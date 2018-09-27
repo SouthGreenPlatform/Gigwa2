@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+	<mongo:mongo-client host="127.0.0.1" port="27017" id="localMongoHost">
+		<mongo:client-options write-concern="NORMAL" />
+	</mongo:mongo-client>
+	<!--	In the case of a host running with authentication enabled: credentials bean id must be defined by
+			appending "Credentials" to the corresponding host bean id. Credentials must be provided for a user 
+			declared in MongoDB's admin collection, who has readWriteAnyDatabase and dbAdminAnyDatabase roles -->
+<!-- 	<bean id="localMongoHostCredentials" class="org.springframework.data.authentication.UserCredentials"> -->
+<!-- 	    <constructor-arg name="username" value="my_user" /> -->
+<!-- 	    <constructor-arg name="password" value="my_passwrod" /> -->
+<!-- 	</bean> -->
+
+</beans>
