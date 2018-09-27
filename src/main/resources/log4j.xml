@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"> <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+<appender name="console" class="org.apache.log4j.ConsoleAppender">
+   <param name="Target" value="System.out"/>
+   <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd/MM HH:mm:ss} | %-5p | %-12t |%-60.60C %4L | %m%n%x"/>
+   </layout>
+</appender>
+
+<appender name="FILE" class="org.apache.log4j.RollingFileAppender">
+    <param name="threshold" value="DEBUG"/>
+    <param name="File" value="${catalina.home}/logs/gigwa.log"/>
+    <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd/MM HH:mm:ss} | %-5p | %-12t |%-60.60C %4L | %m%n%x"/>
+    </layout>
+    <param name="MaxFileSize" value="10MB"/>
+    <param name="MaxBackupIndex" value="5"/>
+</appender>
+
+<category name="com.mongodb">
+    <priority value="WARN"/>
+</category>
+
+<category name="org.springframework">
+    <priority value="WARN"/>
+</category>
+
+<category name="org.springframework.data">
+    <priority value="WARN"/>
+</category>
+
+<category name="org.springframework.web">
+    <priority value="WARN"/>
+</category>
+
+<category name="org.springframework.http">
+    <priority value="WARN"/>
+</category>
+
+<category name="org.springframework.security">
+    <priority value="WARN"/>
+</category>
+
+<category name="fr.cirad.mgdb.gigwa.tools">
+    <priority value="WARN"/>
+</category>
+
+<category name="fr.cirad.mgdb.gigwa.security">
+    <priority value="WARN"/>
+</category>
+
+<category name="fr.cirad">
+    <priority value="INFO"/>
+</category>
+
+<category name="fr.cirad.io.brapi">
+    <priority value="WARN"/>
+</category>
+
+<!-- Otherwise we will only display ERROR messages -->
+<root>
+   <priority value="ERROR" />
+<!--    <appender-ref ref="FILE" /> -->
+   <appender-ref ref="console" />  
+</root>
+
+</log4j:configuration>
