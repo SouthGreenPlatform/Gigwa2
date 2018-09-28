@@ -1253,7 +1253,7 @@
         		var buttonsForThisTool = "";
     	        for (var key in archivedDataFiles)
     	        	if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || arrayContains(toolConfig['formats'].toUpperCase().split(","), $('#exportFormat').val().toUpperCase())))
-        				buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, archivedDataFiles[key]) + '\');" />&nbsp;';
+        				buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
     	        
         		if (buttonsForThisTool != "");
         			$('#serverExportBox').append('<br/><br/>' + buttonsForThisTool)
