@@ -1156,6 +1156,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sModule the module
 	 * @param sProject the project
 	 * @param sRun the run
+	 * @param sProjectDescription the project description
 	 * @param sTechnology the technology
 	 * @param fClearProjectData whether or not to clear project data
 	 * @param dataUri1 data file 1
@@ -1282,23 +1283,31 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			}
 
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
+		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
+		boolean fGotProjectDesc = sProjectDescription != null && sProjectDescription.trim().length() > 0;
 		boolean fBrapiImport = sBrapiMapDbId != null && sBrapiMapDbId.length() > 0 && sBrapiStudyDbId != null && sBrapiStudyDbId.length() > 0 && dataUri1.trim().toLowerCase().startsWith("http");
 		if (fBrapiImport)
 			filesByExtension.clear();	// shall not be treated as a submitted flat-file
-		if (filesByExtension.size() == 0 && !fBrapiImport)
-			progress.setError("Found no data to import!");
+		boolean fGotDataToImport = filesByExtension.size() > 0 || fBrapiImport;
+		if (!fGotDataToImport)
+		{
+			boolean fProjectDescRemainsEmpty = !fGotProjectDesc && (project == null || project.getDescription() == null || project.getDescription().trim().length() == 0);
+			boolean fProjectDescExistsAndUnchanged = fGotProjectDesc && (project != null && project.getDescription() != null && sProjectDescription.trim().equals(project.getDescription().trim()));
+			if (fProjectDescRemainsEmpty || fProjectDescExistsAndUnchanged)
+				progress.setError("Found no data to import!");
+		}
 
-		MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
 		boolean fDatasourceExists = mongoTemplate != null;
 		if (progress.getError() != null)
 		{
-			if (mongoTemplate != null)
-				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, sProjectDescription.trim().length() == 0 ? null : sProjectDescription.trim()), GenotypingProject.class);
+//			if (mongoTemplate != null)
+//				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, !fGotProjectDesc ? null : sProjectDescription.trim()), GenotypingProject.class);
 
 			for (File fileToDelete : uploadedFiles)
 				fileToDelete.delete();
 		}
-		else
+		else if (fGotDataToImport)
 		{
 			if (filesByExtension.size() == 2 && (!filesByExtension.containsKey("ped") || !filesByExtension.containsKey("map")))
 				progress.setError("Dual-file import must consist in map + ped!");
@@ -1379,7 +1388,6 @@ public class GigwaRestController extends ControllerInterface {
 
 			if (fDatasourceExists) {
 				final MongoTemplate finalMongoTemplate = MongoTemplateManager.get(sNormalizedModule /*sModule*/);
-				GenotypingProject project = finalMongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 				if (project == null && expiryDate == null && !tokenManager.canUserCreateProjectInDB(auth, sModule)) // if it's a temp db then don't check for permissions
 				{
 					progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
@@ -1439,8 +1447,8 @@ public class GigwaRestController extends ControllerInterface {
 							}
 							if (newProjId != null)
 								createdProjectId.set(newProjId);
-							if (sProjectDescription != null && sProjectDescription.trim().length() > 0)
-								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, sProjectDescription), GenotypingProject.class);
+							if (fGotProjectDesc)
+								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 						}
 						catch (Exception e) {
 							String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
@@ -1481,6 +1489,12 @@ public class GigwaRestController extends ControllerInterface {
 				}.start();
 			}
 		}
+		else
+		{
+			mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+			progress.markAsComplete();
+		}
+
 		return token;
 	}
 
