@@ -799,7 +799,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ANNOTATION_HEADERS_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, Map<String, String>> getHeaderdescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
+	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, Map<String, String>> response = new HashMap<>();
@@ -1058,7 +1058,7 @@ public class GigwaRestController extends ControllerInterface {
 		if (progress.getError() == null)
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
 				if (uri != null && uri.trim().length() > 0) {
-					String fileExtension = FilenameUtils.getExtension(uri.toString()).toLowerCase();
+					String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
 					if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided file must have a different extension!");
 					else
@@ -1126,7 +1126,7 @@ public class GigwaRestController extends ControllerInterface {
 					if (fastaFile == null && metadataFile == null)
 					{
 						if (filesByExtension.size() == 1)
-							progress.setError("Unsupported file format: " + filesByExtension.values().toArray(new String[1])[0]);
+							progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
 						else
 							progress.setError("Found nothing to import!");
 					}
@@ -1203,7 +1203,7 @@ public class GigwaRestController extends ControllerInterface {
 						file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
 					} else {
 						file = File.createTempFile(null, "_" + mpf.getOriginalFilename());
-						LOG.debug("Had to transfer MultipartFile for tmp directory for " + mpf.getOriginalFilename());
+						LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
 					}
 					mpf.transferTo(file);
 					uploadedFiles.add(file);
@@ -1211,13 +1211,16 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			}
 
+		Authentication auth = tokenManager.getAuthenticationFromToken(token);
+		boolean fAdminImporter = auth != null && auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+
 		if (progress.getError() == null)
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
 			{
 				uri = uri == null ? null : uri.trim();
 				if (uri != null && uri.trim().length() > 0)
 				{
-					String fileExtension = FilenameUtils.getExtension(uri).toString().toLowerCase();
+					String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
 					if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided file must have a different extension!");
 					else {
@@ -1243,7 +1246,24 @@ public class GigwaRestController extends ControllerInterface {
 							else
 								try
 								{
-									fValidURL = ((HttpURLConnection) url.openConnection()).getResponseCode() == HttpURLConnection.HTTP_OK;
+									HttpURLConnection httpConn = ((HttpURLConnection) url.openConnection());
+									fValidURL = httpConn.getResponseCode() == HttpURLConnection.HTTP_OK;
+
+									if (!fAdminImporter)
+									{
+										Integer fileSize = null;
+										try
+										{
+											fileSize = Integer.parseInt(httpConn.getHeaderField("Content-Length"));
+										}
+										catch (Exception ignored)
+										{}
+										if (fileSize == null)
+											progress.setError("Only administrators may upload files with unspecified Content-Length");
+										else if (fileSize > Integer.parseInt(maxUploadSize(request))*1024*1024)
+											progress.setError("Remote file is larger than allowed");
+									}
+										
 								}
 								catch (ConnectException ce)
 								{
@@ -1284,7 +1304,8 @@ public class GigwaRestController extends ControllerInterface {
 			}
 
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
-		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
+		boolean fDatasourceExists = mongoTemplate != null;
+		final GenotypingProject project = !fDatasourceExists ? null : mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		boolean fGotProjectDesc = sProjectDescription != null && sProjectDescription.trim().length() > 0;
 		boolean fBrapiImport = sBrapiMapDbId != null && sBrapiMapDbId.length() > 0 && sBrapiStudyDbId != null && sBrapiStudyDbId.length() > 0 && dataUri1.trim().toLowerCase().startsWith("http");
 		if (fBrapiImport)
@@ -1298,15 +1319,9 @@ public class GigwaRestController extends ControllerInterface {
 				progress.setError("Found no data to import!");
 		}
 
-		boolean fDatasourceExists = mongoTemplate != null;
 		if (progress.getError() != null)
-		{
-//			if (mongoTemplate != null)
-//				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, !fGotProjectDesc ? null : sProjectDescription.trim()), GenotypingProject.class);
-
 			for (File fileToDelete : uploadedFiles)
 				fileToDelete.delete();
-		}
 		else if (fGotDataToImport)
 		{
 			if (filesByExtension.size() == 2 && (!filesByExtension.containsKey("ped") || !filesByExtension.containsKey("map")))
@@ -1324,7 +1339,6 @@ public class GigwaRestController extends ControllerInterface {
 			boolean fRemoteMachineMayImport = remoteAddr.equals(request.getLocalAddr()) || (serversAllowedToImport != null && Helper.split(serversAllowedToImport, ",").contains(remoteAddr));
 			String sReferer = request.getHeader("referer");
 			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
-			Authentication auth = tokenManager.getAuthenticationFromToken(token);
 			final boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 			final boolean fDatasourceAlreadyExisted = fDatasourceExists;
 
@@ -1431,7 +1445,7 @@ public class GigwaRestController extends ControllerInterface {
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
 											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										else
-											throw new Exception("Unsupported file format: " + s);
+											throw new Exception("Unsupported file format or extension: " + s);
 									}
 								}
 								else
@@ -1530,7 +1544,7 @@ public class GigwaRestController extends ControllerInterface {
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MAX_UPLOAD_SIZE_PATH, method = RequestMethod.GET, produces = "application/text")
-	public String maxUploadSizeURL(@RequestParam("module") String sModule, HttpServletRequest request) {
+	public String maxUploadSize(HttpServletRequest request) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String maxSize = appConfig.get("maxUploadSize_" + (auth == null ? "anonymousUser" : auth.getName()));
 		return maxSize == null ? "500" : maxSize;
