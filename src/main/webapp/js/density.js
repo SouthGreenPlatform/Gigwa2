@@ -59,8 +59,23 @@ function initializeAndShowDensityChart(){
     }
 
     $('div#chartContainer').html('<div id="densityChartArea" style="min-width:310px; height:370px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
-    var selectedSequences = getSelectedSequences().split(";");
+    var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
     var selectedTypes = getSelectedTypes().split(";");
+    $.ajax({
+        url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
+        async: false,
+        type: "GET",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+        	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
+        		selectedSequences = jsonResult;
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
     feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes').selectmultiple('option') : selectedTypes);
 }
 
