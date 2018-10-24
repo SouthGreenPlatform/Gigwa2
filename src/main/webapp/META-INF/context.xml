@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context antiJARLocking="true">
-<!-- 	<WatchedResource>WEB-INF/web.xml</WatchedResource> -->
 	<WatchedResource>WEB-INF/classes/config.properties</WatchedResource>
 </Context>
