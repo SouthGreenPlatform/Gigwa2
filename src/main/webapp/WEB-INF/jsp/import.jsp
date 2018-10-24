@@ -163,7 +163,7 @@
                 $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
                 
     	        $.ajax({
-    	            url: maxUploadSizeURL + "?module=" + $('#moduleExistingG').val(),
+    	            url: maxUploadSizeURL,
     	            async: false,
     	            type: "GET",
     	            contentType: "application/json;charset=utf-8",
