@@ -20,13 +20,13 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt"%>
 <fmt:setBundle basename="config" />
+<fmt:message var="googleAnalyticsId" key="googleAnalyticsId" />
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
 	String appVersion = prop.getProperty("Implementation-version");
 	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
-
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
 <c:set var="idSep" value='<%= GigwaGa4ghServiceImpl.ID_SEPARATOR %>' />
@@ -34,6 +34,15 @@
 <html>
 <head>
 <meta charset="utf-8">
+<c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
+<script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '${googleAnalyticsId}');
+</script>
+</c:if>
 <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
@@ -206,7 +215,6 @@
 	    	count = 0;
 		    $('#countResultPanel').hide();
 	        $('#rightSidePanel').hide();
-	        $('#additionnalInfo').hide();
 	        fillWidgets();
 	        resetFilters();
 	        toggleIndividualSelector($('#exportedIndividuals').parent(), false);
@@ -259,11 +267,6 @@
 	    $(".auto-overflow").on('scroll', function() {
 	        var translate = "translate(0," + (this.scrollTop - 1) + "px)";
 	        this.querySelector("thead").style.transform = translate;
-	    });
-	    $('#additionnalInfo').on('click', 'p.hand-cursor', function() {
-	        $(this).siblings().removeClass("selected");
-	        $(this).addClass("selected");
-	        $('#effDetail').html(this.title.replace(/\n/g, '<br/>'));
 	    });
 
 	    $(window).on('beforeunload', function() {
@@ -563,11 +566,11 @@
 	            	if (gotMetaData)
 	                {
 	            		var headerRow = new StringBuffer();
-	            		dataRows.append("<tr><th><div style='position:absolute; right:10px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div><span>" + callSetResponse[ind].name + "</span></th>");
+	            		dataRows.append("<tr><td><div style='margin-right:20px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><th><span>" + callSetResponse[ind].name + "</span></th>");
 	            		for (var key in callSetResponse[ind].info)
 	            		{
 	                		if (ifTable.find("tr").length == 0)
-	                			headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><th>Individual</th>" : "") + "<th>" + key + "<br/></th>");
+	                			headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th colspan='2'>Individual</th>" : "") + "<th>" + key + "<br/></th>");
 	            			dataRows.append("<td>" + callSetResponse[ind].info[key] + "</td>");
 	            		}
 	            		dataRows.append("</tr>");
@@ -1052,73 +1055,40 @@
 	            "Authorization": "Bearer " + token
 	        },
 	        success: function(jsonResult) {
-	            var content = '';
-	            var row = '';
-	            var col = 0;
-	            var headerContent = '<thead><tr>' +
-	                '<th>allele</th>' +
-	                '<th>effect</th>' +
-	                '<th>feature_Id</th>' +
-	                '<th>genomics</th>' +
-	                '</tr></thead>';
-	            if (jsonResult.transcriptEffects.length > 0) { // ANN vcf 4.2
-	                for (var tr in jsonResult.transcriptEffects) {
-	                    var effect = '';
-	                    var title = '';
-	                    for (var eff in jsonResult.transcriptEffects[tr].effects) {
-	                        effect += jsonResult.transcriptEffects[tr].effects[eff].term + '</br>';
-	                    }
-	                    // additional infos are stored in title. They are displayed on hover
-	                    for (var header in jsonResult.info) {
-	                        title += header + ': ' + jsonResult.info[header][col] + '\n';
-	                    }
-	                    row = '<tr class="hover-row" title="' + title + '"><td>' + jsonResult.transcriptEffects[tr].alternateBases + '</td>' +
-	                        '<td>' + effect + '</td>' +
-	                        '<td>' + jsonResult.transcriptEffects[tr].featureId + '</td>' +
-	                        '<td>' + jsonResult.transcriptEffects[tr].hgvsAnnotation.genomic + '</td></tr>';
-	                    content += row;
-	                    col++;
-	                }
-	                $('#annotationTable').html(headerContent + '<tbody>' + content + '</tbody>');
-	                $('#scrollAnnTable').show();
-	            } else { // obsolete annotation format: do not show the table 
-	                var header = typeof jsonResult.info.header === 'undefined' ? [] : jsonResult.info.header; // get vcf_header for annotations
-	                var div = '<div class="row" id="variantAnnotationDiv" style="margin-left:10%;"><dl class="col">';
-	                var fieldIndex = 0, fieldsPerCol = parseInt(Object.keys(jsonResult.info).length / 4);
-	                for (var ai in jsonResult.info) {
-	                    if (ai === 'EFF') { // for EFF fields, split effect 
-	                        var list = '';
-	                        var eff = jsonResult.info[ai][0].split(",");
-	                        for (var effect in eff) {
-	                            var title = eff[effect].substring(eff[effect].indexOf("(") + 1, eff[effect].indexOf(")")).split("${idSep}");
-	                            var text = '';
-	                            if (header.length === 0) {
-	                                for (var t in title) {
-	                                    text += title[t] + '\n';
-	                                }
-	                            } else {
-	                                var i = 0;
-	                                for (var t in title) {
-	                                    text += header[i] + ": " + title[t] + '\n';
-	                                    i++;
-	                                }
-	                            }
-	                            list += '<div>' + eff[effect].substring(0, eff[effect].indexOf("(")) + ' <img style="cursor:help;" src="images/magnifier.gif" title="' + text + '" /></div>';
-	                        }
-	                        div += '<dt>' + ai + '</dt><dd>' + list + '</dd>';
-	                    } else if (ai !== 'header') {
-	                        // display all other additionnal info fields except headers 
-	                        var ann = '<div title="' + (typeof vcfFieldHeaders[ai] !== 'undefined' ? vcfFieldHeaders[ai]: '') + '">' + ai + '</div>'; // put vcf header description for this field in title
-	                        var colIndex = 1 + parseInt(fieldIndex/fieldsPerCol);
-							if (++fieldIndex%fieldsPerCol == 0)
-								div += '</dl><dl class="col">';
-	                        div += '<dt class="fieldIndex' + fieldIndex + '">' + ann + '</dt><dd>' + jsonResult.info[ai] + '</dd>';
-	                    }
-	                }
-	                div += '</dl><p id="effDetail"></p>';
-	                $('#additionnalInfo').html(div).show();
-	                $('#scrollAnnTable').hide();
-	            }
+	        	var gotFunctAnn = jsonResult.info.ann_header != null && jsonResult.info.ann_header.length > 0
+	        	$('#toggleFunctionalAnn').css('display', gotFunctAnn ? 'inline' : 'none');
+	        	if (gotFunctAnn)
+	        	{
+		    		var additionalInfo = new StringBuffer();
+		    		additionalInfo.append("<div id='functionalAnn'" + ($('#toggleFunctionalAnn').hasClass('active') ? "" : " style='display:none;'") + "><h5>Functional annotations</h5><table class='table'><tr>");
+		    		for (var i=0; i<jsonResult.info.ann_header.length; i++)
+		    			additionalInfo.append('<th style="padding:3px;" ' + (i%2 == 0 ? 'class="panel-grey"' : '') + 'title="' + (typeof vcfFieldHeaders[jsonResult.info.ann_header[i]] !== 'undefined' ? vcfFieldHeaders[jsonResult.info.ann_header[i]]: '') + '">' + jsonResult.info.ann_header[i] + "</th>");
+		    		for (var i=0; jsonResult.info["ann_values_" + i] != null; i++)
+		    		{
+			    		additionalInfo.append("</tr><tr>");
+		    			for (var j=0; j<jsonResult.info["ann_values_" + i].length; j++)
+		    				additionalInfo.append("<td" + (j%2 == 0 ? ' class="panel-grey"' : '') + ">" + jsonResult.info["ann_values_" + i][j] + "</td>");
+		    		}
+		    		additionalInfo.append("</tr></table></div>");
+		    		$('#scrollingAnnotationDiv').html(additionalInfo.toString());
+	        	}
+	        	
+	        	var gotMetaData = jsonResult.info.meta_header.length > 0
+	        	$('#toggleVariantMetadata').css('display', gotMetaData ? 'inline' : 'none');
+	        	if (gotMetaData)
+	        	{
+		    		var additionalInfo = new StringBuffer();
+		    		additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
+		    		for (var i=0; i<jsonResult.info.meta_header.length; i++)
+		    			additionalInfo.append('<th style="padding:3px;" ' + (i%2 == 0 ? 'class="panel-grey"' : '') + 'title="' + (typeof vcfFieldHeaders[jsonResult.info.meta_header[i]] !== 'undefined' ? vcfFieldHeaders[jsonResult.info.meta_header[i]]: '') + '">' + jsonResult.info.meta_header[i] + "</th>");
+		    		additionalInfo.append("</tr><tr>");
+		    		for (var i=0; i<jsonResult.info.meta_values.length; i++)
+		    			additionalInfo.append("<td" + (i%2 == 0 ? ' class="panel-grey"' : '') + ">" + jsonResult.info.meta_values[i] + "</td>");
+		    		additionalInfo.append("</tr></table></div>");
+		    		$('#scrollingAnnotationDiv').append(additionalInfo.toString());
+	        	}
+	        	
+
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
 	            handleError(xhr, thrownError);
@@ -1702,9 +1672,15 @@
 	</div>
 	<!-- variant detail modal -->
 	<div class="modal" id="variantDetailPanel" tabindex="-1" role="dialog" aria-labelledby="variantDetailsLabel">
-		<div class="modal-dialog modal-large" role="document">
+		<div class="modal-dialog modal-xlarge" role="document">
 			<div class="modal-content">
 				<div style="float: right; margin: 10px;">
+					<a class="btn btn-sm icon-btn btn-default active" id="toggleFunctionalAnn" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#functionalAnn').toggle(100);">
+						View functional annotations
+					</a>
+					<a class="btn btn-sm icon-btn btn-default active" id="toggleVariantMetadata" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#variantMetadata').toggle(100);">
+						View variant metadata
+					</a>
 					Run:
 					<div class="btn-group" data-toggle="buttons" id="runButtons"></div>
 				</div>
@@ -1730,16 +1706,10 @@
 							</div>
 						</div>
 					</div>
-					<div class="row" id="additionnalInfo"></div>
 					<div class="row">
-						<div class="col-md-1"></div>
-						<div class="col-md-10">
-							<div class="auto-overflow" id="scrollAnnTable">
-								<table class="table table-overflow table-bordered"
-									id="annotationTable"></table>
-							</div>
+						<div class="col-md-12">
+							<div class="auto-overflow" id="scrollingAnnotationDiv"></div>
 						</div>
-						<div class="col-md-1"></div>
 					</div>
 					<div class="row margin-bottom text-center">
 						<div class="col-md-2"></div>
@@ -1751,8 +1721,7 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col-md-1"></div>
-						<div class="col-md-10">
+						<div class="col-md-12">
 							<div id="gtTable" class="auto-overflow"></div>
 						</div>
 					</div>
