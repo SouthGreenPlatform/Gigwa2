@@ -819,6 +819,7 @@
 	        type: "POST",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
+	        timeout:0,
 	        headers: {
 	            "Authorization": "Bearer " + token
 	        },
