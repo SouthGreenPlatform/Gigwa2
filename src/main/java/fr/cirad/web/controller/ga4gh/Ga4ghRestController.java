@@ -93,8 +93,6 @@ public class Ga4ghRestController extends ControllerInterface {
      */
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(Ga4ghRestController.class);
 
-    static public final String MESSAGE_TEMP_RECORDS_NOT_FOUND = "temp records not found";
-
     static public final String BASE_URL = "/ga4gh";
 
     static public final String CALLSETS = "/callsets";
