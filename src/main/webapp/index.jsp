@@ -254,13 +254,13 @@
 		            sortDesc = !sortDesc;
 	            else
 	        		sortBy = seqPath;
-	            searchVariant(2, '0');
+	            searchVariants(2, '0');
 	        } else if ($(this).text().trim() === "start") {
 	            if (sortBy == posPath)
 		            sortDesc = !sortDesc;
 	            else
 	            	sortBy = posPath;
-	            searchVariant(2, '0');
+	            searchVariants(2, '0');
 	        }
 	    });
 
@@ -784,7 +784,7 @@
 	}
 	
 	// main search method
-	function searchVariant(searchMode, pageToken) {
+	function searchVariants(searchMode, pageToken) {
 	    $(".alert").remove();
 	    if ($('#exportPanel').is(':visible'))
 	    	$('#exportBoxToggleButton').click()
@@ -803,15 +803,15 @@
 	    	searchMode = 3;
 	    currentPageToken = pageToken;
         $('#prev').prop('disabled', pageToken === '0');
-	    
-		var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
+
+        var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
    		$('#vcfFieldFilterGroup1 input').each(function() {
    			if (parseInt($(this).val()) > 0)
-   				annotationFieldThresholds[this.id.substring(0, this.id.indexOf("_"))] = $(this).val();
+   				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
    		$('#vcfFieldFilterGroup2 input').each(function() {
    			if (parseInt($(this).val()) > 0)
-   				annotationFieldThresholds2[this.id.substring(0, this.id.indexOf("_"))] = $(this).val();
+   				annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
 	    
 	    $.ajax({
@@ -867,7 +867,7 @@
 	            }
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
-	            handleError(xhr, thrownError);
+            	handleError(xhr, thrownError);
 	        }
 	    });
 	    $('#iconSeq').hide();
@@ -926,7 +926,7 @@
 		for (var i=1; i<=2; i++)
    		$('#vcfFieldFilterGroup' + i + ' input').each(function() {
    			if (parseInt($(this).val()) > 0)
-   				annotationFieldThresholds[this.id.substring(0, this.id.indexOf("_"))] = $(this).val();
+   				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
 
 		var checkThresholds = Object.keys(annotationFieldThresholds).length > 0;
@@ -1047,6 +1047,7 @@
 	    $('#displayAllGt').attr('checked', false);
 	    loadGenotypes(false);
 	    // get annotations 
+       	$('#scrollingAnnotationDiv').html("");
 	    $.ajax({
 	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId),
 	        type: "GET",
@@ -1071,7 +1072,7 @@
 		    				additionalInfo.append("<td" + (j%2 == 0 ? ' class="panel-grey"' : '') + ">" + jsonResult.info["ann_values_" + i][j] + "</td>");
 		    		}
 		    		additionalInfo.append("</tr></table></div>");
-		    		$('#scrollingAnnotationDiv').html(additionalInfo.toString());
+		    		$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 	        	}
 	        	
 	        	var gotMetaData = jsonResult.info.meta_header.length > 0
@@ -1384,8 +1385,8 @@
 							   <div style="margin-top:-25px; text-align:right;">
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer1" onclick="setTimeout('applyGroupMemorizing(1);', 100);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector1" onclick="selectGroupUsingMetadata(1);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy entire list to clipboard" onclick="copyIndividuals(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" data-toggle="button" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals1" onclick="toggleIndividualPasteBox(1);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(1); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals1" onclick="toggleIndividualPasteBox(1);"></button>
 							   </div>
 							   <div class="col margin-top-md vcfFieldFilters">
 							   	    <label class="custom-label">Minimum per-sample...</label><br/>
@@ -1414,7 +1415,7 @@
 									</div>
 								</div>
 								<div class="margin-top-md">
-									<label for="minmaf" class="custom-label">Minor allele frequency</label>
+									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
 									  	<div class="col-xl-6 input-group half-width" style="float:left;">
@@ -1439,7 +1440,7 @@
 										<input id="mostSameRatio1" class="input-xs" style="width:35px;" value="100" maxlength="3"
 										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
 								   </div>
-								   <label for="Genotypes1" class="custom-label">Genotypes</label>
+								   <label for="Genotypes1" class="custom-label">Genotype patterns</label>
 								   &nbsp;
 								   <span class="glyphicon glyphicon-question-sign" id="genotypeHelp1"></span>
 								   <br/>
@@ -1474,8 +1475,8 @@
 							   <div style="margin-top:-25px; float:right;">
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer2" onclick="setTimeout('applyGroupMemorizing(2);', 100);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector2" onclick="selectGroupUsingMetadata(2);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy entire list to clipboard" onclick="copyIndividuals(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:45px; position:absolute\'>Copied!</div>'); infoDiv.insertBefore($(this)); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" data-toggle="button" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals2" onclick="toggleIndividualPasteBox(2);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(2); var infoDiv=$('<div style=\'margin-top:2px; margin-left:45px; position:absolute\'>Copied!</div>'); infoDiv.insertBefore($(this)); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals2" onclick="toggleIndividualPasteBox(2);"></button>
 							   </div>
 							   <div class="col margin-top-md vcfFieldFilters">
 							   	    <label class="custom-label">Minimum per-sample...</label><br/>
@@ -1504,7 +1505,7 @@
 									</div>
 								</div>
 								<div class="margin-top-md">
-									<label for="minmaf" class="custom-label">Minor allele frequency</label>
+									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
 									  	<div class="col-xl-6 input-group half-width" style="float:left;">
@@ -1529,7 +1530,7 @@
 										<input id="mostSameRatio2" class="input-xs" style="width:35px;" value="100" maxlength="3"
 										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
 								   </div>
-								   <label for="Genotypes2" class="custom-label">Genotypes</label>
+								   <label for="Genotypes2" class="custom-label">Genotype patterns</label>
 								   &nbsp;
 								   <span class="glyphicon glyphicon-question-sign" id="genotypeHelp2"></span>
 								   <br/>
@@ -1550,7 +1551,7 @@
 				<div class="row" style="margin-top:-5px; margin-left:1px; position:absolute; width:180px;">
 					<label for="browsingAndExportingEnabled" class="label-checkbox" style="float:right; margin-top:-1px; width:90px;">&nbsp;Enable browse and export</label>
 					<input type="checkbox" onchange="browsingBoxChanged();" id="browsingAndExportingEnabled" class="input-checkbox" checked="checked" style="float:right; margin-top:15px;">
-					<button class="btn btn-primary btn-sm" type="button" name="search" onclick="sortBy=''; sortDesc=false; searchVariant(0, '0');">Search</button>
+					<button class="btn btn-primary btn-sm" type="button" name="search" onclick="sortBy=''; sortDesc=false; searchVariants(0, '0');">Search</button>
 				</div>
 				<div id="rightSidePanel">
 					<div class="row text-center" id="navigationPanel">

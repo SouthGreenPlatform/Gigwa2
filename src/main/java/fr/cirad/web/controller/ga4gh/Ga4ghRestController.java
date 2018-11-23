@@ -179,7 +179,7 @@ public class Ga4ghRestController extends ControllerInterface {
         	if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
         		return service.getReferenceBases(id, listReferenceBasesRequest);
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -219,7 +219,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            } else
 	                return callSet;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -257,7 +257,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            } else
 	                return variantSet;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -296,7 +296,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            } else
 	                return variant;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -334,7 +334,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            } else
 	                return reference;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -373,7 +373,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	                return referenceSet;
 	            }
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -406,7 +406,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -471,7 +471,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0]))
 	            return service.searchReferences(referencesRequest);
 	        else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -519,7 +519,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        		variantSets.getVariantSets().add(0, new VariantSet());
 	            return variantSets;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -543,7 +543,7 @@ public class Ga4ghRestController extends ControllerInterface {
     })
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public GigwaSearchVariantsResponse searchVariant(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
+    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
 
         String token = tokenManager.readToken(request);
         String id = gsvr.getVariantSetId();
@@ -555,7 +555,7 @@ public class Ga4ghRestController extends ControllerInterface {
 				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)));
 	            return service.searchVariants(gsvr);
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -591,7 +591,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	                build404Response(response);
 	            return varAnn;
 	        } else {
-	            build401Response(response);
+	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
 		} catch (ObjectNotFoundException e) {
@@ -606,12 +606,20 @@ public class Ga4ghRestController extends ControllerInterface {
     	resp.getWriter().write(message);
     }
       
-    public void build401Response(HttpServletResponse resp) throws IOException
+    public void buildForbiddenAccessResponse(String token, HttpServletResponse resp) throws IOException
     {
-    	resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    	resp.getWriter().write("You are not allowed to access this resource");
+    	if (token == null || tokenManager.getAuthenticationFromToken(token) == null)
+    	{
+	    	resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	    	resp.getWriter().write("You must be authenticated to access this resource");
+    	}
+    	else
+    	{
+    	 	resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+    	  	resp.getWriter().write("You are not allowed to access this resource");
+    	}
     }
-    
+
     public void build404Response(HttpServletResponse resp) throws IOException
     {
     	resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

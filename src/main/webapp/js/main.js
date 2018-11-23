@@ -79,7 +79,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
 	            "Authorization": "Bearer " + token
 	        },
 	        success: function (jsonResult) {
-	            if (jsonResult == null)
+	            if (jsonResult == null && !processAborted)
 	            	displayProcessProgress(nbMin, token, onSuccessMethod);
 	            else if (jsonResult['complete'] == true) {
 	                if (onSuccessMethod != null)
@@ -147,6 +147,20 @@ function displayMessage(message) {
 }
 
 function handleError(xhr, thrownError) {
+	if (xhr.status == 401)
+	{
+		location.href = 'login.jsp';
+		return;
+	}
+
+	if (xhr.status == 403)
+	{
+		processAborted = true;
+		$('div.modal').modal('hide');
+		alert(xhr.responseText);
+		return;
+	}
+		
 	var errorMsg = xhr == null || xhr.responseText == null ? null : $.parseJSON(xhr.responseText)['errorMsg'];
 	$(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:5; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
 	window.setTimeout(function() {
@@ -388,7 +402,7 @@ function browsingBoxChanged()
 			handleCountSuccess();
 	}
 	else if (count > 0 && $("#variantResultTable tr:gt(0)").length == 0)
-		searchVariant(1, '0');
+		searchVariants(1, '0');
 }
 
 function checkBrowsingBoxAccordingToLocalVariable()
@@ -591,7 +605,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 		$('#vcfFieldFilterGroup1 input').each(function() {
 			var value = $(this).val();
 			if (value != "0")
-				result[this.id.substring(0, this.id.indexOf("_"))] = parseInt(value);
+				result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseInt(value);
 		});
 	
 	var inGroup2 = indArray2.length == 0 || arrayContains(indArray2, individual);
@@ -600,7 +614,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 			var value = $(this).val();
 			if (value != "0")
 			{
-				var annotation = this.id.substring(0, this.id.indexOf("_"));
+				var annotation = this.id.substring(0, this.id.lastIndexOf("_"));
 				result[annotation] = inGroup1 ? Math.max(result[annotation], parseInt(value)) : parseInt(value);
 			}
 		});
@@ -620,7 +634,7 @@ function iteratePages(next) {
     var start = (pageToken * 100) + 1;
     var end = (start + 100) <= count ? (start + 99) : count;
     $('#currentPage').html(start + " - " + end + " / " + count);
-    searchVariant(2, pageToken.toString());
+    searchVariants(2, pageToken.toString());
 }
 
 function isNumberKey(evt) {
@@ -841,9 +855,9 @@ function selectGroupUsingMetadata(groupNumber) {
     });
 }
 
-function copyIndividuals() {
-    var optionArray = $('#Individuals1').selectmultiple('option');
-    copyToClipboard(optionArray.join("\n"));
+function copyIndividuals(groupNumber) {
+	var selectedIndividuals = getSelectedIndividuals(groupNumber);
+	copyToClipboard((selectedIndividuals != "" ? selectedIndividuals : $('#Individuals1').selectmultiple('option')).join("\n"));
 }
 
 function copyToClipboard(text){
