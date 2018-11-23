@@ -30,7 +30,7 @@
            	<div id="appVersionType">${appVersionType}</div>
             <div class="collapse navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="<c:url value='/' />" data-toggle="tooltip" data-placement="bottom" title="Search / browse genotyping data"><span class="glyphicon glyphicon-search margin-icon" aria-hidden="true"></span>Search data</a></li>
+                    <li><a href="<c:url value='/' />" data-toggle="tooltip" data-placement="bottom" title="Search / browse genotyping data"><span class="glyphicon glyphicon-home margin-icon" aria-hidden="true"></span>Home</a></li>
 		   			<li class="dropdown">
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
