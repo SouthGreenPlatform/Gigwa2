@@ -313,7 +313,7 @@ function loadSearchableVcfFields()
             {
         		var htmlContents = "";
                 for (var key in jsonResult)
-               		htmlContents += '<div class="col-xl-6 input-group third-width" style="margin-left:2px; margin-top:1px; float:left;"> <span class="input-group-addon input-xs"><label for="' + jsonResult[key] + '_threshold1" class="' + jsonResult[key] + '_thresholdLabel">' + jsonResult[key] + '</label></span> <input id="' + jsonResult[key] + '_threshold1" class="form-control input-sm" type="text" name="' + jsonResult[key] + '_threshold1" value="0" maxlength="4" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == \'\') $(this).val(0);"></div>';
+               		htmlContents += '<div class="col-xl-6 input-group third-width" style="margin-left:2px; margin-top:1px; float:left;"> <span class="input-group-addon input-xs"><label for="' + jsonResult[key] + '_threshold1" class="' + jsonResult[key] + '_thresholdLabel">' + jsonResult[key] + '</label></span> <input id="' + jsonResult[key] + '_threshold1" class="form-control input-sm" type="number" step="0.1" min="0" name="' + jsonResult[key] + '_threshold1" value="0" maxlength="4" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == \'\') $(this).val(0);"></div>';
         		$('#vcfFieldFilterGroup' + i).html(htmlContents);
         		$('.vcfFieldFilters').toggle(htmlContents != "");
             }
