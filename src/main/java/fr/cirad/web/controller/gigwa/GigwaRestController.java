@@ -922,8 +922,7 @@ public class GigwaRestController extends ControllerInterface {
 				for (String aFilter : annotationThresholdsCsv.split(";"))
 					if (aFilter.length() > 0) {
 						String[] splittedFilter = aFilter.split(":");
-						gsver.getAnnotationFieldThresholds().put(splittedFilter[0],
-								Integer.parseInt(splittedFilter[1]));
+						gsver.getAnnotationFieldThresholds().put(splittedFilter[0], Float.parseFloat(splittedFilter[1]));
 					}
 				gsver.setCallSetIds(callSetIds == null || callSetIds.length() == 0 ? new ArrayList<String>() : Arrays.asList(callSetIds.split(",")));
 
@@ -935,8 +934,7 @@ public class GigwaRestController extends ControllerInterface {
 				for (String aFilter : annotationThresholdsCsv2.split(";"))
 					if (aFilter.length() > 0) {
 						String[] splittedFilter = aFilter.split(":");
-						gsver.getAnnotationFieldThresholds2().put(splittedFilter[0],
-								Integer.parseInt(splittedFilter[1]));
+						gsver.getAnnotationFieldThresholds2().put(splittedFilter[0], Float.parseFloat(splittedFilter[1]));
 					}
 				gsver.setCallSetIds2(callSetIds2 == null || callSetIds2.length() == 0 ? new ArrayList<String>() : Arrays.asList(callSetIds2.split(",")));
 
