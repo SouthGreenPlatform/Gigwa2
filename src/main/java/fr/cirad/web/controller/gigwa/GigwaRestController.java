@@ -1265,7 +1265,7 @@ public class GigwaRestController extends ControllerInterface {
 								}
 								catch (ConnectException ce)
 								{
-									throw new Exception("Unable to connect to " + url + ": " + ce.getMessage());
+									progress.setError("Unable to connect to " + url + " - " + ce.getMessage());
 								}
 							if (fValidURL)
 							{
@@ -1313,7 +1313,7 @@ public class GigwaRestController extends ControllerInterface {
 		{
 			boolean fProjectDescRemainsEmpty = !fGotProjectDesc && (project == null || project.getDescription() == null || project.getDescription().trim().length() == 0);
 			boolean fProjectDescExistsAndUnchanged = fGotProjectDesc && (project != null && project.getDescription() != null && sProjectDescription.trim().equals(project.getDescription().trim()));
-			if (fProjectDescRemainsEmpty || fProjectDescExistsAndUnchanged)
+			if ((fProjectDescRemainsEmpty || fProjectDescExistsAndUnchanged) && progress.getError() == null)
 				progress.setError("Found no data to import!");
 		}
 
