@@ -34,6 +34,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="cache-control" content="no-cache" />
 <c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
 <script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
 <script>
@@ -570,7 +571,7 @@
 	            		for (var key in callSetResponse[ind].info)
 	            		{
 	                		if (ifTable.find("tr").length == 0)
-	                			headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th colspan='2'>Individual</th>" : "") + "<th>" + key + "<br/></th>");
+	                			headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + key + "<br/></th>");
 	            			dataRows.append("<td>" + callSetResponse[ind].info[key] + "</td>");
 	            		}
 	            		dataRows.append("</tr>");
