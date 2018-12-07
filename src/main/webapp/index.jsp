@@ -807,11 +807,11 @@
 
         var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
    		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseInt($(this).val()) > 0)
+   			if (parseFloat($(this).val()) > 0)
    				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
    		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseInt($(this).val()) > 0)
+   			if (parseFloat($(this).val()) > 0)
    				annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
 	    
@@ -842,7 +842,7 @@
 	            "mostSameRatio": $('#mostSameRatio1').val(),
 	            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
    	            "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
- 	            "missingData": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata1').val()),
+ 	            "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
 				"annotationFieldThresholds": annotationFieldThresholds,
 
 	            "callSetIds2": getSelectedIndividuals(2),
@@ -850,7 +850,7 @@
 	            "mostSameRatio2": $('#mostSameRatio2').val(),
 	            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
    	            "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
- 	            "missingData2": $('#missingdata2').val() === null ? 100 : parseInt($('#missingdata2').val()),
+ 	            "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
  	   			"annotationFieldThresholds2": annotationFieldThresholds2,
 	            
 	            "discriminate": $('#discriminate').prop('checked'),
@@ -926,7 +926,7 @@
 		var annotationFieldThresholds = {};
 		for (var i=1; i<=2; i++)
    		$('#vcfFieldFilterGroup' + i + ' input').each(function() {
-   			if (parseInt($(this).val()) > 0)
+   			if (parseFloat($(this).val()) > 0)
    				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
    		});
 
@@ -1076,7 +1076,7 @@
 		    		$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 	        	}
 	        	
-	        	var gotMetaData = jsonResult.info.meta_header.length > 0
+	        	var gotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
 	        	$('#toggleVariantMetadata').css('display', gotMetaData ? 'inline' : 'none');
 	        	if (gotMetaData)
 	        	{
@@ -1130,11 +1130,11 @@
 
 		var annotationFieldThresholds = "", annotationFieldThresholds2 = "";
    		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseInt($(this).val()) > 0)
+   			if (parseFloat($(this).val()) > 0)
    				annotationFieldThresholds += (annotationFieldThresholds == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
    		});
    		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseInt($(this).val()) > 0)
+   			if (parseFloat($(this).val()) > 0)
 	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
    		});
    		
@@ -1155,7 +1155,7 @@
             "mostSameRatio": $('#mostSameRatio1').val(),
             "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
 	        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-	        "missingData": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata1').val()),
+	        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
             "annotationFieldThresholds": annotationFieldThresholds,
 
             "callSetIds2": getSelectedIndividuals(2),
@@ -1163,7 +1163,7 @@
             "mostSameRatio2": $('#mostSameRatio2').val(),
             "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
 	        "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-	        "missingData2": $('#missingdata2').val() === null ? 100 : parseInt($('#missingdata2').val()),
+	        "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
             "annotationFieldThresholds2": annotationFieldThresholds2,
 	        
 			"keepExportOnServer": keepExportOnServer,
@@ -1275,12 +1275,12 @@
 	<div id="welcome">
 		<h3>Welcome to Gigwa</h3>
 		<p>
-		The Gigwa application, which stands for “Genotype Investigator for Genome-Wide Analyses”, provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database with VCF, PLINK or HapMap files containing up to billions of genotypes, and provides a user-friendly interface to filter data in real time. Gigwa provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
+		The Gigwa application, which stands for “Genotype Investigator for Genome-Wide Analyses”, provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database with VCF, PLINK or HapMap files containing up to tens of billions of genotypes, and provides a user-friendly interface to filter data in real time. Gigwa provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
 		<p class="margin-top bold">
 			Homepage: <a href="http://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
 			<br/>
-			GitHub: <a href="https://github.com/SouthGreenPlatform/gigwa" target='_blank'>https://github.com/SouthGreenPlatform/gigwa</a>
+			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
         <fmt:message var="adminEmail" key="adminEmail" />
         <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>

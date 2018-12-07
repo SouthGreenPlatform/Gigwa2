@@ -79,7 +79,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
 	            "Authorization": "Bearer " + token
 	        },
 	        success: function (jsonResult) {
-	            if (jsonResult == null && !processAborted)
+	            if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
 	            	displayProcessProgress(nbMin, token, onSuccessMethod);
 	            else if (jsonResult['complete'] == true) {
 	                if (onSuccessMethod != null)
@@ -147,13 +147,13 @@ function displayMessage(message) {
 }
 
 function handleError(xhr, thrownError) {
-	if (xhr.status == 401)
+	if (xhr != null && xhr.status == 401)
 	{
 		location.href = 'login.jsp';
 		return;
 	}
 
-	if (xhr.status == 403)
+	if (xhr != null && xhr.status == 403)
 	{
 		processAborted = true;
 		$('div.modal').modal('hide');
@@ -605,7 +605,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 		$('#vcfFieldFilterGroup1 input').each(function() {
 			var value = $(this).val();
 			if (value != "0")
-				result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseInt(value);
+				result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseFloat(value);
 		});
 	
 	var inGroup2 = indArray2.length == 0 || arrayContains(indArray2, individual);
@@ -615,7 +615,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 			if (value != "0")
 			{
 				var annotation = this.id.substring(0, this.id.lastIndexOf("_"));
-				result[annotation] = inGroup1 ? Math.max(result[annotation], parseInt(value)) : parseInt(value);
+				result[annotation] = inGroup1 ? Math.max(result[annotation], parseFloat(value)) : parseFloat(value);
 			}
 		});
 
@@ -752,6 +752,8 @@ function getToken() {
         contentType: "application/json;charset=utf-8",
         success: function (jsonResult) {
             token = jsonResult.token;
+            if (document.referrer.endsWith("/login.jsp") && jsonResult.msg != null)
+            	alert(jsonResult.msg);
         },
         error: function (xhr, thrownError) {
             handleError(xhr, thrownError);
