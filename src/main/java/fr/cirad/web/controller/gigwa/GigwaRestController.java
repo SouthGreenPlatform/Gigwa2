@@ -253,8 +253,7 @@ public class GigwaRestController extends ControllerInterface {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			repository.saveContext(SecurityContextHolder.getContext(), request, resp);
 
-			if (authentication == null) { // we don't return a token in case of
-											// a login failure
+			if (authentication == null) { // we don't return a token in case of a login failure
 				resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
 				return null;
 			}
@@ -264,6 +263,9 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, String> result = new HashMap<>();
 
 		result.put(Constants.TOKEN, token);
+		authentication = tokenManager.getAuthenticationFromToken(token);
+		if (authentication != null && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
+			result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
 		return result;
 	}
 
@@ -342,12 +344,11 @@ public class GigwaRestController extends ControllerInterface {
 			throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		if (auth != null && auth.isAuthenticated()) {
-			boolean fAnonymousImporter = "anonymousUser".equals(auth.getName());
 			String tempDbHost = appConfig.get("tempDbHost");
 			Map<String, List<String>> response = new HashMap<>();
 			List<String> hosts = new ArrayList<>();
 			for (String sHost : MongoTemplateManager.getHostNames())
-				if (!fAnonymousImporter || tempDbHost == null || tempDbHost.equals(sHost))
+				if (auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)) || tempDbHost == null || tempDbHost.equals(sHost))
 					hosts.add(sHost);
 			response.put(Constants.HOSTS, hosts);
 			return response;
@@ -1245,7 +1246,19 @@ public class GigwaRestController extends ControllerInterface {
 								try
 								{
 									HttpURLConnection httpConn = ((HttpURLConnection) url.openConnection());
-									fValidURL = httpConn.getResponseCode() == HttpURLConnection.HTTP_OK;
+									httpConn.setInstanceFollowRedirects(true);
+									fValidURL = Arrays.asList(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP).contains(httpConn.getResponseCode());
+									if (fValidURL && HttpURLConnection.HTTP_OK != httpConn.getResponseCode())
+									{	// there's a redirection: try and handle it
+										String sNewUrl = httpConn.getHeaderField("Location");
+										if (sNewUrl == null || !sNewUrl.toLowerCase().startsWith("http"))
+										{
+											fValidURL = false;
+											progress.setError("Unable to handle redirected URL (http code " + httpConn.getResponseCode() + ")");
+										}
+										else
+											url = new URL(sNewUrl);
+									}
 
 									if (!fAdminImporter)
 									{
@@ -1337,7 +1350,8 @@ public class GigwaRestController extends ControllerInterface {
 			boolean fRemoteMachineMayImport = remoteAddr.equals(request.getLocalAddr()) || (serversAllowedToImport != null && Helper.split(serversAllowedToImport, ",").contains(remoteAddr));
 			String sReferer = request.getHeader("referer");
 			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
-			final boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
+			boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
+			boolean fMayOnlyWriteTmpData = fAnonymousImporter || tokenManager.listWritableDBs(auth).size() == 0;
 			final boolean fDatasourceAlreadyExisted = fDatasourceExists;
 
 			if (progress.getError() != null)
@@ -1345,8 +1359,8 @@ public class GigwaRestController extends ControllerInterface {
 				for (File fileToDelete : uploadedFiles)
 					fileToDelete.delete();
 				
-				if (!fIsCalledFromInterface || fAnonymousImporter)
-				{ // only allow writing to his own, new, temporary, hidden database
+				if (!fIsCalledFromInterface || fMayOnlyWriteTmpData)
+				{ // only allow writing to a new, temporary, hidden database
 					if (fDatasourceExists)
 						progress.setError("Datasource " + sNormalizedModule + " already exists!");
 					else if (!fIsCalledFromInterface && !fRemoteMachineMayImport)
@@ -1354,13 +1368,13 @@ public class GigwaRestController extends ControllerInterface {
 					if (progress.getError() != null)
 						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
 							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") + ", fAnonymousImporter:" + fAnonymousImporter + ", fIsCalledFromInterface:" + fIsCalledFromInterface);
+							+ request.getHeader("referer") + ", fAnonymousImporter:" + fMayOnlyWriteTmpData + ", fIsCalledFromInterface:" + fIsCalledFromInterface);
 				}
 				return null;
 			}
 
 			Long expiryDate = null;
-			boolean fPublicAndHidden = !fIsCalledFromInterface || fAnonymousImporter; // remote users (invoking import directly via a URL) and anonymous users are only allowed to create public-and-hidden databases (i.e. for their own use)
+			boolean fPublicAndHidden = !fIsCalledFromInterface || fMayOnlyWriteTmpData; // remote users (invoking import directly via a URL) and anonymous users are only allowed to create public-and-hidden databases (i.e. for their own use)
 			if (!fDatasourceExists) {
 				progress.addStep("Creating datasource");
 				progress.moveToNextStep();
@@ -1382,7 +1396,7 @@ public class GigwaRestController extends ControllerInterface {
 							throw new Exception("No host was specified!");
 					}
 
-					if (!fIsCalledFromInterface || fAnonymousImporter)
+					if (!fIsCalledFromInterface || !fAdminImporter)
 						expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 //					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 
