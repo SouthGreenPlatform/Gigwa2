@@ -45,7 +45,6 @@
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
         <script type="text/javascript">
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
-	    	<%--	    	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />"; --%>
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	    	var maxUploadSizeURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAX_UPLOAD_SIZE_PATH%>"/>';
             var token;
@@ -288,8 +287,9 @@
                     $('#progress').modal('hide');
                     return;
                 }
-                <c:if test="${limitToTempData}">
-                $("#moduleToImport").val(hashCode(token).toString(16) + "O" + hashCode(Date.now()).toString(16));
+                <c:if test="${!isAdmin}">
+                if ($("#moduleToImport").val() == "")
+                	$("#moduleToImport").val(hashCode(token).toString(16) + "O" + hashCode(Date.now()).toString(16));
                 </c:if>
                                 
                 var importDropzoneG = new Dropzone("#importDropzoneG");                 
@@ -321,10 +321,10 @@
                     return;
                 }
                 
-                var moduleOrProjectMissing = $("#moduleToImport").val() === "" || $("#projectToImport").val() === "";
+                var moduleOrProjectMissing = $("#moduleToImport").val() == "" || $("#projectToImport").val() == "";
 				if (moduleOrProjectMissing)
             	{
-                   	alert("You must specify a " + ($("#moduleToImport").val() === "" ? "database!" : "project!"));
+                   	alert("You must specify a " + ($("#moduleToImport").val() == "" ? "database!" : "project!"));
                     $('#progress').modal('hide');
                     return;
             	}
@@ -343,7 +343,7 @@
 	                    return;
                 	}
                 }
-                else if ($("#runToImport").val() === "")
+                else if ($("#runToImport").val() == "")
                 {
                    	alert("You must specify a run!");
                     $('#progress').modal('hide');
@@ -518,9 +518,7 @@
                         "pageToken": null
                     }),
                     success: function (jsonResult) {
-                        <c:if test="${isAdmin}">
                         $('#moduleExistingG').html("<option>- new database -</option>").selectpicker('refresh');
-                        </c:if>
 
                         var option = "";
                         for (var set in jsonResult.referenceSets)
@@ -636,7 +634,7 @@
                                 <div class="row">
                                     <div class="col-md-1" style="text-align:right;"></div>
                                     <div class="col-md-10">
-                                        <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
+                                        <div class="form-group margin-top-md text-left"<c:if test="${limeitToTempData}"> hidden</c:if>>
                                             <div class="row" id="rowModuleExisting">
 	                                        	<div class="col-md-2" style="text-align:right;">
 		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
@@ -668,10 +666,10 @@
                                                 <div class="col-md-3" id="hostDiv">
                                                     <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                                 </div>
-                                                <c:if test="${limitToTempData}">
+                                                <c:if test="${!isAdmin}">
 	                                                <div class="col-md-3 text-red" style="font-size:11px;">
-                                                		<span class="glyphicon glyphicon-warning-sign" style="font-size:13px;"></span>
-                                                		You may only upload temporary data
+                                                		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
+                                                		You are only allowed to create temporary databases
                                                 	</div>
                                                 </c:if>
                                             </div>
