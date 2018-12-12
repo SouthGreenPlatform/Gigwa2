@@ -120,7 +120,7 @@
                         $('.importFormDiv textarea').prop('disabled', true);
                         if ($('#metadataTab').hasClass("active")) {
                             var link = "<c:url value='/' />?module=" + $('#moduleExistingMD').val(); 
-                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete. Annotated data is now <a href="' + link + '">available here</a>');
+                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete. Amended data is now <a href="' + link + '">available here</a>');
                             $('#progress').modal('show');
                             new Dropzone("#importDropzoneMD").destroy();
                         } else {
