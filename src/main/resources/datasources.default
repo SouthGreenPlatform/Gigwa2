@@ -1,0 +1,14 @@
+#keys starting with a star define public databases (their contents are viewable without login)
+#keys ending with a star indicate databases that are not listed in the menu list (may only be accessible if the frame URL and module name are known)
+
+#module1 will be exposed in the list to authorized users and its variant search view will be accessible only to authorized users
+#module1=localMongoHostV2,mgdb_gigwa_module1
+
+#module2 will be exposed in the list for everyone and its variant search view will be accessible even to anonymous users
+#*module2=server1MongoHost,mgdb_gigwa_module2
+
+#module3 will be hidden from the list (for anyone but administrators), but its variant search view will remain accessible to authorized users
+#module3*=server1MongoHost,mgdb_gigwa_module3
+
+#module4 will be hidden from the list, but its variant search view will be accessible even to anonymous users
+#*module4*=server2MongoHost,mgdb_gigwa_module4
