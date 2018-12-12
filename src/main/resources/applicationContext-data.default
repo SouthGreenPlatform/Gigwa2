@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+		
+ 	<!--	Default configuration: definition of a host running locally without authentication enabled -->
+ 	<mongo:mongo-client host="127.0.0.1" port="27017" id="defaultMongoHost">
+ 		<mongo:client-options write-concern="NORMAL" />
+ 	</mongo:mongo-client>
+
+ 	<!--	Definition of a host running remotely without authentication enabled -->
+<!-- 	<mongo:mongo-client host="my.mongo.server1.com" port="27017" id="server1MongoHost"> -->
+<!-- 		<mongo:client-options write-concern="NORMAL" /> -->
+<!-- 	</mongo:mongo-client> -->
+
+
+	<!--  	Definition of a host running locally with authentication enabled: credentials bean id must be defined by appending "Credentials" to the corresponding host bean id
+		Credentials must be provided for a user declared in MongoDB's admin collection, who has readWriteAnyDatabase and dbAdminAnyDatabase roles -->
+<!--  	<mongo:mongo-client host="localhost" port="27017" id="localMongoHost"> -->
+<!-- 		<mongo:client-options write-concern="NORMAL" /> -->
+<!-- 	</mongo:mongo-client> -->
+<!-- 	<bean id="localMongoHostCredentials" class="org.springframework.data.authentication.UserCredentials"> -->
+<!-- 	    <constructor-arg name="username" value="XXXXX" /> -->
+<!-- 	    <constructor-arg name="password" value="YYYYY" /> -->
+<!-- 	</bean> -->
+
+
+ 	<!--	Definition of a host running remotely with authentication enabled: credentials bean id must be defined by appending "Credentials" to the corresponding host bean id
+		Credentials must be provided for a user declared in MongoDB's admin collection, who has readWriteAnyDatabase and dbAdminAnyDatabase roles -->
+<!-- 	<mongo:mongo-client host="my.mongo.server2.com" port="27017" id="server2MongoHost"> -->
+<!-- 		<mongo:client-options write-concern="NORMAL" /> -->
+<!-- 	</mongo:mongo-client> -->
+<!-- 	<bean id="server2MongoHostCredentials" class="org.springframework.data.authentication.UserCredentials"> -->	
+<!-- 	    <constructor-arg name="username" value="XXXXX" /> -->
+<!-- 	    <constructor-arg name="password" value="YYYYY" /> -->
+<!-- 	</bean> -->	
+</beans>
