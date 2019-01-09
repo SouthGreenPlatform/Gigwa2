@@ -53,7 +53,7 @@
         	getToken();
 
             $.ajax({
-                url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORTED_DATA_PATH%>"/>/${principal.username}',
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORTED_DATA_PATH%>"/>/${principal.username}/',
                 type: "GET",
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
