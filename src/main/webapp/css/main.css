@@ -42,7 +42,7 @@ div#welcome {
     margin: 0 auto;
 }
 
-div#density, div#individualFiltering {
+div#density, div#individualFiltering, div#manual {
     overflow: hidden;
 	width: 99%;
     margin: 0 auto;
@@ -52,7 +52,7 @@ div#density * {
 	font-size:11px;
 }
 
-div#density .modal-lg, div#individualFiltering .modal-lg {
+div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg {
     width: 99%;
 }
 

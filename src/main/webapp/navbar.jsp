@@ -44,6 +44,7 @@
 						</ul>
    		   			</li>
                     <li><a href="<c:url value='/rest/swagger-ui.html' />" target="_blank" data-toggle="tooltip" data-placement="bottom" title="Rest API Swagger"><span class="glyphicon glyphicon-leaf margin-icon" aria-hidden="true"></span>Rest APIs</a></li>
+                    <li><a href="#" onclick="$('#manual').modal('show');" data-toggle="tooltip" data-placement="bottom" title="Display online documentation"><span class="glyphicon glyphicon-book margin-icon" aria-hidden="true"></span>Docs</a></li>
                     <c:if test="${principal != null && isAnonymous}">
                         <li>
                             <a href="<c:url value='/login.jsp' />" data-toggle="tooltip" data-placement="bottom" title="Log-in for private data"><span class="glyphicon glyphicon-user margin-icon" aria-hidden="true"></span>Connexion</a>
@@ -66,3 +67,12 @@
             </div>
         </div>
     </nav>
+    
+    <!-- modal which displays documentation -->
+	<div class="modal fade" tabindex="-1" role="dialog" id="manual" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content" style="padding:10px; overflow:hidden;">
+				<iframe id="manualFrame" style="width: 100%; border:0; min-height:90vh;" src='docs/gigwa_docs.html'></iframe>
+			</div>
+		</div>
+	</div>

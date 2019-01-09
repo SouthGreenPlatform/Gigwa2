@@ -1,0 +1,670 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+   <HEAD>
+      <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=us-ascii">
+      <TITLE></TITLE>
+      <META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (FreeBSD/amd64)">
+      <META NAME="CREATED" CONTENT="20190107;8312500">
+      <META NAME="CHANGED" CONTENT="0;0">
+      <STYLE TYPE="text/css">
+         <!--
+            @page {
+            	size: 8.27in 11.69in;
+            	margin-left: 0.75in;
+            	margin-right: 0.75in;
+            	margin-top: 0.87in;
+            	margin-bottom: 0.87in
+            }
+            
+            P {
+            	font-family: "Arial", sans-serif;
+            	margin-bottom: 0.08in;
+            	direction: ltr;
+            	color: #000000;
+            	line-height: 115%;
+            	text-align: left;
+            	text-decoration: none
+            }
+            
+            A, A:visited {
+            	color:blue;
+            	font-weight:bold;
+            	text-decoration:none;
+            }
+            A:hover {
+            	text-decoration:underline;
+            }
+            -->
+      </STYLE>
+   </HEAD>
+   <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
+      STYLE="border: none; padding: 0in">
+      <BR>
+      <P ALIGN=CENTER
+         STYLE="margin-bottom: 0in; line-height: 100%; page-break-before: always">
+         <FONT FACE="Arial, sans-serif"><FONT SIZE=6
+            STYLE="font-size: 28pt">Gigwa v2 &ndash; Documentation</FONT></FONT>
+      </P>
+      <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
+      	<b>Learn how to use Gigwa like a pro in a few minutes!</b>
+      	<BR><BR>
+      	Watch demonstration videos on the project homepage:
+      	<BR>
+      	<a href="http://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
+      </p>
+      <BR>
+      <BR>
+      <P
+         STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+         <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+            SIZE=4 STYLE="font-size: 16pt">A/ USER DOCUMENTATION</FONT></FONT></FONT>
+      </P>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">A1/ IMPORTING DATA</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Choosing &ldquo;Manage
+               data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal
+               menu leads to a page dedicated to data imports.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Anonymous users and users with
+               no particular permissions are limited to importing genotyping data
+               into temporary databases that remain accessible for 24h. These
+               databases are hidden (only visible to people knowing their precise
+               URL and to administrators).
+            </P>
+            <P STYLE="margin-bottom: 0.14in">In the case where the importing
+               person is logged in as administrator or as a user with permissions
+               to write into a permanent database, a tabset allows choosing between
+               importing genotyping data or metadata. Providing individual metadata
+               is only supported for existing databases and aims at enabling users
+               to select them by filtering on that metadata. This is convenient for
+               cases where the individual list is long and / or individual names
+               are not meaningful.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Genotyping data may be provided
+               in various formats (VCF, HapMap, PLINK, BrAPI) and in various ways:
+            </P>
+            <UL>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
+                     specifying an absolute path on the webserver filesystem
+                     (convenient for administrators managing a production instance used
+                     as data portal);
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
+                     uploading files from the client computer (with an adjustable size
+                     limit: see section B4.2);
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
+                     providing an http URL, linking either to data files or to a BrAPI
+                     v1.1 base-url.
+                  </P>
+            </UL>
+            <P STYLE="margin-bottom: 0.14in">Genotyping data import progress
+               can be watched in real time from the upload page, or via a dedicated
+               asynchronous progress page (convenient for large datasets), as
+               imports run as background processes and may not be interrupted by
+               users.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">
+               <BR>
+            </P>
+      </UL>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">A2/ WORKING WITH GENOTYPING
+               DATA</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">From the home page, select a
+               database and a project. Note the presence of an &ldquo;Enable browse
+               and export&rdquo; checkbox that toggles between a mode where only
+               variant counts are displayed, and one where users may browse,
+               visualize and export selected data.
+            </P>
+      </UL>
+      <UL>
+         <UL>
+            <LI>
+               <P
+                  STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
+                     SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
+               </P>
+               <P STYLE="margin-bottom: 0.14in">By default, a single grey
+                  filter panel appears, providing means to select variants based on
+                  their inherent attributes:
+               </P>
+               <UL>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">variant
+                        type (i.e. SNP, INDEL&hellip;);
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">sequence;</P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">position;</P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">if
+                        applicable, number of known alleles (when several are
+                        represented);
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">if
+                        applicable, functional annotations (if the data was provided as a
+                        SnpEff or VEP-annotated VCF file).
+                     </P>
+               </UL>
+               <P STYLE="margin-bottom: 0.14in">As a general rule, a filter
+                  widget where no selection has been made will behave as if all its
+                  items were selected (no filtering applied on that field).
+               </P>
+         </UL>
+      </UL>
+      <UL>
+         <UL>
+            <LI>
+               <P
+                  STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
+                     SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
+               </P>
+               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a
+                  dropdown button may be used to display one or two additional panels
+                  that allow for more advanced filtering features based on a subset
+                  of individuals either in one or two distinct groups.
+               </P>
+               <P STYLE="margin-bottom: 0.14in">Both of these panels have the
+                  same contents and each one lets users select a list of individuals
+                  (thus defining groups 1 and 2). Additionally, some handy tools are
+                  available on the right side of the &ldquo;Individuals&rdquo; drop
+                  down menu as tooltipped icons:
+               </P>
+               <UL>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="m3e56342f.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>
+                        Activating the <B>disk</B> icon allows the current selection of
+                        individuals to be memorized within the web browser;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="mb2639ac.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>The
+                        <B>magnifier</B> icon (only present when metadata are available)
+                        helps selecting individuals according to the metadata attached to
+                        them;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="m6356edb1.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=27 BORDER=0>The
+                        copy <B>icon</B> adds currently selected individuals to clipboard;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="14193476.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>Clicking
+                        the <B>paste</B> icon opens a textbox for pasting / editing a
+                        list of individuals to select.
+                     </P>
+               </UL>
+               <P STYLE="margin-bottom: 0.14in">All other widgets in the same
+                  panel will then let users apply genotype-level filters on the
+                  selected list of individuals:
+               </P>
+               <UL>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">In
+                        the case where data was provided in VCF format containing numeric
+                        genotype-level fields (e.g. depth, genotype quality), a minimum
+                        acceptable value may be provided for each of them. Any genotype
+                        not respecting thus defined constraints is treated as missing for
+                        the rest of the query;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">&ldquo;Max
+                        missing data&rdquo; ratio defines how many individuals (among the
+                        selected ones) may have a missing genotype;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">&ldquo;Minor
+                        allele frequency&rdquo; can be provided as a range (only
+                        supported for bi-allelic data);
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">The
+                        &ldquo;Genotype pattern&rdquo; dropdown provides a list of
+                        genotype patterns that may be applied within the group.
+                     </P>
+               </UL>
+               <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+                  <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN
+                     LANG="en-US"> To identify variants for which genotypes are
+                  steady within each group but different between them, set both
+                  groups&rsquo; genotype pattern to &ldquo;All or mostly the
+                  same&rdquo;. In this case, in each group panel a similarity ratio
+                  lets users specify how many of the current group&rsquo;s selected
+                  individuals must have the same genotype. Additionally, an extra
+                  pink panel appears between both group panels, containing a
+                  checkbox labelled &ldquo;Discriminate groups&rdquo;. Checking this
+                  box will ensure that the most frequent genotype in group 1 is
+                  different from that in group 2.</SPAN>
+               </P>
+               <P STYLE="margin-bottom: 0.14in">Note that genotype-level
+                  filters are applied in the order they appear: the maximum missing
+                  data filter applies first, taking into account truly missing data
+                  and genotypes treated as missing because of low quality. MAF and
+                  genotype pattern queries are then applied at the same time, on the
+                  remaining (non-missing) genotypes only.
+               </P>
+               <P STYLE="margin-bottom: 0.14in">If the &ldquo;Enable browse and
+                  export&rdquo; box is ticked when clicking the Search button, then
+                  one may browse online the selection (i.e. list of variants that
+                  match the query). Clicking a variant line opens a dialog providing
+                  variant details along with individuals&rsquo; genotypes and
+                  optional complementary information like quality data or
+                  annotations.
+               </P>
+               <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
+               <UL>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="4ddcbf79.jpg" ALIGN=BOTTOM WIDTH=55 HEIGHT=26 BORDER=0>
+                        A density chart icon leads to a dialog in which the variant
+                        distribution may be observed for each sequence represented in the
+                        selection. In the case where data was provided in VCF format
+                        containing numeric genotype-level fields (e.g. depth, genotype
+                        quality) an additional series can be displayed for each of these
+                        fields, on top of the default density series;
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
+                        A download button opens a panel where users may select an output
+                        format, refine the list of individuals to export, and choose
+                        between directly downloading the output, or creating a file on
+                        the server (in which case its URL may be used later, shared or
+                        passed to external tools);
+                     </P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+                        <IMG SRC="m448bf72b.jpg" ALIGN=BOTTOM WIDTH=112 HEIGHT=15
+                           BORDER=0> An &ldquo;External tools&rdquo; box provides
+                        means to setup the application for pushing data into external
+                        tools: an online genome browser can be configured for viewing
+                        each variant in its genomic context (via an extra icon at the end
+                        of each table row); a running instance of IGV can be fed with a
+                        VCF export file (refer to tooltip for details); online tools
+                        (e.g. Galaxy) can also be fed using exported files (click
+                        online-output-tools icon for details).
+                     </P>
+               </UL>
+         </UL>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">A3/ WORKING WITH REST APIs</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Any data imported into Gigwa is
+               automatically interfaced via two standard REST APIs, documented in a
+               Swagger page available from the main menu:
+            </P>
+            <P STYLE="margin-bottom: 0.14in">The GA4GH v0.6.0a5
+               implementation has by design a single base-url. Listing available
+               databases can be achieved by posting an empty body to
+               /rest/ga4gh/referencesets/search. Thus obtained values can be then
+               passed to other calls as referencesetId or datasetId. GA4GH&rsquo;s
+               VariantSet, Reference and CallSet concepts respectively correspond
+               to Gigwa&rsquo;s project, sequence and individual entities.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">The BrAPI v1.1 implementation
+               has by design a separate base-url for each database, constructed as
+               follows: /{database}/brapi/v1/token. Each database&rsquo;s BrAPI
+               base-url can be deducted from the mentioned
+               /rest/ga4gh/referencesets/search call&rsquo;s response, and by
+               convenience, the main Gigwa interface provides a link to the
+               corresponding BrAPI base-url when a new database is selected.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Please refer to
+               http://ga4gh-schemas.readthedocs.io/en/latest/ and
+               https://brapi.org/ for more details about each API.
+            </P>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <P
+         STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+         <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+            SIZE=4 STYLE="font-size: 16pt">B/ ADMINISTRATOR DOCUMENTATION</FONT></FONT></FONT>
+      </P>
+      <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+         <SPAN LANG="en-US">By default, a fresh instance of Gigwa comes
+         with a single pre-defined administrator account (login: gigwadmin,
+         password: nimda). It is of course strongly advised to </SPAN><SPAN
+            LANG="en-US"><B>change this password upon first connection</B></SPAN><SPAN
+            LANG="en-US"> (see section B2 below).</SPAN>
+      </P>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">B1/ TOMCAT CONFIGURATION</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Ready-to-use bundled packages
+               should not require any changes in Tomcat configuration since the
+               settings below have already been applied to them. However, if you
+               install Gigwa in a production environment from fresh Tomcat
+               binaries, it is necessary to apply the following modifications:
+            </P>
+            <UL>
+               <LI>
+                  <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+                     <SPAN LANG="en-US">The bin/setenv.bat or bin/setenv.sh
+                     (depending on the platform) script must contain a line as follows
+                     in order to reserve enough RAM for Tomcat:<BR>
+                     </SPAN><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>set
+                     &quot;JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m&quot;</B></SPAN></FONT><SPAN
+                        LANG="en-US"><BR>(This setting may of course be
+                     adapted to get the best out of the hardware configuration)</SPAN>
+                  </P>
+               <LI>
+                  <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+                     <SPAN LANG="en-US">In the conf/server.xml file, the main
+                     Connector element must be configured as below:<BR>
+                     </SPAN><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>maxHttpHeaderSize=&quot;65536&quot;
+                     maxParameterCount=&quot;-1&quot; maxPostSize=&quot;-1&quot;</B></SPAN></FONT>
+                  </P>
+            </UL>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">B2/ MANAGING DATA</FONT></FONT></FONT>
+            </P>
+            <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+               <SPAN LANG="en-US">The visibility of a database is defined
+               using two flags (default values in </SPAN><SPAN LANG="en-US"><B>bold</B></SPAN><SPAN
+                  LANG="en-US">):</SPAN>
+            </P>
+            <UL>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">
+                     public / <B>private:</B> if public, anyone (even anonymous users)
+                     can search this database; if private, only administrators and
+                     users who were explicitly granted permissions may do so;
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">
+                     hidden<B> </B>/<B> exposed</B>: if hidden, only administrators
+                     will see the database in the main menu list; if exposed, any
+                     entitled user (that is, anyone if database is public, otherwise
+                     any user with permissions on at least one of the database&rsquo;s
+                     projects) will see it in the list.
+                  </P>
+            </UL>
+            <P STYLE="margin-bottom: 0.14in">In other words, the first flag
+               defines visibility on the server side while the second defines
+               exposure on the client side. Typically, a temporary database created
+               by an anonymous user or a user without any management permissions
+               will be public and hidden (searchable by anyone, listed to the
+               administrators only), and will be made accessible to its creator via
+               a specific URL referring to the database name (thus accessible to
+               anyone if shared).
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Administrators can see all
+               databases (even if private and/or hidden) and have all privileges on
+               them. Only administrators may create permanent databases. This can
+               be done either at import time, or via the main menu&rsquo;s
+               &ldquo;Manage data&rdquo; link, by subsequently clicking on
+               &ldquo;Manage databases&rdquo;. A simple interface allows then to
+               create an empty database on a selected MongoDB host, set the public
+               and hidden flags on existing databases, and delete existing projects
+               and databases.
+            </P>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">B3/ MANAGING USER ACCOUNTS
+               AND PERMISSIONS</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">By choosing the
+               &ldquo;Administer existing data and user permissions&rdquo; link
+               from the &ldquo;Manage data&ldquo; menu item and subsequently
+               clicking on &ldquo;Manage users and permissions&rdquo;,
+               administrators may access an interface for creating / deleting
+               users, setting their password (even their own), and setting their
+               permissions:
+            </P>
+            <UL>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">at the
+                     database level by allowing to import new projects into it (any
+                     user importing a new project will be automatically granted the
+                     MANAGER role on it);
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">at the
+                     project level by granting either the READER role (only makes sense
+                     for projects in private databases) which allows to search this
+                     project&rsquo;s data, or the MANAGER role which allows to search
+                     project data, import metadata, and grant roles to existing users
+                     on that project.
+                  </P>
+            </UL>
+            <P STYLE="margin-bottom: 0.14in">Indeed, a user with the MANAGER
+               role on a project can administer that project in the same way as an
+               administrator, via the main menu&rsquo;s &ldquo;Manage data&rdquo;
+               menu item also available to him after authentication.
+            </P>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 STYLE="font-size: 13pt">B4/ CONFIGURING ADVANCED
+               SETTINGS (FOR SYSTEM ADMINISTRATORS: REQUIRES WRITE PERMISSIONS
+               ON INSTALLED FILES)</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Although a Gigwa instance
+               installed via a distribution package is functional out of the box,
+               some configuration settings can only be adjusted by editing text
+               files. Most of them only need to be set once.
+            </P>
+      </UL>
+      <UL>
+         <UL>
+            <LI>
+               <P
+                  STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
+                     SIZE=3>B4.1/ Managing data hosts</FONT></FONT></FONT>
+               </P>
+               <P STYLE="margin-bottom: 0.14in">Declaring MongoDB hosts is done
+                  via the WEB-INF/classes/applicationContext-data.xml file following
+                  provided examples. Only hosts running with authentication enabled
+                  (refer to MongoDB documentation if needed) must be declared along
+                  with a UserCredentials bean. Note that Gigwa associates them
+                  internally using their IDs: for example, a host named myMongoHost
+                  will expect a UserCredentials bean named myMongoHostCredentials.
+                  Those credentials must be provided for a user declared in MongoDB's
+                  admin collection, who has readWriteAnyDatabase and
+                  dbAdminAnyDatabase roles. The web-application needs to be reloaded
+                  for such changes to be taken into account (please refer to Tomcat
+                  documentation if needed).
+               </P>
+         </UL>
+      </UL>
+      <UL>
+      <UL>
+      <LI>
+         <P
+            STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+            <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
+               SIZE=3>B4.2/ Setting configuration properties</FONT></FONT></FONT>
+         </P>
+         <P STYLE="margin-bottom: 0.14in">The
+            WEB-INF/classes/config.properties file may be used to set values
+            for the following parameters:
+         </P>
+         <UL>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>dbServerCleanup</B> - You may specify under this property, a
+                  csv list of hosts for which this instance will drop temporary
+                  variant collections on startup (e.g. 127.0.0.1:27017,
+                  another.server.com:27018). Temporary variant collections are
+                  often used once a search has been completed, for
+                  browsing/exporting results. They are normally dropped upon user
+                  interface unload, but some may remain if the web-browser is
+                  exited ungracefully or the application goes down while someone is
+                  using the search interface. If this property does not exist then
+                  the instance will drop all found temp collections, if it exists
+                  but is empty, none will be dropped.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>adminEmail</B> - If Gigwa is being used as a multi-user
+                  data-portal you may specify via this property an email address
+                  for users to be able to contact your administrator, including for
+                  applying for account creation.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>igvDataLoadPort</B> - Defines the port at which IGV listens
+                  for data submission. No IGV connection if missing / invalid.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>igvGenomeListUrl</B> - Defines the URL from which to get the
+                  list of genomes that are available for IGV. No IGV connection if
+                  missing / invalid.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>sessionTimeout </B>- Web session timeout in seconds. Default:
+                  3600 (1h)
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>forbidMongoDiskUse</B> - MongoDB's allowDiskUse option will be
+                  set to the opposite of this parameter's value when launching
+                  aggregation queries. Default: false
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>tempDbHost</B> - Tells the system which MongoDB host to use
+                  when importing temporary databases (for anonymous users). Only
+                  used when several hosts have been configured in
+                  applicationContext-data.xml. If unspecified all connected hosts
+                  will be available for use. If invalid, no import will be possible
+                  for users without specific permissions.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>maxUploadSize_anonymousUser</B> - Defines the maximum allowed
+                  size (in megabytes) granted to anonymous users for data file
+                  upload. Default: 500Mb
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>maxUploadSize_USERNAME</B> - Defines the maximum allowed size
+                  (in megabytes) granted to the USERNAME user for data file upload.
+                  Default: 500Mb
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>serversAllowedToImport</B> - CSV list of external servers that
+                  are allowed to import genotyping data.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>genomeBrowser-MODULE_NAME</B> - Any property named
+                  genomeBrowser-MODULE_NAME is a way for defining a default genome
+                  browser URL for a module called MODULE_NAME. This is optional as
+                  users may define their own genome browser URL, thus overriding
+                  the default one if it exists.
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>onlineOutputTool_N</B> - Any property named onlineOutputTool_N
+                  with N being an integer &gt;= 1 is a way for defining an online
+                  output tool for datasets exported to server. N accepts
+                  consecutive values (if only onlineOutputTool_1 and
+                  onlineOutputTool_3 exist then only onlineOutputTool_1 will be
+                  taken into account). The property value must consist in
+                  semi-colon-separated values. The first one is the label to
+                  display for this tool, the second one is the tool URL (in which
+                  any * character will be replaced at run time with the exported
+                  file&rsquo;s URL). The third value is optional and may contain a
+                  comma-separated list of file-formats (must match some of those
+                  that the Gigwa instance is able to export: BED, DARWIN,
+                  EIGENSTRAT, FLAPJACK, GFF3, HAPMAP, PLINK, VCF), thus defining
+                  those accepted by the tool (if unspecified, files in any format
+                  will be made available for this tool).
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>maxSearchableBillionGenotypes</B> - Defines the maximum
+                  estimated size (in billions) of the genotype matrix (#individuals
+                  * #markers) within which genotype-level filters may be applied.
+                  This property may be tuned according to server performance.
+                  #markers is estimated by calculating an average marker count per
+                  sequence. Whatever value is set here, Gigwa will at least allow
+                  searching on one sequence for all individuals. Default: 1 billion
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in">
+                  <B>maxExportableBillionGenotypes</B> - Defines the maximum
+                  size (in billions) of the genotype matrix (#individuals *
+                  #markers) that may be exported. This property may be tuned
+                  according to server performance. It aims at limiting system
+                  overhead in situations where numerous users may be working on
+                  very large databases. Default: 1 billion
+               </P>
+            <LI>
+               <P>
+                  <B>googleAnalyticsId</B> - If set, a Google Analytics tag is
+                  automatically added into the main page.
+               </P>
+         </UL>
+      	<BR>
+   </BODY>
+</HTML>
