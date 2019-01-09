@@ -6,7 +6,7 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
 		
  	<!--	Default configuration: definition of a host running locally without authentication enabled -->
- 	<mongo:mongo-client host="127.0.0.1" port="27017" id="defaultMongoHost">
+ 	<mongo:mongo-client host="127.0.0.1" port="59393" id="defaultMongoHost">
  		<mongo:client-options write-concern="NORMAL" />
  	</mongo:mongo-client>
 
