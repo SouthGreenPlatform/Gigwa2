@@ -1286,12 +1286,13 @@
         <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
             <p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
         </c:if>
-        <div class="margin-top" style="padding:10px; text-align:center; text-align:center;">     
-            <a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="30" src="images/logo-southgreen.png" /></a>
-            <a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="30" src="images/logo-cirad.png" /></a>
-            <a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="30" src="images/logo-ird.png" /></a>
-            <a href="http://www.inra.fr/" target="_blank" class="margin-left"><img alt="inra" height="30" src="images/logo-inra.png" /></a>
-            <a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="30" src="images/logo-arcad.png" /></a>
+        <div class="margin-top" style="padding:10px 0; text-align:center; text-align:center;" id="logoRow">     
+            <a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
+            <a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
+            <a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
+            <a href="http://www.inra.fr/" target="_blank" class="margin-left"><img alt="inra" height="28" src="images/logo-inra.png" /></a>
+            <a href="https://www.bioversityinternational.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="45" src="images/logo-bioversity.png" /></a>
+            <a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
         </div>
 		<fmt:message var="howToCite" key="howToCite" />
         <c:if test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
