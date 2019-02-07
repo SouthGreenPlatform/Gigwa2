@@ -183,7 +183,7 @@
               		maxFiles: 2,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.map,.ped",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
@@ -757,7 +757,7 @@
 				       									<div>
 				       										<b>Accepted extensions:</b>
 				       										<br/>.vcf
-				       										<br/>.hapmap
+				       										<br/>.hapmap or .txt
 															<br/>.ped + .map
 				       									</div>
 			       									</div>
