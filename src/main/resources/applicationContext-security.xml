@@ -21,16 +21,19 @@
 		<secur:intercept-url pattern="^.*\/permissionManagement\.jsp.*$" access="IS_AUTHENTICATED_FULLY" />
 		<secur:intercept-url pattern="^.*\/login\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY" requires-channel="http" />
         <secur:intercept-url pattern="^.*\/index\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY,IS_AUTHENTICATED_FULLY,IS_AUTHENTICATED_REMEMBERED,ROLE_ADMIN" requires-channel="http" />
-        <secur:form-login login-page="/login.jsp" always-use-default-target="true" default-target-url="/index.jsp" />
+        <secur:form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" />
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />		 
         <secur:logout logout-success-url="/index.jsp" invalidate-session="true"/>  
     </secur:http>
 
+<!--     <bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder" /> -->
+    <bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" />
+
     <secur:authentication-manager alias="authenticationManager" erase-credentials="false">
         <secur:authentication-provider user-service-ref='userDetailsService'>
-            <!-- 	  	<secur:password-encoder hash="md5" /> -->
+			<secur:password-encoder ref="passwordEncoder"/>
         </secur:authentication-provider>
-    </secur:authentication-manager>
+    </secur:authentication-manager>    
     
     <bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
 	
@@ -38,9 +41,7 @@
         <property name="resource" value="classpath:users.properties"/>
     </bean>
         
-    <bean id="gigwaService" class="fr.cirad.mgdb.service.GigwaGa4ghServiceImpl">
-        <!-- <property name="resource" value="classpath:users.properties"/> -->
-    </bean>
+    <bean id="gigwaService" class="fr.cirad.mgdb.service.GigwaGa4ghServiceImpl" />
 	
     <bean id="accessDecisionManager" class="org.springframework.security.access.vote.GigwaAccessDecisionManager">
         <property name="decisionVoters">
