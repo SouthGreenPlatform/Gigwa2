@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Implementation-version: 2.0-RC1
+Implementation-version: 2.0-RC2
