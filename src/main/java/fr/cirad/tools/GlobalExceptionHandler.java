@@ -25,6 +25,7 @@ import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -47,15 +48,18 @@ public class GlobalExceptionHandler {
   @ResponseStatus(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
   public ModelAndView handleAllExceptions(HttpServletRequest request, HttpServletResponse response, Exception ex)
   {
-  	LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI() + "?" + request.getQueryString(), ex);
-  	if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
-  	{
-  		HashMap<String, String> map = new HashMap<String, String>();
-  		map.put("errorMsg", ExceptionUtils.getStackTrace(ex));
-  		return new ModelAndView(new MappingJackson2JsonView(), UnmodifiableMap.decorate(map));
-  	}
-  	else
-  		return exceptionResolver.resolveException(request, response, null, ex);
+	  	if (ex instanceof HttpRequestMethodNotSupportedException)
+	  		LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI() + "?" + request.getQueryString() + " - " + ex.getMessage());
+	  	else
+	  		LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI() + "?" + request.getQueryString(), ex);
+		if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
+		{
+			HashMap<String, String> map = new HashMap<String, String>();
+			map.put("errorMsg", ExceptionUtils.getStackTrace(ex));
+			return new ModelAndView(new MappingJackson2JsonView(), UnmodifiableMap.decorate(map));
+		}
+		else
+			return exceptionResolver.resolveException(request, response, null, ex);
   }
   
   @ExceptionHandler(MaxUploadSizeExceededException.class)
