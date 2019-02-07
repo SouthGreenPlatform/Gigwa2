@@ -1,0 +1,39 @@
+@page {
+	size: 8.27in 11.69in;
+	margin-left: 0.75in;
+	margin-right: 0.75in;
+	margin-top: 0.87in;
+	margin-bottom: 0.87in
+}
+
+P {
+	font-family: "Arial", sans-serif;
+	margin-bottom: 0.08in;
+	direction: ltr;
+	color: #000000;
+	line-height: 115%;
+	text-align: left;
+	text-decoration: none
+}
+
+A, A:visited {
+	color:blue;
+	font-weight:bold;
+	text-decoration:none;
+}
+A:hover {
+	text-decoration:underline;
+}
+* {
+	font-size: 12pt;
+	font-family: "Arial", sans-serif;
+}
+.maintitle {
+	font-size: 28pt;
+}
+.title1 {
+	font-size: 16pt;
+}
+.title2 {
+	font-size: 13pt;
+}

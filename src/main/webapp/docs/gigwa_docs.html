@@ -6,58 +6,31 @@
       <META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (FreeBSD/amd64)">
       <META NAME="CREATED" CONTENT="20190107;8312500">
       <META NAME="CHANGED" CONTENT="0;0">
-      <STYLE TYPE="text/css">
-         <!--
-            @page {
-            	size: 8.27in 11.69in;
-            	margin-left: 0.75in;
-            	margin-right: 0.75in;
-            	margin-top: 0.87in;
-            	margin-bottom: 0.87in
-            }
-            
-            P {
-            	font-family: "Arial", sans-serif;
-            	margin-bottom: 0.08in;
-            	direction: ltr;
-            	color: #000000;
-            	line-height: 115%;
-            	text-align: left;
-            	text-decoration: none
-            }
-            
-            A, A:visited {
-            	color:blue;
-            	font-weight:bold;
-            	text-decoration:none;
-            }
-            A:hover {
-            	text-decoration:underline;
-            }
-            -->
-      </STYLE>
+      <link rel="stylesheet" media="screen" href="screen.css" type="text/css" />
+	  <link rel="stylesheet" media="print" href="print.css" type="text/css" />
    </HEAD>
    <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
-      STYLE="border: none; padding: 0in">
+      STYLE="border: none; padding: 0in; max-width:1240px;">
       <BR>
+	  <a href="javascript:window.print();" alt="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER
-         STYLE="margin-bottom: 0in; line-height: 100%; page-break-before: always">
+         STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            STYLE="font-size: 28pt">Gigwa v2 &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2 &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
       	<b>Learn how to use Gigwa like a pro in a few minutes!</b>
       	<BR><BR>
       	Watch demonstration videos on the project homepage:
       	<BR>
-      	<a href="http://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
+      	<a href="http://www.southgreen.fr/content/gigwa" target='_blank'>http://www.southgreen.fr/content/gigwa</a>
       </p>
       <BR>
       <BR>
       <P
          STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
          <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-            SIZE=4 STYLE="font-size: 16pt">A/ USER DOCUMENTATION</FONT></FONT></FONT>
+            SIZE=4 class='title1'>A/ USER DOCUMENTATION</FONT></FONT></FONT>
       </P>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -67,7 +40,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">A1/ IMPORTING DATA</FONT></FONT></FONT>
+                  SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Choosing &ldquo;Manage
                data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal
@@ -101,7 +74,7 @@
                <LI>
                   <P STYLE="margin-bottom: 0in; line-height: 100%">By
                      uploading files from the client computer (with an adjustable size
-                     limit: see section B4.2);
+                     limit: see section B6.2);
                   </P>
                <LI>
                   <P STYLE="margin-bottom: 0in; line-height: 100%">By
@@ -109,6 +82,22 @@
                      v1.1 base-url.
                   </P>
             </UL>
+            <P STYLE="margin-bottom: 0.14in">On the import page, 3 more fields are required:
+            </P>
+            <UL>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">Database (not available to anonymous users since a "disposable" database is automatically generated for them): a database may contain one or several projects as long as they all rely on the same reference assembly. In the case of very large datasets, for performance-related matters it is however advised to have a single project per database;
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">Project: a project may contain one or several runs;
+                  </P>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up writing a run into a project. Allowing multiple runs in a project is a way of supporting incremental data loading.
+                  </P>
+            </UL>
+            <P STYLE="margin-bottom: 0.14in">A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
+            </P>
+            <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
             <P STYLE="margin-bottom: 0.14in">Genotyping data import progress
                can be watched in real time from the upload page, or via a dedicated
                asynchronous progress page (convenient for large datasets), as
@@ -124,7 +113,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">A2/ WORKING WITH GENOTYPING
+                  SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING
                DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">From the home page, select a
@@ -142,6 +131,7 @@
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
                      SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
                </P>
+               <IMG SRC="shot02_variant_filters.png" BORDER=0 style='float:right; width:274px; margin-top:-30px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">By default, a single grey
                   filter panel appears, providing means to select variants based on
                   their inherent attributes:
@@ -180,6 +170,7 @@
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
                      SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
                </P>
+               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:274px; margin-top:50px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a
                   dropdown button may be used to display one or two additional panels
                   that allow for more advanced filtering features based on a subset
@@ -243,7 +234,7 @@
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">The
                         &ldquo;Genotype pattern&rdquo; dropdown provides a list of
-                        genotype patterns that may be applied within the group.
+                        genotype patterns that may be applied within the group. Descriptions for those are available via the question-mark icon.
                      </P>
                </UL>
                <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
@@ -257,7 +248,7 @@
                   pink panel appears between both group panels, containing a
                   checkbox labelled &ldquo;Discriminate groups&rdquo;. Checking this
                   box will ensure that the most frequent genotype in group 1 is
-                  different from that in group 2.</SPAN>
+                  different from that in group 2. See online video number 4 for a demonstration.</SPAN>
                </P>
                <P STYLE="margin-bottom: 0.14in">Note that genotype-level
                   filters are applied in the order they appear: the maximum missing
@@ -274,6 +265,7 @@
                   optional complementary information like quality data or
                   annotations.
                </P>
+			   <IMG class="fullwidth" SRC="shot04_variant_details.png" ALIGN=BOTTOM BORDER=1>
                <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
                <UL>
                   <LI>
@@ -286,6 +278,7 @@
                         quality) an additional series can be displayed for each of these
                         fields, on top of the default density series;
                      </P>
+				  <IMG class="fullwidth" SRC="shot05_density.png" BORDER=1 style='margin-top:10px;'>
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">
                         <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
@@ -318,7 +311,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">A3/ WORKING WITH REST APIs</FONT></FONT></FONT>
+                  SIZE=3 class='title2'>A3/ WORKING WITH REST APIs (for advanced users)</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Any data imported into Gigwa is
                automatically interfaced via two standard REST APIs, documented in a
@@ -340,9 +333,41 @@
                convenience, the main Gigwa interface provides a link to the
                corresponding BrAPI base-url when a new database is selected.
             </P>
+            <p style="font-weight:bold;">
+            	The table below lists terminology correspondences:
+            </p>
+			<table class="fullwidth" style="border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
+			<tr>
+				<td><b>&nbsp;Gigwa entity</b></td>
+				<td bgcolor="#f0f0f0">database or module</td>
+				<td>project</td>
+				<td bgcolor="#f0f0f0">sequence</td>
+				<td>variant</td>
+				<td bgcolor="#f0f0f0">individual</td>
+				<td>sample</td>
+			</tr>
+			<tr>
+				<td><b>&nbsp;GA4GH entity</b></td>
+				<td bgcolor="#f0f0f0">referenceSet or dataset</td>
+				<td>variantSet</td>
+				<td bgcolor="#f0f0f0">reference</td>
+				<td>variant</td>
+				<td bgcolor="#f0f0f0">callSet</td>
+				<td>-</td>
+			</tr>
+			<tr>
+				<td><b>&nbsp;BrAPI entity</b></td>
+				<td bgcolor="#f0f0f0">database or map</td>
+				<td>study</td>
+				<td bgcolor="#f0f0f0">linkageGroup</td>
+				<td>marker</td>
+				<td bgcolor="#f0f0f0">germplasm</td>
+				<td>sample or markerprofile</td>
+			</tr>
+			</table>
             <P STYLE="margin-bottom: 0.14in">Please refer to
-               http://ga4gh-schemas.readthedocs.io/en/latest/ and
-               https://brapi.org/ for more details about each API.
+               <a href="http://ga4gh-schemas.readthedocs.io/en/latest/" target='_blank'>http://ga4gh-schemas.readthedocs.io/en/latest/</a> and
+               <a href="https://brapi.org/" target='_blank'>https://brapi.org/</a> for more details about each API.
             </P>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
@@ -354,14 +379,14 @@
       <P
          STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
          <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-            SIZE=4 STYLE="font-size: 16pt">B/ ADMINISTRATOR DOCUMENTATION</FONT></FONT></FONT>
+            SIZE=4 class='title1'>B/ ADMINISTRATOR DOCUMENTATION</FONT></FONT></FONT>
       </P>
       <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
          <SPAN LANG="en-US">By default, a fresh instance of Gigwa comes
          with a single pre-defined administrator account (login: gigwadmin,
          password: nimda). It is of course strongly advised to </SPAN><SPAN
             LANG="en-US"><B>change this password upon first connection</B></SPAN><SPAN
-            LANG="en-US"> (see section B2 below).</SPAN>
+            LANG="en-US"> (see section B4 below).</SPAN>
       </P>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -371,7 +396,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">B1/ TOMCAT CONFIGURATION</FONT></FONT></FONT>
+                  SIZE=3 class='title2'>B1/ TOMCAT CONFIGURATION</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Ready-to-use bundled packages
                should not require any changes in Tomcat configuration since the
@@ -385,7 +410,7 @@
                      <SPAN LANG="en-US">The bin/setenv.bat or bin/setenv.sh
                      (depending on the platform) script must contain a line as follows
                      in order to reserve enough RAM for Tomcat:<BR>
-                     </SPAN><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>set
+                     </SPAN><FONT STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>set
                      &quot;JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m&quot;</B></SPAN></FONT><SPAN
                         LANG="en-US"><BR>(This setting may of course be
                      adapted to get the best out of the hardware configuration)</SPAN>
@@ -394,7 +419,7 @@
                   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
                      <SPAN LANG="en-US">In the conf/server.xml file, the main
                      Connector element must be configured as below:<BR>
-                     </SPAN><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>maxHttpHeaderSize=&quot;65536&quot;
+                     </SPAN><FONT STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>maxHttpHeaderSize=&quot;65536&quot;
                      maxParameterCount=&quot;-1&quot; maxPostSize=&quot;-1&quot;</B></SPAN></FONT>
                   </P>
             </UL>
@@ -407,7 +432,44 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">B2/ MANAGING DATA</FONT></FONT></FONT>
+                  SIZE=3 class='title2'>B2/ APACHE CONFIGURATION</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">In production environments, Tomcat often runs behind an Apache proxy. If such is your case, you must include the following line in your VirtualHost configuration:
+            <BR><FONT STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>ProxyTimeout 86400</B></SPAN></FONT>
+            <BR>Otherwise, when Gigwa is undertaking a process that is meant to last long, Apache may stop waiting for Tomcat to respond, and the interface will fail in displaying results.
+            </P>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B3/ ENABLING PASSWORD ENCRYPTION</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">User information is stored in WEB-INF/classes/users.properties. By default, passwords are not encoded. Administrator may enable password encoding to enhance security by:</P>
+            <ol>
+            	<li>Preferably backing-up the existing users.properties file, as switching to password encryption mode is a non-reversible operation
+            	<li>Opening WEB-INF/classes/applicationContext-security.xml in a text editor and locating both beans with the "passwordEncoder" id
+            	<li>Amending the file so that the NoOpPasswordEncoder bean is commented out and the CustomBCryptPasswordEncoder is enabled
+            	<li>Restarting the web-application
+            </ol>
+            <BR>
+            On startup, Gigwa will automatically convert users.properties by encoding all passwords it contains.
+            <BR>Reverting back to plain-password mode is only possible by manually editing users.properties to re-apply unencoded passwords.
+            <BR><FONT STYLE="color:red;">Please do not mix encoded and unencoded passwords in the same file as this would lead to unpredictable behaviour of the system.</FONT> 
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B4/ MANAGING DATA</FONT></FONT></FONT>
             </P>
             <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
                <SPAN LANG="en-US">The visibility of a database is defined
@@ -449,6 +511,7 @@
                and hidden flags on existing databases, and delete existing projects
                and databases.
             </P>
+		    <IMG SRC="shot06_manage_dbs.png" BORDER=1 style='margin-top:10px;'>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -458,7 +521,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">B3/ MANAGING USER ACCOUNTS
+                  SIZE=3 class='title2'>B5/ MANAGING USER ACCOUNTS
                AND PERMISSIONS</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">By choosing the
@@ -484,11 +547,12 @@
                      project data, import metadata, and grant roles to existing users
                      on that project.
                   </P>
+				  <IMG SRC="shot07_manage_users.png" BORDER=1 style='margin-top:10px;'>
             </UL>
             <P STYLE="margin-bottom: 0.14in">Indeed, a user with the MANAGER
                role on a project can administer that project in the same way as an
                administrator, via the main menu&rsquo;s &ldquo;Manage data&rdquo;
-               menu item also available to him after authentication.
+               item also available to him after authentication.
             </P>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
@@ -499,7 +563,7 @@
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 STYLE="font-size: 13pt">B4/ CONFIGURING ADVANCED
+                  SIZE=3 class='title2'>B6/ CONFIGURING ADVANCED
                SETTINGS (FOR SYSTEM ADMINISTRATORS: REQUIRES WRITE PERMISSIONS
                ON INSTALLED FILES)</FONT></FONT></FONT>
             </P>
@@ -515,7 +579,7 @@
                <P
                   STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-                     SIZE=3>B4.1/ Managing data hosts</FONT></FONT></FONT>
+                     SIZE=3>B6.1/ Managing data hosts</FONT></FONT></FONT>
                </P>
                <P STYLE="margin-bottom: 0.14in">Declaring MongoDB hosts is done
                   via the WEB-INF/classes/applicationContext-data.xml file following
@@ -538,7 +602,7 @@
          <P
             STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
             <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-               SIZE=3>B4.2/ Setting configuration properties</FONT></FONT></FONT>
+               SIZE=3>B6.2/ Setting configuration properties</FONT></FONT></FONT>
          </P>
          <P STYLE="margin-bottom: 0.14in">The
             WEB-INF/classes/config.properties file may be used to set values
