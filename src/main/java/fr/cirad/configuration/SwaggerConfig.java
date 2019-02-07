@@ -16,15 +16,20 @@
  *******************************************************************************/
 package fr.cirad.configuration;
 
-import com.google.common.collect.Lists;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.servlet.ServletContext;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import com.google.common.collect.Lists;
 
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -49,8 +54,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableSwagger2
 @EnableWebMvc
-public class SwaggerConfig {
+public class SwaggerConfig implements ServletContextAware {
 
+    /**
+     * The servlet context.
+     */
+    static private ServletContext servletContext;
+    
     @Bean
     public Docket restApi() {
         return new Docket(DocumentationType.SWAGGER_2).
@@ -102,17 +112,24 @@ public class SwaggerConfig {
 
     @SuppressWarnings("deprecation")
 	public ApiInfo apiInfo() {
+    	String rootPath = servletContext.getContextPath() + "/rest";
         return new ApiInfo("Gigwa REST-APIs",
              		"# Gigwa v2\n"
-				+	"  You can find out more about Gigwa at <a href=\"http://www.southgreen.fr/content/Gigwa\" target=\"_blank\">http://www.southgreen.fr/content/gigwa</a></br></br>Source code is available on github at at <a href=\"https://github.com/SouthGreenPlatform/gigwa/\" target=\"_blank\">https://github.com/SouthGreenPlatform/gigwa</a>\n"
+				+	"  You can find out more about Gigwa at <a href=\"http://www.southgreen.fr/content/Gigwa\" target=\"_blank\">http://www.southgreen.fr/content/gigwa</a></br></br>Source code is available on github at at <a href=\"https://github.com/SouthGreenPlatform/gigwa/\" target=\"_blank\">https://github.com/SouthGreenPlatform/Gigwa2</a>\n"
 				+	"# BrAPI v1.1\n"
 				+	"  You can find out more about BrAPI at <a href=\"https://www.brapi.org/\" target=\"_blank\">https://www.brapi.org/</a>\n"
 				+	"# GA4GH v0.6.0a5\n"
 				+	"  You can find out more about GA4GH at <a href=\"http://ga4gh.org/\" target=\"_blank\">http://ga4gh.org/</a>\n"
 				+	"# Workflow\n"
-				+	" In order to use the REST APIs on private databases, you want to get a token at first. This Bearer token will be used by the system to identifiy you as a user so it can apply your privileges when searching for data. A token can be obtained using <pre>/gigwa/generateToken or /{database}/brapi/v1/token</pre> This token then needs to be passed in each request header via the 'Authorization' parameter, its value always being preceded by the Bearer keyword. To use a token via the API, you will need to enter it in the appropriate field at the top.\n\n"
-				+	" Concerning BrAPI, there is a different base-url for each database. You may find a list of available databases using the GA4GH call <pre>/ga4gh/referencesets/search</pre> (a referenceSet in GA4GH is equivalent to a database in Gigwa or BrAPI).",
-                "1.0",
+				+	" In order to use the REST APIs on private databases, you want to get a token at first. This Bearer token will be used by the system to identifiy you as a user so it can apply your privileges when searching for data. A token can be obtained using <pre>" + rootPath + "/gigwa/generateToken or " + rootPath + "/{database}/brapi/v1/token</pre> This token then needs to be passed in each request header via the 'Authorization' parameter, its value always being preceded by the Bearer keyword. To use a token via the API, you will need to enter it in the appropriate field at the top.\n\n"
+				+	" Concerning BrAPI, there is a different base-url for each database. You may find a list of available databases using the GA4GH call <pre>" + rootPath + "/ga4gh/referencesets/search</pre> <font color='red'>NB: a referenceSet in GA4GH is equivalent to a database in Gigwa or BrAPI, as detailed below</font>\n"
+				+	"# Terminology correspondence table\n"
+				+	" <table style='border:1px #404040 dashed; margin-bottom:10px;'>"
+				+	" <tr><td><b>&nbsp;Gigwa entity</b></td><td bgcolor='#f0f0f0'>database or module</td><td>project</td><td bgcolor='#f0f0f0'>sequence</td><td>variant</td><td bgcolor='#f0f0f0'>individual</td><td>sample</td></tr>"
+				+	" <tr><td><b>&nbsp;GA4GH entity</b></td><td bgcolor='#f0f0f0'>referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>-</td></tr>"
+				+	" <tr><td><b>&nbsp;BrAPI entity</b></td><td bgcolor='#f0f0f0'>database or map</td><td>study</td><td bgcolor='#f0f0f0'>linkageGroup</td><td>marker</td><td bgcolor='#f0f0f0'>germplasm</td><td>sample or markerprofile</td></tr>"
+				+	" </table>",
+                "",
                 "",
                 new Contact("Guilhem Sempéré", "", "gigwa@cirad.fr"),
                 "License : GNU Affero GPL v3",
@@ -120,4 +137,12 @@ public class SwaggerConfig {
                 new ArrayList<VendorExtension>()
         	);
     }
+
+	@Override
+	public void setServletContext(ServletContext sc) {
+    	if (servletContext != null)
+    		return;	// already initialized
+    	
+    	servletContext = sc;
+	}
 }
