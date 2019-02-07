@@ -244,7 +244,7 @@ public class Ga4ghRestController extends ControllerInterface {
     })
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public VariantSet getVariantSets(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
@@ -547,6 +547,10 @@ public class Ga4ghRestController extends ControllerInterface {
 
         String token = tokenManager.readToken(request);
         String id = gsvr.getVariantSetId();
+        if (id == null) {
+            build400Response(response, "Parameter variantSetId is required");
+            return null;
+        }
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
@@ -558,7 +562,9 @@ public class Ga4ghRestController extends ControllerInterface {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;
 	        }
-		} catch (ObjectNotFoundException e) {
+		}
+        catch (ObjectNotFoundException e)
+        {
             build404Response(response);
             return null;
 		}
