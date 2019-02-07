@@ -15,17 +15,22 @@
                 GNU Affero General Public License V3.
 */
 
+h3 * {
+	font-size:inherit;
+}
 
 * {
    font-size:12px;
-/*    line-height:2; */
 }
-
 
 text.highcharts-title tspan {
 	font-size:15px !important;
 	margin-bottom:3px;
 	font-weight:bold;
+}
+
+div.modal-sm {
+	width:550px;
 }
 
 .modal-content {

@@ -672,6 +672,7 @@ function setGenotypeInvestigationMode(mode) {
 		$('div.genotypeInvestigationDiv').show(300);
 	
 	$('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
+	$('#exportedIndividuals').parent().parent().find('div.individualSelectionDiv').remove();
 	$('#exportedIndividuals').selectpicker('refresh');
 }
 

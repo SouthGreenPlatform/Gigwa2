@@ -135,6 +135,8 @@
 	        if (!loadProjects(referenceset))
 	        	return;
 	        
+	        $("input#genomeBrowserURL").val(localStorage.getItem("genomeBrowserURL-" + referenceset));
+	        
 	        $("div#welcome").hide();
 
 	        for (var groupNumber=1; groupNumber<=2; groupNumber++)
@@ -614,12 +616,8 @@
 	            
 	            updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
 	            if (indCount === 0) {
-	                $('#individualsLabel1').hide();
-	                $('#Individuals1').hide();
-	                $('#Individuals1').next().hide();
-	                $('#individualsLabel2').hide();
-	                $('#Individuals2').hide();
-	                $('#Individuals2').next().hide();
+	            	setGenotypeInvestigationMode(0);
+	            	$("#genotypeInvestigationMode").prop('disabled', true);
 	            } else {
 	                $('#individualsLabel1').show();
 	                $('#Individuals1').show();
@@ -790,6 +788,7 @@
 	    if ($('#exportPanel').is(':visible'))
 	    	$('#exportBoxToggleButton').click()
 	    $('#asyncProgressButton').hide();
+	    $('#ddlWarning').hide();
 	    $('#progressText').html("Please wait...");
 	    $('#progress').modal({
 	        backdrop: 'static',
@@ -1121,6 +1120,16 @@
 	            return;
 	        }
 	    }
+	    if (keepExportOnServer)
+	    {
+	    	$('#ddlWarning').hide();
+	    	$('#asyncProgressButton').show();
+	    }
+	    else
+	    {
+	    	$('#ddlWarning').show();
+	    	$('#asyncProgressButton').hide();
+	    }
 	    $('#progressText').html("Please wait...");
 	    $('#progress').modal({
 	        backdrop: 'static',
@@ -1185,8 +1194,6 @@
 	            data: data,
 	            success: function(response) {
 	            	downloadURL = response;
-	        	    if (keepExportOnServer)
-	        	    	$('#asyncProgressButton').show();
 	            },
 	            error: function(xhr, ajaxOptions, thrownError) {
 	            	downloadURL = null;
@@ -1196,6 +1203,7 @@
 	            }
 	        });
 	    } else {
+	    	downloadURL = null;
 	    	postDataToIFrame("outputFrame", url, data);
 	        $("div#exportPanel").hide();
 	        $("a#exportBoxToggleButton").removeClass("active");
@@ -1295,9 +1303,16 @@
             <a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
         </div>
 		<fmt:message var="howToCite" key="howToCite" />
-        <c:if test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
-			<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
-		</c:if>
+		<c:choose>
+	        <c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
+				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
+			</c:when>
+			<c:otherwise>
+<pre class="margin-top" style="font-size:10px; position:absolute;">Please cite Gigwa as follows:
+Sempéré G, Philippe F, Dereeper A, Ruiz M, Sarah G, Larmande P. Gigwa-Genotype investigator for genome-wide analyses.
+Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
+			</c:otherwise>
+		</c:choose>
 	</div>
 	<div class="container-fluid">
 		<div class="row" id="searchPanel" hidden>
@@ -1358,7 +1373,7 @@
 									      <input id="geneName" class="form-control input-sm" type="text"
 									         name="genes"> <span class="input-group-addon input-sm"> <span
 									         class="glyphicon glyphicon-question-sign" id="geneHelp"
-									         title="Leave blank to ignore this filter&#13; Enter '-' for variants without gene-name annotation&#13; Enter '+' for variants with any gene-name annotation&#13; Enter comma-separated names for specific genes"></span>
+									         title="Leave blank to ignore this filter. Enter '-' for variants without gene-name annotation. Enter '+' for variants with any gene-name annotation. Enter comma-separated names for specific genes"></span>
 									      </span>
 									   </div>
 									</div>
@@ -1605,7 +1620,7 @@
 									</div>
 									</div>
 								</div>
-								<a href="#" onclick='$("input#genomeBrowserURL").val(localStorage.getItem("genomeBrowserURL-" + referenceset)); $("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
+								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
 								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 								<div id="outputToolConfigDiv" class="modal" tabindex="-1" role="dialog">
 									<div class="modal-dialog modal-large" role="document">
@@ -1659,9 +1674,10 @@
 						<div class="c3"></div>
 						<div class="c4"></div>
 					</div>
-					<h3 id="progressText" class="loading-message">Please wait...</h3>
-					<button style="float:right;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button></p>
-					<button class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel'));">Abort</button>
+					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
+					<br/>
+					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel'));">Abort</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -1755,7 +1771,7 @@
 			<div class="modal-content" style="padding:10px; min-height:90vh;">
 				<div class="bold" style='float:right;'>
 					Click to set group <span id="filteredGroupNumber"></span> to currently selected <span id="filteredIndCount"></span> individuals
-					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) th').map(function(index, value) { return $(value).find('span:last-child').text(); }).get()]); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
+					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) th').map(function(index, value) { return $(value).find('span:last-child').text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
 				</div>
 				<div class="modal-header bold">Please apply filters to select individuals</div>
 				<table id="individualFilteringTable" style="width:98%;"></table>

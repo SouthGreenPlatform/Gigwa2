@@ -47,7 +47,7 @@
                     <li><a href="#" onclick="$('#manual').modal('show');" data-toggle="tooltip" data-placement="bottom" title="Display online documentation"><span class="glyphicon glyphicon-book margin-icon" aria-hidden="true"></span>Docs</a></li>
                     <c:if test="${principal != null && isAnonymous}">
                         <li>
-                            <a href="<c:url value='/login.jsp' />" data-toggle="tooltip" data-placement="bottom" title="Log-in for private data"><span class="glyphicon glyphicon-user margin-icon" aria-hidden="true"></span>Connexion</a>
+                            <a href="<c:url value='/login.jsp' />" data-toggle="tooltip" data-placement="bottom" title="Log-in for private data"><span class="glyphicon glyphicon-user margin-icon" aria-hidden="true"></span>Log-in</a>
                         </li>
 					</c:if>
 					<c:if test="${principal != null && !isAnonymous}">

@@ -26,6 +26,7 @@
         <title>Gigwa - Login</title>
         <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" /> 
         <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
+		<link type="text/css" rel="stylesheet" href="css/main.css">
         <link type="text/css" rel="stylesheet" href="css/login.css">
         <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
 		<script type="text/javascript">
@@ -59,11 +60,22 @@
                         <div class="panel-body text-center">
                         	<div style="background-color:white; padding:7px; border:darkblue 5px outset; margin:10px 0 40px 0;"><img alt="Gigwa" height="40" src="images/logo_big.png" /><br/>LOGIN FORM</div>
                             <form name="f" action='j_spring_security_check' method='POST' id="form-login">
-                                <input type="text" name="j_username" id="username" placeholder="Username" required="required" />
+                                <input type="text" name="j_username" id="username" placeholder="Username" required="required"<c:if test="${param.auth eq 'failure'}"> value="${SPRING_SECURITY_LAST_EXCEPTION.authentication.principal}"</c:if> />
                                 <input type="password" name="j_password" id="password" placeholder="Password" required="required" />
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log  me in</button> 
                             </form>
-                            <button type="button" class="btn btn-primary btn-block btn-large margin-top" onclick="window.location.href = 'index.jsp';">Return to public databases</button>
+							<div class="text-red margin-top-md">
+								&nbsp;
+								<c:if test="${param.auth eq 'failure'}">
+									<span id="loginErrorMsg" style="background-color:white; padding:0 10px;"><c:out value="${SPRING_SECURITY_LAST_EXCEPTION.message}" /></span>
+							        <script type="text/javascript">
+	                                setTimeout(function () {
+	                                    $("span#loginErrorMsg").fadeTo(1000, 0);
+	                                }, 2000);
+	                                </script>
+								</c:if>
+							</div>
+                            <button type="button" class="btn btn-primary btn-block btn-large margin-top-md" onclick="window.location.href = 'index.jsp';">Return to public databases</button>
                             <fmt:message var="adminEmail" key="adminEmail" />
                             <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
                                 <p class="margin-top">Apply for an account at <a href="mailto:${adminEmail}?subject=Gigwa account request">${adminEmail}</a></p>
