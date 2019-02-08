@@ -115,7 +115,7 @@ public class SwaggerConfig implements ServletContextAware {
     	String rootPath = servletContext.getContextPath() + "/rest";
         return new ApiInfo("Gigwa REST-APIs",
              		"# Gigwa v2\n"
-				+	"  You can find out more about Gigwa at <a href=\"http://www.southgreen.fr/content/Gigwa\" target=\"_blank\">http://www.southgreen.fr/content/gigwa</a></br></br>Source code is available on github at at <a href=\"https://github.com/SouthGreenPlatform/gigwa/\" target=\"_blank\">https://github.com/SouthGreenPlatform/Gigwa2</a>\n"
+				+	"  You can find out more about Gigwa at <a href=\"http://www.southgreen.fr/content/Gigwa\" target=\"_blank\">http://www.southgreen.fr/content/gigwa</a></br></br>Source code is available on github at at <a href=\"https://github.com/SouthGreenPlatform/Gigwa2/\" target=\"_blank\">https://github.com/SouthGreenPlatform/Gigwa2</a>\n"
 				+	"# BrAPI v1.1\n"
 				+	"  You can find out more about BrAPI at <a href=\"https://www.brapi.org/\" target=\"_blank\">https://www.brapi.org/</a>\n"
 				+	"# GA4GH v0.6.0a5\n"
