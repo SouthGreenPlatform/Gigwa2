@@ -843,26 +843,6 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	/**
-	 * reload the context after an import
-	 *
-	 * @param request
-	 * @return
-	 */
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL + RELOAD_CONTEXT_PATH, method = RequestMethod.GET, produces = "application/json")
-	public Map<String, Boolean> reloadContext(HttpServletRequest request) {
-		Map<String, Boolean> result = new HashMap<>();
-		boolean success;
-		ConfigurableApplicationContext ac = (ConfigurableApplicationContext) WebApplicationContextUtils.getRequiredWebApplicationContext(request.getSession().getServletContext());
-		ac.refresh();
-		MongoTemplateManager.initialize(ac);
-		userDao.reloadProperties();
-		success = true;
-		result.put(Constants.SUCCESS, success);
-		return result;
-	}
-
-	/**
 	 * export result in a specific format as a .zip file
 	 *
 	 */
