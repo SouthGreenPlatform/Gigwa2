@@ -551,6 +551,10 @@ public class Ga4ghRestController extends ControllerInterface {
             build400Response(response, "Parameter variantSetId is required");
             return null;
         }
+        if (gsvr.getCallSetIds() == null) {
+            build400Response(response, "Parameter callSetIds is required");
+            return null;
+        }
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
