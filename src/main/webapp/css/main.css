@@ -57,6 +57,10 @@ div#density * {
 	font-size:11px;
 }
 
+div#termsOfUse .modal-lg {
+    width: 950px;
+}
+
 div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg {
     width: 99%;
 }
