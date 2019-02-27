@@ -4,7 +4,7 @@
 
     <groupId>fr.cirad</groupId>
     <artifactId>gigwa2</artifactId>
-    <version>2.0-RC2</version>
+    <version>2.0-RELEASE</version>
     <packaging>war</packaging> 
 
     <name>gigwa2</name>
@@ -12,7 +12,7 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <Gigwa2ServiceImpl.version>2.0-RC2</Gigwa2ServiceImpl.version>
+        <Gigwa2ServiceImpl.version>2.0-RELEASE</Gigwa2ServiceImpl.version>
     </properties>
     
     <dependencies>
