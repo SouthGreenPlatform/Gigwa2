@@ -836,7 +836,7 @@
 	            "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
 	            "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
-	            "callSetIds": getSelectedIndividuals(1),
+	            "callSetIds": getSelectedIndividuals(1, true),
 	            "gtPattern": $('#Genotypes1').val(),
 	            "mostSameRatio": $('#mostSameRatio1').val(),
 	            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
@@ -844,7 +844,7 @@
  	            "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
 				"annotationFieldThresholds": annotationFieldThresholds,
 
-	            "callSetIds2": getSelectedIndividuals(2),
+	            "callSetIds2": getSelectedIndividuals(2, true),
 	            "gtPattern2": $('#Genotypes2').val(),
 	            "mostSameRatio2": $('#mostSameRatio2').val(),
 	            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
@@ -1159,7 +1159,7 @@
             "variantEffects": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
             "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
-            "callSetIds": getSelectedIndividuals(1),
+            "callSetIds": getSelectedIndividuals(1, true),
             "gtPattern": $('#Genotypes1').val(),
             "mostSameRatio": $('#mostSameRatio1').val(),
             "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
@@ -1167,7 +1167,7 @@
 	        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
             "annotationFieldThresholds": annotationFieldThresholds,
 
-            "callSetIds2": getSelectedIndividuals(2),
+            "callSetIds2": getSelectedIndividuals(2, true),
             "gtPattern2": $('#Genotypes2').val(),
             "mostSameRatio2": $('#mostSameRatio2').val(),
             "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),

@@ -581,7 +581,7 @@ function markAsMissingData(individual) {
     });
 }
 
-function getSelectedIndividuals(groupNumber) {
+function getSelectedIndividuals(groupNumber, provideGa4ghId) {
     var selectedIndividuals = [];
     var groups = groupNumber == null ? [1, 2] : [groupNumber];
     for (var groupKey in groups)
@@ -591,7 +591,7 @@ function getSelectedIndividuals(groupNumber) {
         	groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('option')
     	for (var indKey in groupIndividuals)
     		if (!arrayContains(selectedIndividuals, groupIndividuals[indKey]))
-    			selectedIndividuals.push(groupIndividuals[indKey]);
+    			selectedIndividuals.push((provideGa4ghId ? $('#project :selected').data("id") + "§" : "") + groupIndividuals[indKey]);
     }
     return selectedIndividuals.length == indCount ? [] : selectedIndividuals;
 }
