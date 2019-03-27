@@ -76,7 +76,7 @@ function initializeAndShowDensityChart(){
             handleError(xhr, thrownError);
         }
     });
-    feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes').selectmultiple('option') : selectedTypes);
+    feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
 }
 
 function clearVcfFieldBasedSeries() {
