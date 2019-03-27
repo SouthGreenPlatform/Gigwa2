@@ -51,13 +51,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -77,7 +77,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
@@ -209,6 +208,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String EXPORT_FORMAT_PATH = "/exportFormats";
 
 	static public final String DEFAULT_GENOME_BROWSER_URL = "/defaultGenomeBrowser";
+	
+	static public final String IGV_GENOME_LIST_URL = "/igvGenomeList";
 	
 	static public final String ONLINE_OUTPUT_TOOLS_URL = "/onlineOutputTools";
 
@@ -1502,6 +1503,25 @@ public class GigwaRestController extends ControllerInterface {
 		return token;
 	}
 
+	/* This is a proxy method so we can call this URL insecurely even when Gigwa runs in https mode */
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + IGV_GENOME_LIST_URL, method = RequestMethod.GET, produces = "application/text")
+	public String getIgvGenomeListURL() {
+		String url = appConfig.get("igvGenomeListUrl");
+		try
+		{
+			if (url == null)
+				return "";
+			
+			String result = IOUtils.toString(new URL(url));
+			return !result.toLowerCase().startsWith("<server-side genome list>") ? "" : result;
+		}
+		catch (Exception e) 
+		{
+			return "";
+		}
+	}
+	
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
