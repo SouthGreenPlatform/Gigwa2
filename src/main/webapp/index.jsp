@@ -127,6 +127,7 @@
 	$(document).ready(function()
 	{
 	    $('#module').on('change', function() {
+	    	$('#individualFilteringTable').html("");
 	    	$('#serverExportBox').hide();
 	        if (referenceset != '')
 	            dropTempCol();
@@ -134,9 +135,7 @@
 	        referenceset = $(this).val();
 	        if (!loadProjects(referenceset))
 	        	return;
-	        
-	        $("input#genomeBrowserURL").val(localStorage.getItem("genomeBrowserURL-" + referenceset));
-	        
+	        	        
 	        $("div#welcome").hide();
 
 	        for (var groupNumber=1; groupNumber<=2; groupNumber++)
@@ -166,6 +165,10 @@
 	            contentType: "application/json;charset=utf-8",
 	            success: function(url) {
 	                defaultGenomeBrowserURL = url;
+	                
+	    	        $("input#genomeBrowserURL").val(localStorage.getItem("genomeBrowserURL-" + referenceset));
+	    	        if ($("input#genomeBrowserURL").val() == "")
+	    	        	$("input#genomeBrowserURL").val(defaultGenomeBrowserURL);
 	            },
 	            error: function(xhr, thrownError) {
 	                handleError(xhr, thrownError);
@@ -1272,7 +1275,7 @@
 	<fmt:message var="igvGenomeListUrl" key="igvGenomeListUrl" />
 	<c:if test='${!fn:startsWith(igvDataLoadPort, "??") && !empty igvDataLoadPort && !fn:startsWith(igvGenomeListUrl, "??") && !empty igvGenomeListUrl}'>
 	igvDataLoadPort = ${igvDataLoadPort};
-	igvGenomeListUrl = "${igvGenomeListUrl}";
+	igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
 	</c:if>
 </script>
 </head>
