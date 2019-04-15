@@ -94,27 +94,16 @@ public class Ga4ghRestController extends ControllerInterface {
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(Ga4ghRestController.class);
 
     static public final String BASE_URL = "/ga4gh";
-
     static public final String CALLSETS = "/callsets";
-
     static public final String VARIANTSETS = "/variantsets";
-
     static public final String VARIANTS = "/variants";
-
     static public final String REFERENCES = "/references";
-
     static public final String REFERENCESETS = "/referencesets";
-
     static public final String VARIANT_ANNOTATION = "/variantAnnotations";
-
     static public final String CALLSETS_SEARCH = "/callsets/search";
-
     static public final String VARIANTSETS_SEARCH = "/variantsets/search";
-
     static public final String VARIANTS_SEARCH = "/variants/search";
-
     static public final String REFERENCES_SEARCH = "/references/search";
-
     static public final String REFERENCESETS_SEARCH = "/referencesets/search";
     
     static public final String BASES = "/bases";

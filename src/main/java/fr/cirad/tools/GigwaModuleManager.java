@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -33,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.Individual;
@@ -156,7 +156,7 @@ public class GigwaModuleManager implements IModuleManager {
 			}.start();
 			LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 			
-            mongoTemplate.getCollection(MgdbDao.COLLECTION_NAME_CACHED_COUNTS).drop();
+            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
 			return true;
 		}
 		else

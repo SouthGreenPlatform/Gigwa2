@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -91,12 +95,15 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
+import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
+import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
@@ -152,70 +159,41 @@ public class GigwaRestController extends ControllerInterface {
 	static private TreeMap<String, String> viewControllers = null;
 
 	static public final String REST_PATH = "/rest";
-
 	static public final String BASE_URL = "/gigwa";
-	
+
 	static public final String IMPORT_PAGE_URL = "/import.do";
-
 	static final public String genotypeImportSubmissionURL = "/genotypeImport";
-
 	static final public String metadataImportSubmissionURL = "/metadataImport";
-
 	static public final String GET_SESSION_TOKEN = "/generateToken";
-
 	static public final String VARIANT_TYPES_PATH = "/variantTypes";
-
 	static public final String NUMBER_ALLELE_PATH = "/numberOfAllele";
-
 	static public final String SEQUENCES_PATH = "/sequences";
-
 	static public final String EFFECT_ANNOTATION_PATH = "/effectAnnotations";
-
 	static public final String SEARCHABLE_ANNOTATION_FIELDS_URL = "/searchableAnnotationFields";
-
 	static public final String PLOIDY_LEVEL_PATH = "/ploidyLevel";
-
 	static public final String PROGRESS_PATH = "/progress";
-
 	static public final String SEQUENCE_FILTER_COUNT_PATH = "/sequencesFilterCount";
-
 	static public final String CLEAR_SELECTED_SEQUENCE_LIST_PATH = "/clearSelectedSequenceList";
-
 	static public final String ABORT_PROCESS_PATH = "/abortProcess";
-
 	static public final String DROP_TEMP_COL_PATH = "/dropTempCol";
-
 	static public final String CLEAR_TOKEN_PATH = "/clearToken";
-
 	static public final String DENSITY_DATA_PATH = "/densityData";
-
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
-
 	static public final String DISTINCT_SEQUENCE_SELECTED_PATH = "/distinctSelectedSequences";
-
 	static public final String EXPORT_DATA_PATH = "/exportData";
-
 	static public final String EXPORTED_DATA_PATH = "/exportedData";
-
 	static public final String PROJECT_RUN_PATH = "/runs";
-
 	static public final String GENOTYPE_PATTERNS_PATH = "/genotypePatterns";
-
 	static public final String HOSTS_PATH = "/hosts";
-
 	static public final String ANNOTATION_HEADERS_PATH = "/annotationHeaders";
-
 	static public final String EXPORT_FORMAT_PATH = "/exportFormats";
-
 	static public final String DEFAULT_GENOME_BROWSER_URL = "/defaultGenomeBrowser";
-	
 	static public final String IGV_GENOME_LIST_URL = "/igvGenomeList";
-	
 	static public final String ONLINE_OUTPUT_TOOLS_URL = "/onlineOutputTools";
-
 	static public final String MAX_UPLOAD_SIZE_PATH = "/maxUploadSize";
-
-	static public final String RELOAD_CONTEXT_PATH = "/reloadContext";
+	static public final String SAVE_QUERY_URL = "/saveQuery";
+	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
+	static public final String LOAD_QUERY_URL = "/loadQuery";
 
 	/**
 	 * instance of Service to manage all interaction with database
@@ -1569,4 +1547,93 @@ public class GigwaRestController extends ControllerInterface {
 		resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		resp.getWriter().write("This resource does not exist");
 	}
+	
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
+    public void saveQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String body = IOUtils.toString(request.getReader());
+		
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode jsonNode = (ObjectNode) mapper.readTree(body);
+		GigwaSearchVariantsRequest gsvr = mapper.readValue(jsonNode, GigwaSearchVariantsRequest.class);
+
+        String token = tokenManager.readToken(request);
+    	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+    	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+    		build401Response(response);
+    		return;
+    	}
+    	String sQueryLabel = request.getHeader("label");
+    	if (sQueryLabel == null || sQueryLabel.trim().length() == 0) {
+    		response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    		response.getWriter().write("You must specify a header parameter named 'label'");
+    		return;
+    	}
+
+    	String info[] = GigwaSearchVariantsRequest.getInfoFromId(gsvr.getVariantSetId(), 2);
+        String sModule = info[0];
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+
+        String queryKey = service.getQueryKey(gsvr);
+
+        BookmarkedQuery cachedQuery = new BookmarkedQuery(queryKey);
+
+        // remove fields unrelated to the filters
+		jsonNode.remove("searchMode");
+		jsonNode.remove("getGT");
+		jsonNode.remove("pageSize");
+		jsonNode.remove("pageToken");
+		jsonNode.remove("sortBy");
+		jsonNode.remove("sortDir");
+    	cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());  	
+    	cachedQuery.setSavedFilters(mapper.readValue(jsonNode, HashMap.class));
+    	mongoTemplate.save(cachedQuery);
+
+    	response.setStatus(HttpServletResponse.SC_CREATED);
+    }
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + LIST_SAVED_QUERIES_URL, method = RequestMethod.GET, produces = "application/json")
+    public HashMap<String, String> listSavedQueries(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule) throws IOException {
+        String token = tokenManager.readToken(request);
+    	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+    	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+    		build401Response(response);
+    		return null;
+    	}
+
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+        HashMap<String, String> result = new HashMap<>();
+
+        List<BookmarkedQuery> cachedQueries = mongoTemplate.find(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName()).exists(true)), BookmarkedQuery.class);
+        for (BookmarkedQuery cq : cachedQueries)
+        	result.put(cq.getId(), cq.getLabelsForUsers().get(authentication.getName()));
+
+        return result;
+    }
+	
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + LOAD_QUERY_URL, method = RequestMethod.GET, produces = "application/json")
+    public HashMap<String, Object> loadQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
+        String token = tokenManager.readToken(request);
+    	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+    	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+    		build401Response(response);
+    		return null;
+    	}
+    	
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+        BookmarkedQuery cachedQuery = mongoTemplate.findById(queryId, BookmarkedQuery.class);
+        if (cachedQuery == null) {
+        	build404Response(response);
+        	return null;
+        }
+        
+        if (!cachedQuery.getLabelsForUsers().containsKey(authentication.getName())) {
+    		build401Response(response);
+    		return null;
+    	}
+
+        return cachedQuery.getSavedFilters();
+    }
 }

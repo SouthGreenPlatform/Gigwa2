@@ -15,6 +15,114 @@
                 GNU Affero General Public License V3.
 */
 
+
+
+/* three line menu from filters panel */
+/* .box-shadow-menu {
+ 	position: relative;
+  	float: right;
+	width: 16px;
+	height: 16px;
+	padding-left: 1.25em;
+  	cursor:pointer; 
+}
+.box-shadow-menu:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  width: 1em;
+  height: 0.15em;
+  background: black;
+  box-shadow: 
+    0 0.25em 0 0 black,
+    0 0.5em 0 0 black;
+}
+ */
+ 
+ #loadedQueries p .glyphicon-search {
+ 	cursor: pointer;
+ }
+ 
+ .queryIcon{
+ 	
+ 	margin-left:20px;
+ 	font-size: 16px;
+ 	float: right;
+ 	cursor: pointer;
+ }
+ 
+ #loadedQueries p {
+ 	width: 100%;
+ 	font-size: 17px;
+ 	padding-left: 45%;
+ 	text-align: left;
+ 	padding-bottom:5px;
+ 	border-width:thin;
+ 	border-bottom: 0.1em solid black;
+ }
+ 
+ #loadedQueries {
+ 	display: block;
+ }
+ .glyphicon-ok {
+ 	color: green;
+ }
+ 
+ #menu1 {
+ 	margin-right: 5px;
+ }
+ 
+ #menu1, #menu1 span {
+ 	cursor: pointer;
+ 	width: 15px;
+ 	height: 15px;
+ 	top: 7px;
+ 	float: right
+ 	
+ }
+ 
+#submenu {
+	position: absolute;
+	display: none;
+/* 	float: left;
+ */	padding: 2px;
+	margin-left: 5px;
+	margin-bottom: 10px;
+	border: 1px solid black;
+	background-color: #f0f0f5;
+	z-index: 6;
+	left: 100%;
+	border-radius: 4px;
+	box-shadow: 1px 1px 2px black;
+	
+}
+
+
+@media screen and (max-width: 977px) {
+
+	#submenu {
+		left: 80% !important; 
+		margin-right: 20px;
+		z-index: 6;
+		
+	}
+	
+}
+
+#submenu p {
+	padding: 10px;
+	cursor:pointer;
+	margin: 5px;
+	margin-bottom: 10px;
+	width: 150px;
+}
+
+#submenu p > span{
+	margin-right: 5px;
+}
+
+
 h3 * {
 	font-size:inherit;
 }
@@ -775,3 +883,4 @@ div#countResultPanel {
     75% { transform:rotate(360deg); }
     100% { transform:rotate(360deg); }
 }
+

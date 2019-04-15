@@ -492,7 +492,7 @@
 	            variantTypesCount = jsonResult.length;
 	            var option = "";
 	            for (var key in jsonResult) {
-	                option += '<option>' + jsonResult[key] + '</option>';
+	                option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
 	            }
 	            $('#variantTypes').html(option).selectpicker('refresh');
 	        },
@@ -649,7 +649,7 @@
 	            if (jsonResult.effectAnnotations.length > 0) {
 	                var option = "";
 	                for (var effect in jsonResult.effectAnnotations) {
-	                    option += '<option>' + jsonResult.effectAnnotations[effect] + '</option>';
+	                    option += '<option value"'+jsonResult.effectAnnotations[effect]+'>' + jsonResult.effectAnnotations[effect] + '</option>';
 	                }
 	                $('#variantEffects').html(option).selectpicker('refresh');
 	                $('#varEffGrp').show();
@@ -1319,12 +1319,22 @@ Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
 	</div>
 	<div class="container-fluid">
 		<div class="row" id="searchPanel" hidden>
-			<div class="col-md-3" style="padding: 0px 0px 0px 15px;">
+			<div id="searchDiv" class="col-md-3" style="padding: 0px 0px 0px 15px;">
 				<div class="col-md-12">
 					<!-- Search panel -->
 					<div class="row">
 						<div class="panel panel-default">
-							<img width="16" height="16" title="Clear filters" src="images/broom.png" style="cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();" />
+							<!-- <img width="16" height="16" title="Clear filters" src="images/broom.png" style="cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();" /> -->
+							<!-- <p style="font-size:16px; cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();"> &#9776 <p/> -->
+							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"> </span></p>
+							<div id="submenu">
+								<p onclick="if (confirm('Are you sure?')) resetFilters()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
+								<c:if test="${principal != null && !isAnonymous}">
+                       				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-pencil" aria-hidden="true"> </span> Save query </p>
+									<p id="loadquery" onclick="loadQuery()"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"> </span> Load saved query </p>
+                       			</c:if>
+								
+							</div>
 							<div class="panel-body panel-grey shadowed-panel">
 								<form class="form">
 								   <div class="col">
@@ -1612,36 +1622,8 @@ Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
 							</div>
 							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 12px;">
 								External tools
-								<div id="genomeBrowserConfigDiv" class="modal" tabindex="-1" role="dialog">
-									<div class="modal-dialog modal-large" role="document">
-									<div class="modal-content" style="padding:10px;">
-										<b>Please specify a URL for the genome browser you want to use</b> <br />
-										<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
-										<input type="text" style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
-										<p>(Clear box to revert to default)</p>
-										<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='if ($("input#genomeBrowserURL").val() == "") $("input#genomeBrowserURL").val(defaultGenomeBrowserURL); localStorage.setItem("genomeBrowserURL-" + referenceset, $("input#genomeBrowserURL").val()); $("div#genomeBrowserConfigDiv").modal("hide");' />
-									</div>
-									</div>
-								</div>
 								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
 								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
-								<div id="outputToolConfigDiv" class="modal" tabindex="-1" role="dialog">
-									<div class="modal-dialog modal-large" role="document">
-									<div class="modal-content" style="padding:10px;">
-										<b>Configure this to be able to push exported data into external online tools</b><br />
-										(feature available when the 'Keep files on server' box is ticked)<br /><br />
-										<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
-										Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
-										<br />Online tool URL (any * will be replaced with exported file location)<br />
-										<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
-										<p>
-											<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='if ($("input#outputToolURL").val().trim() == "") { localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val()); configureSelectedExternalTool(); } else localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()})); $(this).prop("disabled", "disabled");' />
-											<br/>
-											(Set URL blank to revert to default)
-										</p>
-									</div>
-									</div>
-								</div>
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>
@@ -1781,5 +1763,52 @@ Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
 			</div>
 		</div>
 	</div>
+	<!-- modal which displays a box for configuring online output tools -->
+	<div id="outputToolConfigDiv" class="modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-large" role="document">
+		<div class="modal-content" style="padding:10px; text-align:center;">
+			<b>Configure this to be able to push exported data into external online tools</b><br />
+			(feature available when the 'Keep files on server' box is ticked)<br /><br />
+			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
+			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
+			<br />Online tool URL (any * will be replaced with exported file location)<br />
+			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
+			<p>
+				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='if ($("input#outputToolURL").val().trim() == "") { localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val()); configureSelectedExternalTool(); } else localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()})); $(this).prop("disabled", "disabled");' />
+				<br/>
+				(Set URL blank to revert to default)
+			</p>
+		</div>
+		</div>
+	</div>
+	<!-- modal which displays a box for configuring a genome browser -->
+	<div id="genomeBrowserConfigDiv" class="modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-large" role="document">
+		<div class="modal-content" style="padding:10px; text-align:center;">
+			<b>Please specify a URL for the genome browser you want to use</b> <br />
+			<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
+			<input type="text" style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
+			<p>(Clear box to revert to default)</p>
+			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='if ($("input#genomeBrowserURL").val() == "") $("input#genomeBrowserURL").val(defaultGenomeBrowserURL); localStorage.setItem("genomeBrowserURL-" + referenceset, $("input#genomeBrowserURL").val()); $("div#genomeBrowserConfigDiv").modal("hide");' />
+		</div>
+		</div>
+	</div>
+	
+	<!-- modal which displays a box for managing saved queries -->
+	<div id="queryManager" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-medium" role="document">
+		<div id="loadedQueries" class="modal-content" style="padding:10px; text-align:center;">
+		<b style="font-size:18px">You can use and manage here all the queries you've been saving</b>
+		<br>
+		<br>
+		</div>
+		</div>
+	</div>
+
+
+
+
+
+
 </body>
 </html>
