@@ -862,6 +862,7 @@
 	            "sortDir": sortDesc === true ? 'desc' : 'asc'
 	        }),
 	        success: function(jsonResult) {
+	            $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
 	            if (searchMode === 0) { // count only 
 	            	count = jsonResult.count;
 	                handleCountSuccess();
@@ -1312,8 +1313,8 @@
 			</c:when>
 			<c:otherwise>
 <pre class="margin-top" style="font-size:10px; position:absolute;">Please cite Gigwa as follows:
-Sempéré G, Philippe F, Dereeper A, Ruiz M, Sarah G, Larmande P. Gigwa-Genotype investigator for genome-wide analyses.
-Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
+Sempéré G, Pétel A, Rouard M, Frouin G, De Bellis F, Larmande P. Gigwa v2—Extended and improved genotype investigator.
+Gigascience [Internet] 2016;5:25. doi: 10.1093/gigascience/giz051</pre>
 			</c:otherwise>
 		</c:choose>
 	</div>
@@ -1326,12 +1327,12 @@ Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
 						<div class="panel panel-default">
 							<!-- <img width="16" height="16" title="Clear filters" src="images/broom.png" style="cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();" /> -->
 							<!-- <p style="font-size:16px; cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();"> &#9776 <p/> -->
-							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"> </span></p>
+							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:5px;"></span></p>
 							<div id="submenu">
 								<p onclick="if (confirm('Are you sure?')) resetFilters()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
-                       				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-pencil" aria-hidden="true"> </span> Save query </p>
-									<p id="loadquery" onclick="loadQuery()"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"> </span> Load saved query </p>
+                       				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
+									<p id="loadquery" onclick="loadQuery()"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"> </span> View bookmarked query list </p>
                        			</c:if>
 								
 							</div>
@@ -1798,17 +1799,12 @@ Gigascience [Internet] 2016;5:25. doi: 10.1186/s13742-016-0131-8.</pre>
 	<div id="queryManager" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-medium" role="document">
 		<div id="loadedQueries" class="modal-content" style="padding:10px; text-align:center;">
-		<b style="font-size:18px">You can use and manage here all the queries you've been saving</b>
+		<b style="font-size:18px">Your bookmarked queries</b>
 		<br>
 		<br>
 		</div>
 		</div>
 	</div>
-
-
-
-
-
 
 </body>
 </html>

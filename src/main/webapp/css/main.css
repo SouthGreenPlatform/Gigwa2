@@ -15,31 +15,10 @@
                 GNU Affero General Public License V3.
 */
 
-
-
-/* three line menu from filters panel */
-/* .box-shadow-menu {
- 	position: relative;
-  	float: right;
-	width: 16px;
-	height: 16px;
-	padding-left: 1.25em;
-  	cursor:pointer; 
-}
-.box-shadow-menu:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.25em;
-  width: 1em;
-  height: 0.15em;
-  background: black;
-  box-shadow: 
-    0 0.25em 0 0 black,
-    0 0.5em 0 0 black;
-}
- */
  
+ #savequery {
+ 	display: none;
+ }
  #loadedQueries p .glyphicon-search {
  	cursor: pointer;
  }
@@ -47,19 +26,22 @@
  .queryIcon{
  	
  	margin-left:20px;
- 	font-size: 16px;
+ 	font-size: 15px;
  	float: right;
  	cursor: pointer;
  }
  
  #loadedQueries p {
  	width: 100%;
- 	font-size: 17px;
- 	padding-left: 45%;
+ 	font-size: 15px;
+ 	padding: 0 10px;
  	text-align: left;
- 	padding-bottom:5px;
  	border-width:thin;
- 	border-bottom: 0.1em solid black;
+ 	border-bottom: 1px solid black;
+ }
+ 
+ #loadedQueries p .NameQuery{
+ 	font-size: 15px;
  }
  
  #loadedQueries {
@@ -71,13 +53,15 @@
  
  #menu1 {
  	margin-right: 5px;
+ 	position: absolute;
+ 	left: 95%;
  }
  
  #menu1, #menu1 span {
  	cursor: pointer;
  	width: 15px;
  	height: 15px;
- 	top: 7px;
+ 	top:4px;
  	float: right
  	
  }
@@ -115,7 +99,7 @@
 	cursor:pointer;
 	margin: 5px;
 	margin-bottom: 10px;
-	width: 150px;
+	width: 192px;
 }
 
 #submenu p > span{
@@ -883,4 +867,3 @@ div#countResultPanel {
     75% { transform:rotate(360deg); }
     100% { transform:rotate(360deg); }
 }
-

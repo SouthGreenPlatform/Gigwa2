@@ -36,7 +36,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +94,6 @@ import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
-import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
@@ -194,7 +191,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String SAVE_QUERY_URL = "/saveQuery";
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
-
+	static public final String DELETE_QUERY_URL = "/deleteQuery";
+	
 	/**
 	 * instance of Service to manage all interaction with database
 	 */
@@ -1550,7 +1548,7 @@ public class GigwaRestController extends ControllerInterface {
 	
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
-    public void saveQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String body = IOUtils.toString(request.getReader());
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -1563,7 +1561,7 @@ public class GigwaRestController extends ControllerInterface {
     		build401Response(response);
     		return;
     	}
-    	String sQueryLabel = request.getHeader("label");
+    	String sQueryLabel = jsonNode.get("queryLabel").asText();
     	if (sQueryLabel == null || sQueryLabel.trim().length() == 0) {
     		response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     		response.getWriter().write("You must specify a header parameter named 'label'");
@@ -1572,20 +1570,28 @@ public class GigwaRestController extends ControllerInterface {
 
     	String info[] = GigwaSearchVariantsRequest.getInfoFromId(gsvr.getVariantSetId(), 2);
         String sModule = info[0];
-        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);        
 
         String queryKey = service.getQueryKey(gsvr);
+        
+        BookmarkedQuery existingQueryWithThisName = mongoTemplate.findOne(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName()).is(sQueryLabel.trim())), BookmarkedQuery.class);
+        if (existingQueryWithThisName != null && !existingQueryWithThisName.getId().equals(queryKey)) {
+    		response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    		response.getWriter().write("A different query already exists with this name");
+    		return;
+    	}
 
-        BookmarkedQuery cachedQuery = new BookmarkedQuery(queryKey);
-
-        // remove fields unrelated to the filters
+        // remove fields unrelated to the filters so we only save what's relevant
 		jsonNode.remove("searchMode");
 		jsonNode.remove("getGT");
 		jsonNode.remove("pageSize");
 		jsonNode.remove("pageToken");
 		jsonNode.remove("sortBy");
 		jsonNode.remove("sortDir");
-    	cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());  	
+		jsonNode.remove("queryLabel");
+
+        BookmarkedQuery cachedQuery = new BookmarkedQuery(queryKey);
+        cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());  	
     	cachedQuery.setSavedFilters(mapper.readValue(jsonNode, HashMap.class));
     	mongoTemplate.save(cachedQuery);
 
@@ -1594,7 +1600,7 @@ public class GigwaRestController extends ControllerInterface {
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + LIST_SAVED_QUERIES_URL, method = RequestMethod.GET, produces = "application/json")
-    public HashMap<String, String> listSavedQueries(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule) throws IOException {
+    public HashMap<String, String> listBookmarkedQueries(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule) throws IOException {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
@@ -1614,7 +1620,7 @@ public class GigwaRestController extends ControllerInterface {
 	
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + LOAD_QUERY_URL, method = RequestMethod.GET, produces = "application/json")
-    public HashMap<String, Object> loadQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
+    public HashMap<String, Object> loadBookmarkedQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
@@ -1635,5 +1641,25 @@ public class GigwaRestController extends ControllerInterface {
     	}
 
         return cachedQuery.getSavedFilters();
+    }
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + DELETE_QUERY_URL, method = RequestMethod.DELETE, produces = "application/json")
+    public void deleteBookmarkedQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
+        String token = tokenManager.readToken(request);
+    	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+    	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+    		build401Response(response);
+    		return;
+    	}
+    	
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+        WriteResult wr = mongoTemplate.remove(new Query(Criteria.where("_id").is(queryId)), BookmarkedQuery.class);
+        if (wr.getN() == 0) {
+        	build404Response(response);
+        	return;
+        }
+        
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 }
