@@ -109,40 +109,6 @@ public class Ga4ghRestController extends ControllerInterface {
     static public final String BASES = "/bases";
 
     /**
-     * Handle all exceptions.
-     *
-     * @param request the request
-     * @param response the response
-     * @param ex the ex
-     * @return the model and view
-     */
-//    @ExceptionHandler(Exception.class)
-//    @ResponseStatus(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-//    public ModelAndView handleAllExceptions(HttpServletRequest request, HttpServletResponse response, Exception ex) {
-//    	LOG.error("Error at URL " + request.getRequestURI() + "?" + request.getQueryString(), ex);
-//    	if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
-//    	{
-//    		HashMap<String, String> map = new HashMap<String, String>();
-//    		map.put("errorMsg", ExceptionUtils.getStackTrace(ex));
-//    		return new ModelAndView(new MappingJackson2JsonView(), UnmodifiableMap.decorate(map));
-//    	}
-//    	else
-//    		return exceptionResolver.resolveException(request, response, null, ex);
-//    }
-    
-    /**
-     * handler for gigwa exception
-     *
-     * @param ex
-     * @param response
-     */
-//    @ExceptionHandler(GigwaMissingParametersException.class)
-//    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Missing parameters")
-//    public void handleGigwaException(GigwaMissingParametersException ex, HttpServletResponse response) {
-//        ex.printStackTrace();
-//    }
-
-    /**
      * get bases from reference sequence
      *
      * @param request
