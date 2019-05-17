@@ -49,6 +49,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.disk.DiskFileItem;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -81,6 +82,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.mongodb.WriteResult;
@@ -132,8 +134,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired
 	SecurityContextRepository repository;
 
-	/** The exception resolver. */
-	// @Autowired private SimpleMappingExceptionResolver exceptionResolver;
+	/** The upload resolver. */
+	@Autowired private CommonsMultipartResolver uploadResolver;
 
 	@Autowired
 	TokenManager tokenManager;
@@ -1143,32 +1145,40 @@ public class GigwaRestController extends ControllerInterface {
 			progress.setError("Some data is already being imported into this database. Please try again later.");
 
 		HashMap<String, Serializable> filesByExtension = new HashMap<>();
+		Long nTotalUploadSize = 0l, nTotalImportSize = 0l, maxUploadSize = maxUploadSize(request, true), maxImportSize = maxUploadSize(request, false);
+
 		final ArrayList<File> uploadedFiles = new ArrayList<>();
-		for (MultipartFile mpf : Arrays.asList(uploadedFile1, uploadedFile2))
-			if (mpf != null && !mpf.isEmpty()) {
-				String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
-				if (filesByExtension.containsKey(fileExtension))
-					progress.setError("Each provided file must have a different extension!");
-				else {
-					File file;
-					if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
-						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
-						File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-						file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-					} else {
-						file = File.createTempFile(null, "_" + mpf.getOriginalFilename());
-						LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+		if (uploadedFile1 != null || uploadedFile2 != null) {
+			for (MultipartFile mpf : Arrays.asList(uploadedFile1, uploadedFile2))
+				if (mpf != null && !mpf.isEmpty()) {
+					String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
+					if (filesByExtension.containsKey(fileExtension))
+						progress.setError("Each provided file must have a different extension!");
+					else {
+						File file;
+						if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
+							// make sure we transfer it to a file in the same location so it is a move rather than a copy!
+							File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
+							file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+						} else {
+							file = File.createTempFile(null, "_" + mpf.getOriginalFilename());
+							LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+						}
+						mpf.transferTo(file);
+						nTotalUploadSize += file.length();
+						nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
+						uploadedFiles.add(file);
+						filesByExtension.put(fileExtension, file);
 					}
-					mpf.transferTo(file);
-					uploadedFiles.add(file);
-					filesByExtension.put(fileExtension, file);
 				}
-			}
+			if (nTotalUploadSize > maxUploadSize*1024*1024)
+				progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
+		}
 
 		Authentication auth = tokenManager.getAuthenticationFromToken(token);
 		boolean fAdminImporter = auth != null && auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
 
-		if (progress.getError() == null)
+		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
 			{
 				uri = uri == null ? null : uri.trim();
@@ -1226,8 +1236,8 @@ public class GigwaRestController extends ControllerInterface {
 										{}
 										if (fileSize == null)
 											progress.setError("Only administrators may upload files with unspecified Content-Length");
-										else if (fileSize > Integer.parseInt(maxUploadSize(request))*1024*1024)
-											progress.setError("Remote file is larger than allowed");
+										else
+											nTotalImportSize += fileSize * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
 									}
 										
 								}
@@ -1260,14 +1270,20 @@ public class GigwaRestController extends ControllerInterface {
 						else
 						{
 							File f = new File(uri);
-							if (f.exists() && !f.isDirectory() && f.length() > 0)
+							if (f.exists() && !f.isDirectory() && f.length() > 0) {
+								nTotalImportSize += f.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);									
 								filesByExtension.put(fileExtension, f);
+							}
 							else
 								progress.setError("Found no data to import from " + uri);
 						}
 					}
 				}
 			}
+		}
+
+		if (maxImportSize != null && nTotalImportSize > maxImportSize*1024*1024)
+			progress.setError("Provided import data is larger than your allowed maximum (" + maxImportSize + " Mb)." + (filesByExtension.containsKey("gz") ? " Note that bgzipped files are considered to have 20x compression." : ""));
 
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
 		boolean fDatasourceExists = mongoTemplate != null;
@@ -1529,11 +1545,23 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + MAX_UPLOAD_SIZE_PATH, method = RequestMethod.GET, produces = "application/text")
-	public String maxUploadSize(HttpServletRequest request) {
+	@RequestMapping(value = BASE_URL + MAX_UPLOAD_SIZE_PATH, method = RequestMethod.GET)
+	public Long maxUploadSize(HttpServletRequest request, @RequestParam(required=false) Boolean capped) {
+		String maxSize = null;
+		
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
-		String maxSize = appConfig.get("maxUploadSize_" + (auth == null ? "anonymousUser" : auth.getName()));
-		return maxSize == null ? "500" : maxSize;
+		boolean fIsAdmin = auth != null && auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)); // limit only applies when capped for administrators
+		if (!fIsAdmin) {
+			maxSize = appConfig.get("maxImportSize_" + (auth == null ? "anonymousUser" : auth.getName()));
+			if (maxSize == null || !StringUtils.isNumeric(maxSize))
+				maxSize = appConfig.get("maxImportSize");
+		}
+		Long nMaxSizeMb = fIsAdmin ? null : (maxSize == null ? 500 /* absolute default */ : Long.parseLong(maxSize));
+
+		if (!Boolean.TRUE.equals(capped))
+			return nMaxSizeMb;
+		
+		return Math.min((int) uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
 
 	public void build401Response(HttpServletResponse resp) throws IOException {

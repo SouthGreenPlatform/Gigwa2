@@ -1313,8 +1313,9 @@
 			</c:when>
 			<c:otherwise>
 <pre class="margin-top" style="font-size:10px; position:absolute;">Please cite Gigwa as follows:
-Sempéré G, Pétel A, Rouard M, Frouin G, De Bellis F, Larmande P. Gigwa v2—Extended and improved genotype investigator.
-Gigascience [Internet] 2016;5:25. doi: 10.1093/gigascience/giz051</pre>
+Guilhem Sempéré, Adrien Pétel, Mathieu Rouard, Julien Frouin, Yann Hueber, Fabien De Bellis, Pierre Larmande,
+Gigwa v2—Extended and improved genotype investigator, GigaScience, Volume 8, Issue 5, May 2019, giz051,
+https://doi.org/10.1093/gigascience/giz051</pre>
 			</c:otherwise>
 		</c:choose>
 	</div>
@@ -1325,14 +1326,12 @@ Gigascience [Internet] 2016;5:25. doi: 10.1093/gigascience/giz051</pre>
 					<!-- Search panel -->
 					<div class="row">
 						<div class="panel panel-default">
-							<!-- <img width="16" height="16" title="Clear filters" src="images/broom.png" style="cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();" /> -->
-							<!-- <p style="font-size:16px; cursor:pointer; cursor:hand; position:absolute; right:2px; top:2px;" onclick="if (confirm('Are you sure?')) resetFilters();"> &#9776 <p/> -->
-							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:5px;"></span></p>
+							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-								<p onclick="if (confirm('Are you sure?')) resetFilters()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
+								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
                        				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
-									<p id="loadquery" onclick="loadQuery()"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"> </span> View bookmarked query list </p>
+									<p id="listqueries" onclick="listQueries()"><span class="glyphicon glyphicon-th-list" aria-hidden="true"> </span> View bookmarked query list </p>
                        			</c:if>
 								
 							</div>

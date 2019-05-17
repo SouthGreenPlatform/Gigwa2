@@ -731,346 +731,6 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
 		previousSibling.parent().find('div.individualSelectionDiv').hide(200, function() { previousSibling.parent().find('div.individualSelectionDiv').remove() });
 }
 
-function resetFilters() {
-	$('#genomeBrowserPanel').fadeOut();
-    $('#variantDetailPanel').fadeOut();
-    $('#rightSidePanel').fadeOut();
-    $('#variantTypes').selectpicker('deselectAll');
-    $('#numberOfAlleles').selectpicker('deselectAll');
-    $('#Sequences').selectmultiple('deselectAll');
-    $('#minposition').val("");
-    $('#maxposition').val("");
-    $('#geneName').val("");
-    $('#variantEffects').selectpicker('deselectAll');
-
-    $('#genotypeInvestigationMode').val(0);
-    $('.selectpicker').selectpicker('refresh')
-    $('#genotypeInvestigationMode').change();
-}
-
-// Function from three line menu clicking
-function menuAction(){	
-	var $submenu = $('#submenu');
-	if($submenu.css('display') == 'none'){
-		$submenu.css('display', 'inline');
-		$submenu.mouseleave(function(){
-			var to = setTimeout(function(){
-				$submenu.css('display', 'none');
-			}, 400);
-			$submenu.mouseover(function(){
-				if(to.length != 0){
-					window.clearTimeout(to);
-				}
-			});
-		});
-		
-	} else {
-		$submenu.css('display', 'none');
-	}
-}
-
-//This function allow the user to save a query into the DB
-function saveQuery() {
-	var queryName = "";
-	while (queryName.trim() == "")
-		if ((queryName = prompt("Enter query name")) == null)
-			return;
-    var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-		$('#vcfFieldFilterGroup1 input').each(function() {
-			if (parseFloat($(this).val()) > 0)
-				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-		});
-		$('#vcfFieldFilterGroup2 input').each(function() {
-			if (parseFloat($(this).val()) > 0)
-				annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-		});
-	$.ajax({
-        url: 'rest/gigwa/saveQuery',
-        type: "POST",
-        contentType: "application/json;charset=utf-8",
-        timeout:0,
-        headers: {
-            "Authorization": "Bearer " + token,
-        },
-        data: JSON.stringify({
-            "variantSetId": $('#project :selected').data("id"),
-            "getGT": false,
-            "queryLabel": queryName,
-            
-            "referenceName": getSelectedSequences(),
-            "selectedVariantTypes": getSelectedTypes(),
-            "alleleCount": getSelectedNumberOfAlleles(),
-            "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-            "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-            "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-            "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-
-            "callSetIds": getSelectedIndividuals(1, true),
-            "gtPattern": $('#Genotypes1').val(),
-            "mostSameRatio": $('#mostSameRatio1').val(),
-            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-	        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-	        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
-			"annotationFieldThresholds": annotationFieldThresholds,
-
-            "callSetIds2": getSelectedIndividuals(2, true),
-            "gtPattern2": $('#Genotypes2').val(),
-            "mostSameRatio2": $('#mostSameRatio2').val(),
-            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-	        "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-	        "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-	   		"annotationFieldThresholds2": annotationFieldThresholds2,
-            
-            "discriminate": $('#discriminate').prop('checked'),
-            "pageSize": 100,
-            "sortBy": sortBy,
-            "sortDir": sortDesc === true ? 'desc' : 'asc'
-        }),
-        
-        success: function(jsonResult) {
-                $('#savequery').append('<span id="okIcon" class="glyphicon glyphicon-ok" aria-hidden="true"> </span>');
-                setTimeout(function(){ 
-                	$('#okIcon').remove();
-                }, 1000);
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-        	alert(xhr.responseText);
-        	if (xhr.status == 400)
-        		saveQuery();
-        	else
-        		handleError(xhr, thrownError);
-        }
-    });
-	
-}
-
-//This function allows the user to load a query previously saved
-function loadQuery(){
-	$('#loadedQueries p').remove();
-	$('#queryManager').modal("show");
-	$.ajax({	// load queries 
-        url: 'rest/gigwa/listSavedQueries?module=' + referenceset,
-        type: "GET",
-        dataType: "json",
-        async: false,
-        contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
-        success: function(jsonResult) {
-        	var i=0;
-        	for (key in jsonResult)
-            {	
-        		i++;
-        		$('#loadedQueries').append('<p id="'+key+'">' +'<span class="queryIcon glyphicon glyphicon-trash" aria-hidden="true" data-toggle="tooltip" title="Delete"></span>'+'<span class="NameQuery">'
-        				+jsonResult[key]+'</span>'+'</span>'+'<span  class="queryIcon glyphicon glyphicon-pencil" aria-hidden="true" data-toggle="tooltip" title="Rename"></span>'
-        		+ '<span style="font-size: 15px;" class="queryIcon glyphicon glyphicon-folder-open" aria-hidden="true" data-toggle="tooltip" title="Open"></span>' +'</p>');
-            }
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-            handleError(xhr, thrownError);
-        }
-    });
-	
-	//When the pencil is clicked
-	$('#loadedQueries p .glyphicon-pencil').click(function(){
-		var queryId = $(this).parent('p').attr('id');
-		queryName = "";
-		while (queryName.trim() == "")
-			if ((queryName = prompt("Enter query name",$(this).parent('p').text())) == null)
-				return;
-		$.ajax({	// load queries 
-	        url: 'rest/gigwa/loadQuery?module=' + referenceset 
-	        + '&queryId='+ queryId,
-	        type: "GET",
-	        dataType: "json",
-	        async: false,
-	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        }, 
-	        success: function(jsonResult) {
-	        	$.ajax({
-	                url: 'rest/gigwa/saveQuery',
-	                type: "POST",
-	                contentType: "application/json;charset=utf-8",
-	                timeout:0,
-	                headers: {
-	                    "Authorization": "Bearer " + token,
-	                },
-	                data: JSON.stringify({
-	                    "variantSetId": $('#project :selected').data("id"),
-	                    "getGT": false,
-	                    "queryLabel": queryName,
-
-	                    "referenceName": jsonResult['referenceName'],
-	                    "selectedVariantTypes": jsonResult['selectedVariantTypes'],
-	                    "alleleCount": jsonResult['alleleCount'],
-	                    "start": jsonResult['start'],
-	                    "end": jsonResult['end'],
-	                    "variantEffect": jsonResult['variantEffect'],
-	                    "geneName": jsonResult['geneName'],
-
-	                    "callSetIds":	jsonResult['callSetIds'],
-	                    "gtPattern": jsonResult['gtPattern'],
-	                    "mostSameRatio": jsonResult['mostSameRatio'],
-	                    "minmaf": jsonResult['minmaf'],
-	        	        "maxmaf": jsonResult['maxmaf'],
-	        	        "missingData": jsonResult['missingData'],
-	        			"annotationFieldThresholds": jsonResult['annotationFieldThresholds'],
-
-	                    "callSetIds2": jsonResult['callSetIds2'],
-	                    "gtPattern2": jsonResult['gtPattern2'],
-	                    "mostSameRatio2": jsonResult['mostSameRatio2'],
-	                    "minmaf2": jsonResult['minmaf2'],
-	        	        "maxmaf2": jsonResult['maxmaf2'],
-	        	        "missingData2": jsonResult['missingData2'],
-	        	   		"annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
-	                    
-	                    "discriminate": jsonResult['discriminate'],
-	                    "pageSize": jsonResult['pageSize'],
-	                    "sortBy": jsonResult['sortBy'],
-	                    "sortDir": jsonResult['sortDir']
-	                }),
-	                success: function(jsonResult) {
-	                       $('#'+queryId+' .NameQuery').html(queryName);
-	                },
-	                error: function(xhr, ajaxOptions, thrownError) {
-	                	alert(xhr.responseText);
-	                	loadQuery();
-	                	handleError(xhr, thrownError);
-	                }
-	            });        	
-	        },
-	        
-	        error: function(xhr, ajaxOptions, thrownError) {
-	            handleError(xhr, thrownError);
-	        }
-	    });
-	});
-	
-	//When the search is clicked
-	$('#loadedQueries p .glyphicon-folder-open').click(function(){
-		var queryId = $(this).parent('p').attr('id');
-		$.ajax({	// load queries 
-	        url: 'rest/gigwa/loadQuery?module=' + referenceset 
-	        + '&queryId='+ queryId,
-	        type: "GET",
-	        dataType: "json",
-	        async: false,
-	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
-	        success: function(jsonResult) {
-	        	resetFilters(); 
-	        	
-	        	if(jsonResult["start"] != -1) // if there is a start position
-	        	$('#minposition').val(jsonResult["start"]); 
-	        	
-	        	if(jsonResult["end"] != -1) // if there is a end position
-	        	$('#maxposition').val(jsonResult["end"]);
-	        	
-	        	if(jsonResult['referenceName'].split(',') != ""){
-		        	var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
-		        	$('#Sequences div select').val(tabRefs); //change the 'select' values
-		        	$('#Sequences div select').trigger('change');//trigger the change event
-	        	}
-	        	
-	        	if(jsonResult['selectedVariantTypes'].split(',') != ""){
-		        	var tabTypes = jsonResult['selectedVariantTypes'].split(','); //same but with variants types
-		        	$('#variantTypes').selectpicker('val', tabTypes);
-	        	}
-	        	
-	        	if(jsonResult['variantEffect'].split(',') != ""){
-		        	var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
-		        	$('#variantEffects').selectpicker('val', tabEffects);
-	        	}
-	        	
-	        	var names = jsonResult['geneName']; //change gene name value
-	        	$('#geneName').val(names);
-	        	
-	        	if(jsonResult['alleleCount'].split(',') != ""){
-		        	var tabAlleles = jsonResult['alleleCount'].split(','); 
-		        	$('#numberOfAlleles').selectpicker('val', tabAlleles);
-	        	}
-	        	
-	        	for(var i=1 ; i<=2 ; i++){
-	        		
-	        		var e = i;
-	        		if(i==1){
-	        			e='';
-	        		}
-	        		
-	        		if(groupHasFilters(jsonResult, i)){
-	        			$('#genotypeInvestigationMode').selectpicker('val', i);
-				      	$('#genotypeInvestigationMode').trigger('change');
-				      	
-				      	var tabIds = jsonResult['callSetIds'+e];
-				      	if(tabIds.length != 0){
-			            $('#Individuals'+i+' div select').val(tabIds.map(x => x.split("§")[2]));
-			            $('#Individuals'+i+' div select').trigger('change');
-				      	}
-				      	
-				      	$('#vcfFieldFilterGroup'+i+' #DP_threshold1').val(jsonResult['annotationFieldThresholds'+e]['DP']);
-				      	
-				      	$('#vcfFieldFilterGroup'+i+' #GQ_threshold1').val(jsonResult['annotationFieldThresholds'+e]['GQ']); 
-				      	
-				      	$('#missingdata'+i).val(jsonResult['missingData'+e]);
-				      	
-				      	$('#minmaf'+i).val(jsonResult['minmaf'+e]);
-				      	
-				      	$('#maxmaf'+i).val(jsonResult['maxmaf'+e]);
-				      
-				      	$('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
-				      	
-				      	$('#mostSameRatio'+i).val(jsonResult['mostSameRatio'+e]);
-				      	
-				      	$('#Genotypes'+i).trigger('change');
-	        		
-	        		}
-	        	}
-	        	  	 
-	      	 
-	        	if(jsonResult['discriminate']){
-	        		$('#discriminationDiv').show();
-	        		$('#discriminate').prop('checked', true);
-	      		}
-	      	 
-	        	$('#queryManager').modal("hide");
-	        },
-	        
-	        error: function(xhr, ajaxOptions, thrownError) {
-	            handleError(xhr, thrownError);
-	        }
-	    });
-	});
-	
-	//When the trash is clicked
-	$('#loadedQueries p .glyphicon-trash').click(function(){
-		var queryId = $(this).parent().attr('id');
-		if(confirm('Do you really want to delete this query ?')){
-			$.ajax({	
-		        url: 'rest/gigwa/deleteQuery?module='+referenceset+'&queryId='+queryId,
-		        type: "DELETE",
-		        dataType: "json",
-		        async: false,
-		        contentType: "application/json;charset=utf-8",
-		        headers: {
-		            "Authorization": "Bearer " + token
-		        },
-		        success: function(jsonResult) {
-		        	$('#'+queryId).remove();
-		        },
-		        
-		        error: function(xhr, ajaxOptions, thrownError) {
-		            handleError(xhr, thrownError);
-		        }
-		    });
-		}
-	});
-}
-
 function groupHasFilters(jsonResult, grpNumber){
 	var e = grpNumber;
 	if (grpNumber == 1) var e = '';
@@ -1287,3 +947,346 @@ StringBuffer.prototype.append = function(str) {
 StringBuffer.prototype.toString = function() {
     return this.buffer.join("");
 };
+if (!String.prototype.endsWith) {
+   String.prototype.endsWith = function(suffix) {
+     return this.indexOf(suffix, this.length - suffix.length) !== -1;
+   };
+}
+
+
+function resetFilters() {
+	$('#genomeBrowserPanel').fadeOut();
+    $('#variantDetailPanel').fadeOut();
+    $('#rightSidePanel').fadeOut();
+    $('#variantTypes').selectpicker('deselectAll');
+    $('#numberOfAlleles').selectpicker('deselectAll');
+    $('#Sequences').selectmultiple('deselectAll');
+    $('#minposition').val("");
+    $('#maxposition').val("");
+    $('#geneName').val("");
+    $('#variantEffects').selectpicker('deselectAll');
+
+    $('#genotypeInvestigationMode').val(0);
+    $('.selectpicker').selectpicker('refresh')
+    $('#genotypeInvestigationMode').change();
+}
+
+// Function from three line menu clicking
+function menuAction(){	
+	var $submenu = $('#submenu');
+	if($submenu.css('display') == 'none'){
+		$submenu.css('display', 'inline');
+		$submenu.mouseleave(function(){
+			var to = setTimeout(function(){
+				$submenu.css('display', 'none');
+			}, 400);
+			$submenu.mouseover(function(){
+				if(to.length != 0){
+					window.clearTimeout(to);
+				}
+			});
+		});
+		
+	} else {
+		$submenu.css('display', 'none');
+	}
+}
+
+//This function allow the user to save a query into the DB
+function saveQuery() {
+	var queryName = "";
+	while (queryName.trim() == "")
+		if ((queryName = prompt("Enter query name")) == null)
+			return;
+    var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
+		$('#vcfFieldFilterGroup1 input').each(function() {
+			if (parseFloat($(this).val()) > 0)
+				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+		});
+		$('#vcfFieldFilterGroup2 input').each(function() {
+			if (parseFloat($(this).val()) > 0)
+				annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+		});
+	$.ajax({
+        url: 'rest/gigwa/saveQuery',
+        type: "POST",
+        contentType: "application/json;charset=utf-8",
+        timeout:0,
+        headers: {
+            "Authorization": "Bearer " + token,
+        },
+        data: JSON.stringify({
+            "variantSetId": $('#project :selected').data("id"),
+            "getGT": false,
+            "queryLabel": queryName,
+            
+            "referenceName": getSelectedSequences(),
+            "selectedVariantTypes": getSelectedTypes(),
+            "alleleCount": getSelectedNumberOfAlleles(),
+            "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
+            "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
+            "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
+            "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+
+            "callSetIds": getSelectedIndividuals(1, true),
+            "gtPattern": $('#Genotypes1').val(),
+            "mostSameRatio": $('#mostSameRatio1').val(),
+            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
+	        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
+	        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
+			"annotationFieldThresholds": annotationFieldThresholds,
+
+            "callSetIds2": getSelectedIndividuals(2, true),
+            "gtPattern2": $('#Genotypes2').val(),
+            "mostSameRatio2": $('#mostSameRatio2').val(),
+            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
+	        "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
+	        "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
+	   		"annotationFieldThresholds2": annotationFieldThresholds2,
+            
+            "discriminate": $('#discriminate').prop('checked'),
+            "pageSize": 100,
+            "sortBy": sortBy,
+            "sortDir": sortDesc === true ? 'desc' : 'asc'
+        }),
+        
+        success: function(jsonResult) {
+                $('#savequery').append('<span id="okIcon" class="glyphicon glyphicon-ok" aria-hidden="true"> </span>');
+                setTimeout(function(){ 
+                	$('#okIcon').remove();
+                }, 1000);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+        	alert(xhr.responseText);
+        	if (xhr.status == 400)
+        		saveQuery();
+        	else
+        		handleError(xhr, thrownError);
+        }
+    });
+	
+}
+
+//This function allows the user to list previously saved queries
+function listQueries(){
+	$('#loadedQueries p').remove();
+	$('#queryManager').modal("show");
+	$.ajax({	// load queries 
+        url: 'rest/gigwa/listSavedQueries?module=' + referenceset,
+        type: "GET",
+        dataType: "json",
+        async: false,
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function(jsonResult) {
+        	var i=0;
+        	for (key in jsonResult)
+            {	
+        		i++;
+        		$('#loadedQueries').append('<p id="'+key+'">' +'<span class="queryIcon glyphicon glyphicon-trash" aria-hidden="true" data-toggle="tooltip" title="Delete"></span>'+'<span class="NameQuery">'
+        				+jsonResult[key]+'</span>'+'</span>'+'<span  class="queryIcon glyphicon glyphicon-pencil" aria-hidden="true" data-toggle="tooltip" title="Rename"></span>'
+        		+ '<span style="font-size: 15px;" class="queryIcon glyphicon glyphicon-folder-open" aria-hidden="true" data-toggle="tooltip" title="Open"></span>' +'</p>');
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });	
+	
+	//When the pencil icon is clicked
+	$('#loadedQueries p .glyphicon-pencil').click(function(){
+		var queryId = $(this).parent('p').attr('id');
+		queryName = "";
+		while (queryName.trim() == "")
+			if ((queryName = prompt("Enter query name",$(this).parent('p').text())) == null)
+				return;
+		$.ajax({	// load queries 
+	        url: 'rest/gigwa/loadQuery?module=' + referenceset 
+	        + '&queryId='+ queryId,
+	        type: "GET",
+	        dataType: "json",
+	        async: false,
+	        contentType: "application/json;charset=utf-8",
+	        headers: {
+	            "Authorization": "Bearer " + token
+	        }, 
+	        success: function(jsonResult) {
+	        	$.ajax({
+	                url: 'rest/gigwa/saveQuery',
+	                type: "POST",
+	                contentType: "application/json;charset=utf-8",
+	                timeout:0,
+	                headers: {
+	                    "Authorization": "Bearer " + token,
+	                },
+	                data: JSON.stringify({
+	                    "variantSetId": $('#project :selected').data("id"),
+	                    "getGT": false,
+	                    "queryLabel": queryName,
+
+	                    "referenceName": jsonResult['referenceName'],
+	                    "selectedVariantTypes": jsonResult['selectedVariantTypes'],
+	                    "alleleCount": jsonResult['alleleCount'],
+	                    "start": jsonResult['start'],
+	                    "end": jsonResult['end'],
+	                    "variantEffect": jsonResult['variantEffect'],
+	                    "geneName": jsonResult['geneName'],
+
+	                    "callSetIds":	jsonResult['callSetIds'],
+	                    "gtPattern": jsonResult['gtPattern'],
+	                    "mostSameRatio": jsonResult['mostSameRatio'],
+	                    "minmaf": jsonResult['minmaf'],
+	        	        "maxmaf": jsonResult['maxmaf'],
+	        	        "missingData": jsonResult['missingData'],
+	        			"annotationFieldThresholds": jsonResult['annotationFieldThresholds'],
+
+	                    "callSetIds2": jsonResult['callSetIds2'],
+	                    "gtPattern2": jsonResult['gtPattern2'],
+	                    "mostSameRatio2": jsonResult['mostSameRatio2'],
+	                    "minmaf2": jsonResult['minmaf2'],
+	        	        "maxmaf2": jsonResult['maxmaf2'],
+	        	        "missingData2": jsonResult['missingData2'],
+	        	   		"annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
+	                    
+	                    "discriminate": jsonResult['discriminate'],
+	                    "pageSize": jsonResult['pageSize'],
+	                    "sortBy": jsonResult['sortBy'],
+	                    "sortDir": jsonResult['sortDir']
+	                }),
+	                success: function(jsonResult) {
+	                       $('#'+queryId+' .NameQuery').html(queryName);
+	                },
+	                error: function(xhr, ajaxOptions, thrownError) {
+	                	alert(xhr.responseText);
+	                	listQueries();
+	                	handleError(xhr, thrownError);
+	                }
+	            });        	
+	        },
+	        
+	        error: function(xhr, ajaxOptions, thrownError) {
+	            handleError(xhr, thrownError);
+	        }
+	    });
+	});
+
+	//When the open icon is clicked
+	$('#loadedQueries p .glyphicon-folder-open').click(function(){
+		var queryId = $(this).parent('p').attr('id');
+		$.ajax({	// load queries 
+	        url: 'rest/gigwa/loadQuery?module=' + referenceset 
+	        + '&queryId='+ queryId,
+	        type: "GET",
+	        dataType: "json",
+	        async: false,
+	        contentType: "application/json;charset=utf-8",
+	        headers: {
+	            "Authorization": "Bearer " + token
+	        },
+	        success: function(jsonResult) {
+	        	resetFilters(); 
+	        	
+	        	if(jsonResult["start"] != -1) // if there is a start position
+	        	$('#minposition').val(jsonResult["start"]); 
+	        	
+	        	if(jsonResult["end"] != -1) // if there is a end position
+	        	$('#maxposition').val(jsonResult["end"]);
+	        	
+	        	if(jsonResult['referenceName'] != ""){
+		        	var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
+		        	$('#Sequences div select').val(tabRefs); //change the 'select' values
+		        	$('#Sequences div select').trigger('change');//trigger the change event
+	        	}
+	        	
+	        	if(jsonResult['selectedVariantTypes'] != ""){
+		        	var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
+		        	$('#variantTypes').selectpicker('val', tabTypes);
+	        	}
+	        	
+	        	if(jsonResult['variantEffect'] != ""){
+		        	var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
+		        	$('#variantEffects').selectpicker('val', tabEffects);
+	        	}
+	        	
+	        	var names = jsonResult['geneName']; //change gene name value
+	        	$('#geneName').val(names);
+	        	
+	        	if(jsonResult['alleleCount'] != ""){
+		        	var tabAlleles = jsonResult['alleleCount'].split(';'); 
+		        	$('#numberOfAlleles').selectpicker('val', tabAlleles);
+	        	}
+
+	        	for(var i=1 ; i<=2 ; i++) {
+	        		
+	        		var e = i==1 ? "" : i;
+
+	        		if(groupHasFilters(jsonResult, i)){
+	        			$('#genotypeInvestigationMode').selectpicker('val', i);
+				      	$('#genotypeInvestigationMode').trigger('change');
+				      	
+				      	var tabIds = jsonResult['callSetIds'+e];
+				      	if(tabIds.length != 0) {
+				            $('#Individuals'+i+' div select').val(tabIds.map(function(x) {
+				            	return x.split("§")[2];
+				            }));
+				            $('#Individuals'+i+' div select').trigger('change');
+				      	}
+				      	
+				      	$('#vcfFieldFilterGroup'+i+' #DP_threshold1').val(jsonResult['annotationFieldThresholds'+e]['DP']);
+				      	
+				      	$('#vcfFieldFilterGroup'+i+' #GQ_threshold1').val(jsonResult['annotationFieldThresholds'+e]['GQ']); 
+				      	
+				      	$('#missingdata'+i).val(jsonResult['missingData'+e]);
+				      	
+				      	$('#minmaf'+i).val(jsonResult['minmaf'+e]);
+				      	
+				      	$('#maxmaf'+i).val(jsonResult['maxmaf'+e]);
+				      
+				      	$('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
+				      	
+				      	$('#mostSameRatio'+i).val(jsonResult['mostSameRatio'+e]);
+				      	
+				      	$('#Genotypes'+i).trigger('change');
+	        		}
+	        	}
+	      	 
+	        	if(jsonResult['discriminate']){
+	        		$('#discriminationDiv').show();
+	        		$('#discriminate').prop('checked', true);
+	      		}
+	      	 
+	        	$('#queryManager').modal("hide");
+	        },
+	        
+	        error: function(xhr, ajaxOptions, thrownError) {
+	            handleError(xhr, thrownError);
+	        }
+	    });
+	});
+
+	//When the trash is clicked
+	$('#loadedQueries p .glyphicon-trash').click(function(){
+		var queryId = $(this).parent().attr('id');
+		if(confirm('Do you really want to delete this query ?')){
+			$.ajax({	
+		        url: 'rest/gigwa/deleteQuery?module='+referenceset+'&queryId='+queryId,
+		        type: "DELETE",
+		        dataType: "json",
+		        async: false,
+		        contentType: "application/json;charset=utf-8",
+		        headers: {
+		            "Authorization": "Bearer " + token
+		        },
+		        success: function(jsonResult) {
+		        	$('#'+queryId).remove();
+		        },
+		        
+		        error: function(xhr, ajaxOptions, thrownError) {
+		            handleError(xhr, thrownError);
+		        }
+		    });
+		}
+	});
+}

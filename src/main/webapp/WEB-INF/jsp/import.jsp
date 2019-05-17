@@ -49,7 +49,7 @@
 	    	var maxUploadSizeURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAX_UPLOAD_SIZE_PATH%>"/>';
             var token;
             var metadataError;
-            var maxUploadSizeInMb;
+            var maxUploadSizeInMb, maxImportSizeInMb;
         	var BRAPI_V1_URL_ENDPOINT;
         	var brapiParameters;
         	var projectDescriptions = [];
@@ -162,7 +162,7 @@
                 $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
                 
     	        $.ajax({
-    	            url: maxUploadSizeURL,
+    	            url: maxUploadSizeURL + "?capped=true",
     	            async: false,
     	            type: "GET",
     	            contentType: "application/json;charset=utf-8",
@@ -171,7 +171,25 @@
               	  	},
     	            success: function(maxUploadSize) {
     	            	maxUploadSizeInMb = parseInt(maxUploadSize);
-    	            	$("div.dz-default.dz-message h5 div").html("(max total size: " + maxUploadSizeInMb + " Mb)");
+    	            	$("span#maxUploadSize").html(maxUploadSizeInMb);
+    	    	        $.ajax({
+    	    	            url: maxUploadSizeURL + "?capped=false",
+    	    	            async: false,
+    	    	            type: "GET",
+    	    	            contentType: "application/json;charset=utf-8",
+    	              	  	headers: {
+    	              	  		"Authorization": "Bearer " + token
+    	              	  	},
+    	    	            success: function(maxImportSize) {
+    	    	            	if (maxImportSize != null && maxImportSize != "" && maxImportSize != maxUploadSize) {
+    	    	            		maxImportSizeInMb = parseInt(maxImportSize);
+    	    	            		$("span#maxImportSizeSpan").html("Your local or http import volume is limited to <b>" + maxImportSizeInMb + "</b> Mb.");
+    	    	            	}
+    	    	            },
+    	    	            error: function(xhr, thrownError) {
+    	    	                handleError(xhr, thrownError);
+    	    	            }
+    	    	        });
     	            },
     	            error: function(xhr, thrownError) {
     	                handleError(xhr, thrownError);
@@ -299,19 +317,21 @@
                     return;
                 }
 
-                var totalDataSize = 0, compressedFileWarning = "";
-                for (var i=0; i<importDropzoneG.getAcceptedFiles().length; i++)
-                {
-                	var decompressionFactor = importDropzoneG.getAcceptedFiles()[i].name.toLowerCase().endsWith(".gz") ? 20 : 1;
-                	if (decompressionFactor != 1)
-                		compressedFileWarning = "\nNote that bgzipped files are considered to have 20x compression.";
-               		totalDataSize += decompressionFactor * importDropzoneG.getAcceptedFiles()[i].size;
-                }
-                if (totalDataSize > importDropzoneG.options.maxFilesize * 1024 * 1024)
-                {
-                    alert("Overall upload size limit (" + maxUploadSizeInMb + " Mb) exceeded!" + compressedFileWarning);
-                    $('#progress').modal('hide');
-                    return;
+                if (maxImportSizeInMb != null) {
+	                var totalDataSize = 0, compressedFileWarning = "";
+	                for (var i=0; i<importDropzoneG.getAcceptedFiles().length; i++)
+	                {
+	                	var decompressionFactor = importDropzoneG.getAcceptedFiles()[i].name.toLowerCase().endsWith(".gz") ? 20 : 1;
+	                	if (decompressionFactor != 1)
+	                		compressedFileWarning = "\nNote that bgzipped files are considered to have 20x compression.";
+	               		totalDataSize += decompressionFactor * importDropzoneG.getAcceptedFiles()[i].size;
+	                }
+	                if (totalDataSize > maxImportSizeInMb * 1024 * 1024)
+	                {
+	                    alert("Import size limit (" + maxImportSizeInMb + " Mb) exceeded!" + compressedFileWarning);
+	                    $('#progress').modal('hide');
+	                    return;
+	                }
                 }
 
                 var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0);
@@ -733,7 +753,8 @@
 	                                        	<div class="col-md-10">
 	                                        		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
 													<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-	                                        		or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
+	                                        		or an absolute path on webserver filesystem.</small>
+	                                        		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
 		                                        </div>
 	                                        </div>
 	                                        <div class="row text-left" style="margin-bottom:5px;">
@@ -751,7 +772,7 @@
 			                                <div class ="row">
 			                                	<div class="col-md-2"></div>
 			                                    <div class="col-md-5" id="dropZonePreviewsG"></div>
-			                                    <div class="col-md-4">
+			                                    <div class="col-md-4" style="padding-right:0;">
 													<div class="dz-default dz-message" style="background-color:#e8e8e8;">
 				       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
 				       									<div>

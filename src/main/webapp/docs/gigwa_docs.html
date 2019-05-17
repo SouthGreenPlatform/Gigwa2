@@ -663,15 +663,24 @@
                </P>
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
-                  <B>maxUploadSize_anonymousUser</B> - Defines the maximum allowed
-                  size (in megabytes) granted to anonymous users for data file
-                  upload. Default: 500Mb
+                  <B>maxImportSize</B> - Defines the default maximum allowed size
+                  (in megabytes) for genotyping data file imports (capped by the
+                  maxUploadSize value set in applicationContext-MVC.xml). Default: 500Mb.
+                  NB: Does not apply to administrators (administrators are only limited
+                  by maxUploadSize for uploads and are not limited when importing via local or http files)
                </P>
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
-                  <B>maxUploadSize_USERNAME</B> - Defines the maximum allowed size
-                  (in megabytes) granted to the USERNAME user for data file upload.
-                  Default: 500Mb
+                  <B>maxImportSize_anonymousUser</B> - Defines the maximum allowed
+                  size (in megabytes) granted to anonymous users for genotyping data
+                  file imports.
+                  Default: maxImportSize
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>maxImportSize_USERNAME</B> - Defines the maximum allowed size
+                  (in megabytes) granted to the USERNAME user for data file imports.
+                  Default: maxImportSize
                </P>
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
@@ -722,6 +731,20 @@
                   according to server performance. It aims at limiting system
                   overhead in situations where numerous users may be working on
                   very large databases. Default: 1 billion
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in">
+                  <B>maxExportableBillionGenotypes_anonymousUser</B> - Defines the maximum
+                  size (in billions) of the genotype matrix (#individuals *
+                  #markers) that may be exported by anonymous users. Set to 0 to prevent
+                  from exporting genotypes. Default: maxExportableBillionGenotypes
+               </P>
+            <LI>
+               <P STYLE="margin-bottom: 0in">
+                  <B>maxExportableBillionGenotypes_USERNAME</B> - Defines the maximum
+                  size (in billions) of the genotype matrix (#individuals *
+                  #markers) that may be exported by the USERNAME user. Set to 0 to prevent
+                  from exporting genotypes. Default: maxExportableBillionGenotypes
                </P>
             <LI>
                <P>
