@@ -156,17 +156,11 @@ public class TokenManager extends AbstractTokenManager {
     public boolean canUserWriteToDB(Authentication authentication, String module) {
 
         boolean hasAccess = false;
-        if (MongoTemplateManager.isModulePublic(module)) {
-            hasAccess = true;	// if the database is public, return true, no need to check for rights
-        }
-        else
-        {	// database is not public
-    		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-    		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
-    		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
-            if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
-                hasAccess = true;
-        }
+		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
+		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
+        if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
+            hasAccess = true;
         return hasAccess;
     }
     
