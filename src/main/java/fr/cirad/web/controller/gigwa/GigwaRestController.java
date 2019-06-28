@@ -958,10 +958,10 @@ public class GigwaRestController extends ControllerInterface {
 	public ModelAndView setupImportPage()
 	{
 		ModelAndView mav = new ModelAndView();
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
-		if (userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).size() == 0 && managedEntitiesByModuleAndType.size() == 0 && !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
-			mav.addObject("limitToTempData", true);
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
+//		if (userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).size() == 0 && managedEntitiesByModuleAndType.size() == 0 && !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
+//			mav.addObject("limitToTempData", true);
 		return mav;
 	}
 
@@ -1065,7 +1065,18 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						progress.addStep("Importing metadata for individuals");
 						progress.moveToNextStep();
-						IndividualMetadataImport.insertIndividualMetadata(sModule, url, "individual", null);
+						if(tokenManager.canUserWriteToDB(token, sModule)) 
+							IndividualMetadataImport.insertIndividualMetadata(sModule, url, "individual", null);
+						else {
+							Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+							if(authentication != null) {
+								String usrname = authentication.getName();
+								IndividualMetadataImport.insertCustomIndividualMetadata(sModule, url, "individual", null, usrname);
+							} else {
+								progress.setError("Error: You need to be logged in");
+								return null;
+							}
+						}
 					}
 					catch (IOException ioe)
 					{

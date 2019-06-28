@@ -26,8 +26,8 @@
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
-<c:set var="loggedUser"><sec:authentication property="principal" /></c:set>
-<sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"></sec:authorize>
+<sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
+<sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 <html>
     <head>
         <meta charset="utf-8">
@@ -440,8 +440,8 @@
 
                 displayProcessProgress(5, token);
        		}
-            
-            <c:if test="${!limitToTempData}">
+
+            <c:if test="${!isAnonymous}">
             function importMetadata() {
                 var importDropzoneMD = new Dropzone("#importDropzoneMD");                 
                 if (importDropzoneMD.getRejectedFiles().length > 0) {
@@ -544,13 +544,38 @@
                         for (var set in jsonResult.referenceSets)
                             option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
 
-                        var moduleSelectSuffixed = ["G", "MD"];
-                        for (var key in moduleSelectSuffixed)
-                        {
-	                        $('#moduleExisting' + moduleSelectSuffixed[key]).append(option).selectpicker('refresh');
-	                        $('#moduleExisting' + moduleSelectSuffixed[key]).val(0).selectpicker('refresh');
-	                        $('#moduleExisting' + moduleSelectSuffixed[key]).change();
-                        }
+                        $('#moduleExistingG').append(option).selectpicker('refresh');
+                        $('#moduleExistingG').val(0).selectpicker('refresh');
+                        $('#moduleExistingG').change();
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                });
+                
+                $.ajax({
+                    url: "<c:url value='<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS_SEARCH%>' />",
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify({
+                        "assemblyId": null,
+                        "md5checksum": null,
+                        "accession": null,
+                        "pageSize": null,
+                        "pageToken": null
+                    }),
+                    success: function (jsonResult) {
+                        var option = "";
+                        for (var set in jsonResult.referenceSets)
+                            option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+
+                        $('#moduleExistingMD').append(option).selectpicker('refresh');
+                        $('#moduleExistingMD').val(0).selectpicker('refresh');
+                        $('#moduleExistingMD').change();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         handleError(xhr, thrownError);
@@ -628,9 +653,9 @@
         </script>
     </head>
     <body>
-        <%@include file="../../../navbar.jsp" %>        
+        <%@include file="../../../navbar.jsp" %>    
         <div class="container margin-top-md">
-            <c:if test="${!limitToTempData}">
+			<c:if test="${!isAnonymous}">
             <ul class="nav nav-tabs" style="border-bottom:0;">
                 <li id="vcfTab" class="active"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
                 <li id="metadataTab"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
@@ -796,7 +821,7 @@
 	                </form>
                 </div>
                 
-                <c:if test="${!limitToTempData}">
+                <c:if test="${!isAnonymous}">
                 <div class="tab-pane" id="tab2">
                    	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
                     <div class="panel panel-default importFormDiv">
