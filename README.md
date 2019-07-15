@@ -4,7 +4,7 @@ Gigwa aims at managing genomic and genotyping data from NGS analyses. It is a to
 
 Try Gigwa online with public datasets at http://gigwa.southgreen.fr/
 
-## v2.2-RELEASE webapp and bundles are now available for download on Gigwa homepage: http://southgreen.fr/content/gigwa
+## Latest webapp and bundles are now available for download on Gigwa homepage: http://southgreen.fr/content/gigwa
 
 ## Check the wiki:
 https://github.com/SouthGreenPlatform/gigwa/wiki
