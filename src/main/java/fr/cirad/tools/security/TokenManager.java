@@ -288,18 +288,6 @@ public class TokenManager extends AbstractTokenManager {
 		
 		if ("anonymousUser".equals(authentication.getPrincipal()))
 			return false;
-
-//		Map<String, Map<String, Collection<Comparable>>> customRolesByEntityType = userDao.getCustomRolesByModuleAndEntityType(authentication.getAuthorities()).get(sModule);
-//		if (customRolesByEntityType != null)
-//		{
-//			Map<String, Collection<Comparable>> customRolesOnProjects = customRolesByEntityType.get(ENTITY_PROJECT);
-//			if (customRolesOnProjects != null)
-//			{
-//				Collection<Comparable> projectCustomRoles = customRolesOnProjects.get(ROLE_READER);
-//				if (projectCustomRoles != null && projectCustomRoles.contains(projectId))
-//					return true;
-//			}
-//		}
 		
 		Map<String, Collection<Comparable>> managedEntitesByType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(sModule);
 		if (managedEntitesByType != null)
