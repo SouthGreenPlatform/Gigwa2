@@ -1,36 +1,29 @@
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.GAException;
-import org.ga4gh.methods.SearchVariantsRequest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.springframework.data.mongodb.core.MongoTemplate;
-
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
+@SuppressWarnings("unused")
 public class GigwaUnitTests {
-	private static FileInputStream vcfFileInputStream;
 	@BeforeClass
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
@@ -577,7 +570,6 @@ public class GigwaUnitTests {
 	}
 	
 	/*test 21/ nb d'allèles = 3 ou 4 et sur groupe 1 : all heterozygous*/
-	@SuppressWarnings("serial")
 	@Test
 	public void test21() throws GAException, AvroRemoteException {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
