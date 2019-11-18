@@ -51,6 +51,7 @@ public class GigwaUnitTests {
 	public void test00() throws GAException, AvroRemoteException {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
 
+		svr.setApplyMatrixSizeLimit(false);
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
