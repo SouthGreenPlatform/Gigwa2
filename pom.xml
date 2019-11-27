@@ -17,6 +17,10 @@
         <bundle.dir.ubuntu>${bundle.dir}/${project.build.finalName}-ubuntu</bundle.dir.ubuntu>
         <bundle.dir.osx>${bundle.dir}/${project.build.finalName}-osx</bundle.dir.osx>
         <bundle.dir.windows>${bundle.dir}/${project.build.finalName}-windows</bundle.dir.windows>
+        <path.to.jre></path.to.jre>
+        <path.to.ubuntu.jre>${path.to.jre}/ubuntu</path.to.ubuntu.jre>
+        <path.to.osx.jre>${path.to.jre}/osx</path.to.osx.jre>
+        <path.to.windows.jre>${path.to.jre}/windows</path.to.windows.jre>
     </properties>
     
     <dependencies>
@@ -527,6 +531,22 @@
 			                    </configuration>
 			                </execution>
 			                <execution>
+			                    <id>copy-JRE-ubuntu</id>
+			                    <phase>prepare-package</phase>
+			                    <goals>
+			                        <goal>copy-resources</goal>
+			                    </goals>
+			                    <configuration>
+			                    	<includeEmptyDirs>true</includeEmptyDirs>
+			                        <outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
+			                        <resources>
+			                            <resource>
+			                                <directory>${path.to.ubuntu.jre}</directory>
+			                            </resource>
+			                        </resources>
+			                    </configuration>
+			                </execution>
+			                <execution>
 			                    <id>copy-core-script-osx</id>
 			                    <phase>prepare-package</phase>
 			                    <goals>
@@ -543,6 +563,22 @@
 			                    </configuration>
 			                </execution>
 			                <execution>
+			                    <id>copy-JRE-osx</id>
+			                    <phase>prepare-package</phase>
+			                    <goals>
+			                        <goal>copy-resources</goal>
+			                    </goals>
+			                    <configuration>
+			                    	<includeEmptyDirs>true</includeEmptyDirs>
+			                        <outputDirectory>${bundle.dir.osx}</outputDirectory>
+			                        <resources>
+			                            <resource>
+			                                <directory>${path.to.osx.jre}</directory>
+			                            </resource>
+			                        </resources>
+			                    </configuration>
+			                </execution>
+			                <execution>
 			                    <id>copy-core-script-windows</id>
 			                    <phase>prepare-package</phase>
 			                    <goals>
@@ -554,6 +590,22 @@
 			                        <resources>
 			                            <resource>
 			                                <directory>bundle/windows</directory>
+			                            </resource>
+			                        </resources>
+			                    </configuration>
+			                </execution>
+			                <execution>
+			                    <id>copy-JRE-windows</id>
+			                    <phase>prepare-package</phase>
+			                    <goals>
+			                        <goal>copy-resources</goal>
+			                    </goals>
+			                    <configuration>
+			                    	<includeEmptyDirs>true</includeEmptyDirs>
+			                        <outputDirectory>${bundle.dir.windows}</outputDirectory>
+			                        <resources>
+			                            <resource>
+			                                <directory>${path.to.windows.jre}</directory>
 			                            </resource>
 			                        </resources>
 			                    </configuration>
