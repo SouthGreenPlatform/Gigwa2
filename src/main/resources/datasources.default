@@ -2,4 +2,4 @@
 #keys ending with a star indicate databases that are not listed in the menu list (may only be accessible if the frame URL and module name are known)
 
 #JUnit Test Module
-testModule=defaultMongoHost,mgdb2_testModule
+#testModule=defaultMongoHost,mgdb2_testModule
