@@ -10,6 +10,8 @@ services:
     environment:
       MONGO_IP: 
       MONGO_PORT: 
+      MONGO_INITDB_ROOT_USERNAME: 
+      MONGO_INITDB_ROOT_PASSWORD: 
     volumes:
       - type: volume
         source: gigwa
@@ -21,6 +23,9 @@ services:
     command: --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib
     ports:
       - 59393:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: 
+      MONGO_INITDB_ROOT_PASSWORD: 
     volumes:
       - type: volume
         source: mongo

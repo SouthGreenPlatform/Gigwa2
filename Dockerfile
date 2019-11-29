@@ -5,6 +5,7 @@ COPY target/gigwa webapps/gigwa
 #Env Var to avoid ip/port inside image
 RUN sed -i "s|127.0.0.1|\#\{systemEnvironment\[\'MONGO_IP\'\]\}|g" webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
 && sed -i "s|59393|\#\{systemEnvironment\[\'MONGO_PORT\'\]\}|g" webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
+&& awk '!x{x=sub("<\/mongo:mongo-client>","<\/mongo:mongo-client><bean id=\"defaultMongoHostCredentials\" class=\"org.springframework.data.authentication.UserCredentials\"><constructor-arg name=\"username\" value=\"\#\{systemEnvironment\[\'\''MONGO_INITDB_ROOT_USERNAME\'\''\]\}\" \/><constructor-arg name=\"password\" value=\"\#\{systemEnvironment\[\'\''MONGO_INITDB_ROOT_PASSWORD\'\''\]\}\" \/><\/bean>")}7' webapps/gigwa/WEB-INF/classes/applicationContext-data.xml > applicationContext-data.xml.tmp && mv applicationContext-data.xml.tmp webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
 #allowLinking="true" to be able to use symbolic link
 && sed -i "s|<WatchedResource>WEB-INF\/classes\/config.properties<\/WatchedResource>|<WatchedResource>WEB-INF\/classes\/config.properties<\/WatchedResource><Resources allowLinking\=\"true\" \/>|g" webapps/gigwa/META-INF/context.xml \
 #Volume for config files
@@ -15,4 +16,4 @@ RUN sed -i "s|127.0.0.1|\#\{systemEnvironment\[\'MONGO_IP\'\]\}|g" webapps/gigwa
 && mv webapps/gigwa/WEB-INF/classes/datasources.properties config \
 && ln -s /usr/local/tomcat/config/datasources.properties webapps/gigwa/WEB-INF/classes/datasources.properties \
 && mv webapps/gigwa/WEB-INF/classes/users.properties config \
-&& ln -s /usr/local/tomcat/config/users.properties webapps/gigwa/WEB-INF/classes/users.properties \
+&& ln -s /usr/local/tomcat/config/users.properties webapps/gigwa/WEB-INF/classes/users.properties
