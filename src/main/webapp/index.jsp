@@ -1290,7 +1290,7 @@
 		The Gigwa application, which stands for “Genotype Investigator for Genome-Wide Analyses”, provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database with VCF, PLINK or HapMap files containing up to tens of billions of genotypes, and provides a user-friendly interface to filter data in real time. Gigwa provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
 		<p class="margin-top bold">
-			Project homepage: <a href="http://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
+			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
