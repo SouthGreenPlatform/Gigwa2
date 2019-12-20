@@ -267,6 +267,23 @@
 							</arguments>
 						</configuration>
 					</execution>
+					
+					<execution>
+						<id>update-docker-compose-image-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/(image: guilhemsempere\/gigwa.*)/image: guilhemsempere\/gigwa:${project.version}/g</argument>
+								<argument>${project.basedir}/docker-compose.yml</argument>
+							</arguments>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			
