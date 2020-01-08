@@ -37,8 +37,9 @@ public class InstanceTracker {
 			long databases = MongoTemplateManager.getPublicDatabases().stream().count();
 //			LOG.info("TRACKER databases:" + databases);
 			String locale = Locale.getDefault().toString();
+			
 //			LOG.info("TRACKER locale:" + locale);
-			URL url = new URL("http://localhost/instancetracker?instance=eclipse&country=" + locale + "&users=" + users + "&databases=" + databases);
+			URL url = new URL("http://localhost/instancetracker?instance=eclipse&locale=" + locale + "&users=" + users + "&databases=" + databases);
 //			LOG.info(url);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
