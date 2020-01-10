@@ -1064,18 +1064,17 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						progress.addStep("Importing metadata for individuals");
 						progress.moveToNextStep();
-						if(tokenManager.canUserWriteToDB(token, sModule)) 
-							IndividualMetadataImport.insertIndividualMetadata(sModule, url, "individual", null);
-						else {
+						String username = null;
+						if (!tokenManager.canUserWriteToDB(token, sModule))  {
 							Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-							if(authentication != null) {
-								String usrname = authentication.getName();
-								IndividualMetadataImport.insertCustomIndividualMetadata(sModule, url, "individual", null, usrname);
+							if (authentication != null) {
+								username = authentication.getName();
 							} else {
 								progress.setError("Error: You need to be logged in");
 								return null;
 							}
 						}
+						IndividualMetadataImport.importIndividualMetadata(sModule, url, "individual", null, username);
 					}
 					catch (IOException ioe)
 					{
