@@ -38,15 +38,25 @@ public class InstanceTracker {
 //		LOG.info("TRACKER users:" + users);
 		long databases = MongoTemplateManager.getPublicDatabases().stream().count();
 //		LOG.info("TRACKER databases:" + databases);
-		String locale = Locale.getDefault().toString();
+		String country = Locale.getDefault().getCountry();
+//		LOG.info("TRACKER country:" + country);
+		String language = Locale.getDefault().getLanguage();
+//		LOG.info("TRACKER language:" + language);
 		
-//		LOG.info("TRACKER locale:" + locale);
+		
+		String locale = "";
+		if(!country.isEmpty()) {
+			locale = "&country=" + country;
+		}
+		if(!language.isEmpty()) {
+			locale = locale + "&language=" + language;
+		}
 		
 		String trackerUrl = appConfig.get("trackerUrl");
 		URL url = null;
 
 		try {
-			url = new URL((trackerUrl == null ? defaultTrackerUrl : trackerUrl) + "?instance=" + appConfig.getInstanceUUID() + "&locale=" + locale + "&users=" + users + "&databases=" + databases);
+			url = new URL((trackerUrl == null ? defaultTrackerUrl : trackerUrl) + "?instance=" + appConfig.getInstanceUUID() + locale + "&users=" + users + "&databases=" + databases);
 //			LOG.info(url);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
