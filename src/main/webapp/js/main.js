@@ -541,15 +541,26 @@ function updateExportToServerCheckBox() {
 
 function viewGeneInGenomeBrowser(variantPos) {
     if ($("input#genomeBrowserURL").val() != "") {
-    	$('#genomeBrowserFrame').css('height', parseInt($(window).height()*0.88) + "px");
+    	$('#genomeBrowserFrame').css('height', parseInt($(window).height()*0.88 - 20) + "px");
         $("#genomeBrowserPanel").modal({
             opacity: 80,
             overlayCss: {
                 backgroundColor: "#111111"
             }
         });
+
+        let url = $("input#genomeBrowserURL").val().replace(/\*/g, variantPos);
+        $('#genomeBrowserPanelHeader').html('<center><a href="' + url + '" target="_blank">Click here to open genome browser in a different window</a></center>');
         $("#genomeBrowserFrame").attr('src', $("input#genomeBrowserURL").val().replace(/\*/g, variantPos));
     }
+}
+
+function applyGenomeBrowserURL() {
+	if ($("input#genomeBrowserURL").val() == "")
+		$("input#genomeBrowserURL").val(defaultGenomeBrowserURL);
+
+	localStorage.setItem("genomeBrowserURL-" + referenceset, $("input#genomeBrowserURL").val());
+	$("div#genomeBrowserConfigDiv").modal("hide");
 }
 
 function markInconsistentGenotypesAsMissing() {
