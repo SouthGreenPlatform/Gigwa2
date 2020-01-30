@@ -450,6 +450,11 @@
                     return;
                 }
                 
+                if ($('#moduleExistingMD').val() == "") {
+                	alert("Please select a database!");
+                	return;
+                }
+                
                 var dataFile1 = $("#metadataFilePath1").val().trim();
 <%--  		        var dataFile2 = $("#metadataFilePath2").val().trim(); --%>
                 
@@ -842,7 +847,7 @@
                                 <div class="col-md-3">                     
                                     <div class="form-group margin-top text-left">
                                         <label for="moduleExistingMD">Database</label>
-                                        <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                        <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
                                     </div>                  
                                 </div>
                                 <div class="col-md-3"></div>

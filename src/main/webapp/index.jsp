@@ -1671,6 +1671,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div class="modal" id="genomeBrowserPanel" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-xlarge" role="document">
 			<div class="modal-content">
+				<div id="genomeBrowserPanelHeader"></div>
 				<iframe id="genomeBrowserFrame" style="width: 100%;"></iframe>
 			</div>
 		</div>
@@ -1789,7 +1790,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
 			<input type="text" style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
 			<p>(Clear box to revert to default)</p>
-			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='if ($("input#genomeBrowserURL").val() == "") $("input#genomeBrowserURL").val(defaultGenomeBrowserURL); localStorage.setItem("genomeBrowserURL-" + referenceset, $("input#genomeBrowserURL").val()); $("div#genomeBrowserConfigDiv").modal("hide");' />
+			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='applyGenomeBrowserURL();' />
 		</div>
 		</div>
 	</div>

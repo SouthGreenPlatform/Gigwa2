@@ -75,7 +75,6 @@ import io.swagger.annotations.ApiResponses;
  * documented in swagger To browse documentation, go to
  * http://host/rest/swagger-ui.html
  */
-@Api(tags = "GA4GH", description = "GA4GH compliant methods")
 @RestController
 public class Ga4ghRestController extends ControllerInterface {
 

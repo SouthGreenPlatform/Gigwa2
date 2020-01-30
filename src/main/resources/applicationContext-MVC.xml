@@ -7,6 +7,8 @@
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean class="com.fasterxml.jackson.databind.ObjectMapper" />
+
     <mvc:annotation-driven>
         <mvc:message-converters>       
             <bean class="fr.cirad.rest.json.CustomMappingJackson2HttpMessageConverter" />
@@ -14,7 +16,7 @@
     </mvc:annotation-driven>
     
      <!-- Controllers, MongoTemplateManager,timer and api documentation-->
-    <context:component-scan base-package="fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration" />
+    <context:component-scan base-package="fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api" />
 
     <bean class="fr.cirad.tools.GlobalExceptionHandler" />
 	
