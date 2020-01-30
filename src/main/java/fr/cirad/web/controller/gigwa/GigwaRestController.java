@@ -126,7 +126,6 @@ import springfox.documentation.annotations.ApiIgnore;
 /**
  * The Class GigwaController.
  */
-@Api(tags = "Gigwa", description = "Gigwa-specific methods")
 @RestController
 public class GigwaRestController extends ControllerInterface {
 
@@ -214,7 +213,6 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiOperation(value = GET_SESSION_TOKEN, notes = "get a token. This token is the token you need to send with every request. If you have an account, send your credentials in userInfo. If you work on public databases, you can send an empty userInfo as following : { \"username\": \"\", \"password\": \"\" }")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
-	@ApiIgnore
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
@@ -956,6 +954,14 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = IMPORT_PAGE_URL)
 	public ModelAndView setupImportPage()
 	{
+        try {
+            IndividualMetadataImport imi = new IndividualMetadataImport();
+            imi.importBrapiMetadata("testModule", "https://test-server.brapi.org/brapi/v1/", new HashMap() {{put("1", "B001"); put("6", "B006");}});
+	    } catch (Exception e) {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+	    }
+        
 		ModelAndView mav = new ModelAndView();
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
@@ -1064,18 +1070,17 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						progress.addStep("Importing metadata for individuals");
 						progress.moveToNextStep();
-						if(tokenManager.canUserWriteToDB(token, sModule)) 
-							IndividualMetadataImport.insertIndividualMetadata(sModule, url, "individual", null);
-						else {
+						String username = null;
+						if (!tokenManager.canUserWriteToDB(token, sModule))  {
 							Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-							if(authentication != null) {
-								String usrname = authentication.getName();
-								IndividualMetadataImport.insertCustomIndividualMetadata(sModule, url, "individual", null, usrname);
+							if (authentication != null) {
+								username = authentication.getName();
 							} else {
 								progress.setError("Error: You need to be logged in");
 								return null;
 							}
 						}
+						IndividualMetadataImport.importIndividualMetadata(sModule, url, "individual", null, username);
 					}
 					catch (IOException ioe)
 					{
