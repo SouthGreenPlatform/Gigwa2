@@ -352,7 +352,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				List<Integer> result = new ArrayList(service.getDistinctAlleleCounts(info[0]));
+				List<Integer> result = new ArrayList(service.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
@@ -954,14 +954,6 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = IMPORT_PAGE_URL)
 	public ModelAndView setupImportPage()
 	{
-        try {
-            IndividualMetadataImport imi = new IndividualMetadataImport();
-            imi.importBrapiMetadata("testModule", "https://test-server.brapi.org/brapi/v1/", new HashMap() {{put("1", "B001"); put("6", "B006");}});
-	    } catch (Exception e) {
-	            // TODO Auto-generated catch block
-	            e.printStackTrace();
-	    }
-        
 		ModelAndView mav = new ModelAndView();
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());

@@ -230,6 +230,24 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
+	        
+    	    $.ajax({	// load runs
+    	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+    	        type: "GET",
+    	        dataType: "json",
+    	        contentType: "application/json;charset=utf-8",
+    	        headers: {
+    	            "Authorization": "Bearer " + token
+    	        },
+    	        success: function(jsonResult) {
+                    runList = [];
+                    for (var run in jsonResult.runs)
+                        runList.push(jsonResult.runs[run]);
+    	        },
+    	        error: function(xhr, ajaxOptions, thrownError) {
+    	            handleError(xhr, thrownError);
+    	        }
+    	    });
 	    });
 	    $('#numberOfAlleles').on('change', function() {
 	        updateGtPatterns();
@@ -438,24 +456,6 @@
 	                } else {
 	                    $('#project').selectpicker('val', jsonResult.variantSets[0].name);
 	                }
-	        	    
-	        	    $.ajax({	// load runs
-	        	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
-	        	        type: "GET",
-	        	        dataType: "json",
-	        	        contentType: "application/json;charset=utf-8",
-	        	        headers: {
-	        	            "Authorization": "Bearer " + token
-	        	        },
-	        	        success: function(jsonResult) {
-	                        runList = [];
-	                        for (var run in jsonResult.runs)
-	                            runList.push(jsonResult.runs[run]);
-	        	        },
-	        	        error: function(xhr, ajaxOptions, thrownError) {
-	        	            handleError(xhr, thrownError);
-	        	        }
-	        	    });
 
 	                $('#grpProj').show();
 	                $('#project').trigger('change');
