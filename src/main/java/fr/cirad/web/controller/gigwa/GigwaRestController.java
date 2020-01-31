@@ -1248,9 +1248,9 @@ public class GigwaRestController extends ControllerInterface {
 									}
 										
 								}
-								catch (ConnectException ce)
+								catch (Exception e)
 								{
-									progress.setError("Unable to connect to " + url + " - " + ce.getMessage());
+									progress.setError("Unable to connect to " + url + " - " + e.getMessage());
 								}
 							if (fValidURL)
 							{
