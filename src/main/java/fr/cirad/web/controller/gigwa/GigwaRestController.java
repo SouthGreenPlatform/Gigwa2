@@ -956,6 +956,28 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = IMPORT_PAGE_URL)
 	public ModelAndView setupImportPage()
 	{
+		
+		
+		
+		try {
+            LOG.info("importBrapiMetadata was launched");
+            IndividualMetadataImport imi = new IndividualMetadataImport();
+//            imi.importBrapiMetadata("testModule", "https://test-server.brapi.org/brapi/v1/", new HashMap() {{put("1", "BO1"); put("2", "BO2"); put("3", "BO4"); put("4", "BO5"); put("5", "BO6"); put("6", "LA1"); put("7", "LA2"); put("8", "LA3"); put("9", "LA4"); put("10", "LA5");}},"username");
+//            imi.importBrapiMetadata("testModule", "https://test-server.brapi.org/brapi/v1/", new HashMap() {{put("1", "BO1"); put("2", "BO2"); put("3", "BO4"); put("4", "BO5"); put("5", "BO6"); put("6", "LA1"); put("7", "LA2"); put("8", "LA3"); put("9", "LA4"); put("10", "LA5");}},null);
+//          imi.importBrapiMetadata("testModule", "https://gigwa-dev.southgreen.fr/gigwaV2/rest/UMD3-1-86/brapi/v1/", new HashMap() {{put("BO1", "BO1"); put("BO2", "BO2"); put("BO4", "BO4"); put("BO5", "BO5"); put("BO6", "BO6"); put("LA1", "LA1"); put("LA2", "LA2"); put("LA3", "LA3"); put("LA4", "LA4"); put("LA5", "LA5");}},"username");
+//          imi.importBrapiMetadata("testModule", "https://gigwa-dev.southgreen.fr/gigwaV2/rest/UMD3-1-86/brapi/v1/", new HashMap() {{put("BO1", "BO1"); put("BO2", "BO2"); put("BO4", "BO4"); put("BO5", "BO5"); put("BO6", "BO6"); put("LA1", "LA1"); put("LA2", "LA2"); put("LA3", "LA3"); put("LA4", "LA4"); put("LA5", "LA5");}},null);
+//          imi.importBrapiMetadata("testModule", "https://gigwa-dev.southgreen.fr/gigwaV2/rest/UMD3-1-86/brapi/v1/", new HashMap() {{put("BO1", "BO1"); put("BO2", "BO2"); put("BO4", "BO4"); put("BO5", "BO5"); put("BO6", "BO6"); put("LA1", "LA1"); put("LA2", "LA2"); put("LA3", "LA3"); put("LA4", "LA4"); put("LA5", "LA5");}},"username");
+          imi.importBrapiMetadata("testModule", "https://gigwa-dev.southgreen.fr/gigwaV2/rest/magsen/brapi/v1/", new HashMap() {{put("BO1", "BO1"); put("BO2", "BO2"); put("BO4", "BO4"); put("BO5", "BO5"); put("BO6", "BO6"); put("LA1", "LA1"); put("LA2", "LA2"); put("LA3", "LA3"); put("LA4", "LA4"); put("LA5", "LA5");}},null);
+
+	} catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+    }
+		
+		
+		
+		
+		
 		ModelAndView mav = new ModelAndView();
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
