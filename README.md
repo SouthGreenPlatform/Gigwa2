@@ -20,3 +20,4 @@ The source code is available in this repository. It uses Maven for dependency ma
 ##### https://github.com/SouthGreenPlatform/Mgdb2BrapiImpl
 ##### https://github.com/SouthGreenPlatform/Gigwa2ServiceInterface
 ##### https://github.com/SouthGreenPlatform/Gigwa2ServiceImpl
+##### https://github.com/GuilhemSempere/BrAPIv2Impl (under development, may be disabled by commenting out first dependency in Gigwa2's pom.xml)
