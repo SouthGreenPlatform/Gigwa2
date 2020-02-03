@@ -230,6 +230,24 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
+	        
+    	    $.ajax({	// load runs
+    	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+    	        type: "GET",
+    	        dataType: "json",
+    	        contentType: "application/json;charset=utf-8",
+    	        headers: {
+    	            "Authorization": "Bearer " + token
+    	        },
+    	        success: function(jsonResult) {
+                    runList = [];
+                    for (var run in jsonResult.runs)
+                        runList.push(jsonResult.runs[run]);
+    	        },
+    	        error: function(xhr, ajaxOptions, thrownError) {
+    	            handleError(xhr, thrownError);
+    	        }
+    	    });
 	    });
 	    $('#numberOfAlleles').on('change', function() {
 	        updateGtPatterns();
@@ -438,24 +456,6 @@
 	                } else {
 	                    $('#project').selectpicker('val', jsonResult.variantSets[0].name);
 	                }
-	        	    
-	        	    $.ajax({	// load runs
-	        	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
-	        	        type: "GET",
-	        	        dataType: "json",
-	        	        contentType: "application/json;charset=utf-8",
-	        	        headers: {
-	        	            "Authorization": "Bearer " + token
-	        	        },
-	        	        success: function(jsonResult) {
-	                        runList = [];
-	                        for (var run in jsonResult.runs)
-	                            runList.push(jsonResult.runs[run]);
-	        	        },
-	        	        error: function(xhr, ajaxOptions, thrownError) {
-	        	            handleError(xhr, thrownError);
-	        	        }
-	        	    });
 
 	                $('#grpProj').show();
 	                $('#project').trigger('change');
@@ -1671,6 +1671,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div class="modal" id="genomeBrowserPanel" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-xlarge" role="document">
 			<div class="modal-content">
+				<div id="genomeBrowserPanelHeader"></div>
 				<iframe id="genomeBrowserFrame" style="width: 100%;"></iframe>
 			</div>
 		</div>
@@ -1789,7 +1790,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
 			<input type="text" style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
 			<p>(Clear box to revert to default)</p>
-			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='if ($("input#genomeBrowserURL").val() == "") $("input#genomeBrowserURL").val(defaultGenomeBrowserURL); localStorage.setItem("genomeBrowserURL-" + referenceset, $("input#genomeBrowserURL").val()); $("div#genomeBrowserConfigDiv").modal("hide");' />
+			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='applyGenomeBrowserURL();' />
 		</div>
 		</div>
 	</div>

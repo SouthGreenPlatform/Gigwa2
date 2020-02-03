@@ -126,7 +126,6 @@ import springfox.documentation.annotations.ApiIgnore;
 /**
  * The Class GigwaController.
  */
-@Api(tags = "Gigwa", description = "Gigwa-specific methods")
 @RestController
 public class GigwaRestController extends ControllerInterface {
 
@@ -214,7 +213,6 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiOperation(value = GET_SESSION_TOKEN, notes = "get a token. This token is the token you need to send with every request. If you have an account, send your credentials in userInfo. If you work on public databases, you can send an empty userInfo as following : { \"username\": \"\", \"password\": \"\" }")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
-	@ApiIgnore
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
@@ -354,7 +352,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				List<Integer> result = new ArrayList(service.getDistinctAlleleCounts(info[0]));
+				List<Integer> result = new ArrayList(service.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
@@ -1272,9 +1270,9 @@ public class GigwaRestController extends ControllerInterface {
 									}
 										
 								}
-								catch (ConnectException ce)
+								catch (Exception e)
 								{
-									progress.setError("Unable to connect to " + url + " - " + ce.getMessage());
+									progress.setError("Unable to connect to " + url + " - " + e.getMessage());
 								}
 							if (fValidURL)
 							{
