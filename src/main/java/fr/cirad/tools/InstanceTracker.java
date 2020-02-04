@@ -27,7 +27,7 @@ public class InstanceTracker {
 	/**
      * runs every 5 seconds ( for test purpose )
      */
-	@Scheduled(fixedRate = 1000 * 5)
+	@Scheduled(fixedRate = 1000 * 60 * 60 * 24)
 	
     /**
      * runs every 7 days
