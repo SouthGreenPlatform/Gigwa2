@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -57,6 +56,8 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.ga4gh.methods.SearchCallSetsRequest;
+import org.ga4gh.models.CallSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -87,6 +88,7 @@ import org.springframework.web.servlet.ModelAndView;
 import com.mongodb.WriteResult;
 
 import fr.cirad.controller.GigwaMethods;
+import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
@@ -117,7 +119,6 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -144,6 +145,9 @@ public class GigwaRestController extends ControllerInterface {
 
 	@Autowired
 	private AppConfig appConfig;
+	
+	@Autowired 
+	private GigwaGa4ghServiceImpl ga4ghService;
 
 	/**
 	 * The Constant LOG.
@@ -1008,14 +1012,32 @@ public class GigwaRestController extends ControllerInterface {
 					filesByExtension.put(fileExtension, file.getAbsolutePath());
 				}
 			}
+		
+		String username = null;
+		if (!tokenManager.canUserWriteToDB(token, sModule))  {
+			Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+			if (authentication != null) {
+				username = authentication.getName();
+			} else {
+				progress.setError("Error: You need to be logged in");
+				return null;
+			}
+		}
+		
+		String fBrapiImportURI = null;
 		if (progress.getError() == null)
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
 				if (uri != null && uri.trim().length() > 0) {
 					String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
 					if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided file must have a different extension!");
-					else
-						filesByExtension.put(fileExtension, uri);
+					else {
+						String lcURI = uri.toLowerCase();
+						if ((lcURI.startsWith("http://") || lcURI.startsWith("https://")) && (lcURI.contains("/brapi/v1")))
+							fBrapiImportURI = uri;
+						else
+							filesByExtension.put(fileExtension, uri);
+					}
 				}
 		
 		if (progress.getError() != null)
@@ -1025,6 +1047,7 @@ public class GigwaRestController extends ControllerInterface {
 		{
 			try
 			{
+				int nModifiedRecords = 0;
 				String fastaFile = null, gzFile = filesByExtension.get("gz");
 				if (gzFile != null)
 				{
@@ -1062,17 +1085,7 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						progress.addStep("Importing metadata for individuals");
 						progress.moveToNextStep();
-						String username = null;
-						if (!tokenManager.canUserWriteToDB(token, sModule))  {
-							Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-							if (authentication != null) {
-								username = authentication.getName();
-							} else {
-								progress.setError("Error: You need to be logged in");
-								return null;
-							}
-						}
-						IndividualMetadataImport.importIndividualMetadata(sModule, url, "individual", null, username);
+						nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, url, "individual", null, username);
 					}
 					catch (IOException ioe)
 					{
@@ -1083,15 +1096,43 @@ public class GigwaRestController extends ControllerInterface {
 						metadataFile = null;
 					}
 				}
+				else if (fBrapiImportURI != null) {
+					HashMap<String, String> germplasmDbIdToIndividualMap = new HashMap<>();
+					MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+					for (int projId : (Collection<Integer>) mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id")) {
+						SearchCallSetsRequest scsr = new SearchCallSetsRequest();
+						scsr.setVariantSetId(sModule + GigwaMethods.ID_SEPARATOR + projId);
+						for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
+							List<String> gpDbIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmDbId);
+							if (gpDbIdValues == null || gpDbIdValues.isEmpty())
+								continue;
+							
+							if (gpDbIdValues.size() != 1)
+								LOG.warn("Only one germplasmDbId expected for individual " + ga4ghCallSet.getId());
+							String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
+							germplasmDbIdToIndividualMap.put(gpDbIdValues.get(0), splitId[splitId.length - 1]);
+						}
+					}
+
+					if (germplasmDbIdToIndividualMap.isEmpty())
+						progress.setError("Individuals must have a metadata value for " + BrapiService.BRAPI_FIELD_germplasmDbId);
+					else
+						try {
+							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImlhdCI6MTU4MjkwMzA1Mn0.qb7A-MfVlaU08H7aB15MZqbRoO7ALVx3BW6ACAY4c7I");
+						}
+						catch (Error err) {
+							progress.setError(err.getMessage());
+						}
+				}
 
 				if (progress.getError() == null)
 				{
-					if (fastaFile == null && metadataFile == null)
-					{
-						if (filesByExtension.size() == 1)
+					if (nModifiedRecords == 0)
+					{	// no changes applied
+						if (fBrapiImportURI == null && filesByExtension.size() == 1)
 							progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
 						else
-							progress.setError("Found nothing to import!");
+							progress.setError("Provided data did not lead to any changes!");
 					}
 					else
 						progress.markAsComplete();
