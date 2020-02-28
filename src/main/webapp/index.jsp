@@ -565,29 +565,43 @@
 	            var gotMetaData = false;
 	    		var ifTable = $("table#individualFilteringTable");
 	    		var dataRows = new StringBuffer();
+	    		
+	    		// first pass to compile an exhaustive field list
+	    		var headers = new Array();
 	            for (var ind in callSetResponse)
 	            {
 	            	if (!gotMetaData && callSetResponse[ind].info != null && Object.keys(callSetResponse[ind].info).length > 0)
 	            		gotMetaData = true;
 	            	if (gotMetaData)
-	                {
-	            		var headerRow = new StringBuffer();
-	            		dataRows.append("<tr><td><div style='margin-right:20px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><th><span>" + callSetResponse[ind].name + "</span></th>");
 	            		for (var key in callSetResponse[ind].info)
-	            		{
-	                		if (ifTable.find("tr").length == 0)
-	                			headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + key + "<br/></th>");
-	            			dataRows.append("<td>" + callSetResponse[ind].info[key] + "</td>");
-	            		}
-	            		dataRows.append("</tr>");
-	            		if (headerRow != "")
-	            			ifTable.prepend(headerRow + "</tr>");
-	    	        }
-	            	
-	            	if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
-                		indOpt.push(callSetResponse[ind].name);
+	            			if (!arrayContains(headers, key))
+	            				headers.push(key);
 	            }
+	    		
+	      	   	// second pass to build the actual table
+	            if (gotMetaData) {
+            		var headerRow = new StringBuffer();
+	            	for (var i in headers)
+	            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
+		            for (var ind in callSetResponse)
+		            {
+		            		dataRows.append("<tr><td><div style='margin-right:20px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><th><span>" + callSetResponse[ind].name + "</span></th>");
+		            		for (var i in headers)
+		            		{
+								var value = callSetResponse[ind].info[headers[i]];
+		            			dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
+		            		}
+		            		dataRows.append("</tr>");
+
+		            	if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
+	                		indOpt.push(callSetResponse[ind].name);
+		            }
+	            }
+	      	   	
+        		if (headerRow != "")
+        			ifTable.prepend(headerRow + "</tr>");
 	    		ifTable.append(dataRows.toString());
+	    		
 	    		for (var groupNumber=1; groupNumber<=2; groupNumber++)
 	    			if (gotMetaData)
 	    				$("button#groupSelector" + groupNumber).removeClass("hidden");
