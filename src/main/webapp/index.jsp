@@ -576,6 +576,8 @@
 	            		for (var key in callSetResponse[ind].info)
 	            			if (!arrayContains(headers, key))
 	            				headers.push(key);
+	            	if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
+                		indOpt.push(callSetResponse[ind].name);
 	            }
 	    		
 	      	   	// second pass to build the actual table
@@ -585,16 +587,13 @@
 	            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
 		            for (var ind in callSetResponse)
 		            {
-		            		dataRows.append("<tr><td><div style='margin-right:20px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><th><span>" + callSetResponse[ind].name + "</span></th>");
-		            		for (var i in headers)
-		            		{
-								var value = callSetResponse[ind].info[headers[i]];
-		            			dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
-		            		}
-		            		dataRows.append("</tr>");
-
-		            	if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
-	                		indOpt.push(callSetResponse[ind].name);
+		            	dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
+		            	for (var i in headers)
+		            	{
+							var value = callSetResponse[ind].info[headers[i]];
+		            		dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
+		            	}
+		            	dataRows.append("</tr>");
 		            }
 	            }
 	      	   	
@@ -1773,7 +1772,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					Click to set group <span id="filteredGroupNumber"></span> to currently selected <span id="filteredIndCount"></span> individuals
 					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) th').map(function(index, value) { return $(value).find('span:last-child').text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
 				</div>
-				<div class="modal-header bold">Please apply filters to select individuals</div>
+				<div class="modal-header bold">
+					Please apply filters to select individuals
+					<input class="btn btn-primary btn-sm" style="margin-left:150px;" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
+				</div>
 				<table id="individualFilteringTable" style="width:98%;"></table>
 			</div>
 		</div>

@@ -860,6 +860,16 @@ function applyDropDownFiltersToTable(tableObj)
 	}
 }
 
+function resetDropDownFilterTable(tableObj)
+{
+	$(tableObj).find("th select.selectpicker").each(function() {
+		$(this).selectpicker('deselectAll');
+	});
+	$(tableObj).find("tr").each(function() {
+		$(this).show();
+	});
+}
+
 function selectGroupUsingMetadata(groupNumber) {
 	$("span#filteredGroupNumber").html(groupNumber);
 	$("table#individualFilteringTable tr:eq(0)").attr("class", "group" + groupNumber);

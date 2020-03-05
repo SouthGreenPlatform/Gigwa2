@@ -640,6 +640,12 @@ div#variantDetailPanel thead th {
 
 table#individualFilteringTable th {
 	padding:3px;
+	border-left:1px solid white;
+}
+
+table#individualFilteringTable td {
+	padding:0 1px;
+	border-left:1px solid #bcd4f2;
 }
 
 .panel-pink {
