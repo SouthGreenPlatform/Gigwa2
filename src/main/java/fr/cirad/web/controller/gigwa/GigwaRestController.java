@@ -984,7 +984,8 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam("metadataFilePath1") final String dataUri1, @RequestParam(value="metadataFilePath2", required=false) final String dataUri2,
 			@RequestParam(value = "clearProjectSequences", required = false) final boolean fClearProjectSeqData,
 			@RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
-			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2) throws Exception
+			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
+			@RequestParam(value="brapiToken", required=false) final String brapiToken) throws Exception
 	{
 		final String token = tokenManager.readToken(request);
 		final ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking submitted data" });
@@ -1047,7 +1048,7 @@ public class GigwaRestController extends ControllerInterface {
 		{
 			try
 			{
-				int nModifiedRecords = 0;
+				int nModifiedRecords = -1;
 				String fastaFile = null, gzFile = filesByExtension.get("gz");
 				if (gzFile != null)
 				{
@@ -1118,7 +1119,7 @@ public class GigwaRestController extends ControllerInterface {
 						progress.setError("Individuals must have a metadata value for " + BrapiService.BRAPI_FIELD_germplasmDbId);
 					else
 						try {
-							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImlhdCI6MTU4MjkwMzA1Mn0.qb7A-MfVlaU08H7aB15MZqbRoO7ALVx3BW6ACAY4c7I");
+							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "".equals(brapiToken) ? null : brapiToken);
 						}
 						catch (Error err) {
 							progress.setError(err.getMessage());
@@ -1127,9 +1128,9 @@ public class GigwaRestController extends ControllerInterface {
 
 				if (progress.getError() == null)
 				{
-					if (nModifiedRecords == 0)
+					if (nModifiedRecords <= 0)
 					{	// no changes applied
-						if (fBrapiImportURI == null && filesByExtension.size() == 1)
+						if (fBrapiImportURI == null && nModifiedRecords == -1)
 							progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
 						else
 							progress.setError("Provided data did not lead to any changes!");

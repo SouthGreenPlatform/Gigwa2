@@ -457,10 +457,22 @@
                 
                 var dataFile1 = $("#metadataFilePath1").val().trim();
 <%--  		        var dataFile2 = $("#metadataFilePath2").val().trim(); --%>
+
+				var source1Uri = dataFile1.toLowerCase();
+        		if (source1Uri.startsWith("http") && source1Uri.toLowerCase().indexOf("brapi") != -1)
+        		{
+        			if (source1Uri.indexOf("/brapi/v1") > -1 && !(source1Uri.endsWith("/brapi/v1") || source1Uri.endsWith("/brapi/v1/")))
+        			{
+        				alert("BrAPI base-url should end with /brapi/v1");
+        				return;
+        			}
+
+        			$('#brapiToken').val(prompt("Please enter remote server token or leave blank if unneeded").trim());
+        		}
                 
                 var totalDataSourceCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) <%--+ (dataFile2 != "" ? 1 : 0)--%>;
                 if (totalDataSourceCount > 1) {
-                    alert("You may not provide more than 1 metadata file!");
+                    alert("You may not provide more than 1 metadata source!");
                     $('#progress').modal('hide');
                     return;
                 }
@@ -829,6 +841,7 @@
                 <c:if test="${!isAnonymous}">
                 <div class="tab-pane" id="tab2">
                    	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
+                    <input type="hidden" name="brapiToken" id="brapiToken"/>
                     <div class="panel panel-default importFormDiv">
                         <div class="panel-body panel-grey text-center">
                             <h4>Adding metadata to existing database</h4>
@@ -859,7 +872,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group text-left">
                                         <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
-                                        <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">                                        
+                                        <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
+                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a server implementing germplasm search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId for each individual</small>                                  
                                     </div>
 <%--
                                     <div class="form-group text-left">
@@ -872,7 +886,6 @@
 --%>
                                 </div>
                             </div>
-                            <br/>
                             <div class ="row">
                             	<div class="col-md-1"></div>
                                 <div class="col-md-4"></div>
