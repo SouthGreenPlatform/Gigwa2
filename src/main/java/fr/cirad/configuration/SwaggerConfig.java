@@ -72,7 +72,7 @@ public class SwaggerConfig implements ServletContextAware {
                 .paths(PathSelectors.regex("^((?!.do).)*$"))
                 .build()
                 .pathMapping("/")
-                .groupName("Breeding API version 2")
+                .groupName("Breeding API v2 - under development")
                 .apiInfo(apiInfo())
                 .useDefaultResponseMessages(false) // don't use generic response code 
                 .securitySchemes(Lists.newArrayList(apiKey()))
@@ -88,7 +88,7 @@ public class SwaggerConfig implements ServletContextAware {
                 .paths(PathSelectors.regex("^((?!.do).)*$"))
                 .build()
                 .pathMapping("/")
-                .groupName("Breeding API version 1")
+                .groupName("Breeding API v1")
                 .apiInfo(apiInfo())
                 .useDefaultResponseMessages(false) // don't use generic response code 
                 .securitySchemes(Lists.newArrayList(apiKey()))
@@ -104,7 +104,7 @@ public class SwaggerConfig implements ServletContextAware {
                 .paths(PathSelectors.regex("^((?!.do).)*$"))
                 .build()
                 .pathMapping("/")
-                .groupName("GA4GH API version 0.6.0a5")
+                .groupName("GA4GH API v0.6.0a5")
                 .apiInfo(apiInfo())
                 .useDefaultResponseMessages(false) // don't use generic response code 
                 .securitySchemes(Lists.newArrayList(apiKey()))
@@ -176,9 +176,9 @@ public class SwaggerConfig implements ServletContextAware {
 				+	"# Terminology correspondence table\n"
 				+	" <table style='border:1px #404040 dashed; margin-bottom:10px;'>"
 				+	" <tr><td><b>&nbsp;Gigwa entity</b></td><td bgcolor='#f0f0f0'>database or module</td><td>project</td><td bgcolor='#f0f0f0'>sequence</td><td>variant</td><td bgcolor='#f0f0f0'>individual</td><td>sample</td></tr>"
-				+	" <tr><td><b>&nbsp;BrAPI v1 entity</b></td><td bgcolor='#f0f0f0'>database or map</td><td>genotyping study</td><td bgcolor='#f0f0f0'>linkageGroup</td><td>marker</td><td bgcolor='#f0f0f0'>germplasm</td><td>sample or markerprofile</td></tr>"
 				+	" <tr><td><b>&nbsp;GA4GH entity</b></td><td bgcolor='#f0f0f0'>referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>-</td></tr>"
-				+	" <tr><td><b>&nbsp;BrAPI v2 entity</b></td><td bgcolor='#f0f0f0'>database or map or referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>sample</td></tr>"
+				+	" <tr><td><b>&nbsp;BrAPI v1 entity</b></td><td bgcolor='#f0f0f0'>database or map</td><td>genotyping study</td><td bgcolor='#f0f0f0'>linkageGroup</td><td>marker</td><td bgcolor='#f0f0f0'>germplasm</td><td>sample or markerprofile</td></tr>"
+				+	" <tr><td><b>&nbsp;BrAPI v2 entity</b><br/><span style='color:red; font-style:italic;'>(under development)</span></td><td bgcolor='#f0f0f0'>database or map or referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>sample</td></tr>"
 				+	" </table>",
                 "",
                 "",
