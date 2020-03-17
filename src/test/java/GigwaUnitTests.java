@@ -30,7 +30,7 @@ public class GigwaUnitTests {
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
 		Properties p = new Properties();
 		p.load(datasources);
-		assertNotNull("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("testModule"));
+		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
 		new VcfImport().importToMongo(false, "testModule", "testProject", "testRun", "testTechnology", new File("test/sample.vcf").toURI().toURL(), 0);
 	}
 
