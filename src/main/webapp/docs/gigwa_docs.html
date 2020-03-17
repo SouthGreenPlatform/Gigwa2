@@ -7,23 +7,23 @@
       <META NAME="CREATED" CONTENT="20190107;8312500">
       <META NAME="CHANGED" CONTENT="0;0">
       <link rel="stylesheet" media="screen" href="screen.css" type="text/css" />
-	  <link rel="stylesheet" media="print" href="print.css" type="text/css" />
+     <link rel="stylesheet" media="print" href="print.css" type="text/css" />
    </HEAD>
    <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
       STYLE="border: none; padding: 0in; max-width:1240px;">
       <BR>
-	  <a href="javascript:window.print();" alt="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
+     <a href="javascript:window.print();" alt="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2 &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.3 &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
-      	<b>Learn how to use Gigwa like a pro in a few minutes!</b>
-      	<BR><BR>
-      	Watch demonstration videos on the project homepage:
-      	<BR>
-      	<a href="http://www.southgreen.fr/content/gigwa" target='_blank'>http://www.southgreen.fr/content/gigwa</a>
+         <b>Learn how to use Gigwa like a pro in a few minutes!</b>
+         <BR><BR>
+         Watch demonstration videos on the project homepage:
+         <BR>
+         <a href="http://www.southgreen.fr/content/gigwa" target='_blank'>http://www.southgreen.fr/content/gigwa</a>
       </p>
       <BR>
       <BR>
@@ -39,50 +39,32 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Choosing &ldquo;Manage
-               data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal
-               menu leads to a page dedicated to data imports.
+               data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal menu leads to a page dedicated to data imports.
             </P>
-            <P STYLE="margin-bottom: 0.14in">Anonymous users and users with
-               no particular permissions are limited to importing genotyping data
-               into temporary databases that remain accessible for 24h. These
-               databases are hidden (only visible to people knowing their precise
+            <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data
+               into temporary databases that remain accessible for 24h. These databases are hidden (only visible to people knowing their precise
                URL and to administrators).
             </P>
-            <P STYLE="margin-bottom: 0.14in">In the case where the importing
-               person is logged in as administrator or as a user with permissions
-               to write into a permanent database, a tabset allows choosing between
-               importing genotyping data or metadata. Providing individual metadata
-               is only supported for existing databases and aims at enabling users
-               to select them by filtering on that metadata. This is convenient for
-               cases where the individual list is long and / or individual names
-               are not meaningful.
+            <P STYLE="margin-bottom: 0.14in">In the case where the importing person is logged in as administrator or as a user with permissions
+               to write into a permanent database, a tabset allows choosing between importing genotyping data or metadata.
             </P>
-            <P STYLE="margin-bottom: 0.14in">Genotyping data may be provided
-               in various formats (VCF, HapMap, PLINK, BrAPI) and in various ways:
+            <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, BrAPI) and in various ways:
             </P>
             <UL>
                <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
-                     specifying an absolute path on the webserver filesystem
-                     (convenient for administrators managing a production instance used
-                     as data portal);
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By specifying an absolute path on the webserver filesystem (convenient for administrators managing a production instance used as data portal);
                   </P>
                <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
-                     uploading files from the client computer (with an adjustable size
-                     limit: see section B6.2);
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By uploading files from the client computer (with an adjustable size limit: see section B6.2);
                   </P>
                <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By
-                     providing an http URL, linking either to data files or to a BrAPI
-                     v1.1 base-url.
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">By providing an http URL, linking either to data files or to a BrAPI v1.1 base-url.
                   </P>
             </UL>
-            <P STYLE="margin-bottom: 0.14in">On the import page, 3 more fields are required:
+            <P STYLE="margin-bottom: 0.14in">On the genotyping data import page, 3 more fields are required:
             </P>
             <UL>
                <LI>
@@ -98,57 +80,46 @@
             <P STYLE="margin-bottom: 0.14in">A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
             </P>
             <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
-            <P STYLE="margin-bottom: 0.14in">Genotyping data import progress
-               can be watched in real time from the upload page, or via a dedicated
-               asynchronous progress page (convenient for large datasets), as
-               imports run as background processes and may not be interrupted by
-               users.
+            <P STYLE="margin-bottom: 0.14in">Genotyping data import progress can be watched in real time from the upload page, or via a dedicated
+               asynchronous progress page (convenient for large datasets), as imports run as background processes and may not be interrupted by users.
             </P>
+            <P STYLE="margin-bottom: 0.14in"><u>Providing individual metadata</u> is only supported for existing databases and aims at enabling users to select
+                them by filtering on that metadata. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Metadata may be provided as a simple tabulated file containing user-defined columns (only one is enforced, named "individual").
+               Import via BrAPI v1 is also supported assuming that germplasmDbId values have been provided  beforehand. It is able to extract single-string germplasm fields and attributes from BrAPI sources.
+            </P>
+            <IMG class="fullwidth" SRC="shot01bis_import_md.png" BORDER=0>
             <P STYLE="margin-bottom: 0.14in">
                <BR>
             </P>
       </UL>
       <UL>
          <LI>
-            <P
-               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING
-               DATA</FONT></FONT></FONT>
+            <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING DATA</FONT></FONT></FONT>
             </P>
-            <P STYLE="margin-bottom: 0.14in">From the home page, select a
-               database and a project. Note the presence of an &ldquo;Enable browse
-               and export&rdquo; checkbox that toggles between a mode where only
-               variant counts are displayed, and one where users may browse,
+            <P STYLE="margin-bottom: 0.14in">From the home page, select a database and a project. Note the presence of an &ldquo;Enable browse
+               and export&rdquo; checkbox that toggles between a mode where only variant counts are displayed, and one where users may browse,
                visualize and export selected data.
             </P>
-      </UL>
-      <UL>
          <UL>
             <LI>
-               <P
-                  STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-                     SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
+               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
                </P>
                <IMG SRC="shot02_variant_filters.png" BORDER=0 style='float:right; width:274px; margin-top:-30px; margin-left:10px;'>
-               <P STYLE="margin-bottom: 0.14in">By default, a single grey
-                  filter panel appears, providing means to select variants based on
-                  their inherent attributes:
+               <P STYLE="margin-bottom: 0.14in">By default, a single grey filter panel appears, providing means to select variants based on their inherent attributes:
                </P>
                <UL>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">variant
-                        type (i.e. SNP, INDEL&hellip;);
-                     </P>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">variant type (i.e. SNP, INDEL&hellip;);</P>
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">sequence;</P>
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">position;</P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">if
-                        applicable, number of known alleles (when several are
-                        represented);
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, number of known alleles (when several are represented);
                      </P>
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">if
@@ -161,18 +132,13 @@
                   items were selected (no filtering applied on that field).
                </P>
          </UL>
-      </UL>
-      <UL>
          <UL>
             <LI>
-               <P
-                  STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-                     SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
+               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
                </P>
                <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:274px; margin-top:50px; margin-left:10px;'>
-               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a
-                  dropdown button may be used to display one or two additional panels
+               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown button may be used to display one or two additional panels
                   that allow for more advanced filtering features based on a subset
                   of individuals either in one or two distinct groups.
                </P>
@@ -232,80 +198,93 @@
                         supported for bi-allelic data);
                      </P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">The
+                     <P  STYLE="margin-bottom: 0.14in; line-height: 100%">The
                         &ldquo;Genotype pattern&rdquo; dropdown provides a list of
                         genotype patterns that may be applied within the group. Descriptions for those are available via the question-mark icon.
                      </P>
                </UL>
-               <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
-                  <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN
-                     LANG="en-US"> To identify variants for which genotypes are
-                  steady within each group but different between them, set both
-                  groups&rsquo; genotype pattern to &ldquo;All or mostly the
-                  same&rdquo;. In this case, in each group panel a similarity ratio
-                  lets users specify how many of the current group&rsquo;s selected
-                  individuals must have the same genotype. Additionally, an extra
-                  pink panel appears between both group panels, containing a
-                  checkbox labelled &ldquo;Discriminate groups&rdquo;. Checking this
-                  box will ensure that the most frequent genotype in group 1 is
-                  different from that in group 2. See online video number 4 for a demonstration.</SPAN>
+     	    <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+    	        <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within each group but different between them, set both
+    	        groups&rsquo; genotype pattern to &ldquo;All or mostly the same&rdquo;. In this case, in each group panel a similarity ratio
+    	        lets users specify how many of the current group&rsquo;s selected individuals must have the same genotype. Additionally, an extra
+    	        pink panel appears between both group panels, containing a checkbox labelled &ldquo;Discriminate groups&rdquo;. Checking this
+    	        box will ensure that the most frequent genotype in group 1 is different from that in group 2. See online video number 4 for a demonstration.</SPAN>
+     	    </P>
+     	    <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
+      	      and genotypes treated as missing because of low quality. MAF and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
+      	   </P>
+         </UL>
+         <UL>
+            <LI>
+               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.3/ BOOKMARKING QUERIES</FONT></FONT></FONT>
                </P>
-               <P STYLE="margin-bottom: 0.14in">Note that genotype-level
-                  filters are applied in the order they appear: the maximum missing
-                  data filter applies first, taking into account truly missing data
-                  and genotypes treated as missing because of low quality. MAF and
-                  genotype pattern queries are then applied at the same time, on the
-                  remaining (non-missing) genotypes only.
+               <IMG SRC="shot03bis_bookmarks.png" BORDER=0 style='float:right; width:471px; margin-top:-30px; margin-left:10px;'>
+               <P STYLE="margin-bottom: 0.14in">After executing a query, any logged-in user may bookmark it from the hamburger menu. Each bookmarked query needs to be given a name and thus users may:
                </P>
-               <P STYLE="margin-bottom: 0.14in">If the &ldquo;Enable browse and
-                  export&rdquo; box is ticked when clicking the Search button, then
-                  one may browse online the selection (i.e. list of variants that
-                  match the query). Clicking a variant line opens a dialog providing
-                  variant details along with individuals&rsquo; genotypes and
-                  optional complementary information like quality data or
-                  annotations.
-               </P>
-			   <IMG class="fullwidth" SRC="shot04_variant_details.png" ALIGN=BOTTOM BORDER=1>
-               <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
-               <UL>
+               <UL style="height:240px;">
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="4ddcbf79.jpg" ALIGN=BOTTOM WIDTH=55 HEIGHT=26 BORDER=0>
-                        A density chart icon leads to a dialog in which the variant
-                        distribution may be observed for each sequence represented in the
-                        selection. In the case where data was provided in VCF format
-                        containing numeric genotype-level fields (e.g. depth, genotype
-                        quality) an additional series can be displayed for each of these
-                        fields, on top of the default density series;
-                     </P>
-				  <IMG class="fullwidth" SRC="shot05_density.png" BORDER=1 style='margin-top:10px;'>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">consult their list of bookmarked queries;</P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
-                        A download button opens a panel where users may select an output
-                        format, refine the list of individuals to export, and choose
-                        between directly downloading the output, or creating a file on
-                        the server (in which case its URL may be used later, shared or
-                        passed to external tools);
-                     </P>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">load one of them at any time to be able to re-run it;</P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="m448bf72b.jpg" ALIGN=BOTTOM WIDTH=112 HEIGHT=15
-                           BORDER=0> An &ldquo;External tools&rdquo; box provides
-                        means to setup the application for pushing data into external
-                        tools: an online genome browser can be configured for viewing
-                        each variant in its genomic context (via an extra icon at the end
-                        of each table row); a running instance of IGV can be fed with a
-                        VCF export file (refer to tooltip for details); online tools
-                        (e.g. Galaxy) can also be fed using exported files (click
-                        online-output-tools icon for details).
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">rename them;</P>
+                  <LI>
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">discard them.
                      </P>
                </UL>
+            <LI>
+               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                  <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.4/ BROWSING / VISUALIZING VARIANTS</FONT></FONT></FONT>
+               </P>
+      		   <P STYLE="margin-bottom: 0.14in">If the &ldquo;Enable browse and
+     		    export&rdquo; box is ticked when clicking the Search button, then
+           		one may browse online the selection (i.e. list of variants that
+            	match the query). Clicking a variant line opens a dialog providing
+       			variant details along with individuals&rsquo; genotypes and
+            	optional complementary information like quality data or
+            	annotations.
+    		   </P>
+   			<IMG class="fullwidth" SRC="shot04_variant_details.png" ALIGN=BOTTOM BORDER=1>
+     	    <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
+            <UL>
+               <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <IMG SRC="4ddcbf79.jpg" ALIGN=BOTTOM WIDTH=55 HEIGHT=26 BORDER=0>
+                  A density chart icon leads to a dialog in which the variant
+                  distribution may be observed for each sequence represented in the
+                  selection. In the case where data was provided in VCF format
+                  containing numeric genotype-level fields (e.g. depth, genotype
+                  quality) an additional series can be displayed for each of these
+                  fields, on top of the default density series;
+               </P>
+      	      <IMG class="fullwidth" SRC="shot05_density.png" BORDER=1 style='margin-top:10px;'>
+      	      <LI>
+      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
+      	            <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
+      	            A download button opens a panel where users may select an output
+      	            format, refine the list of individuals to export, and choose
+      	            between directly downloading the output, or creating a file on
+      	            the server (in which case its URL may be used later, shared or
+      	            passed to external tools);
+      	         </P>
+      	      <LI>
+      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
+      	            <IMG SRC="m448bf72b.jpg" ALIGN=BOTTOM WIDTH=112 HEIGHT=15 BORDER=0> An &ldquo;External tools&rdquo; box provides
+      	            means to setup the application for pushing data into external
+         	         tools: an online genome browser can be configured for viewing
+            	      each variant in its genomic context (via an extra icon at the end
+            	      of each table row); a running instance of IGV can be fed with a
+            	      VCF export file (refer to tooltip for details); online tools
+           		     (e.g. Galaxy) can also be fed using exported files (click
+            	      online-output-tools icon for details).
+            	   </P>
+        	    </UL>
+     	    <P STYLE="margin-bottom: 0.14in">
+     	       <BR>
+      	   </P>
          </UL>
       </UL>
-      <P STYLE="margin-bottom: 0.14in">
-         <BR>
-      </P>
       <UL>
          <LI>
             <P
@@ -334,37 +313,43 @@
                corresponding BrAPI base-url when a new database is selected.
             </P>
             <p style="font-weight:bold;">
-            	The table below lists terminology correspondences:
+               The table below lists terminology correspondences:
             </p>
-			<table class="fullwidth" style="border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
-			<tr>
-				<td><b>&nbsp;Gigwa entity</b></td>
-				<td bgcolor="#f0f0f0">database or module</td>
-				<td>project</td>
-				<td bgcolor="#f0f0f0">sequence</td>
-				<td>variant</td>
-				<td bgcolor="#f0f0f0">individual</td>
-				<td>sample</td>
-			</tr>
-			<tr>
-				<td><b>&nbsp;GA4GH entity</b></td>
-				<td bgcolor="#f0f0f0">referenceSet or dataset</td>
-				<td>variantSet</td>
-				<td bgcolor="#f0f0f0">reference</td>
-				<td>variant</td>
-				<td bgcolor="#f0f0f0">callSet</td>
-				<td>-</td>
-			</tr>
-			<tr>
-				<td><b>&nbsp;BrAPI entity</b></td>
-				<td bgcolor="#f0f0f0">database or map</td>
-				<td>study</td>
-				<td bgcolor="#f0f0f0">linkageGroup</td>
-				<td>marker</td>
-				<td bgcolor="#f0f0f0">germplasm</td>
-				<td>sample or markerprofile</td>
-			</tr>
-			</table>
+         <table class="fullwidth" style="border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
+         <tr>
+            <td><b>&nbsp;Gigwa entity</b></td>
+            <td bgcolor="#f0f0f0">database or module</td>
+            <td>project</td>
+            <td bgcolor="#f0f0f0">sequence</td>
+            <td>variant</td>
+            <td bgcolor="#f0f0f0">individual</td>
+            <td>sample</td>
+         </tr>
+         <tr>
+            <td><b>&nbsp;GA4GH entity</b></td>
+            <td bgcolor="#f0f0f0">referenceSet or dataset</td>
+            <td>variantSet</td>
+            <td bgcolor="#f0f0f0">reference</td>
+            <td>variant</td>
+            <td bgcolor="#f0f0f0">callSet</td>
+            <td>-</td>
+         </tr>
+         <tr>
+            <td><b>&nbsp;BrAPI entity</b></td>
+            <td bgcolor="#f0f0f0">database or map</td>
+            <td>study</td>
+            <td bgcolor="#f0f0f0">linkageGroup</td>
+            <td>marker</td>
+            <td bgcolor="#f0f0f0">germplasm</td>
+            <td>sample or markerprofile</td>
+         </tr>
+		<tr>
+			<td><b>&nbsp;BrAPI v2 entity</b><br/><span style='color:red; font-style:italic;'>(under development)</span></td>
+			<td bgcolor='#f0f0f0'>database or map or referenceSet or dataset</td>
+			<td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td>
+			<td bgcolor='#f0f0f0'>callSet</td><td>sample</td>
+		</tr>
+         </table>
             <P STYLE="margin-bottom: 0.14in">Please refer to
                <a href="http://ga4gh-schemas.readthedocs.io/en/latest/" target='_blank'>http://ga4gh-schemas.readthedocs.io/en/latest/</a> and
                <a href="https://brapi.org/" target='_blank'>https://brapi.org/</a> for more details about each API.
@@ -451,10 +436,10 @@
             </P>
             <P STYLE="margin-bottom: 0.14in">User information is stored in WEB-INF/classes/users.properties. By default, passwords are not encoded. Administrator may enable password encoding to enhance security by:</P>
             <ol>
-            	<li>Preferably backing-up the existing users.properties file, as switching to password encryption mode is a non-reversible operation
-            	<li>Opening WEB-INF/classes/applicationContext-security.xml in a text editor and locating both beans with the "passwordEncoder" id
-            	<li>Amending the file so that the NoOpPasswordEncoder bean is commented out and the CustomBCryptPasswordEncoder is enabled
-            	<li>Restarting the web-application
+               <li>Preferably backing-up the existing users.properties file, as switching to password encryption mode is a non-reversible operation
+               <li>Opening WEB-INF/classes/applicationContext-security.xml in a text editor and locating both beans with the "passwordEncoder" id
+               <li>Amending the file so that the NoOpPasswordEncoder bean is commented out and the CustomBCryptPasswordEncoder is enabled
+               <li>Restarting the web-application
             </ol>
             <BR>
             On startup, Gigwa will automatically convert users.properties by encoding all passwords it contains.
@@ -511,7 +496,7 @@
                and hidden flags on existing databases, and delete existing projects
                and databases.
             </P>
-		    <IMG SRC="shot06_manage_dbs.png" BORDER=1 style='margin-top:10px;'>
+          <IMG SRC="shot06_manage_dbs.png" BORDER=1 style='margin-top:10px;'>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -547,7 +532,7 @@
                      project data, import metadata, and grant roles to existing users
                      on that project.
                   </P>
-				  <IMG SRC="shot07_manage_users.png" BORDER=1 style='margin-top:10px;'>
+              <IMG SRC="shot07_manage_users.png" BORDER=1 style='margin-top:10px;'>
             </UL>
             <P STYLE="margin-bottom: 0.14in">Indeed, a user with the MANAGER
                role on a project can administer that project in the same way as an
@@ -752,6 +737,6 @@
                   automatically added into the main page.
                </P>
          </UL>
-      	<BR>
+         <BR>
    </BODY>
 </HTML>
