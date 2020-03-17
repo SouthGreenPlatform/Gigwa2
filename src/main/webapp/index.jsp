@@ -591,7 +591,7 @@
 		            	for (var i in headers)
 		            	{
 							var value = callSetResponse[ind].info[headers[i]];
-		            		dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
+		            		dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
 		            	}
 		            	dataRows.append("</tr>");
 		            }
@@ -1770,7 +1770,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<div class="modal-content" style="padding:10px; min-height:90vh;">
 				<div class="bold" style='float:right;'>
 					Click to set group <span id="filteredGroupNumber"></span> to currently selected <span id="filteredIndCount"></span> individuals
-					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) th').map(function(index, value) { return $(value).find('span:last-child').text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
+					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
 				</div>
 				<div class="modal-header bold">
 					Please apply filters to select individuals
