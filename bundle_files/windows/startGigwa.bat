@@ -7,7 +7,24 @@ netstat -n -a -o | FINDSTR ":59393" | FINDSTR LISTENING > NUL && ECHO MongoDB po
 %~d0
 cd "%~dp0"
 
-start mongodb\bin\mongod.exe --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --dbpath data --logpath logs/mongo.log
+set errors=
+powershell -executionPolicy bypass -command "& {$process = start-process $args[0] -RedirectStandardError errFile -passthru -argumentlist $args[1..($args.length-1)]; exit $process.id}" mongodb\bin\mongod.exe --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb --dbpath data --logpath logs/mongod.log
+set mongoPID=%errorlevel%
+
+timeout 3 > NUL
+set /p errors= < errFile
+del errFile
+if "%errors%" neq "" (
+	echo Unable to start MongoDB: %errors%
+	exit /b %errorlevel%
+)
+
+tasklist /FI "PID eq %mongoPID%" | FINDSTR %mongoPID% > NUL
+if %errorlevel% neq 0 (
+	echo Unable to start MongoDB, contents of logs/mongod.log below:
+	powershell -command "Get-Content -tail 20 logs/mongod.log"
+	exit /b %errorlevel%
+)
 
 set JAVA_HOME=jre
 set CATALINA_HOME=tomcat

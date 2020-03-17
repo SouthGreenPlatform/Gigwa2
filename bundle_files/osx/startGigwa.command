@@ -16,7 +16,23 @@ BASEDIR=$(dirname $0)
 cd "${BASEDIR}"
 
 export LC_ALL=C
-mongodb/bin/mongod --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --dbpath data --logpath logs/mongo.log &
+
+mongodb/bin/mongod --pidfilepath mongoPID --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb --dbpath data --logpath logs/mongo.log 2>errFile &
+sleep 3
+errors="$(cat errFile)"
+rm errFile
+if [ ! -z "$errors" ]; then
+	echo "Unable to start MongoDB: $errors"
+	exit 1
+fi
+
+mongoPID="$(cat mongoPID)"
+rm mongoPID
+if [ $(ps -p $mongoPID | grep $mongoPID | wc -l) -eq 0 ]; then
+	echo "Unable to start MongoDB, contents of logs/mongod.log below:"
+	tail -20 logs/mongo.log
+	exit 1
+fi
 
 export JAVA_HOME=jre
 export CATALINA_HOME=tomcat

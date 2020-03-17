@@ -3,15 +3,15 @@ services:
   tomcat:
     depends_on:
       - mongo
-    image: magsenabbe/gigwa:2.2-RELEASE
+    image: guilhemsempere/gigwa:2.3-RELEASE
     ports:
       - 8080:8080
     restart: always
     environment:
-      MONGO_IP: 
-      MONGO_PORT: 
-      MONGO_INITDB_ROOT_USERNAME: 
-      MONGO_INITDB_ROOT_PASSWORD: 
+      MONGO_IP: mongo.container.ip.address
+      MONGO_PORT: 59393
+      MONGO_INITDB_ROOT_USERNAME: yourMongoRootUser
+      MONGO_INITDB_ROOT_PASSWORD: yourMongoRootPassword
     volumes:
       - type: volume
         source: gigwa
@@ -20,12 +20,12 @@ services:
   mongo:
     image: mongo
     restart: always
-    command: --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib
+    command: --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb
     ports:
       - 59393:27017
     environment:
-      MONGO_INITDB_ROOT_USERNAME: 
-      MONGO_INITDB_ROOT_PASSWORD: 
+      MONGO_INITDB_ROOT_USERNAME: yourMongoRootUser
+      MONGO_INITDB_ROOT_PASSWORD: yourMongoRootPassword
     volumes:
       - type: volume
         source: mongo
