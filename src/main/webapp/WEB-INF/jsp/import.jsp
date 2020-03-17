@@ -853,8 +853,8 @@
                                 		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension).</p>
                                 		<p>The first row in the file (header) must contain field labels, one of them must be named "individual".</p>
                                 		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
-                                		<p class="bold">The following BrAPI fields are supported for export via the /germplasm-search call:</p>
-										defaultDisplayName, accessionNumber, germplasmPUI, pedigree, seedSource, commonCropName, instituteCode, instituteName, biologicalStatusOfAccessionCode, countryOfOriginCode, typeOfGermplasmStorageCode, genus, species, speciesAuthority, subtaxa, subtaxaAuthority, acquisitionDate
+                                		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
+										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
                                 	</div>
                                 </div>
                                 <div class="col-md-3">                     
@@ -873,7 +873,7 @@
                                     <div class="form-group text-left">
                                         <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
                                         <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
-                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a server implementing germplasm search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId for each individual</small>                                  
+                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a remote server implementing germplasm-search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId by file for each targeted individual</small>                                  
                                     </div>
 <%--
                                     <div class="form-group text-left">
