@@ -5,7 +5,7 @@
 
 	<groupId>fr.cirad</groupId>
 	<artifactId>gigwa2</artifactId>
-	<version>2.3-SNAPSHOT</version>
+	<version>2.3-RELEASE</version>
 	<packaging>war</packaging>
 
 	<name>gigwa2</name>
@@ -13,7 +13,7 @@
 	<properties>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<Gigwa2ServiceImpl.version>2.3-SNAPSHOT</Gigwa2ServiceImpl.version>
+		<Gigwa2ServiceImpl.version>2.3-RELEASE</Gigwa2ServiceImpl.version>
 		<bundle.dir>target/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
@@ -22,16 +22,16 @@
 		<path.to.osx.jre>/home/sempere/Bureau/jre-8u212-macosx-x64.tar.gz</path.to.osx.jre>
 		<path.to.windows.jre>/home/sempere/Bureau/jre-8u212-windows-x64.tar.gz</path.to.windows.jre>
 		<tomcat.version>8.5.35</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.0.10</mongodb.linux.file>
-		<mongodb.osx.file>osx-ssl-x86_64-4.0.10</mongodb.osx.file>
-		<mongodb.windows.file>win32-x86_64-2008plus-ssl-4.0.10</mongodb.windows.file>
-		<mongodb.osx.folder>osx-x86_64-4.0.10</mongodb.osx.folder>
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.3</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.3</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.3</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.3</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
 	<dependencies>
    		<dependency>
-		    <groupId>org.brapi</groupId>
-		    <artifactId>brapi-schema</artifactId>
+		    <groupId>fr.cirad</groupId>
+		    <artifactId>Mgdb2BrapiV2Impl</artifactId>
 		    <version>2.0-snapshot</version>
 		    <exclusions>
 		    	<exclusion>
@@ -205,6 +205,20 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>del-target-dir</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
@@ -278,7 +292,7 @@
 							</arguments>
 						</configuration>
 					</execution>
-					
+
 					<execution>
 						<id>update-docker-compose-image-version</id>
 						<phase>package</phase>
@@ -298,38 +312,13 @@
 				</executions>
 			</plugin>
 			
+			<!--	MUST remain here although empty, bundle build will fail otherwise
+				 	(making Maven respect an execution order is a nightmare! 			-->
 			<plugin>
 				<groupId>com.coderplus.maven.plugins</groupId>
 				<artifactId>copy-rename-maven-plugin</artifactId>
 				<version>1.0.1</version>
 				<executions>
-					<execution>	<!-- replace target directory's config files with default versions -->
-						<id>set-default-config</id>
-						<phase>package</phase>
-						<goals>
-							<goal>rename</goal>
-						</goals>
-						<configuration>
-							<fileSets>
-								<fileSet>
-									<sourceFile>target/gigwa/WEB-INF/classes/users.default</sourceFile>
-									<destinationFile>target/gigwa/WEB-INF/classes/users.properties</destinationFile>
-								</fileSet>
-								<fileSet>
-									<sourceFile>target/gigwa/WEB-INF/classes/config.default</sourceFile>
-									<destinationFile>target/gigwa/WEB-INF/classes/config.properties</destinationFile>
-								</fileSet>
-								<fileSet>
-									<sourceFile>target/gigwa/WEB-INF/classes/datasources.default</sourceFile>
-									<destinationFile>target/gigwa/WEB-INF/classes/datasources.properties</destinationFile>
-								</fileSet>
-								<fileSet>
-									<sourceFile>target/gigwa/WEB-INF/classes/applicationContext-data.default</sourceFile>
-									<destinationFile>target/gigwa/WEB-INF/classes/applicationContext-data.xml</destinationFile>
-								</fileSet>
-							</fileSets>
-						</configuration>
-					</execution>
 				</executions>
 			</plugin>
 
@@ -338,6 +327,24 @@
 				<version>1.6.0</version>
 				<groupId>org.codehaus.mojo</groupId>
 				<executions>
+					<!-- make log4j write to file and change DEBUG levels to INFO -->
+					<execution>
+						<id>update-log4j-config</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/ref ref="console"/ref ref="FILE"/g;s/priority value="DEBUG"/priority value="INFO"/g</argument>
+								<argument>target/gigwa/WEB-INF/classes/log4j.xml</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					
 					<!-- zip directory to create webapp package -->
 					<execution>
 						<id>zip-webapp</id>
@@ -376,7 +383,7 @@
 											org.apache.maven.plugins
 										</groupId>
 										<artifactId>
-											maven-clean-plugin
+												
 										</artifactId>
 										<versionRange>
 											[3.0.0,)
@@ -399,32 +406,9 @@
 
 	<profiles>
 		<profile>
-			<id>bundle</id>	<!-- Create bundles for Ubuntu, OSX and Windows -->
+			<id>bundles</id>	<!-- Create bundles for Ubuntu, OSX and Windows -->
 			<build>
 				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-clean-plugin</artifactId>
-						<version>3.0.0</version>
-						<executions>
-							<execution>	<!-- Delete previous bundle directory if exists -->
-								<id>del-bundle-dir</id>
-								<phase>validate</phase>
-								<goals>
-									<goal>clean</goal>
-								</goals>
-								<configuration>
-									<excludeDefaultDirectories>true</excludeDefaultDirectories>
-									<filesets>
-										<fileset>
-											<directory>${bundle.dir}</directory>
-										</fileset>
-									</filesets>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					
 					<plugin>
 						<groupId>com.googlecode.maven-download-plugin</groupId>
 						<artifactId>download-maven-plugin</artifactId>
@@ -441,7 +425,6 @@
 									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
-									<sha512>b9373fba09a7d25340a546b93061d60ea0a2645badb2a4d19dbaab1355f2f22e45b8377bedec907dec4bb3f29f2725a8dfb7106ef8c2a31805a9d5988082f4a9</sha512>
 								</configuration>
 							</execution>
 							<execution>
@@ -454,7 +437,6 @@
 									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.osx}</outputDirectory>
-									<sha512>b9373fba09a7d25340a546b93061d60ea0a2645badb2a4d19dbaab1355f2f22e45b8377bedec907dec4bb3f29f2725a8dfb7106ef8c2a31805a9d5988082f4a9</sha512>
 								</configuration>
 							</execution>
 							<execution>
@@ -467,7 +449,6 @@
 									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.windows}</outputDirectory>
-									<sha512>b9373fba09a7d25340a546b93061d60ea0a2645badb2a4d19dbaab1355f2f22e45b8377bedec907dec4bb3f29f2725a8dfb7106ef8c2a31805a9d5988082f4a9</sha512>
 								</configuration>
 							</execution>
 							<!-- Download and unzip MongoDB -->
@@ -478,10 +459,9 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>http://downloads.mongodb.org/linux/mongodb-${mongodb.linux.file}.tgz</url>
+									<url>https://fastdl.mongodb.org/linux/mongodb-${mongodb.linux.file}.tgz</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
-									<sha512>2dd5398943a6384a6dfde7ffaf892375791237f9b0781847639c75a786c7637435871acdeb52bbe20f4c647525f1ee07a58abd8762047955f60117d0dbcfe4d5</sha512>
 								</configuration>
 							</execution>
 							<execution>
@@ -491,10 +471,9 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>http://downloads.mongodb.org/osx/mongodb-${mongodb.osx.file}.tgz</url>
+									<url>https://fastdl.mongodb.org/osx/mongodb-${mongodb.osx.file}.tgz</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.osx}</outputDirectory>
-									<sha512>1f64eb18fac1e81fe8963f8d48f41569d3c3ae56f9fcc6c39c75f33bfe1773ca759717f1cf51e5334cbea820535c9b9a9136dd133a5df7e8ac100f19c2bf2cc1</sha512>
 								</configuration>
 							</execution>
 							<execution>
@@ -504,10 +483,9 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>http://downloads.mongodb.org/win32/mongodb-${mongodb.windows.file}.zip</url>
+									<url>https://fastdl.mongodb.org/win32/mongodb-${mongodb.windows.file}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.windows}</outputDirectory>
-									<sha512>17fd04f99f723595f903ca4b0335d9fe97ca2956b0a3307f6db33379ed720c5ceba1d8d342ac5ec64d0ee62bb855481690799f5ec0fbc4c24a1fb0adab373eda</sha512>
 								</configuration>
 							</execution>
 						</executions>
@@ -584,6 +562,49 @@
 						<version>1.6.0</version>
 						<groupId>org.codehaus.mojo</groupId>
 						<executions>
+						<!-- Create setenv scripts to adjust tomcat memory usage -->
+							<execution>
+								<phase>pre-integration-test</phase>
+								<id>create-setenv-ubuntu</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>echo</executable>
+									<arguments>
+										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+									</arguments>
+									<outputFile>${bundle.dir.ubuntu}/tomcat/bin/setenv.sh</outputFile>
+								</configuration>
+							</execution>
+							<execution>
+								<phase>pre-integration-test</phase>
+								<id>create-setenv-osx</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>echo</executable>
+									<arguments>
+										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+									</arguments>
+									<outputFile>${bundle.dir.osx}/tomcat/bin/setenv.sh</outputFile>
+								</configuration>
+							</execution>
+							<execution>
+								<phase>pre-integration-test</phase>
+								<id>create-setenv-windows</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>echo</executable>
+									<arguments>
+										<argument>set "JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m"</argument>
+									</arguments>
+									<outputFile>${bundle.dir.windows}/tomcat/bin/setenv.bat</outputFile>
+								</configuration>
+							</execution>
 							<!--  Add all additional files to bundles (start/stop/update scripts, license, readme) -->
 							<execution>
 								<phase>pre-integration-test</phase>
@@ -812,7 +833,6 @@
 									</arguments>
 								</configuration>
 							</execution>
-							
 						</executions>
 					</plugin>
 					
@@ -951,6 +971,49 @@
 				</plugins>
 			</build>
 		</profile>
+		
+	    <profile>
+	        <id>prod</id>
+			<build>
+		        <plugins>
+					<plugin>
+						<groupId>com.coderplus.maven.plugins</groupId>
+						<artifactId>copy-rename-maven-plugin</artifactId>
+						<version>1.0.1</version>					
+						<executions>
+							<execution>	<!-- replace target directory's config files with default versions -->
+								<id>set-default-config</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rename</goal>
+								</goals>
+								<configuration>
+									<fileSets>
+										<fileSet>
+											<sourceFile>target/gigwa/WEB-INF/classes/users.default</sourceFile>
+											<destinationFile>target/gigwa/WEB-INF/classes/users.properties</destinationFile>
+										</fileSet>
+										<fileSet>
+											<sourceFile>target/gigwa/WEB-INF/classes/datasources.default</sourceFile>
+											<destinationFile>target/gigwa/WEB-INF/classes/datasources.properties</destinationFile>
+										</fileSet>
+										<fileSet>
+											<sourceFile>target/gigwa/WEB-INF/classes/applicationContext-data.default</sourceFile>
+											<destinationFile>target/gigwa/WEB-INF/classes/applicationContext-data.xml</destinationFile>
+										</fileSet>
+										<fileSet>
+											<sourceFile>target/gigwa/WEB-INF/classes/config.default</sourceFile>
+											<destinationFile>target/gigwa/WEB-INF/classes/config.properties</destinationFile>
+										</fileSet>
+									</fileSets>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+	    </profile>
+		
 		<profile>
 			<id>docker</id>
 			<build>
@@ -965,6 +1028,31 @@
 								<phase>install</phase>	<!-- This should be in deploy phase but could not get it to work -->
 								<goals>
 									<goal>build</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<repository>guilhemsempere/gigwa</repository>
+							<tag>${project.version}</tag>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<profile>
+			<id>push</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.spotify</groupId>
+						<artifactId>dockerfile-maven-plugin</artifactId>
+						<version>1.4.13</version>
+						<executions>
+							<execution>
+								<id>default</id>
+								<phase>install</phase>	<!-- This should be in deploy phase but could not get it to work -->
+								<goals>
 									<goal>push</goal>
 								</goals>
 							</execution>
@@ -977,5 +1065,6 @@
 				</plugins>
 			</build>
 		</profile>
+	
 	</profiles>
 </project>
