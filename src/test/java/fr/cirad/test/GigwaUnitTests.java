@@ -1,4 +1,4 @@
-import static org.junit.Assert.assertNotNull;
+package fr.cirad.test;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
