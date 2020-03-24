@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [![ $# -eq 3 ]] ; then
-    echo 'updateGigwa.sh Path_of_new_gigwa_webapp Path_of_old_gigwa_webapp Path_of_where_to_save'
+if [ $# -ne 3 ] ; then
+    echo 'USAGE: updateGigwa.sh Path_of_new_gigwa_webapp Path_of_old_gigwa_webapp Path_of_where_to_create_backup'
     exit 1
 fi
 
@@ -21,7 +21,10 @@ if [ -d "$1" ]; then
 
 		#copy configuration files from saved folder to new gigwa folder
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/applicationContext-data.xml $2/WEB-INF/classes/applicationContext-data.xml
+		cp -avr $3/gigwa.$DATE/WEB-INF/classes/applicationContext-security.xml $2/WEB-INF/classes/applicationContext-security.xml
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/datasources.properties $2/WEB-INF/classes/datasources.properties
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/users.properties $2/WEB-INF/classes/users.properties
+		cp -avr $3/gigwa.$DATE/WEB-INF/classes/config.properties $2/WEB-INF/classes/config.properties
+		cp -avr $3/gigwa.$DATE/WEB-INF/classes/log4j.xml $2/WEB-INF/classes/log4j.xml
 	fi
 fi

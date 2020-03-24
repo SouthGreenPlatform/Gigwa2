@@ -8,7 +8,7 @@ netstat -n -a -o | FINDSTR ":59393" | FINDSTR LISTENING > NUL && ECHO MongoDB po
 cd "%~dp0"
 
 set errors=
-powershell -executionPolicy bypass -command "& {$process = start-process $args[0] -RedirectStandardError errFile -passthru -argumentlist $args[1..($args.length-1)]; exit $process.id}" mongodb\bin\mongod.exe --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb --dbpath data --logpath logs/mongod.log
+powershell -executionPolicy bypass -command "& {$process = start-process $args[0] -RedirectStandardError errFile -passthru -argumentlist $args[1..($args.length-1)]; exit $process.id}" mongodb\bin\mongod.exe --profile 0 --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb --dbpath data --logpath logs/mongod.log
 set mongoPID=%errorlevel%
 
 timeout 3 > NUL
