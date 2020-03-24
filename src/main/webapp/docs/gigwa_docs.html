@@ -394,9 +394,10 @@
                   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
                      <SPAN LANG="en-US">The bin/setenv.bat or bin/setenv.sh
                      (depending on the platform) script must contain a line as follows
-                     in order to reserve enough RAM for Tomcat:<BR>
-                     </SPAN><FONT STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>set
-                     &quot;JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m&quot;</B></SPAN></FONT><SPAN
+                     in order to reserve enough RAM for Tomcat:<BR></SPAN><FONT STYLE="font-size: 9pt">
+                     <SPAN LANG="en-US"><B>export CATALINA_OPTS=&quot;$CATALINA_OPTS -Xms512m -Xmx2048m&quot; (Ubuntu / OSX)</B></SPAN><br/>
+                     <SPAN LANG="en-US"><B>set &quot;JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m&quot; (Windows)</B></SPAN>
+                     </FONT><SPAN
                         LANG="en-US"><BR>(This setting may of course be
                      adapted to get the best out of the hardware configuration)</SPAN>
                   </P>
