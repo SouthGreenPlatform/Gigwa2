@@ -24,26 +24,16 @@ public class InstanceTracker {
 	
 	private static final String defaultTrackerUrl = "https://webtools.southgreen.fr/GigwaInstanceTracker";
 
-	/**
-     * runs every 5 seconds ( for test purpose )
-     */
-	@Scheduled(fixedRate = 1000 * 5)
-	
     /**
-     * runs every 7 days
+     * runs every 28 days
      */
-//	@Scheduled(fixedRate = 1000 * 60 * 60 * 24 * 7)
+	@Scheduled(fixedRate = 1000l * 60 * 60 * 24 * 28)
 	public void track() {
 		int users = userDao.getUserMap().getUserCount();
-//		LOG.info("TRACKER users:" + users);
-		long databases = MongoTemplateManager.getPublicDatabases().stream().count();
-//		LOG.info("TRACKER databases:" + databases);
+		int databases = MongoTemplateManager.getAvailableModules().size();
 		String country = Locale.getDefault().getCountry();
-//		LOG.info("TRACKER country:" + country);
 		String language = Locale.getDefault().getLanguage();
-//		LOG.info("TRACKER language:" + language);
-		
-		
+	
 		String locale = "";
 		if(!country.isEmpty()) {
 			locale = "&country=" + country;
@@ -57,17 +47,14 @@ public class InstanceTracker {
 
 		try {
 			url = new URL((trackerUrl == null ? defaultTrackerUrl : trackerUrl) + "?instance=" + appConfig.getInstanceUUID() + locale + "&users=" + users + "&databases=" + databases);
-//			LOG.info(url);
+			LOG.debug("Invoking instance tracker:" + url);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
 			con.connect();
-			LOG.info("Instance tracked returned HTTP code " + con.getResponseCode());
-//			con.getResponseMessage();
+			LOG.info("Instance tracker returned HTTP code " + con.getResponseCode());
 			con.disconnect();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			LOG.error("Unable to reach instance tracker at " + url, e);
 		}
-	
 	}
 }
