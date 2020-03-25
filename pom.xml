@@ -50,7 +50,7 @@
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2BrapiImpl</artifactId>
-			<version>1.1-RC2</version>
+			<version>1.1-RC3</version>
 		</dependency>
 
 		<dependency>
@@ -572,7 +572,8 @@
 								<configuration>
 									<executable>echo</executable>
 									<arguments>
-										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+										<argument>-e</argument>
+										<argument>LC_ALL=\nexport CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
 									</arguments>
 									<outputFile>${bundle.dir.ubuntu}/tomcat/bin/setenv.sh</outputFile>
 								</configuration>
