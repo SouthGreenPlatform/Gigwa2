@@ -47,7 +47,7 @@ public class InstanceTracker {
 
 		try {
 			url = new URL((trackerUrl == null ? defaultTrackerUrl : trackerUrl) + "?instance=" + appConfig.getInstanceUUID() + locale + "&users=" + users + "&databases=" + databases);
-			LOG.debug("Invoking instance tracker:" + url);
+			LOG.debug("Invoking instance tracker with URL: " + url);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
 			con.connect();
