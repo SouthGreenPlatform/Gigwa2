@@ -56,10 +56,6 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -79,10 +75,6 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -101,10 +93,6 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -125,8 +113,6 @@ public class GigwaUnitTests {
 		svr.setCallSetIds2(new ArrayList<>());
 		svr.setStart((long) 1000000);
 		svr.setEnd((long) 2000000);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -145,10 +131,7 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
 		svr.setEnd((long) 9000000);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -167,10 +150,6 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -190,10 +169,7 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
 		svr.setEnd((long) 4000000);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -214,10 +190,6 @@ public class GigwaUnitTests {
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -228,7 +200,7 @@ public class GigwaUnitTests {
 	
 	
 	/* ------------------
-	 * (à partir du test 8 on considère que groupe d'individus 1
+	 * (à partir du test 8 jusqu'au 25 on considère que groupe d'individus 1
 	 * = tous les individus qui commencent par BO)
 	 * ------------------
 	 */
@@ -244,10 +216,6 @@ public class GigwaUnitTests {
 
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -269,10 +237,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -296,10 +260,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -323,10 +283,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -352,10 +308,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -382,10 +334,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -409,10 +357,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -438,10 +382,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -465,10 +405,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -494,10 +430,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -523,10 +455,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -552,10 +480,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -581,10 +505,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -604,10 +524,6 @@ public class GigwaUnitTests {
 		svr.setAlleleCount("3;4");
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -630,10 +546,6 @@ public class GigwaUnitTests {
 
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -669,10 +581,6 @@ public class GigwaUnitTests {
 		
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -703,10 +611,6 @@ public class GigwaUnitTests {
 		
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
@@ -739,15 +643,28 @@ public class GigwaUnitTests {
 		
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
-		svr.setStart((long) -1);
-		svr.setEnd((long) -1);
-		svr.setPageSize(100);
-		svr.setPageToken("0");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 22);
+	}
+	
+	/*test 26/ pattern=mostly all the same 100%)*/
+	@SuppressWarnings("serial")
+	@Test
+	public void test26() throws GAException, AvroRemoteException {
+		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
+		
+		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6", "testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4")));
+		svr.setGtPattern("All or mostly the same");
+		svr.setVariantSetId("testModule§1");
+		svr.setGetGT(false);
+		svr.setSearchMode(0);//only count
+		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
+		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
+
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 139);
 	}
 }
