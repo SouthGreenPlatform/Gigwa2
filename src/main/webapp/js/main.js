@@ -550,7 +550,7 @@ function viewGeneInGenomeBrowser(variantPos) {
         });
 
         let url = $("input#genomeBrowserURL").val().replace(/\*/g, variantPos);
-        $('#genomeBrowserPanelHeader').html('<center><a href="' + url + '" target="_blank">Click here to open genome browser in a different window</a></center>');
+        $('#genomeBrowserPanelHeader').html('<center><a href="' + url + '" target="_blank" onclick="$(\'#genomeBrowserPanel\').modal(\'hide\');">Click here to open genome browser in a different window</a></center>');
         $("#genomeBrowserFrame").attr('src', $("input#genomeBrowserURL").val().replace(/\*/g, variantPos));
     }
 }
@@ -1239,8 +1239,7 @@ function listQueries(){
 		        	$('#numberOfAlleles').selectpicker('val', tabAlleles);
 	        	}
 
-	        	for(var i=1 ; i<=2 ; i++) {
-	        		
+	        	for (var i=1 ; i<=2 ; i++) {
 	        		var e = i==1 ? "" : i;
 
 	        		if(groupHasFilters(jsonResult, i)){
@@ -1255,20 +1254,13 @@ function listQueries(){
 				            $('#Individuals'+i+' div select').trigger('change');
 				      	}
 				      	
-				      	$('#vcfFieldFilterGroup'+i+' #DP_threshold1').val(jsonResult['annotationFieldThresholds'+e]['DP']);
-				      	
+				      	$('#vcfFieldFilterGroup'+i+' #DP_threshold1').val(jsonResult['annotationFieldThresholds'+e]['DP']);				      	
 				      	$('#vcfFieldFilterGroup'+i+' #GQ_threshold1').val(jsonResult['annotationFieldThresholds'+e]['GQ']); 
-				      	
 				      	$('#missingdata'+i).val(jsonResult['missingData'+e]);
-				      	
 				      	$('#minmaf'+i).val(jsonResult['minmaf'+e]);
-				      	
 				      	$('#maxmaf'+i).val(jsonResult['maxmaf'+e]);
-				      
 				      	$('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
-				      	
 				      	$('#mostSameRatio'+i).val(jsonResult['mostSameRatio'+e]);
-				      	
 				      	$('#Genotypes'+i).trigger('change');
 	        		}
 	        	}
