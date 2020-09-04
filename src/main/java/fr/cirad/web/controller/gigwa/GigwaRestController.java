@@ -1688,7 +1688,7 @@ public class GigwaRestController extends ControllerInterface {
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
         HashMap<String, String> result = new HashMap<>();
 
-        List<BookmarkedQuery> cachedQueries = mongoTemplate.find(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName()).exists(true)), BookmarkedQuery.class);
+        List<BookmarkedQuery> cachedQueries = mongoTemplate.find(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName().replaceAll("\\.", MongoTemplateManager.DOT_REPLACEMENT_STRING)).exists(true)), BookmarkedQuery.class);
         for (BookmarkedQuery cq : cachedQueries)
         	result.put(cq.getId(), cq.getLabelsForUsers().get(authentication.getName()));
 
