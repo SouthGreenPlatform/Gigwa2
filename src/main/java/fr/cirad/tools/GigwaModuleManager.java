@@ -51,6 +51,11 @@ public class GigwaModuleManager implements IModuleManager {
 	
     @Autowired TokenManager tokenManager;
 
+    @Override
+    public String getModuleHost(String sModule) {
+        return MongoTemplateManager.getModuleHost(sModule);
+    }
+    
 	@Override
 	public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
 		if (fTrueForPublicFalseForPrivateNullForBoth == null)
