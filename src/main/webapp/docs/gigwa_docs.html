@@ -16,7 +16,7 @@
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.3 &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.4 &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -736,6 +736,10 @@
                <P>
                   <B>googleAnalyticsId</B> - If set, a Google Analytics tag is
                   automatically added into the main page.
+               </P>
+            <LI>
+               <P>
+                  <B>enforcedWebapRootUrl</B> - In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
                </P>
          </UL>
          <BR>
