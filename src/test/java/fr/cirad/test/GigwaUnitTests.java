@@ -36,7 +36,7 @@ public class GigwaUnitTests {
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
-		MongoTemplateManager.get("testModule").getDb().dropDatabase();
+		MongoTemplateManager.get("testModule").getDb().drop();
 	}
 
 //	@Before

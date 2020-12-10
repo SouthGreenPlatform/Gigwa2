@@ -17,6 +17,7 @@
 package fr.cirad.tools;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,7 +82,7 @@ public class GigwaModuleManager implements IModuleManager {
 					}
 					
 					Query q = new Query();
-					q.with(new Sort("_id"));
+					q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
 					q.fields().include(GenotypingProject.FIELDNAME_NAME);
 					for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
 						moduleEntities.put(project.getId(), project.getName());
@@ -138,24 +139,24 @@ public class GigwaModuleManager implements IModuleManager {
 			}
 			if (nProjCount == 1 && !individualsInThisProject.isEmpty())
 			{
-				mongoTemplate.getDb().dropDatabase();
+				mongoTemplate.getDb().drop();
 				LOG.debug("Dropped database for module " + sModule + " instead of removing its only project");
 				return true;
 			}
 
-			int nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getN();
+			long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
 			LOG.debug("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
 
 			Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject, CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
-			int nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getN();
+			long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
 			LOG.debug("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
 
-			if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getN() > 0)
+			if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
 				LOG.debug("Removed project " + nProjectIdToRemove + " from module " + sModule);
 			
 			new Thread() {
 				public void run() {
-					int nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getN();
+					long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
 					LOG.debug("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
 				}
 			}.start();

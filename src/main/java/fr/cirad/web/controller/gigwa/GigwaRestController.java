@@ -85,7 +85,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.mongodb.WriteResult;
+import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
@@ -1100,7 +1100,7 @@ public class GigwaRestController extends ControllerInterface {
 				else if (fBrapiImportURI != null) {
 					HashMap<String, String> germplasmDbIdToIndividualMap = new HashMap<>();
 					MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-					for (int projId : (Collection<Integer>) mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id")) {
+					for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {
 						SearchCallSetsRequest scsr = new SearchCallSetsRequest();
 						scsr.setVariantSetId(sModule + GigwaMethods.ID_SEPARATOR + projId);
 						for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
@@ -1504,13 +1504,19 @@ public class GigwaRestController extends ControllerInterface {
 								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to previous import error");
 							else
 							{	// attempt finer cleanup
-								Query cleanupQuery = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(project.getId()).andOperator(Criteria.where("_id." + VariantRunDataId.FIELDNAME_RUNNAME).is(sRun)));
-								WriteResult wr = mongoTemplate.remove(cleanupQuery, VariantRunData.class);
-								if (wr.getN() > 0)
-									LOG.debug("Removed " + wr.getN() + " records from VariantRunData subsequently to previous import error");
-				                if (mongoTemplate.count(null, VariantRunData.class) == 0 && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(sModule))
+								if (project == null && mongoTemplate.findOne(new Query(), GenotypingProject.class) == null) {
+									mongoTemplate.dropCollection(VariantRunData.class);
+									LOG.debug("Dropped VariantRunData collection subsequently to previous import error");
+								}
+								else {
+									Query cleanupQuery = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(project.getId()).andOperator(Criteria.where("_id." + VariantRunDataId.FIELDNAME_RUNNAME).is(sRun)));
+									DeleteResult dr = mongoTemplate.remove(cleanupQuery, VariantRunData.class);
+									if (dr.getDeletedCount() > 0)
+										LOG.debug("Removed " + dr.getDeletedCount() + " records from VariantRunData subsequently to previous import error");
+								}
+				                if (mongoTemplate.findOne(new Query(), VariantRunData.class) == null && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(sModule))
 				                {	// if there is no genotyping data left and we are not working on a fixed list of variants then any other data is irrelevant
-				                    mongoTemplate.getDb().dropDatabase();
+				                    mongoTemplate.getDb().drop();
 				                }
 							}
 						}
@@ -1731,8 +1737,8 @@ public class GigwaRestController extends ControllerInterface {
     	}
     	
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-        WriteResult wr = mongoTemplate.remove(new Query(Criteria.where("_id").is(queryId)), BookmarkedQuery.class);
-        if (wr.getN() == 0) {
+        DeleteResult dr = mongoTemplate.remove(new Query(Criteria.where("_id").is(queryId)), BookmarkedQuery.class);
+        if (dr.getDeletedCount() == 0) {
         	build404Response(response);
         	return;
         }
