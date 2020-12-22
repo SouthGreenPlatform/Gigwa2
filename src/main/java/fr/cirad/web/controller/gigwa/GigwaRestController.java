@@ -1159,6 +1159,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request the request
 	 * @param sHost the host
 	 * @param sModule the module
+	 * @param ncbiTaxonIdNameAndSpecies the ncbi TaxonId, Taxon Name and Species Name
 	 * @param sProject the project
 	 * @param sRun the run
 	 * @param sProjectDescription the project description
@@ -1172,7 +1173,8 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
 	public @ResponseBody String importGenotypingData(HttpServletRequest request,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
-			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies, @RequestParam("project") final String sProject,
+			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
+			@RequestParam("project") final String sProject,
 			@RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
 			@RequestParam(value = "clearProjectData", required = false) final Boolean fClearProjectData,
@@ -1616,7 +1618,7 @@ public class GigwaRestController extends ControllerInterface {
 		if (!Boolean.TRUE.equals(capped))
 			return nMaxSizeMb;
 		
-		return Math.min((int) uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
+		return Math.min(uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
 
 	public void build401Response(HttpServletResponse resp) throws IOException {
