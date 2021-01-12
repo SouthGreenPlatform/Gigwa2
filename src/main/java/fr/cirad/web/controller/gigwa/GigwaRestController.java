@@ -97,6 +97,7 @@ import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
+import fr.cirad.mgdb.model.mongo.maintypes.Database;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
@@ -379,10 +380,9 @@ public class GigwaRestController extends ControllerInterface {
 	@Deprecated
 	@ApiOperation(value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+							@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCES_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
@@ -713,8 +713,7 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -1422,7 +1421,10 @@ public class GigwaRestController extends ControllerInterface {
 						expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 //					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 
-					if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, fPublicAndHidden, fPublicAndHidden, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
+					Database db = MongoTemplateManager.createDataSource(sNormalizedModule, sHost, fPublicAndHidden, fPublicAndHidden, null, expiryDate);
+					if (db != null) {
+						MongoTemplateManager.parseTaxInfoAndAddToDB(ncbiTaxonIdNameAndSpecies, db);
+						MongoTemplateManager.getCommonsTemplate().save(db);
 						LOG.info("Importing database " + sNormalizedModule + " into host " + sHost);
 						fDatasourceExists = true;
 					} 
