@@ -34,6 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
+import fr.cirad.mgdb.model.mongo.maintypes.Database;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.Individual;
@@ -51,20 +52,15 @@ public class GigwaModuleManager implements IModuleManager {
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 	
     @Autowired TokenManager tokenManager;
-
-    @Override
-    public String getModuleHost(String sModule) {
-        return MongoTemplateManager.getModuleHost(sModule);
-    }
-    
-	@Override
-	public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
-		if (fTrueForPublicFalseForPrivateNullForBoth == null)
-			return MongoTemplateManager.getAvailableModules();
-		if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
-			return MongoTemplateManager.getPublicDatabases();
-		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
-	}
+//
+//	@Override
+//	public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
+//		if (fTrueForPublicFalseForPrivateNullForBoth == null)
+//			return MongoTemplateManager.getAvailableModules();
+//		if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
+//			return MongoTemplateManager.getPublicDatabases();
+//		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
+//	}
 
 	@Override
 	public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny)
@@ -101,13 +97,13 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 
 	@Override
-	public boolean updateDataSource(String sModule, boolean fPublic, boolean fHidden, String ncbiTaxonIdNameAndSpecies) throws Exception {
-		return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.UPDATE_STATUS, sModule, fPublic, fHidden, null, ncbiTaxonIdNameAndSpecies, null);
+	public boolean updateDataSource(String sModule, boolean fPublic, boolean fHidden, Map<String, Object> editableFieldValues) throws Exception {
+		return MongoTemplateManager.updateDataSource(sModule, fPublic, fHidden, editableFieldValues);
 	}
 
 	@Override
-	public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
-		return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
+	public Database createDataSource(String sModule, String sHost, boolean fPublic, boolean fHidden, Map<String, Object> customFields, Long expiryDate) throws Exception {       
+        return MongoTemplateManager.createDataSource(sModule, sHost, fPublic, fHidden, customFields, expiryDate);
 	}
 	
 	@Override
@@ -193,5 +189,35 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic) throws Exception {
 		return false;
+	}
+
+	@Override
+	public Map<String, String> getEditableModuleFields() {
+		return Helper.getDocFieldNamesFromFieldAnnotationValues(Database.class, Arrays.asList(Database.FIELDNAME_TAXID));
+	}
+
+    @Override
+    public String getModuleHost(String sModule) {
+        return MongoTemplateManager.getModuleHost(sModule);
+    }
+    
+	@Override
+	public Collection<Database> getModulesByVisibility(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
+		Query q = fTrueForPublicFalseForPrivateNullForBoth == null ? new Query() : new Query(Criteria.where(Database.FIELDNAME_PUBLIC).is(fTrueForPublicFalseForPrivateNullForBoth));
+		return MongoTemplateManager.getCommonsTemplate().find(q, Database.class);
+	}
+    
+	@Override
+	public Collection<Database> getModulesByNames(Collection<String> moduleNames) {
+		return MongoTemplateManager.getCommonsTemplate().find(new Query(Criteria.where("_id").in(moduleNames)), Database.class);
+	}
+	
+	@Override
+	public Collection<String> getModuleNamesByVisibility(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
+		if (fTrueForPublicFalseForPrivateNullForBoth == null)
+			return MongoTemplateManager.getAvailableModules();
+		if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
+			return MongoTemplateManager.getPublicDatabases();
+		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
 	}
 }
