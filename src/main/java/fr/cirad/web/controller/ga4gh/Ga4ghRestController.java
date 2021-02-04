@@ -130,7 +130,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-        	if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
         		return service.getReferenceBases(id, listReferenceBasesRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
@@ -165,7 +167,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            CallSet callSet = service.getCallSet(id);
 	            if (callSet == null) {
 	                build404Response(response);
@@ -203,7 +207,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            VariantSet variantSet = service.getVariantSet(id);
 	            if (variantSet == null) {
 	                build404Response(response);
@@ -241,8 +247,10 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
 	            String indHeader = request.getHeader("ind");
+	            service.applyAssemblyId(request, module);
 	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList() : Helper.split(indHeader, ";"));
 	            if (variant == null) {
 	                build404Response(response);
@@ -280,7 +288,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            Reference reference = service.getReference(id);
 	            if (reference == null) {
 	                build404Response(response);
@@ -318,7 +328,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            ReferenceSet referenceSet = service.getReferenceSet(id);
 	            if (referenceSet == null) {
 	                build404Response(response);
@@ -357,7 +369,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String id = callSetsRequest.getVariantSetId();
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
@@ -384,7 +398,6 @@ public class Ga4ghRestController extends ControllerInterface {
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCESETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferenceSetsResponse searchReferenceSets(HttpServletRequest request, @RequestBody SearchReferenceSetsRequest referenceSetsRequest) throws AvroRemoteException {
-
         SearchReferenceSetsResponse response = service.searchReferenceSets(referenceSetsRequest);
         String token = tokenManager.readToken(request);
         List<ReferenceSet> listRef = new ArrayList<>();
@@ -422,8 +435,11 @@ public class Ga4ghRestController extends ControllerInterface {
         
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0]))
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            return service.searchReferences(referencesRequest);
+	        }
 	        else {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;
@@ -511,7 +527,9 @@ public class Ga4ghRestController extends ControllerInterface {
         }
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            gsvr.setRequest(request);
 				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
 				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)));
@@ -549,7 +567,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String module = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0];
+	        if (tokenManager.canUserReadDB(token, module)) {
+	        	service.applyAssemblyId(request, module);
 	            VariantAnnotation varAnn = service.getVariantAnnotation(id);
 	            if (varAnn == null)
 	                build404Response(response);

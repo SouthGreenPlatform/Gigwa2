@@ -118,6 +118,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
+	var moduleAssemblies = {};
 	
 	$.ajaxSetup({cache: false});
 
@@ -133,9 +134,18 @@
 	            dropTempCol();
 
 	        referenceset = $(this).val();
+	        let assemblyOptions = "";
+	        for (var assembly in moduleAssemblies[referenceset])
+	        	assemblyOptions += '<option>' + moduleAssemblies[referenceset][assembly] + '</option>';
+	    	$('#assembly').html(assemblyOptions).selectpicker('refresh');
+	    	if (moduleAssemblies[referenceset] == null || moduleAssemblies[referenceset].length <= 1)
+	    		$("#grpAsm").hide();
+	    	else
+	    		$("#grpAsm").show();
+	        
 	        if (!loadProjects(referenceset))
 	        	return;
-	        	        
+
 	        $("div#welcome").hide();
 
 	        for (var groupNumber=1; groupNumber<=2; groupNumber++)
@@ -236,9 +246,7 @@
     	        type: "GET",
     	        dataType: "json",
     	        contentType: "application/json;charset=utf-8",
-    	        headers: {
-    	            "Authorization": "Bearer " + token
-    	        },
+    	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
     	        success: function(jsonResult) {
                     runList = [];
                     for (var run in jsonResult.runs)
@@ -302,7 +310,6 @@
 	        exporting = false;
 	    });
 		
-	    $('#grpProj').hide();
 	    $('[data-toggle="tooltip"]').tooltip({
 	        delay: {
 	            "show": 300,
@@ -376,6 +383,8 @@
 	            var option = "";
 	            for (var set in jsonResult.referenceSets) {
 	                option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+	                if (jsonResult.referenceSets[set].assemblyId != null)
+	                	moduleAssemblies[jsonResult.referenceSets[set].name] = jsonResult.referenceSets[set].assemblyId.replace(new RegExp(', ', 'g'), ',').split(",");
 	            }
 	            $('#module').html(option).selectpicker('refresh');
 	            var module = $_GET("module"); // get module from url
@@ -404,9 +413,7 @@
 	        type: "POST",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "datasetId": module == null && passedModule != null ? passedModule : module,
 	            "pageSize": null,
@@ -485,9 +492,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	            variantTypesCount = jsonResult.length;
 	            var option = "";
@@ -508,9 +513,7 @@
 	        type: "POST",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "referenceSetId": $('#module').val(),
 	            "variantSetId": $('#project :selected').data("id"),
@@ -655,9 +658,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	            if (jsonResult.effectAnnotations.length > 0) {
 	                var option = "";
@@ -687,9 +688,7 @@
 	        dataType: "json",
 	        async:false,
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        success: function(jsonResult) {
                 alleleCount = jsonResult.numberOfAllele.length;
                 var option = "";
@@ -836,9 +835,7 @@
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
 	        timeout:0,
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "variantSetId": $('#project :selected').data("id"),
 	            "searchMode": searchMode,
@@ -1070,9 +1067,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
+	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	        	var gotFunctAnn = jsonResult.info.ann_header != null && jsonResult.info.ann_header.length > 0
 	        	$('#toggleFunctionalAnn').css('display', gotFunctAnn ? 'inline' : 'none');
@@ -1204,9 +1199,7 @@
 	        $.ajax({
 	            url: url,
 	            type: "POST",
-	            headers: {
-	                "Authorization": "Bearer " + token
-	            },
+	            headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
 	            traditional: true,
 	            data: data,
 	            success: function(response) {

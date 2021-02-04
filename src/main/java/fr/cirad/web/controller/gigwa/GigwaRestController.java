@@ -453,7 +453,7 @@ public class GigwaRestController extends ControllerInterface {
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.searchableAnnotationFields(info[0], Integer.parseInt(info[1]));
+				return service.getAnnotationFields(info[0], Integer.parseInt(info[1]), true);
 			} else {
 				build401Response(resp);
 				return null;
@@ -660,6 +660,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
+				service.applyAssemblyId(request, info[0]);
 				return service.selectionDensity(gdr);
 			} else {
 				build401Response(resp);
@@ -693,6 +694,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
+				service.applyAssemblyId(request, info[0]);
 				return service.selectionVcfFieldPlotData(gvfpr);
 			} else {
 				build401Response(resp);
@@ -705,7 +707,7 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	/**
-	 * get distinct selected sequences
+	 * get distinct sequences in current variant selection
 	 *
 	 * @param request
 	 * @param variantSetId
@@ -713,11 +715,12 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
+	public Collection<String> getDistinctSelectedSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
+				service.applyAssemblyId(request, info[0]);
 				return service.distinctSequencesInSelection(request, info[0], Integer.parseInt(info[1]), token);
 			} else {
 				build401Response(resp);

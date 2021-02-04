@@ -58,10 +58,14 @@
                 </ul>
                 <form class="navbar-form navbar-left" role="search" id="moduleProjectNavbar">
                     <select class="selectpicker" id="module" data-actions-box="true" data-live-search="true" name="module" title="Database"></select>
-                    <div class="form-group" id="grpProj">&nbsp;
-                        <label for="project" class="label-light" id="projectLabel">Project </label>
-                        <select class="selectpicker" id="project" data-actions-box="true" data-live-search="true" name="project"></select>
+                    <div class="form-group" id="grpProj" style="display:none;">
+                    	&nbsp;<label for="project" class="label-light">Project </label>
+                        <select class="selectpicker" id="project" data-actions-box="true" name="project"></select>
 	                    <a href="#" onclick="displayProjectInfo($('#project').val());" id="projectInfoLink" style="display:none;"><span role='button' title="Click for project information" class="glyphicon glyphicon-info-sign" id="formatHelp" style="color:yellow;"></span></a>
+	                </div>
+                    <div class="form-group" id="grpAsm" style="display:none;">
+	                    &nbsp;<label for="assembly" class="label-light">Assembly </label>
+                        <select class="selectpicker" id="assembly" data-actions-box="true" name="assembly"></select>
                     </div>
                 </form>
             </div>

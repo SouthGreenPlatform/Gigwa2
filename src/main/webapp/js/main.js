@@ -1303,3 +1303,10 @@ function listQueries(){
 		}
 	});
 }
+
+function buildHeaderWithTokenAndAssembly(token, assemblyId) {
+    var headers = { "Authorization": "Bearer " + token };
+	    if (assemblyId != null)
+	    	headers["assembly"] = assemblyId;
+	    return headers;
+}

@@ -65,9 +65,7 @@ function initializeAndShowDensityChart(){
         url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
         async: false,
         type: "GET",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
         success: function (jsonResult) {
         	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
         		selectedSequences = jsonResult;
@@ -196,14 +194,11 @@ function loadAndDisplayChart(minPos, maxPos) {
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
-
     $.ajax({
         url: selectionDensityDataURL + '/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
@@ -303,9 +298,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
