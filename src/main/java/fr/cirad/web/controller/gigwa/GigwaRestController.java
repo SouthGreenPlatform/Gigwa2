@@ -96,6 +96,7 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.Database;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
@@ -834,9 +835,9 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST)
-	public void exportData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
+	public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestParam(value = "assembly", required = false) String assembly,
 			@RequestParam("keepExportOnServer") boolean keepExportOnServer,
+			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
 			@RequestParam("variantEffects") String variantEffects, @RequestParam("exportFormat") String exportFormat,
 			@RequestParam("selectedVariantTypes") String selectedVariantTypes,
 			@RequestParam("alleleCount") String alleleCount, @RequestParam("geneName") String geneName,
@@ -907,6 +908,11 @@ public class GigwaRestController extends ControllerInterface {
 
 				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
 				gsver.setApplyMatrixSizeLimit(!"BED".equals(exportFormat) && (authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN))));
+
+				if (assembly != null)
+					service.getAssemblyId().set(assembly == null ? null : MongoTemplateManager.get(info[0]).findOne(new Query(Criteria.where(Assembly.FIELDNAME_NAME).is(assembly)), Assembly.class).getId());	// when it's a form submission there is no way to specify http headers so the assembly name is passed explicitly as a form parameter 
+				else
+					service.applyAssemblyId(request, info[0]);
 				service.exportVariants(gsver, token, resp);
 			} else
 				build401Response(resp);
