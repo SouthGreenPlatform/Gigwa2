@@ -43,7 +43,284 @@
         <script type="text/javascript" src="js/main.js"></script>
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
-        <script type="text/javascript">
+    </head>
+    <body>
+        <%@include file="../../../navbar.jsp" %>    
+        <div class="container margin-top-md">
+			<c:if test="${!isAnonymous}">
+            <ul class="nav nav-tabs" style="border-bottom:0;">
+                <li id="vcfTab" class="active"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
+                <li id="metadataTab"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
+            </ul>
+            </c:if>
+            <div class="tab-content">
+                <div class="tab-pane active" id="tab1">
+            	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL%>' />" method="post">
+	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
+	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
+                    <div class="panel panel-default importFormDiv">
+                        <div class="panel-body panel-grey">
+                            <div class="form text-center">
+                                <div class ="row">
+                                    <div class="col-md-1" style="text-align:right;"></div>
+                                    <div class="col-md-10">
+                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / BrAPI format</h4>
+											<p class="margin-top-md text-red">Properties followed by * are required</p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12" style="padding:0 30px;">
+                                        <div class="form-group margin-top-md text-left">
+                                            <div class="row" id="rowModuleExisting">
+	                                        	<div class="col-md-2" style="text-align:right;">
+		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
+	                                            </div>
+                                                <div class="col-md-5">
+                                                    <select class="selectpicker moduleExisting" id="moduleExistingG" name="moduleExistingG" data-actions-box="true" data-live-search="true"></select>
+                                                    <input id="moduleToImport" name="module" class="form-control text-input input-sm" style='display:inline; width:250px;' type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
+                                                </div>
+                                                <div class="col-md-5" id="taxonDiv" align="right">
+                                                	<div style="float:left;">
+		                                                <label for="ncbiTaxon">Taxon</label>
+		                                                <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
+	                                                </div>
+	                                                <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
+	                                                <input id="ncbiTaxon" name="ncbiTaxon" 
+		                                                onblur="grabNcbiTaxon($(this));"
+		                                                onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
+		                                                class="form-control text-input input-sm" style="max-width:85%;" type="text" placeholder="Taxon id / name">
+												</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group text-left" id="hostGrp">
+                                            <div class="row">
+	                                        	<div class="col-md-2" style="text-align:right;">
+	                                            	<label for="host">Host</label>
+	                                            </div>
+                                                <div class="col-md-2" id="hostDiv">
+                                                    <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                                </div>
+	                                            <div class="col-md-3 text-red text-center" style="font-size:11px; margin-top:-5px;">
+	                                            	&nbsp;
+    	                                            <c:if test="${!isAdmin}">
+                                                		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
+                                                		You may create<br/>temporary databases only
+	                                                </c:if>
+                                             	</div>
+                                                <div class="col-md-5" style="display:inline;" id="assemblyDiv" align="right">
+	                                                <div align="left" style="width:100%;">
+									                    <label for="assembly">Assembly </label>&nbsp;
+								                        <select class="selectpicker" id="existingAssembly" data-actions-box="true"></select>
+								                        <input id="assemblyToImport" name="assembly" class="form-control text-input input-sm" style='display:inline; max-width:52%;' type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New assembly name">
+													</div>
+												</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group text-left">
+                                            <div class="row">
+	                                        	<div class="col-md-2" style="text-align:right;">
+	                                            	<label for="projectExisting">Project <span class="text-red">*</span></label>
+	                                            </div>
+                                                <div class="col-md-5">
+                                                    <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-live-search="true"></select>
+	                                                <div id="emptyBeforeImportDiv" style="margin-left:5px; display:none; text-align:center;">
+	                                                    <input type="checkbox" id="clearProjectData" name="clearProjectData" title="If box is ticked, all project runs will be discarded before import">&nbsp;<label class="label-checkbox" title="If box is ticked, all project runs will be discarded before import" for="clearProjectData"> Clear project before import</label>
+	                                                </div>
+	                                                <input id="projectToImport" style="display:inline; width:250px;" name="project" class="form-control text-input input-sm" type="text" placeholder="New project name" onchange="if ($(this).val().trim().length > 0) $('#projectDescDiv').show(50); else $('#projectDescDiv').hide(50);">
+                                                </div>
+                                                <div class="col-md-5" style="text-align:center; float:right;">
+                                                	<div style="margin-top:-5px; display:none; position:absolute; width:90%;" id="projectDescDiv">
+                                                		<label for="projectDesc">
+                                                			Project description
+                                                			<img id="igvTooltip" style="margin-left:10px;" src="images/lightbulb.gif" title='TIP: Publication reference(s) may be specified at the bottom of this text, preceded by "HOW TO CITE"' />
+                                                		</label>
+                                                		<textarea id="projectDesc" name="projectDesc" style="resize:none; width:100%; height:105px;"></textarea>
+                                                	</div>
+												</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group text-left">
+                                            <div class="row">
+	                                        	<div class="col-md-2" style="text-align:right;">
+		                                            <label for="runExisting">Run <span class="text-red">*</span></label>
+		                                        </div>
+                                                <div class="col-md-5">
+                                                    <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-live-search="true"></select>
+	                                                <div class="text-red" id="overwriteRunWarning" style="margin-left:5px; display:none; font-size:11px; text-align:center;">
+	                                                    <span class="glyphicon glyphicon-warning-sign" style="font-size:13px; margin-top:-10px;"></span>
+	                                                    Existing run data will be erased!
+	                                                </div>
+                                                    <input id="runToImport" style="display:inline; width:250px;" name="run" class="form-control text-input input-sm" type="text" placeholder="New run name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row text-left form-group">
+                                        	<div class="col-md-2" style="text-align:right;">
+	                                             <label for="technology">Technology</label>
+	                                        </div>
+                                            <div class="col-md-3">
+	                                            <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
+	                                        </div>
+	                                        <div class="col-md-3"></div>
+                                        </div>
+                                        <div>
+	                                        <div class="row text-left" style="margin-top:20px;">
+	                                        	<div class="col-md-2 text-nowrap" style="text-align:right;">
+		                                             <label for="dataFile1">Data source <span class="text-red">*</span></label>
+		                                        </div>
+	                                        	<div class="col-md-10">
+	                                        		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
+													<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
+	                                        		or an absolute path on webserver filesystem.</small>
+	                                        		<div class="text-red" style="float: right;">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
+		                                        </div>
+	                                        </div>
+	                                        <div class="row text-left" style="margin-bottom:5px;">
+	                                        	<div class="col-md-2"></div>
+	                                        	<div style="text-align:right; position:absolute; width:110px; margin-left:20px;">
+	                                        		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
+	                                        	</div>
+	                                            <div class="col-md-5">
+		                                            <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
+		                                        </div>
+	                                            <div class="col-md-5">
+		                                            <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK (ped + map)">
+		                                        </div>
+	                                        </div>
+			                                <div class ="row">
+			                                	<div class="col-md-2"></div>
+			                                    <div class="col-md-5" id="dropZonePreviewsG"></div>
+			                                    <div class="col-md-4" style="padding-right:0;">
+													<div class="dz-default dz-message" style="background-color:#e8e8e8;">
+				       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
+				       									<div>
+				       										<b>Accepted extensions:</b>
+				       										<br/>.vcf
+				       										<br/>.hapmap or .txt
+															<br/>.ped + .map
+				       									</div>
+			       									</div>
+			                                    </div>
+			                                    <div class="col-md-1">
+				                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
+			                                    </div>
+			                                </div>
+	                                	</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+	                </form>
+                </div>
+                
+                <c:if test="${!isAnonymous}">
+                <div class="tab-pane" id="tab2">
+                   	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
+                    <input type="hidden" name="brapiToken" id="brapiToken"/>
+                    <div class="panel panel-default importFormDiv">
+                        <div class="panel-body panel-grey text-center">
+                            <h4>Adding metadata to existing database</h4>
+                            <div class="row">
+                            	<div class="col-md-1"></div>
+                                <div class="col-md-4">
+                                	<div style="position:absolute; margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
+                                		<p>Providing metadata for individuals will enable users to select them by filtering on that metadata.</p>
+                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension).</p>
+                                		<p>The first row in the file (header) must contain field labels, one of them must be named "individual".</p>
+                                		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
+                                		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
+										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
+                                	</div>
+                                </div>
+                                <div class="col-md-3">                     
+                                    <div class="form-group margin-top text-left">
+                                        <label for="moduleExistingMD">Database</label>
+                                        <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
+                                    </div>                  
+                                </div>
+                                <div class="col-md-3"></div>
+                            </div>
+                            <br/>
+                            <div class="row">
+                            	<div class="col-md-1"></div>
+                                <div class="col-md-4"></div>
+                                <div class="col-md-6">
+                                    <div class="form-group text-left">
+                                        <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
+                                        <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
+                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a remote server implementing germplasm-search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId by file for each targeted individual</small>                                  
+                                    </div>
+<%--
+                                    <div class="form-group text-left">
+                                        <label for="metadataFilePath2">Second file path or URL</label> <small class="text-muted">Local to webserver or remote (http / ftp)</small>
+                                        <input id="metadataFilePath2" class="form-control input-sm" type="text" name="metadataFilePath2">
+                                    </div>
+                                    <div class="row margin-bottom">
+                                        <label class="label-checkbox">Clear existing project sequence data before importing <input type="checkbox" name="clearProjectSequences" class="input-checkbox"></label>
+                                    </div>
+--%>
+                                </div>
+                            </div>
+                            <div class ="row">
+                            	<div class="col-md-1"></div>
+                                <div class="col-md-4"></div>
+                                <div class="col-md-3">
+									<div class="dz-default dz-message" style="background-color:#e8e8e8;">
+    									<h5>... or drop file here or click to upload<br/><i>(max size: 5 Mb)</i></h5>
+    									<div>
+    										<b>Accepted extensions:</b>
+    										<br/>.tsv or .csv
+    										<br/>(tab-separated only)
+    									</div>
+   									</div>
+                                </div>
+                                <div class="col-md-4" id="dropZonePreviewsMD">
+									<button class="btn btn-primary btn-sm" id="importMetadataButton" type="button">Submit</button><br/>
+                                </div>                                                                
+                            </div>
+                        </div>
+                    </div>
+                    </form>
+                </div>
+                </c:if>
+            </div>
+        </div>
+        <!-- modal which prompts BrAPI user password -->
+		<div class="modal fade" tabindex="-1" role="dialog" id="brapiPwdDialog" aria-hidden="true">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<form onsubmit="return false;">
+							<span class="bold text-info">Please enter password for BrAPI user</span>
+							<br/>
+							<input type="password" id="brapiPassword" size="25" style="margin:8px;" onkeyup="$('#brapiPasswordApplyButton').attr('disabled', $(this).val().trim().length == 0);" />
+							<br/>
+							<input class="btn btn-sm btn-default" disabled type="submit" value="Apply" id="brapiPasswordApplyButton" onclick="$('#brapiPwdDialog').modal('hide');" />
+							<input style="margin-left:100px;" class="btn btn-sm btn-default" type="button" value="Cancel" onclick="$('#brapiPassword').val(''); $('#brapiPassword').keyup(); $('#brapiPwdDialog').modal('hide');" />
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- progress modal -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="progress" aria-hidden="true">
+            <div class="modal-dialog modal-sm margin-top-lg">
+                <div class="modal-content modal-progress">
+                    <div class="loading text-center" id="progressContents">
+<!--                         <div> -->
+<!--                             <div class="c1"></div> -->
+<!--                             <div class="c2"></div> -->
+<!--                             <div class="c3"></div> -->
+<!--                             <div class="c4"></div> -->
+<!--                         </div> -->
+                        <h3 id="progressText" class="loading-message">Please wait...</h3>      
+                        <button class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=' + token + '&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));" title="This will open a separate page allowing to watch import progress at any time. Leaving the current page will not abort the import process.">Open async progress watch page</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+       <script type="text/javascript">
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	    	var maxUploadSizeURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAX_UPLOAD_SIZE_PATH%>"/>';
@@ -54,53 +331,84 @@
         	var brapiParameters;
         	var projectDescriptions = [];
    			var brapiUserName, brapiUserPassword, brapiToken;
+   			var moduleAssemblies = {};
+   			
+   			$(".selectpicker").each(function() {
+   				let selectId = $(this).attr("id");
+   				if (selectId == "moduleExistingG")
+   					$(this).selectpicker({ noneSelectedText : 'Loading...' });
+   				else if (selectId != "moduleExistingMD")
+   					$(this).selectpicker({ noneSelectedText : '(new entry)' });
+   			});
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
                     clearFields();
-                    if ($(this).val() !== '- new database -' && $(this).val() !== null) {
-                        loadProjects($(this).val());
-                        $('#newModuleDiv').hide();
+                    if ($(this).val() !== '(new entry)' && $(this).val() !== null) {
+                        $('#moduleToImport').hide();
                         $('#taxonDiv').hide();
-                        $('#hostGrp').hide();
+                        $('#hostGrp div div.col-md-2 *:first-child').hide();
+                        $(this).selectpicker('refresh');
+                        
+            	    	if (moduleAssemblies[$(this).val()] != null && Object.keys(moduleAssemblies[$(this).val()]).length > 0)
+            	    		$('#assemblyToImport').hide();
+            	    	else
+            	    		$('#assemblyToImport').show();
+            	        let assemblyOptions = '<option>(new entry)</option>';
+            	        for (var assembly in moduleAssemblies[$(this).val()])
+            	        	assemblyOptions += '<option ' + (assembly == 0 ? 'selected ' : '') + 'value="' + moduleAssemblies[$(this).val()][assembly] + '">' + (moduleAssemblies[$(this).val()][assembly] == '' ? '(unnamed default assembly)' : moduleAssemblies[$(this).val()][assembly]) + '</option>';
+            	    	$('#existingAssembly').html(assemblyOptions).selectpicker('refresh');
+
+                        loadProjects($(this).val());
                     } else {
-                        $('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
-                        $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
-                        $('#newModuleDiv').show();
+                        $('#projectExisting').html('<option>(new entry)</option>').selectpicker('refresh');
+                        $('#runExisting').html('<option>(new entry)</option>').selectpicker('refresh');
+                        $('#projectDescDiv').css("display", "inline");
+                        $('#moduleToImport').show();
                         $('#taxonDiv').show();
                         $('#projectToImport').removeClass('hidden');
                         $('#runToImport').removeClass('hidden');
-                        $('#hostGrp').show();
+                        $('#hostGrp div div.col-md-2 *:first-child').show();
+                        $(this).selectpicker('refresh');
                     }
                     $('#projectExisting').change();
                 });
+                
                 $('#projectExisting').on('change', function () {
-                	$('#emptyBeforeImportDiv').toggle();
                 	var projDesc = projectDescriptions[$(this).val()];
                 	$("textarea#projectDesc").val(projDesc == null ? "" : projDesc);
-                    if ($(this).val() !== '- new project -') {
+                    if ($(this).val() !== '(new entry)') {
                         loadRuns();
-                        $('#projectToImport').addClass('hidden');
-                        $('#emptyBeforeImportDiv').show(100);
-                        $('#projectDescDiv').show(100);
+                        $('#projectToImport').hide();
+                        $('#emptyBeforeImportDiv').css("display", "inline");
+                        $('#projectDescDiv').css("display", "inline");
                     } else {
-                        $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+                        $('#runExisting').html('<option>(new entry)</option>').selectpicker('refresh');
                         $('#projectToImport').removeClass('hidden');
-                        $('#emptyBeforeImportDiv').hide(100);
-                        $('#projectDescDiv').hide(100);
+                        $('#emptyBeforeImportDiv').hide();
+                        $('#projectDescDiv').hide();
                     }
                 	$('#runExisting').change();
                 });
 
                 $('#runExisting').on('change', function () {
-                    if ($(this).val() !== '- new run -') {
+                    if ($(this).val() !== '(new entry)') {
                         $('#runToImport').hide();
-                    	$('#overwriteRunWarning').show();
+                    	$('#overwriteRunWarning').css("display", "inline");
                     } else {
                         $('#runToImport').show();
                     	$('#overwriteRunWarning').hide();
                     }
                 });
+                
+                $('#existingAssembly').on('change', function () {
+                    if ($(this).val() !== '(new entry)' && $(this).val() !== null) {
+                    	$('#assemblyToImport').hide();
+                    } else {
+                    	$('#assemblyToImport').show();
+                    }
+                });
+
                 // check if entered char is valid 
                 $(".text-input").on("keypress", function (event) {
                     if (!isValidKeyForNewName(event))
@@ -159,7 +467,7 @@
            		getToken();
                 loadModules();
                 loadHost();
-                $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+                $('#runExisting').html('<option>(new entry)</option>').selectpicker('refresh');
                 
     	        $.ajax({
     	            url: maxUploadSizeURL + "?capped=true",
@@ -291,12 +599,17 @@
             
             function importGenotypes() {
                 var host = $("#host").val();
-                if ($("#moduleExistingG").val() != '- new database -')
+                if ($("#moduleExistingG").val() != '(new entry)')
                		$("#moduleToImport").val($("#moduleExistingG").val());
-                if ($("#projectExisting").val() != null && $("#projectExisting").val() != '- new project -')
+
+                if ($("#projectExisting").val() != null && $("#projectExisting").val() != '(new entry)')
                		$("#projectToImport").val($("#projectExisting").val());
-                if ($("#runExisting").val() != '- new run -')
+                if ($("#runExisting").val() != '(new entry)')
                		$("#runToImport").val($("#runExisting").val());
+
+                if ($("#existingAssembly").val() != null && $("#existingAssembly").val() != '(new entry)')
+               		$("#assemblyToImport").val($("#existingAssembly").val());
+
                 var dataFile1 = $("#dataFile1").val().trim();
                 var dataFile2 = $("#dataFile2").val().trim();
 
@@ -538,7 +851,7 @@
             }
 
             function loadModules() {
-                $.ajax({
+                $.ajax({	// first load db list for genotyping data tab
                     url: "<c:url value='<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS_SEARCH%>' />",
                     type: "POST",
                     dataType: "json",
@@ -555,44 +868,45 @@
                         "pageToken": null
                     }),
                     success: function (jsonResult) {
-                        $('#moduleExistingG').html("<option>- new database -</option>").selectpicker('refresh');
-
+                        $('#moduleExistingG').html("<option>(new entry)</option>").selectpicker('refresh');
                         var option = "";
-                        for (var set in jsonResult.referenceSets)
+                        for (var set in jsonResult.referenceSets) {
                             option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
-
+        	                if (jsonResult.referenceSets[set].assemblyId != null)
+        	                	moduleAssemblies[jsonResult.referenceSets[set].name] = jsonResult.referenceSets[set].assemblyId.replace(new RegExp(', ', 'g'), ',').split(",");
+                        }
                         $('#moduleExistingG').append(option).selectpicker('refresh');
                         $('#moduleExistingG').val(0).selectpicker('refresh');
                         $('#moduleExistingG').change();
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        handleError(xhr, thrownError);
-                    }
-                });
-                
-                $.ajax({
-                    url: "<c:url value='<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS_SEARCH%>' />",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json;charset=utf-8",
-                    headers: {
-                        "Authorization": "Bearer " + token
-                    },
-                    data: JSON.stringify({
-                        "assemblyId": null,
-                        "md5checksum": null,
-                        "accession": null,
-                        "pageSize": null,
-                        "pageToken": null
-                    }),
-                    success: function (jsonResult) {
-                        var option = "";
-                        for (var set in jsonResult.referenceSets)
-                            option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
 
-                        $('#moduleExistingMD').append(option).selectpicker('refresh');
-                        $('#moduleExistingMD').val(0).selectpicker('refresh');
-                        $('#moduleExistingMD').change();
+                        $.ajax({	// now load db list for metadata tab
+                            url: "<c:url value='<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS_SEARCH%>' />",
+                            type: "POST",
+                            dataType: "json",
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                "Authorization": "Bearer " + token
+                            },
+                            data: JSON.stringify({
+                                "assemblyId": null,
+                                "md5checksum": null,
+                                "accession": null,
+                                "pageSize": null,
+                                "pageToken": null
+                            }),
+                            success: function (jsonResult) {
+                                var option = "";
+                                for (var set in jsonResult.referenceSets)
+                                    option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+
+                                $('#moduleExistingMD').append(option).selectpicker('refresh');
+                                $('#moduleExistingMD').val(0).selectpicker('refresh');
+                                $('#moduleExistingMD').change();
+                            },
+                            error: function (xhr, ajaxOptions, thrownError) {
+                                handleError(xhr, thrownError);
+                            }
+                        });
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         handleError(xhr, thrownError);
@@ -627,7 +941,7 @@
                         			break;
                         		}
                         	var isNewProject = Object.keys(project).length == 0; 
-                            option += '<option data-id="' + (isNewProject ? "" : project.id) + '">' + (isNewProject ? "- new project -" : project.name) + '</option>';
+                            option += '<option data-id="' + (isNewProject ? "" : project.id) + '">' + (isNewProject ? "(new entry)" : project.name) + '</option>';
                         }
                         $('#projectExisting').html(option).selectpicker('refresh');
                         $('#projectExisting').val(0).selectpicker('refresh');
@@ -648,7 +962,7 @@
                         "Authorization": "Bearer " + token
                     },
                     success: function (jsonResult) {
-                        var option = "<option>- new run -</option>";
+                        var option = "<option>(new entry)</option>";
                         for (var run in jsonResult.runs) {
                             option += '<option>' + jsonResult.runs[run] + '</option>';
                         }
@@ -668,281 +982,5 @@
                 $('#vcfImportSuccessText').html("");
             }
         </script>
-    </head>
-    <body>
-        <%@include file="../../../navbar.jsp" %>    
-        <div class="container margin-top-md">
-			<c:if test="${!isAnonymous}">
-            <ul class="nav nav-tabs" style="border-bottom:0;">
-                <li id="vcfTab" class="active"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
-                <li id="metadataTab"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
-            </ul>
-            </c:if>
-            <div class="tab-content">
-                <div class="tab-pane active" id="tab1">
-            	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL%>' />" method="post">
-	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
-	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
-                    <div class="panel panel-default importFormDiv">
-                        <div class="panel-body panel-grey">
-                            <div class="form text-center">
-                                <div class ="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / BrAPI format</h4>
-											<p class="margin-top-md text-red">Properties followed by * are required</p>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <div class="form-group margin-top-md text-left"<c:if test="${limeitToTempData}"> hidden</c:if>>
-                                            <div class="row" id="rowModuleExisting">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-4" id="taxonDiv" align="center">
-                                                	<div style="float:left;">
-		                                                <label for="ncbiTaxon">Taxon</label>
-		                                                <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
-	                                                </div>
-	                                                <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
-	                                                <input id="ncbiTaxon" name="ncbiTaxon" 
-		                                                onblur="grabNcbiTaxon($(this));"
-		                                                onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
-		                                                class="form-control text-input input-sm" style="min-width:100px; max-width:62%;" type="text" placeholder="Taxon id / name">
-												</div>
-                                                <div class="col-md-3" id="newModuleDiv">
-                                                    <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left" id="hostGrp">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-	                                            	<label for="host">Host</label>
-	                                            </div>
-                                                <div class="col-md-3" id="hostDiv">
-                                                    <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <c:if test="${!isAdmin}">
-	                                                <div class="col-md-3 text-red" style="font-size:11px;">
-                                                		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
-                                                		You are only allowed to create temporary databases
-                                                	</div>
-                                                </c:if>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-	                                            	<label for="projectExisting">Project <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-3" id="emptyBeforeImportDiv" style="display:none;">
-                                                    <input type="checkbox" id="clearProjectData" name="clearProjectData" title="If box is ticked, all project runs will be discarded before import">&nbsp;<label class="label-checkbox" title="If box is ticked, all project runs will be discarded before import" for="clearProjectData"> Clear project before import</label>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input id="projectToImport" name="project" class="form-control text-input input-sm" type="text" placeholder="New project name" onchange="if ($(this).val().trim().length > 0) $('#projectDescDiv').show(50); else $('#projectDescDiv').hide(50);">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="runExisting">Run <span class="text-red">*</span></label>
-		                                        </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-3 text-red" id="overwriteRunWarning" style="display:none; font-size:11px;">
-                                                    <span class="glyphicon glyphicon-warning-sign" style="font-size:13px;"></span>
-                                                    Existing run data will be erased!
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input id="runToImport" name="run" class="form-control text-input input-sm" type="text" placeholder="New run name">
-                                                </div>
-                                                <div class="col-md-4">
-                                                	<div style="width:100%; position:absolute; margin-top:-90px;" id="projectDescDiv">
-                                                		<label for="projectDesc">
-                                                			Project description
-                                                			<img id="igvTooltip" style="margin-left:10px;" src="images/lightbulb.gif" title='TIP: Publication reference(s) may be specified at the bottom of this text, preceded by "HOW TO CITE"' />
-                                                		</label>
-                                                		<textarea id="projectDesc" name="projectDesc" style="resize:none; width:100%; height:140px;"></textarea>
-                                                	</div>
-												</div>
-                                            </div>
-                                        </div>
-                                        <div class="row text-left form-group">
-                                        	<div class="col-md-2" style="text-align:right;">
-	                                             <label for="technology">Technology</label>
-	                                        </div>
-                                            <div class="col-md-3">
-	                                            <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
-	                                        </div>
-	                                        <div class="col-md-3"></div>
-                                        </div>
-                                        <div>
-	                                        <div class="row text-left">
-	                                        	<div class="col-md-2 text-nowrap" style="text-align:right;">
-		                                             <label for="dataFile1">Data source <span class="text-red">*</span></label>
-		                                        </div>
-	                                        	<div class="col-md-10">
-	                                        		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
-													<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-	                                        		or an absolute path on webserver filesystem.</small>
-	                                        		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
-		                                        </div>
-	                                        </div>
-	                                        <div class="row text-left" style="margin-bottom:5px;">
-	                                        	<div class="col-md-2"></div>
-	                                        	<div style="text-align:right; position:absolute; width:110px;">
-	                                        		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
-	                                        	</div>
-	                                            <div class="col-md-5">
-		                                            <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
-		                                        </div>
-	                                            <div class="col-md-5">
-		                                            <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK (ped + map)">
-		                                        </div>
-	                                        </div>
-			                                <div class ="row">
-			                                	<div class="col-md-2"></div>
-			                                    <div class="col-md-5" id="dropZonePreviewsG"></div>
-			                                    <div class="col-md-4" style="padding-right:0;">
-													<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-				       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
-				       									<div>
-				       										<b>Accepted extensions:</b>
-				       										<br/>.vcf
-				       										<br/>.hapmap or .txt
-															<br/>.ped + .map
-				       									</div>
-			       									</div>
-			                                    </div>
-			                                    <div class="col-md-1">
-				                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
-			                                    </div>
-			                                </div>
-	                                	</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-	                </form>
-                </div>
-                
-                <c:if test="${!isAnonymous}">
-                <div class="tab-pane" id="tab2">
-                   	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
-                    <input type="hidden" name="brapiToken" id="brapiToken"/>
-                    <div class="panel panel-default importFormDiv">
-                        <div class="panel-body panel-grey text-center">
-                            <h4>Adding metadata to existing database</h4>
-                            <div class="row">
-                            	<div class="col-md-1"></div>
-                                <div class="col-md-4">
-                                	<div style="position:absolute; margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
-                                		<p>Providing metadata for individuals will enable users to select them by filtering on that metadata.</p>
-                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension).</p>
-                                		<p>The first row in the file (header) must contain field labels, one of them must be named "individual".</p>
-                                		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
-                                		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
-										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
-                                	</div>
-                                </div>
-                                <div class="col-md-3">                     
-                                    <div class="form-group margin-top text-left">
-                                        <label for="moduleExistingMD">Database</label>
-                                        <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
-                                    </div>                  
-                                </div>
-                                <div class="col-md-3"></div>
-                            </div>
-                            <br/>
-                            <div class="row">
-                            	<div class="col-md-1"></div>
-                                <div class="col-md-4"></div>
-                                <div class="col-md-6">
-                                    <div class="form-group text-left">
-                                        <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
-                                        <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
-                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a remote server implementing germplasm-search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId by file for each targeted individual</small>                                  
-                                    </div>
-<%--
-                                    <div class="form-group text-left">
-                                        <label for="metadataFilePath2">Second file path or URL</label> <small class="text-muted">Local to webserver or remote (http / ftp)</small>
-                                        <input id="metadataFilePath2" class="form-control input-sm" type="text" name="metadataFilePath2">
-                                    </div>
-                                    <div class="row margin-bottom">
-                                        <label class="label-checkbox">Clear existing project sequence data before importing <input type="checkbox" name="clearProjectSequences" class="input-checkbox"></label>
-                                    </div>
---%>
-                                </div>
-                            </div>
-                            <div class ="row">
-                            	<div class="col-md-1"></div>
-                                <div class="col-md-4"></div>
-                                <div class="col-md-3">
-									<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-    									<h5>... or drop file here or click to upload<br/><i>(max size: 5 Mb)</i></h5>
-    									<div>
-    										<b>Accepted extensions:</b>
-    										<br/>.tsv or .csv
-    										<br/>(tab-separated only)
-    									</div>
-   									</div>
-                                </div>
-                                <div class="col-md-4" id="dropZonePreviewsMD">
-									<button class="btn btn-primary btn-sm" id="importMetadataButton" type="button">Submit</button><br/>
-                                </div>                                                                
-                            </div>
-                        </div>
-                    </div>
-                    </form>
-                </div>
-                </c:if>
-            </div>
-        </div>
-        <!-- modal which prompts BrAPI user password -->
-		<div class="modal fade" tabindex="-1" role="dialog" id="brapiPwdDialog" aria-hidden="true">
-			<div class="modal-dialog modal-lg">
-				<div class="modal-content">
-					<div class="modal-header">
-						<form onsubmit="return false;">
-							<span class="bold text-info">Please enter password for BrAPI user</span>
-							<br/>
-							<input type="password" id="brapiPassword" size="25" style="margin:8px;" onkeyup="$('#brapiPasswordApplyButton').attr('disabled', $(this).val().trim().length == 0);" />
-							<br/>
-							<input class="btn btn-sm btn-default" disabled type="submit" value="Apply" id="brapiPasswordApplyButton" onclick="$('#brapiPwdDialog').modal('hide');" />
-							<input style="margin-left:100px;" class="btn btn-sm btn-default" type="button" value="Cancel" onclick="$('#brapiPassword').val(''); $('#brapiPassword').keyup(); $('#brapiPwdDialog').modal('hide');" />
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- progress modal -->
-        <div class="modal fade" tabindex="-1" role="dialog" id="progress" aria-hidden="true">
-            <div class="modal-dialog modal-sm margin-top-lg">
-                <div class="modal-content modal-progress">
-                    <div class="loading text-center" id="progressContents">
-<!--                         <div> -->
-<!--                             <div class="c1"></div> -->
-<!--                             <div class="c2"></div> -->
-<!--                             <div class="c3"></div> -->
-<!--                             <div class="c4"></div> -->
-<!--                         </div> -->
-                        <h3 id="progressText" class="loading-message">Please wait...</h3>      
-                        <button class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=' + token + '&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));" title="This will open a separate page allowing to watch import progress at any time. Leaving the current page will not abort the import process.">Open async progress watch page</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </body>
 </html>

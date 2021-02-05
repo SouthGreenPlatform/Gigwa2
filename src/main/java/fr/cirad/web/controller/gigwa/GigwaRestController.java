@@ -114,6 +114,7 @@ import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
+import fr.cirad.tools.mongo.AutoIncrementCounter;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
@@ -1182,7 +1183,7 @@ public class GigwaRestController extends ControllerInterface {
 	public @ResponseBody String importGenotypingData(HttpServletRequest request,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
-			@RequestParam("project") final String sProject,
+			@RequestParam("project") final String sProject, @RequestParam("assembly") final String sAssembly,
 			@RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
 			@RequestParam(value = "clearProjectData", required = false) final Boolean fClearProjectData,
@@ -1436,6 +1437,7 @@ public class GigwaRestController extends ControllerInterface {
 						MongoTemplateManager.getCommonsTemplate().save(db);
 						LOG.info("Importing database " + sNormalizedModule + " into host " + sHost);
 						fDatasourceExists = true;
+						mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
 					} 
 					else
 						throw new Exception("Unable to add " + sNormalizedModule + " entry to datasources");
@@ -1459,6 +1461,13 @@ public class GigwaRestController extends ControllerInterface {
 					return null;
 				}
 
+				Assembly assembly = mongoTemplate.findOne(new Query(Criteria.where(Assembly.FIELDNAME_NAME).is(sAssembly)), Assembly.class);
+				if (assembly == null && !sAssembly.isEmpty()) {	// if its name is empty it will be created by the data-import class
+					assembly = new Assembly(AutoIncrementCounter.getNextSequence(mongoTemplate, MongoTemplateManager.getMongoCollectionName(Assembly.class)));
+					assembly.setName(sAssembly);
+					mongoTemplate.save(assembly);
+				}
+				
 				final AtomicInteger createdProjectId = new AtomicInteger(-1);
 				final SecurityContext securityContext = SecurityContextHolder.getContext();
 				new Thread() {
@@ -1475,20 +1484,20 @@ public class GigwaRestController extends ControllerInterface {
 									{
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
-										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf"))
 									{
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
-										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
-											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										else
 											throw new Exception("Unsupported file format or extension: " + s);
 									}
@@ -1501,7 +1510,7 @@ public class GigwaRestController extends ControllerInterface {
 										BlockCompressedInputStream.assertNonDefectiveFile((File) s);
 									else
 										LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
-									newProjId = new VcfImport(token).importToMongo((fIsLocalFile ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									newProjId = new VcfImport(token).importToMongo((fIsLocalFile ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 								}
 							}
 							if (newProjId != null)
@@ -1517,6 +1526,7 @@ public class GigwaRestController extends ControllerInterface {
 								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to previous import error");
 							else
 							{	// attempt finer cleanup
+								MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
 								if (project == null && mongoTemplate.findOne(new Query(), GenotypingProject.class) == null) {
 									mongoTemplate.dropCollection(VariantRunData.class);
 									LOG.debug("Dropped VariantRunData collection subsequently to previous import error");

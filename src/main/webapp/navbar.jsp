@@ -17,6 +17,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <sec:authentication property="principal" var="principal"/>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
@@ -56,22 +57,24 @@
                         </li>
 					</c:if>
                 </ul>
-                <form class="navbar-form navbar-left" role="search" id="moduleProjectNavbar">
-                    <select class="selectpicker" id="module" data-actions-box="true" data-live-search="true" name="module" title="Database"></select>
-                    <div class="form-group" id="grpProj" style="display:none;">
-                    	&nbsp;<label for="project" class="label-light">Project </label>
-                        <select class="selectpicker" id="project" data-actions-box="true" name="project"></select>
-	                    <a href="#" onclick="displayProjectInfo($('#project').val());" id="projectInfoLink" style="display:none;"><span role='button' title="Click for project information" class="glyphicon glyphicon-info-sign" id="formatHelp" style="color:yellow;"></span></a>
-	                </div>
-                    <div class="form-group" id="grpAsm" style="display:none;">
-	                    &nbsp;<label for="assembly" class="label-light">Assembly </label>
-                        <select class="selectpicker" id="assembly" data-actions-box="true" name="assembly"></select>
-                    </div>
-                </form>
+                <% if (request.getRequestURI().replace("/index.jsp", "/").endsWith("/")) { %>
+	                <form class="navbar-form navbar-left" role="search" id="moduleProjectNavbar">
+	                    <select class="selectpicker" id="module" data-actions-box="true" data-live-search="true" name="module" title="Database"></select>
+	                    <div class="form-group" id="grpProj" style="display:none;">
+	                    	&nbsp;<label for="project" class="label-light">Project </label>
+	                        <select class="selectpicker" id="project" data-actions-box="true" name="project"></select>
+		                    <a href="#" onclick="displayProjectInfo($('#project').val());" id="projectInfoLink" style="display:none;"><span role='button' title="Click for project information" class="glyphicon glyphicon-info-sign" id="formatHelp" style="color:yellow;"></span></a>
+		                </div>
+	                    <div class="form-group" id="grpAsm" style="display:none;">
+		                    &nbsp;<label for="assembly" class="label-light">Assembly </label>
+	                        <select class="selectpicker" id="assembly" data-actions-box="true" name="assembly"></select>
+	                    </div>
+	                </form>
+				<% } %>
             </div>
         </div>
     </nav>
-    
+
     <!-- modal which displays documentation -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="manual" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
