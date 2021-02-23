@@ -177,7 +177,7 @@
 
 	        $.ajax({
 	            url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
-	            async: false,
+	            async: false,// 	        async: false,
 	            type: "GET",
 	            contentType: "application/json;charset=utf-8",
 	            success: function(labelsAndURLs) {
@@ -260,7 +260,7 @@
 	    $('#Sequences').on('multiple_select_change', function() {
 	        $('#sequencesLabel').html("Sequences (" + $('#Sequences').selectmultiple('count') + "/" + seqCount + ")");
 	    });
-	    $('#Individuals1').on('multiple_select_change', function() {
+	    $('#Individuals1').on('multiple_select_change', function() {// 	        async: false,
 	        $('#individualsLabel1').html("Individuals (" + $('#Individuals1').selectmultiple('count') + "/" + indCount + ")");
 	        updateGtPatterns();
 	    });
@@ -343,7 +343,6 @@
 	function clearToken() {
 	    $.ajax({
 	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
-	        async: false,
 	        type: "DELETE",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
