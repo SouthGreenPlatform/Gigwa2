@@ -30,7 +30,7 @@ public class InstanceTracker {
 	@Scheduled(fixedRate = 1000l * 60 * 60 * 24 * 28)
 	public void track() {
 		int users = userDao.getUserMap().getUserCount();
-		int databases = MongoTemplateManager.getAvailableModules().size();
+		int databases = MongoTemplateManager.getAvailableModules(null).size();
 		String country = Locale.getDefault().getCountry();
 		String language = Locale.getDefault().getLanguage();
 	

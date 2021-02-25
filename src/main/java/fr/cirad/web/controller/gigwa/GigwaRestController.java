@@ -1347,6 +1347,9 @@ public class GigwaRestController extends ControllerInterface {
 
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sNormalizedModule);
 		boolean fDatasourceExists = mongoTemplate != null;
+		if (fDatasourceExists && mongoTemplate.getDb().getName().startsWith("mgdb2_"))
+			progress.setError("Gigwa V3 cannot import data into an existing V2 database. Please create a new one.");
+
 		final GenotypingProject project = !fDatasourceExists ? null : mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		boolean fGotProjectDesc = sProjectDescription != null && sProjectDescription.trim().length() > 0;
 		boolean fBrapiImport = sBrapiMapDbId != null && sBrapiMapDbId.length() > 0 && sBrapiStudyDbId != null && sBrapiStudyDbId.length() > 0 && dataUri1.trim().toLowerCase().startsWith("http");
@@ -1461,13 +1464,6 @@ public class GigwaRestController extends ControllerInterface {
 					return null;
 				}
 
-				Assembly assembly = mongoTemplate.findOne(new Query(Criteria.where(Assembly.FIELDNAME_NAME).is(sAssembly)), Assembly.class);
-				if (assembly == null && !sAssembly.isEmpty()) {	// if its name is empty it will be created by the data-import class
-					assembly = new Assembly(AutoIncrementCounter.getNextSequence(mongoTemplate, MongoTemplateManager.getMongoCollectionName(Assembly.class)));
-					assembly.setName(sAssembly);
-					mongoTemplate.save(assembly);
-				}
-				
 				final AtomicInteger createdProjectId = new AtomicInteger(-1);
 				final SecurityContext securityContext = SecurityContextHolder.getContext();
 				new Thread() {
@@ -1490,7 +1486,7 @@ public class GigwaRestController extends ControllerInterface {
 									{
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
-										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new VcfImport(token).importToMongo(filesByExtension.containsKey("bcf"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();
@@ -1537,7 +1533,7 @@ public class GigwaRestController extends ControllerInterface {
 									if (dr.getDeletedCount() > 0)
 										LOG.debug("Removed " + dr.getDeletedCount() + " records from VariantRunData subsequently to previous import error");
 								}
-				                if (mongoTemplate.findOne(new Query(), VariantRunData.class) == null && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(sModule))
+				                if (mongoTemplate.findOne(new Query(), VariantRunData.class) == null && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(mongoTemplate))
 				                {	// if there is no genotyping data left and we are not working on a fixed list of variants then any other data is irrelevant
 				                    mongoTemplate.getDb().drop();
 				                }

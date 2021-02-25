@@ -67,7 +67,7 @@ public class GigwaModuleManager implements IModuleManager {
 	{
 		Map<String, Map<Comparable, String>> entitiesByModule = new LinkedHashMap<String, Map<Comparable, String>>();
 		if ("project".equals(entityType))
-			for (String sModule : MongoTemplateManager.getAvailableModules())
+			for (String sModule : MongoTemplateManager.getAvailableModules(null))
 				if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny))
 				{
 					Map<Comparable, String> moduleEntities = entitiesByModule.get(sModule);
@@ -215,9 +215,9 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public Collection<String> getModuleNamesByVisibility(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
 		if (fTrueForPublicFalseForPrivateNullForBoth == null)
-			return MongoTemplateManager.getAvailableModules();
+			return MongoTemplateManager.getAvailableModules(null);
 		if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
 			return MongoTemplateManager.getPublicDatabases();
-		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
+		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(null), MongoTemplateManager.getPublicDatabases());
 	}
 }

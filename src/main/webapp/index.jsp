@@ -118,7 +118,6 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
-	var moduleAssemblies = {};
 	
 	$.ajaxSetup({cache: false});
 
@@ -134,15 +133,33 @@
 	            dropTempCol();
 
 	        referenceset = $(this).val();
-	        let assemblyOptions = "";
-	        for (var assembly in moduleAssemblies[referenceset])
-	        	assemblyOptions += '<option>' + moduleAssemblies[referenceset][assembly] + '</option>';
-	    	$('#assembly').html(assemblyOptions).selectpicker('refresh');
-	    	if (moduleAssemblies[referenceset] == null || moduleAssemblies[referenceset].length <= 1)
-	    		$("#grpAsm").hide();
-	    	else
-	    		$("#grpAsm").show();
-	        
+
+	        $.ajax({
+		        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS%>" />/' + referenceset,
+		        type: "GET",
+		        dataType: "json",
+		        async: false,
+		        headers: {
+		            "Authorization": "Bearer " + token
+		        },
+		        success: function(jsonResult) {
+		        	if (jsonResult.assemblyId == null)
+		        		return;
+
+			        let moduleAssemblies = jsonResult.assemblyId.split(", "), assemblyOptions = "";
+			        for (var assembly in moduleAssemblies)
+			        	assemblyOptions += '<option value="' + moduleAssemblies[assembly] + '">' + (moduleAssemblies[assembly] == '' ? '(unnamed default)' : moduleAssemblies[assembly]) + '</option>';
+			    	$('#assembly').html(assemblyOptions).selectpicker('refresh');
+			    	if (moduleAssemblies == null || moduleAssemblies.length <= 1)
+			    		$("#grpAsm").hide();
+			    	else
+			    		$("#grpAsm").show();
+		        },
+		        error: function(xhr, ajaxOptions, thrownError) {
+		            handleError(xhr, thrownError);
+		        }
+		    });
+	        	        
 	        if (!loadProjects(referenceset))
 	        	return;
 
@@ -246,7 +263,7 @@
     	        type: "GET",
     	        dataType: "json",
     	        contentType: "application/json;charset=utf-8",
-    	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+    	        headers: buildHeader(token, $('#assembly').val()),
     	        success: function(jsonResult) {
                     runList = [];
                     for (var run in jsonResult.runs)
@@ -350,7 +367,6 @@
 	function clearToken() {
 	    $.ajax({
 	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
-	        async: false,
 	        type: "DELETE",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
@@ -381,17 +397,15 @@
 	        }),
 	        success: function(jsonResult) {
 	            var option = "";
-	            for (var set in jsonResult.referenceSets) {
+	            for (var set in jsonResult.referenceSets)
 	                option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
-	                if (jsonResult.referenceSets[set].assemblyId != null)
-	                	moduleAssemblies[jsonResult.referenceSets[set].name] = jsonResult.referenceSets[set].assemblyId.replace(new RegExp(', ', 'g'), ',').split(",");
-	            }
 	            $('#module').html(option).selectpicker('refresh');
 	            var module = $_GET("module"); // get module from url
 	            if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp               
                 	module = module.replace(new RegExp('#([^\\s]*)', 'g'), '');
                 
 	            if (module !== null) {
+	            	$('#module').append('<option>' + module + '</option>');
 	                $('#module').selectpicker('val', module);
 	                $('#module').trigger('change');
 	            }
@@ -413,7 +427,7 @@
 	        type: "POST",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "datasetId": module == null && passedModule != null ? passedModule : module,
 	            "pageSize": null,
@@ -492,7 +506,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	            variantTypesCount = jsonResult.length;
 	            var option = "";
@@ -513,7 +527,7 @@
 	        type: "POST",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "referenceSetId": $('#module').val(),
 	            "variantSetId": $('#project :selected').data("id"),
@@ -658,7 +672,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	            if (jsonResult.effectAnnotations.length > 0) {
 	                var option = "";
@@ -688,7 +702,7 @@
 	        dataType: "json",
 	        async:false,
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        success: function(jsonResult) {
                 alleleCount = jsonResult.numberOfAllele.length;
                 var option = "";
@@ -835,7 +849,7 @@
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
 	        timeout:0,
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        data: JSON.stringify({
 	            "variantSetId": $('#project :selected').data("id"),
 	            "searchMode": searchMode,
@@ -1011,10 +1025,7 @@
 	            async: false,
 	            dataType: "json",
 	            contentType: "application/json;charset=utf-8",
-	            headers: {
-	                "Authorization": "Bearer " + token,
-	                "ind": ind
-	            },
+	            headers: buildHeader(token, $('#assembly').val(), ind),
 	            success: function(jsonResult) {
 	                if (jsonResult.calls.length > 0)
 	                {
@@ -1023,7 +1034,7 @@
 		    	            $('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
 		    	            $('#varSeq').html("Seq: " + jsonResult.referenceName);
 		    	            $('#varType').html("Type: " + jsonResult.info.type[0]);
-		    	            $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+		    	            $('#varPos').html("Pos: " + jsonResult.start + (jsonResult.start != jsonResult.end ? " to " + jsonResult.end : ""));
 		    		    }
 
 	                	var htmlTableContents = buildGenotypeTableContents(jsonResult);
@@ -1067,7 +1078,7 @@
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
-	        headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val()),
 	        success: function(jsonResult) {
 	        	var gotFunctAnn = jsonResult.info.ann_header != null && jsonResult.info.ann_header.length > 0
 	        	$('#toggleFunctionalAnn').css('display', gotFunctAnn ? 'inline' : 'none');
@@ -1199,7 +1210,7 @@
 	        $.ajax({
 	            url: url,
 	            type: "POST",
-	            headers: buildHeaderWithTokenAndAssembly(token, $('#assembly').val()),
+	            headers: buildHeader(token, $('#assembly').val()),
 	            traditional: true,
 	            data: data,
 	            success: function(response) {

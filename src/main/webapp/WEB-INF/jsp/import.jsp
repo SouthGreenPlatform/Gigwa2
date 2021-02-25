@@ -109,7 +109,7 @@
                                              	</div>
                                                 <div class="col-md-5" style="display:inline;" id="assemblyDiv" align="right">
 	                                                <div align="left" style="width:100%;">
-									                    <label for="assembly">Assembly </label>&nbsp;
+									                    <label for="assembly">Assembly <span class="text-red">*</span></label>&nbsp;
 								                        <select class="selectpicker" id="existingAssembly" data-actions-box="true"></select>
 								                        <input id="assemblyToImport" name="assembly" class="form-control text-input input-sm" style='display:inline; max-width:52%;' type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New assembly name">
 													</div>
@@ -356,7 +356,7 @@
             	    		$('#assemblyToImport').show();
             	        let assemblyOptions = '<option>(new entry)</option>';
             	        for (var assembly in moduleAssemblies[$(this).val()])
-            	        	assemblyOptions += '<option ' + (assembly == 0 ? 'selected ' : '') + 'value="' + moduleAssemblies[$(this).val()][assembly] + '">' + (moduleAssemblies[$(this).val()][assembly] == '' ? '(unnamed default assembly)' : moduleAssemblies[$(this).val()][assembly]) + '</option>';
+            	        	assemblyOptions += '<option ' + (assembly == 0 ? 'selected ' : '') + 'value="' + moduleAssemblies[$(this).val()][assembly] + '">' + (moduleAssemblies[$(this).val()][assembly] == '' ? '(unnamed default)' : moduleAssemblies[$(this).val()][assembly]) + '</option>';
             	    	$('#existingAssembly').html(assemblyOptions).selectpicker('refresh');
 
                         loadProjects($(this).val());
@@ -381,12 +381,15 @@
                         loadRuns();
                         $('#projectToImport').hide();
                         $('#emptyBeforeImportDiv').css("display", "inline");
-                        $('#projectDescDiv').css("display", "inline");
+                        $('#projectDescDiv').show();
                     } else {
                         $('#runExisting').html('<option>(new entry)</option>').selectpicker('refresh');
-                        $('#projectToImport').removeClass('hidden');
+                        $('#projectToImport').show();
                         $('#emptyBeforeImportDiv').hide();
-                        $('#projectDescDiv').hide();
+                        if ($('#projectToImport').val() != "")
+                            $('#projectDescDiv').show();
+                        else
+                        	$('#projectDescDiv').hide();
                     }
                 	$('#runExisting').change();
                 });
@@ -622,6 +625,13 @@
                 if ($("#moduleToImport").val() == "")
                 	$("#moduleToImport").val(hashCode(token).toString(16) + "O" + hashCode(Date.now()).toString(16));
                 </c:if>
+                
+                if ($("#existingAssembly").val() == "(new entry)" && $("#assemblyToImport").val() == "")
+                {
+                   	alert("You must specify an assembly!");
+                    $('#progress').modal('hide');
+                    return;
+                }
                                 
                 var importDropzoneG = new Dropzone("#importDropzoneG");                 
                 if (importDropzoneG.getRejectedFiles().length > 0) {
@@ -712,7 +722,7 @@
     						alert("This BrAPI service does not support authentication!");
     						return failAndHideBrapiDataSelectionDiv();
     					}
-    					
+
         				$('#brapiPwdDialog').modal({backdrop: 'static', keyboard: false, show: true});
         				return;
          			}

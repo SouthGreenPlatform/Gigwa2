@@ -321,7 +321,7 @@ function loadSearchableVcfFields()
             {
         		var htmlContents = "";
                 for (var key in jsonResult)
-               		htmlContents += '<div class="col-xl-6 input-group third-width" style="margin-left:2px; margin-top:1px; float:left;"> <span class="input-group-addon input-xs"><label for="' + jsonResult[key] + '_threshold1" class="' + jsonResult[key] + '_thresholdLabel">' + jsonResult[key] + '</label></span> <input id="' + jsonResult[key] + '_threshold1" class="form-control input-sm" type="number" step="0.1" min="0" name="' + jsonResult[key] + '_threshold1" value="0" maxlength="4" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == \'\') $(this).val(0);"></div>';
+               		htmlContents += '<div class="col-xl-6 input-group third-width" style="margin-left:2px; margin-top:1px; float:left;"> <span class="input-group-addon input-xs"><label for="' + jsonResult[key] + '_threshold' + i + '" class="' + jsonResult[key] + '_thresholdLabel">' + jsonResult[key] + '</label></span> <input id="' + jsonResult[key] + '_threshold' + i + '" class="form-control input-sm" type="number" step="0.1" min="0" name="' + jsonResult[key] + '_threshold' + i + '" value="0" maxlength="4" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == \'\') $(this).val(0);"></div>';
         		$('#vcfFieldFilterGroup' + i).html(htmlContents);
         		$('.vcfFieldFilters').toggle(htmlContents != "");
             }
@@ -1254,8 +1254,9 @@ function listQueries(){
 				            $('#Individuals'+i+' div select').trigger('change');
 				      	}
 				      	
-				      	$('#vcfFieldFilterGroup'+i+' #DP_threshold1').val(jsonResult['annotationFieldThresholds'+e]['DP']);				      	
-				      	$('#vcfFieldFilterGroup'+i+' #GQ_threshold1').val(jsonResult['annotationFieldThresholds'+e]['GQ']); 
+				      	let groupThresholds = jsonResult['annotationFieldThresholds'+e];
+				      	for (var key in groupThresholds)
+				      		$('#vcfFieldFilterGroup'+i+' #' + key + '_threshold' + i).val(groupThresholds[key]);				      	
 				      	$('#missingdata'+i).val(jsonResult['missingData'+e]);
 				      	$('#minmaf'+i).val(jsonResult['minmaf'+e]);
 				      	$('#maxmaf'+i).val(jsonResult['maxmaf'+e]);
@@ -1304,9 +1305,11 @@ function listQueries(){
 	});
 }
 
-function buildHeaderWithTokenAndAssembly(token, assemblyId) {
+function buildHeader(token, assemblyId, individuals) {
     var headers = { "Authorization": "Bearer " + token };
 	    if (assemblyId != null)
 	    	headers["assembly"] = assemblyId;
+	    if (individuals != null)
+	    	headers["ind"] = individuals;
 	    return headers;
 }

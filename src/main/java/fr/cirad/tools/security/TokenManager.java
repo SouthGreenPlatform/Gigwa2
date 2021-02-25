@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,8 @@ import javax.ejb.ObjectNotFoundException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,6 +45,7 @@ import org.springframework.stereotype.Component;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
+import fr.cirad.mgdb.model.mongo.maintypes.Database;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.Helper;
@@ -203,16 +207,13 @@ public class TokenManager extends AbstractTokenManager {
     {
     	Map<String, Map<String, Map<String, Collection<Comparable>>>> customRolesByModuleAndEntityType = userDao.getCustomRolesByModuleAndEntityType(authentication.getAuthorities());
     	Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
-		Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
-		for (String module : modules)
-		{
-			boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
-			boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
-			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
-			boolean fAuthorizedUser = fAuthentifiedUser && (customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
-			if (fAdminUser || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
-				authorizedModules.add(module);
+		Collection<String> authorizedModules = new HashSet<String>();
+		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
+		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		for (Database db : MongoTemplateManager.getCommonsTemplate().find(new Query(Criteria.where("_id").in(MongoTemplateManager.getAvailableModules(null))), Database.class)) {
+			boolean fAuthorizedUser = fAuthentifiedUser && (customRolesByModuleAndEntityType.get(db.getId()) != null || managedEntitiesByModuleAndType.get(db.getId()) != null);
+			if (fAdminUser || (!db.isHidden() && (fAuthorizedUser || db.isPublic())))
+				authorizedModules.add(db.getId());
 		}
         return authorizedModules;
     }
@@ -253,14 +254,12 @@ public class TokenManager extends AbstractTokenManager {
      * @return List<String> writable modules
      */
     public Collection<String> listWritableDBs(Authentication authentication) {
-		Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
+		Collection<String> modules = MongoTemplateManager.getAvailableModules(3), authorizedModules = new HashSet<String>();
 		Map<String, Collection<String>> writableEntityTypesByModule = userDao.getWritableEntityTypesByModule(authentication.getAuthorities());
 		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
-		for (String module : modules)
-		{
-//			boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
-			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
+		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		for (String module : modules) {
 			Collection<String> writableEntityTypes = writableEntityTypesByModule.get(module);
 			boolean fAuthorizedUser = fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || managedEntitiesByModuleAndType.get(module) != null);
 			if (fAdminUser || (/*!fHiddenModule && */fAuthorizedUser))

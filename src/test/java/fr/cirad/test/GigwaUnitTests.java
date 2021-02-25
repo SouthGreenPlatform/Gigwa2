@@ -31,7 +31,7 @@ public class GigwaUnitTests {
 		Properties p = new Properties();
 		p.load(datasources);
 		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
-		new VcfImport().importToMongo(false, "testModule", "testProject", "testRun", "testTechnology", new File("test/sample.vcf").toURI().toURL(), 0);
+		new VcfImport().importToMongo(false, "testModule", "testProject", "testRun", "testTechnology", new File("test/sample.vcf").toURI().toURL(), "", 0);
 	}
 
 	@AfterClass
