@@ -1225,7 +1225,8 @@
 	        });
 	    } else {
 	    	downloadURL = null;
-	    	data['assembly'] = $('#assembly').val();
+	    	if ($('#assembly').val() != null)
+	    		data['assembly'] = $('#assembly').val();
 	    	postDataToIFrame("outputFrame", url, data);
 	        $("div#exportPanel").hide();
 	        $("a#exportBoxToggleButton").removeClass("active");

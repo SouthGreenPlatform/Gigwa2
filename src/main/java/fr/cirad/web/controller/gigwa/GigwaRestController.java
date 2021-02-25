@@ -911,7 +911,7 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setApplyMatrixSizeLimit(!"BED".equals(exportFormat) && (authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN))));
 
 				if (assembly != null)
-					service.getAssemblyId().set(assembly == null ? null : MongoTemplateManager.get(info[0]).findOne(new Query(Criteria.where(Assembly.FIELDNAME_NAME).is(assembly)), Assembly.class).getId());	// when it's a form submission there is no way to specify http headers so the assembly name is passed explicitly as a form parameter 
+					service.getAssemblyId().set(/*assembly == null ? null : */MongoTemplateManager.get(info[0]).findOne(new Query(Criteria.where(Assembly.FIELDNAME_NAME).is(assembly)), Assembly.class).getId());	// when it's a form submission there is no way to specify http headers so the assembly name is passed explicitly as a form parameter 
 				else
 					service.applyAssemblyId(request, info[0]);
 				service.exportVariants(gsver, token, resp);
