@@ -1472,7 +1472,7 @@ public class GigwaRestController extends ControllerInterface {
 						try {
 							Integer newProjId = null;
 							if (fBrapiImport)
-								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sAssembly, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else
 							{
 								if (!filesByExtension.containsKey("gz")) {
