@@ -175,10 +175,10 @@ public class SwaggerConfig implements ServletContextAware {
 				+	" Concerning BrAPI, there is a different base-url for each database. You may find a list of available databases using the GA4GH call <pre>" + rootPath + "/ga4gh/referencesets/search</pre> <font color='red'>NB: a referenceSet in GA4GH or BrAPI v2 is equivalent to a database in Gigwa or BrAPI v1, as detailed below</font>\n"
 				+	"# Terminology correspondence table\n"
 				+	" <table style='border:1px #404040 dashed; margin-bottom:10px;'>"
-				+	" <tr><td><b>&nbsp;Gigwa entity</b></td><td bgcolor='#f0f0f0'>database or module</td><td>project</td><td bgcolor='#f0f0f0'>sequence</td><td>variant</td><td bgcolor='#f0f0f0'>individual</td><td>sample</td></tr>"
-				+	" <tr><td><b>&nbsp;GA4GH entity</b></td><td bgcolor='#f0f0f0'>referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>-</td></tr>"
-				+	" <tr><td><b>&nbsp;BrAPI v1 entity</b></td><td bgcolor='#f0f0f0'>database or map</td><td>genotyping study</td><td bgcolor='#f0f0f0'>linkageGroup</td><td>marker</td><td bgcolor='#f0f0f0'>germplasm</td><td>sample or markerprofile</td></tr>"
-				+	" <tr><td><b>&nbsp;BrAPI v2 entity</b><br/><span style='color:red; font-style:italic;'>(under development)</span></td><td bgcolor='#f0f0f0'>database or map or referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td><td bgcolor='#f0f0f0'>callSet</td><td>sample</td></tr>"
+				+	" <tr><td><b>&nbsp;Gigwa entity</b></td><td bgcolor='#f0f0f0'>database or module</td><td>project</td><td bgcolor='#f0f0f0'>run</td><td>sequence</td><td bgcolor='#f0f0f0'>variant</td><td>individual</td><td bgcolor='#f0f0f0'>sample</td></tr>"
+				+	" <tr><td><b>&nbsp;GA4GH entity</b></td><td bgcolor='#f0f0f0'>referenceSet or dataset</td><td>variantSet</td><td bgcolor='#f0f0f0'>-</td><td>reference</td><td bgcolor='#f0f0f0'>variant</td><td>callSet</td><td bgcolor='#f0f0f0'>-</td></tr>"
+				+	" <tr><td><b>&nbsp;BrAPI v1 entity</b></td><td bgcolor='#f0f0f0'>database or map</td><td>genotyping study</td><td bgcolor='#f0f0f0'>-</td><td>linkageGroup</td><td bgcolor='#f0f0f0'>marker</td><td>germplasm</td><td bgcolor='#f0f0f0'>sample or markerprofile</td></tr>"
+				+	" <tr><td><b>&nbsp;BrAPI v2 entity</b><br/><span style='color:red; font-style:italic;'>(under development)</span></td><td bgcolor='#f0f0f0'>referenceSet</td><td>genotyping study</td><td bgcolor='#f0f0f0'>variantSet</td><td>reference</td><td bgcolor='#f0f0f0'>variant</td><td>germplasm</td><td bgcolor='#f0f0f0'>sample or callSet</td></tr>"
 				+	" </table>",
                 "",
                 "",
