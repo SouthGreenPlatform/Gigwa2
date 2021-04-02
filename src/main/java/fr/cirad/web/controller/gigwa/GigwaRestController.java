@@ -1119,7 +1119,7 @@ public class GigwaRestController extends ControllerInterface {
 						progress.setError("Individuals must have a metadata value for " + BrapiService.BRAPI_FIELD_germplasmDbId);
 					else
 						try {
-							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "".equals(brapiToken) ? null : brapiToken);
+							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "".equals(brapiToken) ? null : brapiToken, progress);
 						}
 						catch (Error err) {
 							progress.setError(err.getMessage());
