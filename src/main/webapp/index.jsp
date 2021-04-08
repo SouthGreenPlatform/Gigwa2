@@ -143,8 +143,11 @@
 		            "Authorization": "Bearer " + token
 		        },
 		        success: function(jsonResult) {
-		        	if (jsonResult.assemblyId == null)
+		        	if (jsonResult.assemblyId == null) {
+		        		$('#assembly').html("").selectpicker('refresh');
+			    		$("#grpAsm").hide();
 		        		return;
+		        	}
 
 			        let moduleAssemblies = jsonResult.assemblyId.split(", "), assemblyOptions = "";
 			        for (var assembly in moduleAssemblies)
@@ -1487,7 +1490,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<div class="margin-top-md">
 								   <div id="mostSameRatioSpan1" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio
 										<input id="mostSameRatio1" class="input-xs" style="width:35px;" value="100" maxlength="3"
-										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
+										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == '' || $(this).val() > 100) $(this).val(100);">%
 								   </div>
 								   <label for="Genotypes1" class="custom-label">Genotype patterns</label>
 								   &nbsp;
@@ -1577,7 +1580,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<div class="margin-top-md">
 								   <div id="mostSameRatioSpan2" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio
 										<input id="mostSameRatio2" class="input-xs" style="width:35px;" value="100" maxlength="3"
-										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
+										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() == '' || $(this).val() > 100) $(this).val(100);">%
 								   </div>
 								   <label for="Genotypes2" class="custom-label">Genotype patterns</label>
 								   &nbsp;
