@@ -102,6 +102,7 @@ import fr.cirad.mgdb.model.mongo.maintypes.Database;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
+import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
@@ -114,7 +115,6 @@ import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
-import fr.cirad.tools.mongo.AutoIncrementCounter;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
@@ -455,7 +455,7 @@ public class GigwaRestController extends ControllerInterface {
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.getAnnotationFields(info[0], Integer.parseInt(info[1]), true);
+				return MgdbDao.getAnnotationFields(MongoTemplateManager.get(info[0]), Integer.parseInt(info[1]), true);
 			} else {
 				build401Response(resp);
 				return null;
