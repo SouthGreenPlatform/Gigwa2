@@ -127,7 +127,6 @@
 	$(document).ready(function()
 	{
 	    $('#module').on('change', function() {
-	    	$('#individualFilteringTable').html("");
 	    	$('#serverExportBox').hide();
 	        if (referenceset != '')
 	            dropTempCol();
@@ -219,7 +218,8 @@
 	    });
 	    $('#project').on('change', function() {
 	    	count = 0;
-		    $('#countResultPanel').hide();
+	    	$("table#individualFilteringTable").html("");
+	    	$('#countResultPanel').hide();
 	        $('#rightSidePanel').hide();
 	        fillWidgets();
 	        resetFilters();
