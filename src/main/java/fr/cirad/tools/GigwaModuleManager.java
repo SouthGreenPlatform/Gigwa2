@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -126,12 +125,11 @@ public class GigwaModuleManager implements IModuleManager {
 			MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 			Query query = new Query();
 			query.fields().include("_id");
-			List<String> individualsInThisProject = null, individualsInOtherProjects = new ArrayList<>();
+			Collection<String> individualsInThisProject = null, individualsInOtherProjects = new ArrayList<>();
 			int nProjCount = 0;
 			for (GenotypingProject proj : mongoTemplate.find(query, GenotypingProject.class))
 			{
 				nProjCount++;
-//				List<String> projectIndividuals = proj.getSamples().values().stream().map(sp -> sp.getIndividual()).collect(Collectors.toList());
 				if (proj.getId() == nProjectIdToRemove)
 					individualsInThisProject = MgdbDao.getProjectIndividuals(sModule, proj.getId());
 				else
