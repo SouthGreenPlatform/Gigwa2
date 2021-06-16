@@ -406,12 +406,12 @@
          			else
          			{
          				submitBrapiForm();
-         				if (typeof brapiParameters == 'undefined')
+         				if (typeof brapiParameters == 'undefined' || brapiParameters == null)
          					return;		// just displayed the selection div
          			}
         		}
 
-        		if (typeof brapiParameters != 'undefined')
+        		if (typeof brapiParameters != 'undefined' && brapiParameters != null)
         		{
         			$('#brapiParameter_mapDbId').val(brapiParameters['mapDbId']);
         			$('#brapiParameter_studyDbId').val(brapiParameters['studyDbId']);
