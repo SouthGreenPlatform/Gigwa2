@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
@@ -53,7 +53,9 @@
         	var BRAPI_V1_URL_ENDPOINT;
         	var brapiParameters;
         	var projectDescriptions = [];
-   			var brapiUserName, brapiUserPassword, brapiToken;
+   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
+   			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
+   			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
@@ -151,9 +153,63 @@
                 $('#brapiPwdDialog').on('shown.bs.modal', function () {
                 	$('#brapiPassword').focus();
                 });
+                
+                $('#moduleExistingMD').on('change', function () {
+            	    $.ajax({
+            	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTSETS_SEARCH%>"/>',
+            	        async: false,
+            	        type: "POST",
+            	        dataType: "json",
+            	        contentType: "application/json;charset=utf-8",
+            	        headers: {
+            	            "Authorization": "Bearer " + token
+            	        },
+            	        data: JSON.stringify({
+            	            "datasetId": $('#moduleExistingMD').val()//,
+            	        }),
+            	        success: function(jsonResult) {
+            	        	distinctBrapiMetadataURLs = new Set();
+            	        	for (var vs in jsonResult.variantSets) {
+                        	    $.ajax({
+                        	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
+                        	        type: "POST",
+                        	        dataType: "json",
+                        	        async:false,
+                        	        contentType: "application/json;charset=utf-8",
+                        	        headers: {
+                        	            "Authorization": "Bearer " + token
+                        	        },
+                        	        data: JSON.stringify({
+                        	            "variantSetId": jsonResult.variantSets[vs].id
+                        	        }),
+                        	        success: function(individualsResult) {
+                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v1\/?/i);
+                        	        	for (var cs in individualsResult.callSets) {
+                        	        		var ai = individualsResult.callSets[cs].info;
+                        	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString()))
+                        	        			distinctBrapiMetadataURLs.add(ai[extRefSrcField].toString());
+                        	        	}
+                        	        	updateBrapiNotice();
+                        	        },
+                        	        error: function(xhr, ajaxOptions, thrownError) {
+                        	            handleError(xhr, thrownError);
+                        	        }
+                        	    });
+            	        	}
+            	        },
+            	        error: function(xhr, ajaxOptions, thrownError) {
+            	            $('#searchPanel').hide();
+            	            handleError(xhr, thrownError);
+            	            $('#module').val("");
+            	            $('#grpProj').hide();
+            	            return false;
+            	        }
+            	    });
+                });
             });
 
-            $(document).ready(function () {    	        
+            $(document).ready(function () {    	   
+            	updateBrapiNotice();
     	        $('#moduleProjectNavbar').hide();
                 $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
            		getToken();
@@ -241,6 +297,13 @@
                 $('button#importGenotypesButton').on("click", function() {importGenotypes()});
                 $('button#importMetadataButton').on("click", function() {importMetadata()});
             });
+            
+            function updateBrapiNotice() {
+            	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.size > 0)
+	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains individuals that are linked to BrAPI germplasm records. You may directly click on SUBMIT to import their metadata</span>");
+	        	else
+	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1's germplasm-search call is supported in a two-step procedure: (1) Importing metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>germplasmDbId</b> and <b>BrAPI base-URLs</b>; (2) Coming back to this form and submitting<span style='color:#;'>");
+            }
             
             function submitBrapiForm() {
     			if ($("div#brapiDataSelectionDiv").length == 0)
@@ -458,26 +521,29 @@
                 var dataFile1 = $("#metadataFilePath1").val().trim();
 <%--  		        var dataFile2 = $("#metadataFilePath2").val().trim(); --%>
 
-				var source1Uri = dataFile1.toLowerCase();
-        		if (source1Uri.startsWith("http") && source1Uri.toLowerCase().indexOf("brapi") != -1)
-        		{
-        			if (source1Uri.indexOf("/brapi/v1") > -1 && !(source1Uri.endsWith("/brapi/v1") || source1Uri.endsWith("/brapi/v1/")))
-        			{
-        				alert("BrAPI base-url should end with /brapi/v1");
-        				return;
-        			}
+				var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) <%--+ (dataFile2 != "" ? 1 : 0)--%>;
+				if (providedFileCount > 1) {
+				    alert("You may not provide more than 1 metadata source!");
+				    $('#progress').modal('hide');
+				    return;
+				}
 
-        			$('#brapiToken').val(prompt("Please enter remote server token or leave blank if unneeded").trim());
+				if (dataFile1 == "" && importDropzoneMD.getAcceptedFiles().length == 0 && distinctBrapiMetadataURLs.size > 0) {
+					$('#brapiURLs').val("");
+					$('#brapiTokens').val("");
+        			distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
+	        			var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
+	        			if (brapiToken == null)
+	        				return;
+						var fFirstEntry = $('#brapiURLs').val() == "";
+        				$('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
+        				$('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+        			});
         		}
-                
-                var totalDataSourceCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) <%--+ (dataFile2 != "" ? 1 : 0)--%>;
-                if (totalDataSourceCount > 1) {
-                    alert("You may not provide more than 1 metadata source!");
-                    $('#progress').modal('hide');
-                    return;
-                }
-                if (totalDataSourceCount < 1) {
-                    alert("You must provide a metadata file!");
+
+                if (providedFileCount + ($('#brapiURLs').val() == "" ? 0 : 1) < 1) {
+                	if (distinctBrapiMetadataURLs.size == 0)
+                    	alert("You must provide a metadata file!");
                     $('#progress').modal('hide');
                     return;
                 }
@@ -592,7 +658,6 @@
 
                         $('#moduleExistingMD').append(option).selectpicker('refresh');
                         $('#moduleExistingMD').val(0).selectpicker('refresh');
-                        $('#moduleExistingMD').change();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         handleError(xhr, thrownError);
@@ -841,7 +906,8 @@
                 <c:if test="${!isAnonymous}">
                 <div class="tab-pane" id="tab2">
                    	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
-                    <input type="hidden" name="brapiToken" id="brapiToken"/>
+                    <input type="hidden" name="brapiURLs" id="brapiURLs"/>
+                    <input type="hidden" name="brapiTokens" id="brapiTokens"/>
                     <div class="panel panel-default importFormDiv">
                         <div class="panel-body panel-grey text-center">
                             <h4>Adding metadata to existing database</h4>
@@ -873,7 +939,6 @@
                                     <div class="form-group text-left">
                                         <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
                                         <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
-                                        <small class="text-info">You may supply here a BrAPI v1 base-path for a remote server implementing germplasm-search</small> <small style='text-decoration:underline;' class="text-info">if you already provided a germplasmDbId by file for each targeted individual</small>                                  
                                     </div>
 <%--
                                     <div class="form-group text-left">
@@ -899,7 +964,10 @@
     									</div>
    									</div>
                                 </div>
-                                <div class="col-md-4" id="dropZonePreviewsMD">
+                                <div class="col-md-4 align-text-bottom" id="dropZonePreviewsMD">
+                                	<div style='height:100px;'>
+			                        	<div id="brapiMetadataNotice"></div>
+			                        </div>
 									<button class="btn btn-primary btn-sm" id="importMetadataButton" type="button">Submit</button><br/>
                                 </div>                                                                
                             </div>

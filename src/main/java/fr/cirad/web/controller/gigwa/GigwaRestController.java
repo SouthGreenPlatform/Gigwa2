@@ -971,10 +971,12 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param sModule
 	 * @param dataFile1
-	 * @param dataFile1
+	 * @param dataFile2
 	 * @param fClearProjectSeqData
 	 * @param uploadedFile1
 	 * @param uploadedFile2
+	 * @param brapiURLs
+	 * @param brapiTokens
 	 * @return
 	 * @throws Exception 
 	 */
@@ -985,7 +987,8 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "clearProjectSequences", required = false) final boolean fClearProjectSeqData,
 			@RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
 			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
-			@RequestParam(value="brapiToken", required=false) final String brapiToken) throws Exception
+			@RequestParam(value="brapiURLs", required=false) final String brapiURLs,
+			@RequestParam(value="brapiTokens", required=false) final String brapiTokens) throws Exception
 	{
 		final String token = tokenManager.readToken(request);
 		final ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking submitted data" });
@@ -1020,23 +1023,29 @@ public class GigwaRestController extends ControllerInterface {
 			if (authentication != null) {
 				username = authentication.getName();
 			} else {
-				progress.setError("Error: You need to be logged in");
+				progress.setError("You need to be logged in");
 				return null;
 			}
 		}
 		
-		String fBrapiImportURI = null;
+		List<String> brapiUrlArray = Helper.split(brapiURLs, " ; "), brapiTokenArray = Helper.split(brapiTokens, " ; ");
+		if (brapiUrlArray.size() != brapiTokenArray.size()) {
+			progress.setError("You must provide the same number of BrAPI URLs and tokens (empty tokens mean no token required)");
+			return null;
+		}
+		
+//		String fBrapiImportURI = null;
 		if (progress.getError() == null)
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
 				if (uri != null && uri.trim().length() > 0) {
 					String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
 					if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided file must have a different extension!");
-					else {
-						String lcURI = uri.toLowerCase();
-						if ((lcURI.startsWith("http://") || lcURI.startsWith("https://")) && (lcURI.contains("/brapi/v1")))
-							fBrapiImportURI = uri;
-						else
+					else if (brapiUrlArray.size() == 0) {
+//						String lcURI = uri.toLowerCase();
+//						if ((lcURI.startsWith("http://") || lcURI.startsWith("https://")) && (lcURI.contains("/brapi/v1")))
+//							fBrapiImportURI = uri;
+//						else
 							filesByExtension.put(fileExtension, uri);
 					}
 				}
@@ -1097,32 +1106,41 @@ public class GigwaRestController extends ControllerInterface {
 						metadataFile = null;
 					}
 				}
-				else if (fBrapiImportURI != null) {
-					HashMap<String, String> germplasmDbIdToIndividualMap = new HashMap<>();
+				else if (brapiUrlArray.size() > 0) {	// we've got BrAPI endpoints to pull metadata from
+					HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 					MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-					for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {
+					for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {	// invoke searchCallSets for each project to treat all individuals in the DB 
 						SearchCallSetsRequest scsr = new SearchCallSetsRequest();
 						scsr.setVariantSetId(sModule + GigwaMethods.ID_SEPARATOR + projId);
 						for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
-							List<String> gpDbIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmDbId);
-							if (gpDbIdValues == null || gpDbIdValues.isEmpty())
+							List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
+							List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+							if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
 								continue;
-							
-							if (gpDbIdValues.size() != 1)
-								LOG.warn("Only one germplasmDbId expected for individual " + ga4ghCallSet.getId());
+
+							if (extRefIdValues.size() != 1)
+								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for individual " + ga4ghCallSet.getId());
+							if (extRefSrcValues.size() != 1)
+								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for individual " + ga4ghCallSet.getId());
+
 							String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
-							germplasmDbIdToIndividualMap.put(gpDbIdValues.get(0), splitId[splitId.length - 1]);
+							HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(extRefSrcValues.get(0));
+							if (individualsCurrentEndpointHasDataFor == null) {
+								individualsCurrentEndpointHasDataFor = new HashMap<>();
+								brapiUrlToIndividualsMap.put(extRefSrcValues.get(0), individualsCurrentEndpointHasDataFor);
+							}
+							individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
 						}
 					}
 
-					if (germplasmDbIdToIndividualMap.isEmpty())
-						progress.setError("Individuals must have a metadata value for " + BrapiService.BRAPI_FIELD_germplasmDbId);
-					else
+					for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet())
 						try {
-							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, fBrapiImportURI, germplasmDbIdToIndividualMap, username, "".equals(brapiToken) ? null : brapiToken, progress);
+							String sToken = brapiTokenArray.get(brapiUrlArray.indexOf(sBrapiUrl));
+							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
 						}
-						catch (Error err) {
-							progress.setError(err.getMessage());
+						catch (Throwable err) {
+							progress.setError(err.getMessage() + " - " + sBrapiUrl);
+							LOG.error("Error importing metadata", err);
 						}
 				}
 
@@ -1130,7 +1148,7 @@ public class GigwaRestController extends ControllerInterface {
 				{
 					if (nModifiedRecords <= 0)
 					{	// no changes applied
-						if (fBrapiImportURI == null && nModifiedRecords == -1)
+						if (brapiUrlArray.size() == 0 && nModifiedRecords == -1)
 							progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
 						else
 							progress.setError("Provided data did not lead to any changes!");
@@ -1139,7 +1157,7 @@ public class GigwaRestController extends ControllerInterface {
 						progress.markAsComplete();
 				}
 			}
-			catch (Exception e)
+			catch (Throwable e)
 			{
 				progress.setError(e.getMessage());
 				LOG.error("Error importing metadata", e);
