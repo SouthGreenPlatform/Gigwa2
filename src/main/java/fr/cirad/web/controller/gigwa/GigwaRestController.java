@@ -1133,10 +1133,11 @@ public class GigwaRestController extends ControllerInterface {
 						}
 					}
 
+					nModifiedRecords = 0;
 					for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet())
 						try {
 							String sToken = brapiTokenArray.get(brapiUrlArray.indexOf(sBrapiUrl));
-							nModifiedRecords = IndividualMetadataImport.importBrapiMetadata(sModule, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
+							nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
 						}
 						catch (Throwable err) {
 							progress.setError(err.getMessage() + " - " + sBrapiUrl);
