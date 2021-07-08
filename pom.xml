@@ -31,7 +31,19 @@
 		<mongodb.osx.folder>macos-x86_64-4.2.14</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
-	<dependencies>
+	<dependencies>		
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>role_manager</artifactId>
+			<version>1.1.3-RELEASE</version>
+		</dependency>
+
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>Mgdb2BrapiImpl</artifactId>
+			<version>1.1-RC3</version>
+		</dependency>
+		
    		<dependency>
 		    <groupId>fr.cirad</groupId>
 		    <artifactId>Mgdb2BrapiV2Impl</artifactId>
@@ -42,18 +54,6 @@
  					<artifactId>log4j-over-slf4j</artifactId>
 		    	</exclusion>
 		    </exclusions>
-		</dependency>
-		
-		<dependency>
-			<groupId>fr.cirad</groupId>
-			<artifactId>role_manager</artifactId>
-			<version>1.1.3-RELEASE</version>
-		</dependency>
-
-		<dependency>
-			<groupId>fr.cirad</groupId>
-			<artifactId>Mgdb2BrapiImpl</artifactId>
-			<version>1.1-RC4</version>
 		</dependency>
 
 		<dependency>
@@ -84,27 +84,18 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>2.7.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-aop</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+
+	    <dependency>
+	        <groupId>io.springfox</groupId>
+	        <artifactId>springfox-oas</artifactId>
+	        <version>3.0.0</version>
+	    </dependency>
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger-ui</artifactId>
-			<version>2.5.0</version>
+			<version>3.0.0</version>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>jstl</artifactId>
@@ -120,7 +111,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
-            <version>5.2.10.RELEASE</version>
+            <version>5.2.15.RELEASE</version>
 			<exclusions>
 				<exclusion>
 					<groupId>commons-logging</groupId>

@@ -61,19 +61,17 @@ import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
-import io.swagger.annotations.Api;
+
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 
 /**
  *
- * @author petel
+ * @author petel, sempere
  *
- * Contain both rest Api ga4gh compliant and older gigwa methods from the
- * previous version. Methods only used for the javascript interface aren't
- * documented in swagger To browse documentation, go to
- * http://host/rest/swagger-ui.html
+ * Implementation of GA4GH-compliant calls, with little additional Gigwa-specific functionality. Methods only used by the Javascript interface are ignored by Swagger
  */
 @RestController
 public class Ga4ghRestController extends ControllerInterface {
@@ -84,9 +82,6 @@ public class Ga4ghRestController extends ControllerInterface {
      */
     @Autowired private GigwaGa4ghServiceImpl service;
     
-	/** The exception resolver. */
-//	@Autowired private SimpleMappingExceptionResolver exceptionResolver;
-
     /**
      * logger
      */
@@ -118,7 +113,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return
      * @throws IOException
      */
-    @ApiOperation(value = "getSequenceBase", notes = "Get references sequences bases from a specific location ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequenceBase", notes = "Get references sequences bases from a specific location ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = ListReferenceBasesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
@@ -152,7 +147,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return CallSet
      * @throws IOException 
      */
-    @ApiOperation(value = "getCallSet", notes = "get a CallSet from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getCallSet", notes = "get a CallSet from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = CallSet.class),
         @ApiResponse(code = 401, message = "Access forbidden"),
@@ -190,7 +185,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return VariantSet
      * @throws IOException 
      */
-    @ApiOperation(value = "getVariantSet", notes = "get a VariantSet from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantSet", notes = "get a VariantSet from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = VariantSet.class),
         @ApiResponse(code = 401, message = "Access forbidden"),
@@ -228,7 +223,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return Variant
      * @throws IOException 
      */
-    @ApiOperation(value = "getVariant", notes = "get a Variant from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariant", notes = "get a Variant from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = Variant.class),
         @ApiResponse(code = 401, message = "Access forbidden"),
@@ -267,7 +262,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return Reference in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "getReference", notes = "get a Reference from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getReference", notes = "get a Reference from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = Reference.class),
         @ApiResponse(code = 401, message = "Access forbidden"),
@@ -305,7 +300,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return ReferenceSet in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "getReferenceSet", notes = "get a ReferenceSet from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getReferenceSet", notes = "get a ReferenceSet from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = ReferenceSet.class),
         @ApiResponse(code = 401, message = "Access forbidden"),
@@ -344,7 +339,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchCallSetsResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "searchCallSets", notes = "get a list of CallSet matching values from SearchCallSetsRequest. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchCallSets", notes = "get a list of CallSet matching values from SearchCallSetsRequest. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchCallSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
@@ -377,7 +372,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferenceSetsResponse in JSON format
      * @throws org.apache.avro.AvroRemoteException
      */
-    @ApiOperation(value = "searchReferenceSets", notes = "get a list of ReferenceSet matching values from SearchReferenceSetsRequest. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferenceSets", notes = "get a list of ReferenceSet matching values from SearchReferenceSetsRequest. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchReferenceSetsResponse.class)
     })
@@ -405,7 +400,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferencesResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "searchReferences", notes = "get a list of Reference matching values from SearchReferencesRequest. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferences", notes = "get a list of Reference matching values from SearchReferencesRequest. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchReferencesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
@@ -442,7 +437,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferencesResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "searchVariantSets", notes = "get a list of VariantSet matching values from SearchVariantSetsRequest. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchVariantSets", notes = "get a list of VariantSet matching values from SearchVariantSetsRequest. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchVariantSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
@@ -490,7 +485,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchVariantsResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(value = "searchVariant", notes = "get a list of Variant matching values from GigwaSearchVariantsResponse. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchVariant", notes = "get a list of Variant matching values from GigwaSearchVariantsResponse. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = GigwaSearchVariantsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
@@ -536,7 +531,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return Variant Annotation
      * @throws IOException 
      */
-    @ApiOperation(value = "getVariantAnnotationById", notes = "get a VariantAnnotation from its ID. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantAnnotationById", notes = "get a VariantAnnotation from its ID. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = VariantAnnotation.class),
         @ApiResponse(code = 401, message = "Access forbidden"),

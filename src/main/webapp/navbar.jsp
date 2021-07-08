@@ -43,7 +43,7 @@
 							</c:if>
 						</ul>
    		   			</li>
-                    <li><a href="<c:url value='/rest/swagger-ui.html' />" target="_blank" data-toggle="tooltip" data-placement="bottom" title="Rest API Swagger"><span class="glyphicon glyphicon-leaf margin-icon" aria-hidden="true"></span>Rest APIs</a></li>
+                    <li><a href="<c:url value='<%= GigwaRestController.REST_PATH %>' />/swagger-ui/index.html" target="_blank" data-toggle="tooltip" data-placement="bottom" title="Rest API Swagger"><span class="glyphicon glyphicon-leaf margin-icon" aria-hidden="true"></span>Rest APIs</a></li>
                     <li><a href="#" onclick="$('#manual').modal('show');" data-toggle="tooltip" data-placement="bottom" title="Display online documentation"><span class="glyphicon glyphicon-book margin-icon" aria-hidden="true"></span>Docs</a></li>
                     <c:if test="${principal != null && isAnonymous}">
                         <li>

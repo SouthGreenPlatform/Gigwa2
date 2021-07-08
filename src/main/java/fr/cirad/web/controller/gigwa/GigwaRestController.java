@@ -119,9 +119,11 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -159,7 +161,7 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	static private TreeMap<String, String> viewControllers = null;
 
-	static public final String REST_PATH = "/rest";
+	public static final String REST_PATH = "/rest";
 	static public final String BASE_URL = "/gigwa";
 
 	static public final String IMPORT_PAGE_URL = "/import.do";
@@ -171,7 +173,6 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String SEQUENCES_PATH = "/sequences";
 	static public final String EFFECT_ANNOTATION_PATH = "/effectAnnotations";
 	static public final String SEARCHABLE_ANNOTATION_FIELDS_URL = "/searchableAnnotationFields";
-	static public final String PLOIDY_LEVEL_PATH = "/ploidyLevel";
 	static public final String PROGRESS_PATH = "/progress";
 	static public final String SEQUENCE_FILTER_COUNT_PATH = "/sequencesFilterCount";
 	static public final String CLEAR_SELECTED_SEQUENCE_LIST_PATH = "/clearSelectedSequenceList";
@@ -184,6 +185,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String EXPORT_DATA_PATH = "/exportData";
 	static public final String EXPORTED_DATA_PATH = "/exportedData";
 	static public final String PROJECT_RUN_PATH = "/runs";
+	static public final String PLOIDY_LEVEL_PATH = "/ploidyLevel";
 	static public final String GENOTYPE_PATTERNS_PATH = "/genotypePatterns";
 	static public final String HOSTS_PATH = "/hosts";
 	static public final String ANNOTATION_HEADERS_PATH = "/annotationHeaders";
@@ -205,7 +207,7 @@ public class GigwaRestController extends ControllerInterface {
 
 	@Autowired
 	private ReloadableInMemoryDaoImpl userDao;
-
+	
 	/**
 	 * get a unique processID
 	 *
@@ -215,7 +217,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @throws UnsupportedEncodingException
 	 * @throws IllegalArgumentException
 	 */
-	@ApiOperation(value = GET_SESSION_TOKEN, notes = "get a token. This token is the token you need to send with every request. If you have an account, send your credentials in userInfo. If you work on public databases, you can send an empty userInfo as following : { \"username\": \"\", \"password\": \"\" }")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GET_SESSION_TOKEN, notes = "Generate a token. The obtained token then needs to be passed along with every request.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse resp,
@@ -256,7 +258,7 @@ public class GigwaRestController extends ControllerInterface {
 	 *         htsjdk.variant.variantcontext.Type
 	 * @throws IOException
 	 */
-	@ApiOperation(value = "getVariantTypes", notes = "get availables variant types in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantTypes", notes = "get availables variant types in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -279,7 +281,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiOperation(value = "getRunList", notes = "get availables runs in a project. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getRunList", notes = "get availables runs in a project. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -304,16 +306,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiOperation(value = "getGenotypePatternsAndDescriptions", notes = "get the list of genotype patterns")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), })
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL
-			+ GENOTYPE_PATTERNS_PATH, method = RequestMethod.GET, produces = "application/json")
-	public HashMap<String, String> getGenotypePatternsAndDescriptions() {
-		return GenotypingDataQueryBuilder.getGenotypePatternToDescriptionMap();
-	}
-
-	@ApiOperation(value = "getHostList", notes = "get availables hosts.")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getHostList", notes = "get availables hosts.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "Unauthorized resource") })
 	@ApiIgnore
@@ -343,7 +336,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, List<Integer>> containing distinct number of alleles
 	 *         inb JSON format
 	 */
-	@ApiOperation(value = "getNumberOfAlleles", notes = "get availables alleles count in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getNumberOfAlleles", notes = "get availables alleles count in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -377,7 +370,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, List<String>> containing the sequences in JSON format
 	 */
 	@Deprecated
-	@ApiOperation(value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -409,7 +402,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, TreeSet<String>> containing the annotation effect in
 	 *         JSON format
 	 */
-	@ApiOperation(value = "getEffectAnnotations", notes = "get availables effect annotations in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getEffectAnnotations", notes = "get availables effect annotations in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -441,7 +434,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return List<String> field IDs
 	 */
-	@ApiOperation(value = "listSearchableAnnotationFields", notes = "Lists searchable annotation fields in a referenceSet's variantSet")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "listSearchableAnnotationFields", notes = "Lists searchable annotation fields in a referenceSet's variantSet")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -471,12 +464,10 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return Map<String, Integer> containing ploidy level in JSON format
 	 */
-	@ApiOperation(value = "getPloidyLevel", notes = "return the ploidy level in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getPloidyLevel", notes = "return the ploidy level in a referenceSet and variantSet. ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
@@ -494,13 +485,21 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getGenotypePatternsAndDescriptions", notes = "get the list of genotype patterns")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + GENOTYPE_PATTERNS_PATH, method = RequestMethod.GET, produces = "application/json")
+	public HashMap<String, String> getGenotypePatternsAndDescriptions() {
+		return GenotypingDataQueryBuilder.getGenotypePatternToDescriptionMap();
+	}
+
 	/**
 	 * get the progress indicator
 	 *
 	 * @param request
 	 * @return Map<String, ProgressIndicator>
 	 */
-	@ApiOperation(value = "getProcessProgress", notes = "get the progress of a process from its token. If no current process with this token, returns null")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response) {
@@ -520,7 +519,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param referenceSetId
 	 * @return ap<String, Integer> containing filter count in JSON format
 	 */
-	@ApiOperation(value = "getSequencesFilterCount", notes = "get sequence filter count in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = SEQUENCE_FILTER_COUNT_PATH, notes = "get sequence filter count in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
@@ -580,7 +579,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @return Map<String, Boolean> true if aborted successfully
 	 */
-	@ApiOperation(value = ABORT_PROCESS_PATH, notes = "abort a process from its ID. If there is a process with this id running, and if the process aborted successfully, will return true. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = ABORT_PROCESS_PATH, notes = "abort a process from its ID. If there is a process with this id running, and if the process aborted successfully, will return true. ")
 	@ApiResponses(value = { @ApiResponse(code = 204, message = "Success") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ABORT_PROCESS_PATH, method = RequestMethod.DELETE, produces = "application/json")
@@ -647,7 +646,7 @@ public class GigwaRestController extends ControllerInterface {
 	 *         format
 	 * @throws Exception
 	 */
-	@ApiOperation(value = "getDensityData", notes = "get density data from selected variants")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = DENSITY_DATA_PATH, notes = "get density data from selected variants")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
@@ -680,7 +679,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, Map<Long, Long>> containing plot data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(value = "getVcfFieldPlotData", notes = "get plot data from selected variants, using numeric values for a vcf info field")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VCF_FIELD_PLOT_DATA_PATH, notes = "get plot data from selected variants, using numeric values for a vcf info field")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
@@ -731,14 +730,14 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	/**
-	 * get list of available individuals
+	 * Get recent history of files exported by the specified user
 	 *
 	 * @param request
 	 * @param username
 	 * @return Map<Long, String> containing the list of datasets recently exported by this user, along with corresponding timestamps
 	 * @throws IOException
 	 */
-	@ApiOperation(value = "getIndividualList", notes = "get individuals in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EXPORTED_DATA_PATH + "/{username}", notes = "Get recent history of files exported by the specified user")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -773,7 +772,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return Map<String, Map<String, String>> containing the list of annotation headers in a referenceSet and variantSet
 	 */
-	@ApiOperation(value = "getAnnotationHeaders", notes = "get annotation headers in a referenceSet and variantSet. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = ANNOTATION_HEADERS_PATH + "/{variantSetId}", notes = "get annotation headers in a referenceSet and variantSet.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
@@ -800,33 +799,19 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return
 	 */
-	@ApiOperation(value = "getExportFormat", notes = "get exports formats description in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getExportFormat", notes = "get available exports formats and descriptions")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + EXPORT_FORMAT_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public TreeMap<String, HashMap<String, String>> getExportFormats(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
-		try {
-			if (tokenManager.canUserReadDB(token, info[0]))
-				return service.getExportFormat(info[0], Integer.parseInt(info[1]));
-			else {
-				build401Response(resp);
-				return null;
-			}
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-			return null;
-		}
+	@RequestMapping(value = BASE_URL + EXPORT_FORMAT_PATH, method = RequestMethod.GET, produces = "application/json")
+	public TreeMap<String, HashMap<String, String>> getExportFormats(HttpServletRequest request, HttpServletResponse resp) throws IOException {
+		return service.getExportFormats();
 	}
 
 	/**
-	 * export result in a specific format as a .zip file
+	 * export results in a specific format as a .zip file
 	 *
 	 */
-	@ApiOperation(value = "exportData", notes = "export selected variant data. ")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EXPORT_DATA_PATH, notes = "export selected variant data. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = HashMap.class),
 	@ApiResponse(code = 400, message = "wrong parameters"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
@@ -1189,6 +1174,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return the token to use for checking progress
 	 * @throws Exception the exception
 	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = genotypeImportSubmissionURL, notes = "Import genotyping data.")
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
 	public @ResponseBody String importGenotypingData(HttpServletRequest request,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
