@@ -293,63 +293,42 @@
                   SIZE=3 class='title2'>A3/ WORKING WITH REST APIs (for advanced users)</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Any data imported into Gigwa is
-               automatically interfaced via two standard REST APIs, documented in a
+               automatically interfaced via the following standard REST APIs, documented in a
                Swagger page available from the main menu:
             </P>
             <P STYLE="margin-bottom: 0.14in">The GA4GH v0.6.0a5
                implementation has by design a single base-url. Listing available
                databases can be achieved by posting an empty body to
                /rest/ga4gh/referencesets/search. Thus obtained values can be then
-               passed to other calls as referencesetId or datasetId. GA4GH&rsquo;s
-               VariantSet, Reference and CallSet concepts respectively correspond
-               to Gigwa&rsquo;s project, sequence and individual entities.
+               passed to other calls as referencesetId or datasetId.
+            </P>
+            <P STYLE="margin-bottom: 0.14in">The BrAPI v2.0
+               implementation has by design a single base-url. Listing available
+               databases can be achieved by posting an empty body to
+               /gigwa2/rest/brapi/v2/programs or /gigwa2/rest/brapi/v2/trials. Thus obtained values can be then
+               passed to other calls as programDbId or trialDbId.
             </P>
             <P STYLE="margin-bottom: 0.14in">The BrAPI v1.1 implementation
                has by design a separate base-url for each database, constructed as
-               follows: /{database}/brapi/v1/token. Each database&rsquo;s BrAPI
-               base-url can be deducted from the mentioned
-               /rest/ga4gh/referencesets/search call&rsquo;s response, and by
+               follows: /{database}/brapi/v1/token. Each database&rsquo;s
+               base-url can be deducted from the above-mentioned
+               calls&rsquo; responses, and by
                convenience, the main Gigwa interface provides a link to the
                corresponding BrAPI base-url when a new database is selected.
             </P>
             <p style="font-weight:bold;">
                The table below lists terminology correspondences:
             </p>
-         <table class="fullwidth" style="border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
-         <tr>
-            <td><b>&nbsp;Gigwa entity</b></td>
-            <td bgcolor="#f0f0f0">database or module</td>
-            <td>project</td>
-            <td bgcolor="#f0f0f0">sequence</td>
-            <td>variant</td>
-            <td bgcolor="#f0f0f0">individual</td>
-            <td>sample</td>
-         </tr>
-         <tr>
-            <td><b>&nbsp;GA4GH entity</b></td>
-            <td bgcolor="#f0f0f0">referenceSet or dataset</td>
-            <td>variantSet</td>
-            <td bgcolor="#f0f0f0">reference</td>
-            <td>variant</td>
-            <td bgcolor="#f0f0f0">callSet</td>
-            <td>-</td>
-         </tr>
-         <tr>
-            <td><b>&nbsp;BrAPI entity</b></td>
-            <td bgcolor="#f0f0f0">database or map</td>
-            <td>study</td>
-            <td bgcolor="#f0f0f0">linkageGroup</td>
-            <td>marker</td>
-            <td bgcolor="#f0f0f0">germplasm</td>
-            <td>sample or markerprofile</td>
-         </tr>
-		<tr>
-			<td><b>&nbsp;BrAPI v2 entity</b><br/><span style='color:red; font-style:italic;'>(under development)</span></td>
-			<td bgcolor='#f0f0f0'>database or map or referenceSet or dataset</td>
-			<td>variantSet</td><td bgcolor='#f0f0f0'>reference</td><td>variant</td>
-			<td bgcolor='#f0f0f0'>callSet</td><td>sample</td>
-		</tr>
-         </table>
+			<table class="fullwidth" style="width:100%; border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
+				<tr bgcolor="#d0d0d0"><th>Gigwa entity</th><th>GA4GH entity</th><th>BrAPI v1 entity</th><th>BrAPI v2 entity</th></tr>
+				<tr><td bgcolor="#f0f0f0">database or module</td><td>referenceSet or dataset</td><td bgcolor="#f0f0f0">database or map</td><td>program or trial</td></tr>
+				<tr><td bgcolor="#f0f0f0">project</td><td>variantSet</td><td bgcolor="#f0f0f0">genotyping study</td><td>genotyping study or referenceSet</td></tr>
+				<tr><td bgcolor="#f0f0f0">run</td><td>-</td><td bgcolor="#f0f0f0">-</td><td>variantSet</td></tr>
+				<tr><td bgcolor="#f0f0f0">sequence</td><td>reference</td><td bgcolor="#f0f0f0">linkageGroup</td><td>reference</td></tr>
+				<tr><td bgcolor="#f0f0f0">variant</td><td>variant</td><td bgcolor="#f0f0f0">marker</td><td>variant</td></tr>
+				<tr><td bgcolor="#f0f0f0">individual</td><td>callSet</td><td bgcolor="#f0f0f0">germplasm</td><td>germplasm</td></tr>
+				<tr><td bgcolor="#f0f0f0">sample</td><td>-</td><td bgcolor="#f0f0f0">sample or markerprofile</td><td>sample or callSet</td></tr>
+			</table>
             <P STYLE="margin-bottom: 0.14in">Please refer to
                <a href="http://ga4gh-schemas.readthedocs.io/en/latest/" target='_blank'>http://ga4gh-schemas.readthedocs.io/en/latest/</a> and
                <a href="https://brapi.org/" target='_blank'>https://brapi.org/</a> for more details about each API.
