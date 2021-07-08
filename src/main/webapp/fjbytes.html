@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <title>Flapjack Bytes</title>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+      <div id="canvas-holder">
+        <!-- Empty div that we can insert a canvas into from javascript. -->
+      </div>
+      <script src="js/jquery-1.12.4.min.js"></script>
+      <script src="js/flapjack-bytes.js"></script>
+      <script type="text/javascript">
+      $.urlParam = function(name) {
+          var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+          if (results==null) {
+             return null;
+          }
+          return decodeURI(results[1]) || 0;
+      }
+
+      $.urlExists = function(url)  {
+          var http = new XMLHttpRequest();
+          http.open('HEAD', url, false);
+          http.send();
+          return http.status==200;
+      }
+
+      let gFile = $.urlParam('g'), mFile = $.urlParam('m');
+      if ($.urlExists(gFile) && $.urlExists(mFile)) {
+        $("div#canvas-holder").html("<center>Please wait while Flapjack-Bytes is loading data...<br/><br/><img src='https://gigwa-dev.southgreen.fr/gigwaV2/private/img/progress.gif'/></center>");
+        $("div#canvas-holder").bind('FlapjackFinished', function() {
+            $("div#canvas-holder center").remove();
+        });
+        GenotypeRenderer().renderGenotypesUrl("#canvas-holder", window.innerWidth - 30, window.innerHeight - 200, mFile, gFile);
+      }
+      else
+        $("div#canvas-holder").html("<center>At least one of the two required file URLs is missing or incorrect</center>");
+      </script>
+  </body>
+</html>

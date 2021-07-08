@@ -139,7 +139,7 @@ div#welcome {
     margin: 0 auto;
 }
 
-div#density, div#individualFiltering, div#manual {
+div#density, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel {
     overflow: hidden;
 	width: 99%;
     margin: 0 auto;
@@ -153,7 +153,7 @@ div#termsOfUse .modal-lg {
     width: 950px;
 }
 
-div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg {
+div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg {
     width: 99%;
 }
 

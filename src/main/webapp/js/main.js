@@ -231,6 +231,23 @@ function addIgvExportIfRunning() {
 	});
 }
 
+function addFjBytesExport() {
+	$('div#serverExportBox').append("<br/><br/><center><input type='button' value='View in Flapjack-Bytes' onclick='sendToFjBytes();'/></center>");
+}
+
+function sendToFjBytes() {
+    $("#fjBytesPanel").modal({
+        opacity: 80,
+        overlayCss: {
+            backgroundColor: "#111111"
+        }
+    });
+
+    let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') + "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype');
+    $('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes. <a href="' + url + '" target="_blank">Click here</a> to open in a separate window.</center>');
+    $("#fjBytesFrame").attr('src', url);
+}
+
 function getNcbiTaxonDetails(ncbiTaxonId)
 {
 	var result = $.ajax({

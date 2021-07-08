@@ -124,8 +124,7 @@
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
 
 	// when HTML/CSS is fully loaded
-	$(document).ready(function()
-	{
+	$(document).ready(function() {
 	    $('#module').on('change', function() {
 	    	$('#serverExportBox').hide();
 	        if (referenceset != '')
@@ -193,7 +192,7 @@
 	            }
 	        });
 
-        	var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>/';
+        	var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
 	        $.ajax({
 	            url: brapiBaseUrl,
 	            async: false,
@@ -311,7 +310,20 @@
 	    });
 	    getToken();
 	    loadModules();
+	    
+	    $(window).resize(function() {
+	    	resizeDialogs();
+    	}).on('shown.bs.modal', function(e) {
+    		if ("progress" != e.target.id)
+	    		resizeDialogs();
+	    });
 	});
+	
+	function resizeDialogs() {
+ 	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
+ 	    $("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
+ 	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
+	}
 	
 	function markCurrentProcessAsAborted() {
     	processAborted = true;
@@ -723,7 +735,7 @@
 	
 	function loadGenotypePatterns() {
 	    $.ajax({
-	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENOTYPE_PATTERNS_PATH%>" />/',
+	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENOTYPE_PATTERNS_PATH%>" />',
 	        type: "GET",
 	        dataType: "json",
 	        async:false,
@@ -770,7 +782,7 @@
 	function fillExportFormat()
 	{
 	    $.ajax({
-	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_FORMAT_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_FORMAT_PATH%>" />',
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
@@ -1052,10 +1064,7 @@
 	    	markInconsistentGenotypesAsMissing();
 
 	    if (!errorEncountered)
-	    {
-	        $('#variantDetailPanel div#modal-body').css('height', parseInt($(window).height()*0.70) + "px");
 	        $('#variantDetailPanel').modal('show');
-	    }
 	}
 
 	// create the annotation detail panel 
@@ -1236,8 +1245,11 @@
 
         var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
         $('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" href="' + downloadURL + '">' + fileName + '</a> ').show();
-        if ("VCF" == $('#exportFormat').val().toUpperCase())
+        var exportedFormat = $('#exportFormat').val().toUpperCase();
+        if ("VCF" == exportedFormat)
             addIgvExportIfRunning();
+        else if ("FLAPJACK" == exportedFormat)
+        	addFjBytesExport();
         
         var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
         for (var key in exportFormatExtensions)
@@ -1680,17 +1692,26 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- genome browser modal -->
-	<div class="modal" id="genomeBrowserPanel" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-xlarge" role="document">
+	<div class="modal" id="genomeBrowserPanel" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
 			<div class="modal-content">
 				<div id="genomeBrowserPanelHeader"></div>
-				<iframe id="genomeBrowserFrame" style="width: 100%;"></iframe>
+				<iframe id="genomeBrowserFrame" style="width:100%;"></iframe>
+			</div>
+		</div>
+	</div>
+	<!-- Flapjack-Bytes modal -->
+	<div class="modal" id="fjBytesPanel" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content" style="overflow:hidden;">
+				<div id="fjBytesPanelHeader"></div>
+				<iframe id="fjBytesFrame" style="width:100%;"></iframe>
 			</div>
 		</div>
 	</div>
 	<!-- variant detail modal -->
-	<div class="modal" id="variantDetailPanel" tabindex="-1" role="dialog" aria-labelledby="variantDetailsLabel">
-		<div class="modal-dialog modal-xlarge" role="document">
+	<div class="modal fade" role="dialog" id="variantDetailPanel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div style="float: right; margin: 10px;">
 					<a class="btn btn-sm icon-btn btn-default active" id="toggleFunctionalAnn" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#functionalAnn').toggle(100);">
@@ -1748,7 +1769,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays density data -->
-	<div class="modal fade" tabindex="-1" role="dialog" id="density" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="density" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header" id="chartContainer"></div>
@@ -1756,7 +1777,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays project information -->
-	<div class="modal fade" tabindex="-1" role="dialog" id="projectInfo" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header" id="projectInfoContainer"></div>
@@ -1764,7 +1785,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays individual selection interface -->
-	<div class="modal fade" tabindex="-1" role="dialog" id="individualFiltering" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="individualFiltering" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content" style="padding:10px; min-height:90vh;">
 				<div class="bold" style='float:right;'>
@@ -1780,7 +1801,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays a box for configuring online output tools -->
-	<div id="outputToolConfigDiv" class="modal" tabindex="-1" role="dialog">
+	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
 			<b>Configure this to be able to push exported data into external online tools</b><br />
@@ -1798,7 +1819,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays a box for configuring a genome browser -->
-	<div id="genomeBrowserConfigDiv" class="modal" tabindex="-1" role="dialog">
+	<div id="genomeBrowserConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
 			<b>Please specify a URL for the genome browser you want to use</b> <br />
@@ -1811,7 +1832,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	
 	<!-- modal which displays a box for managing saved queries -->
-	<div id="queryManager" class="modal fade" tabindex="-1" role="dialog">
+	<div id="queryManager" class="modal fade" role="dialog">
 		<div class="modal-dialog modal-medium" role="document">
 		<div id="loadedQueries" class="modal-content" style="padding:10px; text-align:center;">
 		<b style="font-size:18px">Your bookmarked queries</b>
