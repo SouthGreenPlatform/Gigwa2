@@ -264,14 +264,14 @@ function loadAndDisplayChart(minPos, maxPos) {
                         dataLabels: {
                             enabled: false
                         },
-                        marker: {
-                            enabled: false
-                        },
                         enableMouseTracking: true
                     }
                 },
                 series: [{
                     name: 'Variants in interval',
+                    marker: {
+		                enabled: false
+		            },
                     lineWidth: 1,
                     color : colorTab[0],
                     data: jsonValues
