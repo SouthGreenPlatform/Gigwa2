@@ -362,7 +362,8 @@
 	            "Authorization": "Bearer " + token
 	        },
 	        error: function(xhr, thrownError) {
-	            handleError(xhr, thrownError);
+	    	    if (xhr.status != 0)	// Firefox gets this instead of 401 (!)
+	            	handleError(xhr, thrownError);
 	        }
 	    });
 	}
