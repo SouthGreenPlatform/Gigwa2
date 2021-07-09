@@ -28,3 +28,8 @@ if [ -d "$1" ]; then
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/log4j.xml $2/WEB-INF/classes/log4j.xml
 	fi
 fi
+
+chmod -R 755 $2
+
+echo
+echo "Update complete. You may want to apply chown -R on the updated folder."
