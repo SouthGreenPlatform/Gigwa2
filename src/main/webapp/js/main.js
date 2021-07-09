@@ -244,7 +244,7 @@ function sendToFjBytes() {
     });
 
     let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') + "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype');
-    $('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes. <a href="' + url + '" target="_blank">Click here</a> to open in a separate window.</center>');
+    $('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" target="_blank">Open in separate window</a></center>');
     $("#fjBytesFrame").attr('src', url);
 }
 
@@ -398,7 +398,7 @@ function updateGtPatterns() {
 	    var gtPatternIndex = 0;
 	    for (var gtPattern in gtTable) {
 	    	var fAddToSelect = true;
-	    	if (selectedIndivCount == 1 && gtPatternIndex >= 1 && gtPatternIndex <= 5)
+	    	if (selectedIndivCount == 1 && gtPatternIndex >= 1 && gtPattern.toLowerCase().indexOf("all ") > -1)
 	    		fAddToSelect = false;
 	    	else if (gtPatternIndex == 11)
 	    	{

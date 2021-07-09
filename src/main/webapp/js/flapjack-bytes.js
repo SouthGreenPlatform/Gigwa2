@@ -1,10 +1,12 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.GenotypeRenderer = factory());
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.GenotypeRenderer = factory());
 }(this, (function () { 'use strict';
 
   function _typeof(obj) {
+    "@babel/helpers - typeof";
+
     if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
       _typeof = function (obj) {
         return typeof obj;
@@ -41,23 +43,36 @@
   }
 
   function _toConsumableArray(arr) {
-    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
 
   function _arrayWithoutHoles(arr) {
-    if (Array.isArray(arr)) {
-      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-      return arr2;
-    }
+    if (Array.isArray(arr)) return _arrayLikeToArray(arr);
   }
 
   function _iterableToArray(iter) {
-    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+  }
+
+  function _unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+  }
+
+  function _arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+    return arr2;
   }
 
   function _nonIterableSpread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance");
+    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   var bind = function bind(fn, thisArg) {
@@ -68,18 +83,6 @@
       }
       return fn.apply(thisArg, args);
     };
-  };
-
-  /*!
-   * Determine if an object is a Buffer
-   *
-   * @author   Feross Aboukhadijeh <https://feross.org>
-   * @license  MIT
-   */
-
-  var isBuffer = function isBuffer (obj) {
-    return obj != null && obj.constructor != null &&
-      typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
   };
 
   /*global toString:true*/
@@ -96,6 +99,27 @@
    */
   function isArray(val) {
     return toString.call(val) === '[object Array]';
+  }
+
+  /**
+   * Determine if a value is undefined
+   *
+   * @param {Object} val The value to test
+   * @returns {boolean} True if the value is undefined, otherwise false
+   */
+  function isUndefined(val) {
+    return typeof val === 'undefined';
+  }
+
+  /**
+   * Determine if a value is a Buffer
+   *
+   * @param {Object} val The value to test
+   * @returns {boolean} True if value is a Buffer, otherwise false
+   */
+  function isBuffer(val) {
+    return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
+      && typeof val.constructor.isBuffer === 'function' && val.constructor.isBuffer(val);
   }
 
   /**
@@ -152,16 +176,6 @@
    */
   function isNumber(val) {
     return typeof val === 'number';
-  }
-
-  /**
-   * Determine if a value is undefined
-   *
-   * @param {Object} val The value to test
-   * @returns {boolean} True if the value is undefined, otherwise false
-   */
-  function isUndefined(val) {
-    return typeof val === 'undefined';
   }
 
   /**
@@ -637,6 +651,48 @@
     }
   };
 
+  /**
+   * Determines whether the specified URL is absolute
+   *
+   * @param {string} url The URL to test
+   * @returns {boolean} True if the specified URL is absolute, otherwise false
+   */
+  var isAbsoluteURL = function isAbsoluteURL(url) {
+    // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+    // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+    // by any combination of letters, digits, plus, period, or hyphen.
+    return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+  };
+
+  /**
+   * Creates a new URL by combining the specified URLs
+   *
+   * @param {string} baseURL The base URL
+   * @param {string} relativeURL The relative URL
+   * @returns {string} The combined URL
+   */
+  var combineURLs = function combineURLs(baseURL, relativeURL) {
+    return relativeURL
+      ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+      : baseURL;
+  };
+
+  /**
+   * Creates a new URL by combining the baseURL with the requestedURL,
+   * only when the requestedURL is not already an absolute URL.
+   * If the requestURL is absolute, this function returns the requestedURL untouched.
+   *
+   * @param {string} baseURL The base URL
+   * @param {string} requestedURL Absolute or relative URL to combine
+   * @returns {string} The combined full path
+   */
+  var buildFullPath = function buildFullPath(baseURL, requestedURL) {
+    if (baseURL && !isAbsoluteURL(requestedURL)) {
+      return combineURLs(baseURL, requestedURL);
+    }
+    return requestedURL;
+  };
+
   // Headers whose duplicates are ignored by node
   // c.f. https://nodejs.org/api/http.html#http_message_headers
   var ignoreDuplicateOf = [
@@ -820,7 +876,8 @@
         requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
       }
 
-      request.open(config.method.toUpperCase(), buildURL(config.url, config.params, config.paramsSerializer), true);
+      var fullPath = buildFullPath(config.baseURL, config.url);
+      request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
 
       // Set the request timeout in MS
       request.timeout = config.timeout;
@@ -881,7 +938,11 @@
 
       // Handle timeout
       request.ontimeout = function handleTimeout() {
-        reject(createError('timeout of ' + config.timeout + 'ms exceeded', config, 'ECONNABORTED',
+        var timeoutErrorMessage = 'timeout of ' + config.timeout + 'ms exceeded';
+        if (config.timeoutErrorMessage) {
+          timeoutErrorMessage = config.timeoutErrorMessage;
+        }
+        reject(createError(timeoutErrorMessage, config, 'ECONNABORTED',
           request));
 
         // Clean up request
@@ -895,7 +956,7 @@
         var cookies$1 = cookies;
 
         // Add xsrf header
-        var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
+        var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
           cookies$1.read(config.xsrfCookieName) :
           undefined;
 
@@ -918,8 +979,8 @@
       }
 
       // Add withCredentials to request if needed
-      if (config.withCredentials) {
-        request.withCredentials = true;
+      if (!utils.isUndefined(config.withCredentials)) {
+        request.withCredentials = !!config.withCredentials;
       }
 
       // Add responseType to request if needed
@@ -980,12 +1041,11 @@
 
   function getDefaultAdapter() {
     var adapter;
-    // Only Node.JS has a process variable that is of [[Class]] process
-    if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
-      // For node use HTTP adapter
-      adapter = xhr;
-    } else if (typeof XMLHttpRequest !== 'undefined') {
+    if (typeof XMLHttpRequest !== 'undefined') {
       // For browsers use XHR adapter
+      adapter = xhr;
+    } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
+      // For node use HTTP adapter
       adapter = xhr;
     }
     return adapter;
@@ -1063,32 +1123,6 @@
   var defaults_1 = defaults;
 
   /**
-   * Determines whether the specified URL is absolute
-   *
-   * @param {string} url The URL to test
-   * @returns {boolean} True if the specified URL is absolute, otherwise false
-   */
-  var isAbsoluteURL = function isAbsoluteURL(url) {
-    // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
-    // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
-    // by any combination of letters, digits, plus, period, or hyphen.
-    return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
-  };
-
-  /**
-   * Creates a new URL by combining the specified URLs
-   *
-   * @param {string} baseURL The base URL
-   * @param {string} relativeURL The relative URL
-   * @returns {string} The combined URL
-   */
-  var combineURLs = function combineURLs(baseURL, relativeURL) {
-    return relativeURL
-      ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
-      : baseURL;
-  };
-
-  /**
    * Throws a `Cancel` if cancellation has been requested.
    */
   function throwIfCancellationRequested(config) {
@@ -1106,11 +1140,6 @@
   var dispatchRequest = function dispatchRequest(config) {
     throwIfCancellationRequested(config);
 
-    // Support baseURL config
-    if (config.baseURL && !isAbsoluteURL(config.url)) {
-      config.url = combineURLs(config.baseURL, config.url);
-    }
-
     // Ensure headers exist
     config.headers = config.headers || {};
 
@@ -1125,7 +1154,7 @@
     config.headers = utils.merge(
       config.headers.common || {},
       config.headers[config.method] || {},
-      config.headers || {}
+      config.headers
     );
 
     utils.forEach(
@@ -1179,13 +1208,23 @@
     config2 = config2 || {};
     var config = {};
 
-    utils.forEach(['url', 'method', 'params', 'data'], function valueFromConfig2(prop) {
+    var valueFromConfig2Keys = ['url', 'method', 'params', 'data'];
+    var mergeDeepPropertiesKeys = ['headers', 'auth', 'proxy'];
+    var defaultToConfig2Keys = [
+      'baseURL', 'url', 'transformRequest', 'transformResponse', 'paramsSerializer',
+      'timeout', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
+      'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress',
+      'maxContentLength', 'validateStatus', 'maxRedirects', 'httpAgent',
+      'httpsAgent', 'cancelToken', 'socketPath'
+    ];
+
+    utils.forEach(valueFromConfig2Keys, function valueFromConfig2(prop) {
       if (typeof config2[prop] !== 'undefined') {
         config[prop] = config2[prop];
       }
     });
 
-    utils.forEach(['headers', 'auth', 'proxy'], function mergeDeepProperties(prop) {
+    utils.forEach(mergeDeepPropertiesKeys, function mergeDeepProperties(prop) {
       if (utils.isObject(config2[prop])) {
         config[prop] = utils.deepMerge(config1[prop], config2[prop]);
       } else if (typeof config2[prop] !== 'undefined') {
@@ -1197,13 +1236,25 @@
       }
     });
 
-    utils.forEach([
-      'baseURL', 'transformRequest', 'transformResponse', 'paramsSerializer',
-      'timeout', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
-      'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress', 'maxContentLength',
-      'validateStatus', 'maxRedirects', 'httpAgent', 'httpsAgent', 'cancelToken',
-      'socketPath'
-    ], function defaultToConfig2(prop) {
+    utils.forEach(defaultToConfig2Keys, function defaultToConfig2(prop) {
+      if (typeof config2[prop] !== 'undefined') {
+        config[prop] = config2[prop];
+      } else if (typeof config1[prop] !== 'undefined') {
+        config[prop] = config1[prop];
+      }
+    });
+
+    var axiosKeys = valueFromConfig2Keys
+      .concat(mergeDeepPropertiesKeys)
+      .concat(defaultToConfig2Keys);
+
+    var otherKeys = Object
+      .keys(config2)
+      .filter(function filterAxiosKeys(key) {
+        return axiosKeys.indexOf(key) === -1;
+      });
+
+    utils.forEach(otherKeys, function otherKeysDefaultToConfig2(prop) {
       if (typeof config2[prop] !== 'undefined') {
         config[prop] = config2[prop];
       } else if (typeof config1[prop] !== 'undefined') {
@@ -1243,7 +1294,15 @@
     }
 
     config = mergeConfig(this.defaults, config);
-    config.method = config.method ? config.method.toLowerCase() : 'get';
+
+    // Set config.method
+    if (config.method) {
+      config.method = config.method.toLowerCase();
+    } else if (this.defaults.method) {
+      config.method = this.defaults.method.toLowerCase();
+    } else {
+      config.method = 'get';
+    }
 
     // Hook up interceptors middleware
     var chain = [dispatchRequest, undefined];
@@ -1411,38 +1470,36 @@
   }
 
   // Create the default instance to be exported
-  var axios = createInstance(defaults_1);
+  var axios$1 = createInstance(defaults_1);
 
   // Expose Axios class to allow class inheritance
-  axios.Axios = Axios_1;
+  axios$1.Axios = Axios_1;
 
   // Factory for creating new instances
-  axios.create = function create(instanceConfig) {
-    return createInstance(mergeConfig(axios.defaults, instanceConfig));
+  axios$1.create = function create(instanceConfig) {
+    return createInstance(mergeConfig(axios$1.defaults, instanceConfig));
   };
 
   // Expose Cancel & CancelToken
-  axios.Cancel = Cancel_1;
-  axios.CancelToken = CancelToken_1;
-  axios.isCancel = isCancel;
+  axios$1.Cancel = Cancel_1;
+  axios$1.CancelToken = CancelToken_1;
+  axios$1.isCancel = isCancel;
 
   // Expose all/spread
-  axios.all = function all(promises) {
+  axios$1.all = function all(promises) {
     return Promise.all(promises);
   };
-  axios.spread = spread;
+  axios$1.spread = spread;
 
-  var axios_1 = axios;
+  var axios_1 = axios$1;
 
   // Allow use of default import syntax in TypeScript
-  var default_1 = axios;
+  var default_1 = axios$1;
   axios_1.default = default_1;
 
-  var axios$1 = axios_1;
+  var axios = axios_1;
 
-  var ScrollBarWidget =
-  /*#__PURE__*/
-  function () {
+  var ScrollBarWidget = /*#__PURE__*/function () {
     function ScrollBarWidget(x, y, width, height) {
       _classCallCheck(this, ScrollBarWidget);
 
@@ -1486,9 +1543,7 @@
     return ScrollBarWidget;
   }();
 
-  var ScrollBar =
-  /*#__PURE__*/
-  function () {
+  var ScrollBar = /*#__PURE__*/function () {
     function ScrollBar(parentWidth, parentHeight, width, height, vertical) {
       _classCallCheck(this, ScrollBar);
 
@@ -1543,9 +1598,7 @@
     return ScrollBar;
   }();
 
-  var NucleotideColorScheme =
-  /*#__PURE__*/
-  function () {
+  var NucleotideColorScheme = /*#__PURE__*/function () {
     function NucleotideColorScheme(dataSet) {
       _classCallCheck(this, NucleotideColorScheme);
 
@@ -1622,9 +1675,15 @@
         });
       }
     }, {
+      key: "getAlleleColor",
+      value: function getAlleleColor(allele) {
+        var color = this.colorMap.get(allele);
+        return color == null ? this.colorMap.get("-") : color;
+      }
+    }, {
       key: "drawGradientSquare",
       value: function drawGradientSquare(size, genotype, font, fontSize) {
-        var color = this.colorMap.get(genotype.allele1);
+        var color = this.getAlleleColor(genotype.allele1);
         var gradCanvas = document.createElement('canvas');
         gradCanvas.width = size;
         gradCanvas.height = size;
@@ -1647,8 +1706,8 @@
     }, {
       key: "drawHetSquare",
       value: function drawHetSquare(size, genotype, font, fontSize) {
-        var color1 = this.colorMap.get(genotype.allele1);
-        var color2 = this.colorMap.get(genotype.allele2);
+        var color1 = this.getAlleleColor(genotype.allele1);
+        var color2 = this.getAlleleColor(genotype.allele2);
         var gradCanvas = document.createElement('canvas');
         gradCanvas.width = size;
         gradCanvas.height = size;
@@ -1689,9 +1748,7 @@
     return NucleotideColorScheme;
   }();
 
-  var SimilarityColorScheme =
-  /*#__PURE__*/
-  function () {
+  var SimilarityColorScheme = /*#__PURE__*/function () {
     function SimilarityColorScheme(dataSet, compIndex) {
       _classCallCheck(this, SimilarityColorScheme);
 
@@ -1921,9 +1978,7 @@
     return SimilarityColorScheme;
   }();
 
-  var GenotypeCanvas =
-  /*#__PURE__*/
-  function () {
+  var GenotypeCanvas = /*#__PURE__*/function () {
     function GenotypeCanvas(width, height, boxSize) {
       _classCallCheck(this, GenotypeCanvas);
 
@@ -2380,9 +2435,9 @@
       }
     }, {
       key: "canScrollX",
-      // We can only scroll horizontally if the render size of our data horizontally
+      value: // We can only scroll horizontally if the render size of our data horizontally
       // is wider than the canvas itself
-      value: function canScrollX() {
+      function canScrollX() {
         return this.maxCanvasWidth() > this.alleleCanvasWidth();
       }
     }, {
@@ -2642,9 +2697,7 @@
     return GenotypeCanvas;
   }();
 
-  var CanvasController =
-  /*#__PURE__*/
-  function () {
+  var CanvasController = /*#__PURE__*/function () {
     function CanvasController(genotypeCanvas) {
       var _this = this;
 
@@ -2792,9 +2845,7 @@
     return CanvasController;
   }();
 
-  var Genotype =
-  /*#__PURE__*/
-  function () {
+  var Genotype = /*#__PURE__*/function () {
     function Genotype(allele1, allele2, isHomozygous) {
       _classCallCheck(this, Genotype);
 
@@ -2820,22 +2871,21 @@
       value: function fromString(genotypeString) {
         var hetSeparator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '/';
         var upperCased = genotypeString.toUpperCase();
-        var geno;
-
-        if (upperCased.length === 3 && !upperCased.includes(hetSeparator)) {
-          throw Error('Encounctered a string which could not be converted into a Genotype');
-        }
+        var geno; //    if (upperCased.length === 3 && !upperCased.includes(hetSeparator)) {
+        //      throw Error('Encountered a string which could not be converted into a Genotype');
+        //    }
 
         if (upperCased === '-' || upperCased === 'NN' || upperCased === 'N/N' || !upperCased || upperCased.length === 0) {
           geno = new Genotype('', '', true);
         } else if (upperCased.length === 1) {
           geno = new Genotype(upperCased, upperCased, true);
-        } else if (upperCased.length === 2) {
+        } else if (upperCased.length === 2 && (hetSeparator == null || hetSeparator == "")) {
           geno = new Genotype(upperCased[0], upperCased[1], upperCased[0] === upperCased[1]);
         } else if (upperCased.includes(hetSeparator)) {
           var alleles = upperCased.split(hetSeparator);
           geno = new Genotype(alleles[0], alleles[1], alleles[0] === alleles[1]);
-        }
+        } else // homozygous with multi-nucleic allele (INDEL?) 
+          geno = new Genotype(upperCased, upperCased, true);
 
         return geno;
       }
@@ -3625,14 +3675,12 @@
   });
 
   var IntervalTree = unwrapExports(lib);
-  var lib_1 = lib.Node;
-  var lib_2 = lib.IntervalTree;
-  var lib_3 = lib.InOrder;
-  var lib_4 = lib.PreOrder;
+  lib.Node;
+  lib.IntervalTree;
+  lib.InOrder;
+  lib.PreOrder;
 
-  var GenomeMap =
-  /*#__PURE__*/
-  function () {
+  var GenomeMap = /*#__PURE__*/function () {
     function GenomeMap(chromosomes) {
       _classCallCheck(this, GenomeMap);
 
@@ -3743,9 +3791,7 @@
     return GenomeMap;
   }();
 
-  var Chromosome =
-  /*#__PURE__*/
-  function () {
+  var Chromosome = /*#__PURE__*/function () {
     function Chromosome(name, end, markers) {
       _classCallCheck(this, Chromosome);
 
@@ -3768,9 +3814,7 @@
     return Chromosome;
   }();
 
-  var GenotypeImporter =
-  /*#__PURE__*/
-  function () {
+  var GenotypeImporter = /*#__PURE__*/function () {
     function GenotypeImporter(genomeMap) {
       _classCallCheck(this, GenotypeImporter);
 
@@ -3781,6 +3825,8 @@
       this.genomeMap = genomeMap;
       this.markerIndices = new Map();
       this.germplasmList = [];
+      this.processedLines;
+      this.totalLineCount;
     }
 
     _createClass(GenotypeImporter, [{
@@ -3858,13 +3904,22 @@
     }, {
       key: "parseFile",
       value: function parseFile(fileContents) {
+        this.processedLines = 0;
+        this.totalLineCount = 0;
         var lines = fileContents.split(/\r?\n/);
+        this.totalLineCount = lines.length;
 
-        for (var line = 0; line < lines.length; line += 1) {
+        for (var line = 0; line < this.totalLineCount; line += 1) {
           this.processFileLine(lines[line]);
+          this.processedLines = line;
         }
 
         return this.germplasmList;
+      }
+    }, {
+      key: "getImportProgressPercentage",
+      value: function getImportProgressPercentage() {
+        return parseInt(this.processedLines + " / " + this.totalLineCount);
       } // In situations where a map hasn't been provided, we want to create a fake or
       // dummy map one chromosome and evenly spaced markers
 
@@ -3973,9 +4028,7 @@
     return GenotypeImporter;
   }();
 
-  var MapImporter =
-  /*#__PURE__*/
-  function () {
+  var MapImporter = /*#__PURE__*/function () {
     function MapImporter() {
       _classCallCheck(this, MapImporter);
 
@@ -4069,9 +4122,7 @@
     return MapImporter;
   }();
 
-  var DataSet =
-  /*#__PURE__*/
-  function () {
+  var DataSet = /*#__PURE__*/function () {
     function DataSet(genomeMap, germplasmList, stateTable) {
       _classCallCheck(this, DataSet);
 
@@ -4121,13 +4172,10 @@
   }();
 
   function GenotypeRenderer() {
-    var genotypeRenderer = {}; // Variables for referring to the genotype canvas
+    var genotypeRenderer = {};
+    var genotypeImporter; // Variables for referring to the genotype canvas
 
     var genotypeCanvas; // TODO: need to investigate a proper clean way to implement this controller
-    // functionality
-    // eslint-disable-next-line no-unused-vars
-
-    var canvasController;
     var boxSize = 16;
     var colorScheme;
     var genomeMap;
@@ -4193,7 +4241,7 @@
       zoomDiv.appendChild(form);
       canvasHolder.appendChild(zoomDiv);
       addStyleSheet();
-      canvasController = new CanvasController(genotypeCanvas);
+      new CanvasController(genotypeCanvas);
     }
 
     function addRadioButton(name, id, text, checked, parent) {
@@ -4333,7 +4381,7 @@
     genotypeRenderer.renderGenotypesBrapi = function renderGenotypesBrapi(domParent, width, height, server, matrixId, mapId, authToken) {
       createRendererComponents(domParent, width, height);
       var germplasmData;
-      var client = axios$1.create({
+      var client = axios.create({
         baseURL: server
       });
       client.defaults.headers.common.Authorization = "Bearer ".concat(authToken);
@@ -4345,14 +4393,15 @@
           var mapImporter = new MapImporter();
           genomeMap = mapImporter.parseMarkerpositions(markerpositions);
           processVariantSetCall(client, "/variantsets/".concat(matrixId, "/calls")).then(function (variantSetCalls) {
-            var genotypeImporter = new GenotypeImporter(genomeMap);
+            genotypeImporter = new GenotypeImporter(genomeMap);
 
             if (genomeMap === undefined) {
               genomeMap = genotypeImporter.createFakeMapFromVariantSets(variantSetCalls);
             }
 
             germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
-            var stateTable = genotypeImporter.stateTable;
+            var _genotypeImporter = genotypeImporter,
+                stateTable = _genotypeImporter.stateTable;
             dataSet = new DataSet(genomeMap, germplasmData, stateTable);
             colorScheme = new NucleotideColorScheme(dataSet);
             populateLineSelect();
@@ -4373,14 +4422,15 @@
         });
       } else {
         processVariantSetCall(client, "/variantsets/".concat(matrixId, "/calls")).then(function (variantSetCalls) {
-          var genotypeImporter = new GenotypeImporter(genomeMap);
+          genotypeImporter = new GenotypeImporter(genomeMap);
 
           if (genomeMap === undefined) {
             genomeMap = genotypeImporter.createFakeMapFromVariantSets(variantSetCalls);
           }
 
           germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
-          var stateTable = genotypeImporter.stateTable;
+          var _genotypeImporter2 = genotypeImporter,
+              stateTable = _genotypeImporter2.stateTable;
           dataSet = new DataSet(genomeMap, germplasmData, stateTable);
           colorScheme = new NucleotideColorScheme(dataSet);
           populateLineSelect();
@@ -4403,7 +4453,7 @@
       createRendererComponents(domParent, width, height);
       var mapFile;
       var genotypeFile;
-      axios$1.get(mapFileURL, {}, {
+      axios.get(mapFileURL, {}, {
         headers: {
           'Content-Type': 'text/plain'
         }
@@ -4417,34 +4467,34 @@
           genomeMap = mapImporter.parseFile(mapFile);
         }
 
-        axios$1.get(genotypeFileURL, {}, {
+        axios.get(genotypeFileURL, {}, {
           headers: {
             'Content-Type': 'text/plain'
           }
         }).then(function (response) {
           genotypeFile = response.data;
         }).then(function () {
-          var genotypeImporter = new GenotypeImporter(genomeMap);
+          genotypeImporter = new GenotypeImporter(genomeMap);
 
           if (genomeMap === undefined) {
             genomeMap = genotypeImporter.createFakeMap(genotypeFile);
           }
 
           var germplasmData = genotypeImporter.parseFile(genotypeFile);
-          var stateTable = genotypeImporter.stateTable;
+          var _genotypeImporter3 = genotypeImporter,
+              stateTable = _genotypeImporter3.stateTable;
           dataSet = new DataSet(genomeMap, germplasmData, stateTable);
           colorScheme = new NucleotideColorScheme(dataSet);
           populateLineSelect();
           genotypeCanvas.init(dataSet, colorScheme);
-          genotypeCanvas.prerender();
-
-          // Tells the dom parent that Flapjack has finished loading. Allows spinners
+          genotypeCanvas.prerender(); // Tells the dom parent that Flapjack has finished loading. Allows spinners
           // or similar to be disabled
+
           sendEvent('FlapjackFinished', domParent);
-        }).catch((error) => {
-            sendEvent('FlapjackError', domParent);
-            // eslint-disable-next-line no-console
-            console.log(error);
+        })["catch"](function (error) {
+          sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+
+          console.log(error);
         });
       });
       return genotypeRenderer;
@@ -4499,14 +4549,15 @@
       // Then genotype data
 
       genotypePromise.then(function (result) {
-        var genotypeImporter = new GenotypeImporter(genomeMap);
+        genotypeImporter = new GenotypeImporter(genomeMap);
 
         if (genomeMap === undefined) {
           genomeMap = genotypeImporter.createFakeMap(result);
         }
 
         germplasmData = genotypeImporter.parseFile(result);
-        var stateTable = genotypeImporter.stateTable;
+        var _genotypeImporter4 = genotypeImporter,
+            stateTable = _genotypeImporter4.stateTable;
         dataSet = new DataSet(genomeMap, germplasmData, stateTable);
         colorScheme = new NucleotideColorScheme(dataSet);
         populateLineSelect();
@@ -4514,6 +4565,10 @@
         genotypeCanvas.prerender();
       });
       return genotypeRenderer;
+    };
+
+    genotypeRenderer.getRenderingProgressPercentage = function getRenderingProgressPercentage() {
+      return genotypeImporter == null ? -1 : genotypeImporter.getImportProgressPercentage();
     };
 
     return genotypeRenderer;
