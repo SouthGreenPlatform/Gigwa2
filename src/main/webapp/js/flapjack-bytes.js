@@ -3761,9 +3761,19 @@
       }
     }, {
       key: "markerByName",
-      value: function markerByName(markerName) {
+      value: function markerByName(markerName, markerIndexesByNamesAndChromosomes) {
         var found = -1;
-        this.chromosomes.forEach(function (chromosome, idx) {
+        if (markerIndexesByNamesAndChromosomes != null) for (var chrIdx in markerIndexesByNamesAndChromosomes) {
+          var markerIndex = markerIndexesByNamesAndChromosomes[chrIdx].indexOf(markerName);
+
+          if (markerIndex !== -1) {
+            found = {
+              chromosome: chrIdx,
+              markerIndex: markerIndex
+            };
+            break;
+          }
+        } else this.chromosomes.forEach(function (chromosome, idx) {
           var markerIndex = chromosome.markers.map(function (m) {
             return m.name;
           }).indexOf(markerName);
@@ -3866,7 +3876,7 @@
       }
     }, {
       key: "processFileLine",
-      value: function processFileLine(line) {
+      value: function processFileLine(line, markerIndexesByNamesAndChromosomes) {
         var _this = this;
 
         if (line.startsWith('#') || !line || line.length === 0) {
@@ -3876,7 +3886,7 @@
         if (line.startsWith('Accession') || line.startsWith('\t')) {
           var markerNames = line.split('\t');
           markerNames.slice(1).forEach(function (name, idx) {
-            var indices = _this.genomeMap.markerByName(name);
+            var indices = _this.genomeMap.markerByName(name, markerIndexesByNamesAndChromosomes);
 
             if (indices !== -1) {
               _this.markerIndices.set(idx, indices);
@@ -3904,16 +3914,25 @@
     }, {
       key: "parseFile",
       value: function parseFile(fileContents) {
+        var b4 = Date.now(); // pre-calculating this index array once for all brings significantly faster loading
+
+        var markerIndexesByNamesAndChromosomes = new Array();
+        this.genomeMap.chromosomes.forEach(function (chromosome, idx) {
+          markerIndexesByNamesAndChromosomes[idx] = chromosome.markers.map(function (m) {
+            return m.name;
+          });
+        });
         this.processedLines = 0;
         this.totalLineCount = 0;
         var lines = fileContents.split(/\r?\n/);
         this.totalLineCount = lines.length;
 
         for (var line = 0; line < this.totalLineCount; line += 1) {
-          this.processFileLine(lines[line]);
+          this.processFileLine(lines[line], markerIndexesByNamesAndChromosomes);
           this.processedLines = line;
         }
 
+//        console.log("parseFile took " + (Date.now() - b4) + "ms");
         return this.germplasmList;
       }
     }, {
