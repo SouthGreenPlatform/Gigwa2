@@ -192,23 +192,6 @@
 	            }
 	        });
 
-        	var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
-	        $.ajax({
-	            url: brapiBaseUrl,
-	            async: false,
-	            type: "GET",
-	            contentType: "application/json;charset=utf-8",
-	            success: function(jsonResult) {
-	            	dbDesc = jsonResult['description'].replace('germplasm', 'individual');
-	            	if ((dbDesc.match(/; 0/g) || []).length == 2)
-	            		dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
-	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
-            },
-	            error: function(xhr, thrownError) {
-	                handleError(xhr, thrownError);
-	            }
-	        });
-
 	        if (localStorage.getItem("genomeBrowserURL-" + referenceset) == null && defaultGenomeBrowserURL != null && defaultGenomeBrowserURL != "")
 	        	localStorage.setItem("genomeBrowserURL-" + referenceset, defaultGenomeBrowserURL);
 	        	        
@@ -575,7 +558,6 @@
 	            var indOpt = [];
 
 	            var gotMetaData = false;
-	    		var ifTable = $("table#individualFilteringTable");
 	    		var dataRows = new StringBuffer();
 	    		
 	    		// first pass to compile an exhaustive field list
@@ -591,28 +573,62 @@
 	            	if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
                 		indOpt.push(callSetResponse[ind].name);
 	            }
-	    		
-	      	   	// second pass to build the actual table
+	            
+            	var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
+    	        $.ajax({
+    	            url: brapiBaseUrl,
+    	            async: false,
+    	            type: "GET",
+    	            contentType: "application/json;charset=utf-8",
+    	            success: function(jsonResult) {
+    	            	dbDesc = jsonResult['description'].replace('germplasm', 'individual');
+    	            	if ((dbDesc.match(/; 0/g) || []).length == 2)
+    	            		dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
+                	},
+    	            error: function(xhr, thrownError) {
+    	                handleError(xhr, thrownError);
+    	            }
+    	        });
+
 	            if (gotMetaData) {
-            		var headerRow = new StringBuffer();
-	            	for (var i in headers)
-	            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
-		            for (var ind in callSetResponse)
-		            {
-		            	dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
+	            	$('#asyncProgressButton').hide();
+				    $('button#abort').hide();
+				    $('#progressText').html("Loading individuals' metadata...");
+				    $('#progress').modal({
+				        backdrop: 'static',
+				        keyboard: false,
+				        show: true
+				    });
+		            setTimeout(function() {
+	            		var headerRow = new StringBuffer();
 		            	for (var i in headers)
-		            	{
-							var value = callSetResponse[ind].info[headers[i]];
-		            		dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
-		            	}
-		            	dataRows.append("</tr>");
-		            }
+		            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
+			            for (var ind in callSetResponse)
+			            {
+			            	dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
+			            	for (var i in headers)
+			            	{
+								var value = callSetResponse[ind].info[headers[i]];
+			            		dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
+			            	}
+			            	dataRows.append("</tr>");
+			            }
+
+			    		var ifTable = $("table#individualFilteringTable");
+		        		if (headerRow != "")
+		        			ifTable.prepend(headerRow + "</tr>");
+			    		ifTable.append(dataRows.toString());
+			    		
+		                $('#progress').modal('hide');
+		            	var tableObj = document.getElementById("individualFilteringTable");
+		    			addSelectionDropDownsToHeaders(tableObj);
+		    			resetDropDownFilterTable(tableObj);
+    	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+		            }, 1);
 	            }
-	      	   	
-        		if (headerRow != "")
-        			ifTable.prepend(headerRow + "</tr>");
-	    		ifTable.append(dataRows.toString());
-	    		
+	            else
+	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+
 	    		for (var groupNumber=1; groupNumber<=2; groupNumber++)
 	    			if (gotMetaData)
 	    				$("button#groupSelector" + groupNumber).removeClass("hidden");
@@ -621,8 +637,6 @@
 	    				$("button#groupSelector" + groupNumber).addClass("hidden");
 	    				$("table#individualFilteringTable").html("");
 	    			}
-	            if (gotMetaData)
-	    			addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));
 	            
 	            var multipleSelectOpts = {
 	                text: 'Individuals',
@@ -1327,7 +1341,7 @@
             <a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
             <a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
             <a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
-            <a href="http://www.inra.fr/" target="_blank" class="margin-left"><img alt="inra" height="28" src="images/logo-inra.png" /></a>
+            <a href="http://www.inrae.fr/" target="_blank" class="margin-left"><img alt="inra" height="20" src="images/logo-inrae.png" /></a>
             <a href="https://www.bioversityinternational.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="45" src="images/logo-bioversity.png" /></a>
             <a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
         </div>
