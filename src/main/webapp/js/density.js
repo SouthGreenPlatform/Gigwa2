@@ -336,6 +336,9 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
                 lineWidth: 1,
                 color: colorTab[colorIndex],
                 yAxis: fieldName,
+				marker: {
+		                enabled: false
+		        },
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
