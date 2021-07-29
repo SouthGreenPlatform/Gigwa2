@@ -684,6 +684,7 @@ function isNumberKey(evt) {
 function setGenotypeInvestigationMode(mode) {
 	if (mode <= 1)
 	{
+		$('#discriminationDiv').hide(300);
 	    $('#Individuals2').selectmultiple('deselectAll');
 	    $('#Genotypes2').selectpicker('deselectAll');
 	    $('#missingdata2').val("100");
@@ -704,8 +705,10 @@ function setGenotypeInvestigationMode(mode) {
 		else
 			$('div#genotypeInvestigationDiv1').show(300);
 	}
-	else
+	else {
+ 	    $('#discriminationDiv').show(300);
 		$('div.genotypeInvestigationDiv').show(300);
+	}
 	
 	$('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
 	$('#exportedIndividuals').parent().parent().find('div.individualSelectionDiv').remove();

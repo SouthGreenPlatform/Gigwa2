@@ -761,30 +761,12 @@
 	    	        $('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 	    	        var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 	    	        $('#mostSameRatioSpan1').toggle(fMostSameSelected);
-	    	        if (fMostSameSelected && $('#Genotypes2').val() != null && $('#Genotypes2').val().indexOf("ostly the same") != -1)
-	    	        	$('#discriminationDiv').show(300);
-	    	        else
-	    	        	$('#discriminationDiv').hide(300);
-	    	        if (!fMostSameSelected)
-	    	        {
-		    	        $('#discriminate').prop('checked', false);
-		    	        $('#discriminate').change();
-	    	        }
 	    	        enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
 	    	    });
 	    	    $('#Genotypes2').on('change', function() {
 	    	        $('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 	    	        var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 	    	        $('#mostSameRatioSpan2').toggle(fMostSameSelected);
-	    	        if (fMostSameSelected && $('#Genotypes1').val().indexOf("ostly the same") != -1)
-	    	        	$('#discriminationDiv').show(300);
-	    	        else
-	    	        	$('#discriminationDiv').hide(300);
-	    	        if (!fMostSameSelected)
-	    	        {
-		    	        $('#discriminate').prop('checked', false);
-		    	        $('#discriminate').change();
-	    	        }
 	    	        enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
 	    	    });
 	        },
@@ -831,6 +813,7 @@
 	    	$('#exportBoxToggleButton').click()
 	    $('#asyncProgressButton').hide();
 	    $('#ddlWarning').hide();
+	    $('button#abort').show();
 	    $('#progressText').html("Please wait...");
 	    $('#progress').modal({
 	        backdrop: 'static',
@@ -1170,6 +1153,7 @@
 	    	$('#ddlWarning').show();
 	    	$('#asyncProgressButton').hide();
 	    }
+	    $('button#abort').show();
 	    $('#progressText').html("Please wait...");
 	    $('#progress').modal({
 	        backdrop: 'static',
