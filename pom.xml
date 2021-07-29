@@ -25,10 +25,10 @@
 <!-- 		macos	https://javadl.oracle.com/webapps/download/AutoDL?BundleId=244577_d7fc238d0cbf4b0dac67be84580cfb4b -->
 <!-- 		win		https://javadl.oracle.com/webapps/download/AutoDL?BundleId=244585_d7fc238d0cbf4b0dac67be84580cfb4b -->
 		<tomcat.version>8.5.66</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.14</mongodb.linux.file>
-		<mongodb.windows.file>win32-x86_64-2012plus-4.2.14</mongodb.windows.file>
-		<mongodb.osx.file>macos-x86_64-4.2.14</mongodb.osx.file>
-		<mongodb.osx.folder>macos-x86_64-4.2.14</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.15</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.15</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.15</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.15</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
 	<dependencies>		
