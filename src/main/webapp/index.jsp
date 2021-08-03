@@ -238,6 +238,7 @@
 	    $('#exportFormat').on('change', function() {
 	        var opt = $(this).children().filter(':selected');
 	        $('#formatDesc').html(opt.data('desc'));
+	        $('#exportPanel div.individualRelated').css("display", $(this).val() == "BED" ? "none" : "block");
 	    });
 	    $('#Sequences').on('multiple_select_change', function() {
 	        $('#sequencesLabel').html("Sequences (" + $('#Sequences').selectmultiple('count') + "/" + seqCount + ")");
@@ -589,10 +590,10 @@
     	                handleError(xhr, thrownError);
     	            }
     	        });
-
 	            if (gotMetaData) {
 	            	$('#asyncProgressButton').hide();
 				    $('button#abort').hide();
+				    $('#ddlWarning').hide();
 				    $('#progressText').html("Loading individuals' metadata...");
 				    $('#progress').modal({
 				        backdrop: 'static',
@@ -600,14 +601,17 @@
 				        show: true
 				    });
 		            setTimeout(function() {
-	            		var headerRow = new StringBuffer();
-		            	for (var i in headers)
+	            		var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
+		            	for (var i in headers) {
 		            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
-			            for (var ind in callSetResponse)
-			            {
+		            		if (i > 0)
+		            			exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
+		            	}
+		            	$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
+
+			            for (var ind in callSetResponse) {
 			            	dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
-			            	for (var i in headers)
-			            	{
+			            	for (var i in headers) {
 								var value = callSetResponse[ind].info[headers[i]];
 			            		dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
 			            	}
@@ -797,7 +801,7 @@
 	            if (!gotVCF)
 	                $("img#igvTooltip").hide();
 	            $('#exportFormat').html(option);
-	            $('#exportFormat').val(1).selectpicker('refresh');
+	            $('#exportFormat').val("VCF").selectpicker('refresh');
 	            $('#formatDesc').html($('#exportFormat').children().filter(':selected').data('desc'));
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
@@ -1123,12 +1127,10 @@
 
 	function exportData() {
 	    var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-	    if (!keepExportOnServer && $('#exportFormat').val() != "BED")
-	    {
-			var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
+		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
+	    if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
 			var indToExportCount = indToExport == null ? indCount : indToExport.length;
-			if (indToExportCount * count > 1000000000)
-			{
+			if (indToExportCount * count > 1000000000) {
 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
 				return;
 			}
@@ -1203,7 +1205,8 @@
 			"discriminate": $('#discriminate').prop('checked'),
 	        "exportFormat": $('#exportFormat').val(),
             "token": token,
-            "exportedIndividuals" : $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)))
+            "exportedIndividuals" : indToExport,
+            "metadataFields" : $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
 	    };
 	    processAborted = false;
 	    $('button#abort').attr('rel', 'export_' + token);
@@ -1613,7 +1616,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
 									<img title="Variant density chart" src="images/densityIcon.gif" height="25" width="54" />
 								</button>
-								<div class="row" id="exportPanel" style="position:absolute; margin-left:-30px; width:250px; margin-top:2px; z-index:1; display:none;">
+								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
 									<div class="panel panel-default panel-grey shadowed-panel">
 										<div class="panel-body panel-center text-center">
 											<div class="form-group text-nowrap">
@@ -1622,19 +1625,32 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 												<div id="formatInfo" style="white-space: normal;" align='center'>
 													<div id="formatDesc"></div>
 												</div>
-												<span title="Click for information on this format" class="glyphicon glyphicon-question-sign hand-cursor" id="formatHelp" onclick="$('#formatInfo').toggle();"></span>
+												<span title="Click to toggle information on selected format" class="glyphicon glyphicon-question-sign hand-cursor" id="formatHelp" onclick="$('#formatInfo').toggle();"></span>
 											</div>
-											<div class="form-group text-nowrap">
-												<label for="exportedIndividuals">Individuals to export</label>
-												<br/>
-												<select class="selectpicker" id="exportedIndividuals" onchange="toggleIndividualSelector($(this).parent(), 'choose' == $(this).selectpicker('val'));">
-													<option id="exportedIndividualsAll" value="">All of them</option>
-												</select>
+											<div class="form-group text-nowrap row margin-top-md">
+												<div class="col-md-6" style="padding-right:10px;">
+													<div class="individualRelated">
+														<label for="exportedIndividuals">Exported individuals</label><br/>
+														<select class="selectpicker" id="exportedIndividuals" onchange="toggleIndividualSelector($(this).parent(), 'choose' == $(this).selectpicker('val'));">
+															<option id="exportedIndividualsAll" value="">All of them</option>
+														</select>
+													</div>
+												</div>
+												<div class="col-md-6" style="text-align:center; padding-left:10px;">
+													<div class="individualRelated">
+														<label for="exportedIndividualMetadata">Metadata to export</label>&nbsp;<br/>
+														<select id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
+													</div>
+													<div style="width:100%; text-align:center;">
+														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
+															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
+														</label>
+														<div>
+															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
+														</div>
+													</div>
+												</div>
 											</div>
-											<button style="float:right; margin-right:5px; margin-top:-10px;" id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
-											<label class="label-checkbox">
-												<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
-											</label>
 											<div id="serverExportWarning"></div>
 										</div>
 									</div>

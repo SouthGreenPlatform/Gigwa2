@@ -412,6 +412,10 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
     padding-right:20px;
 }
 
+div#exportPanel select[multiple] option {
+	font-size:11px;
+}
+
 div#serverExportBox {
 	min-width: 580px;
 	right: 266px;
@@ -420,10 +424,9 @@ div#serverExportBox {
 }
 
 div#serverExportWarning {
-	margin:5px;
+	margin:10px 5px;
 	color:#c07070;
 	font-size:11px;
-	
 }
 
 div#formatInfo, div#serverExportBox {
@@ -438,7 +441,7 @@ div#formatInfo, div#serverExportBox {
 
 div#formatInfo {
     min-width:100%;
-    margin-left:-200px;
+    margin-left:-40px;
     padding:3px;
 }
 

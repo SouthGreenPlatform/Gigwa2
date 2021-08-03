@@ -838,6 +838,7 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "minmaf2", required = false) Float minmaf2,
 			@RequestParam(value = "maxmaf2", required = false) Float maxmaf2,
 			@RequestParam(value = "exportedIndividuals", required = false) String exportedIndividuals,
+			@RequestParam(value = "metadataFields", required = false) String metadataFields,
 			@RequestParam("discriminate") boolean discriminate) throws Exception {
 
 		String[] info = new String[1];
@@ -885,6 +886,7 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setExportFormat(exportFormat);
 				gsver.setKeepExportOnServer(keepExportOnServer);
 				gsver.setExportedIndividuals(exportedIndividuals == null || exportedIndividuals.length() == 0 ? new ArrayList<String>() : Arrays.asList(exportedIndividuals.split(",")));
+				gsver.setMetadataFields(metadataFields == null || metadataFields.length() == 0 ? new ArrayList<String>() : Arrays.asList(metadataFields.split(",")));
 				gsver.setDiscriminate(discriminate);
 				gsver.setRequest(request);
 

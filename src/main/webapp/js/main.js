@@ -752,8 +752,8 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
 		var allInd = $('#Individuals1').selectmultiple('option');
 		var allIndOptions = new StringBuffer();
 		for (var key in allInd)
-			allIndOptions.append("<option>" + allInd[key] + "</option>");
-		previousSibling.after("<div style='display:none; margin-top:5px;' class='individualSelectionDiv'><select " + (onchangeFunc != null ? "onchange='" + onchangeFunc + "();' " : "") + " style='width:100%' multiple size='15' class='individualSelector'>" + allIndOptions + "</select></div>");
+			allIndOptions.append("<option title=\"" + allInd[key] + "\">" + allInd[key] + "</option>");
+		previousSibling.after("<div style='display:none; margin-top:5px;' class='individualSelectionDiv'><select " + (onchangeFunc != null ? "onchange='" + onchangeFunc + "();' " : "") + " style='width:100%;' multiple size='15' class='individualSelector'>" + allIndOptions + "</select></div>");
 		if (!isNaN(size))
 			previousSibling.parent().find('select.individualSelector').attr("size", size);
 		previousSibling.parent().find('div.individualSelectionDiv').show(200);
