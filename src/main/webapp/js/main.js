@@ -852,6 +852,7 @@ function addSelectionDropDownsToHeaders(tableObj)
 	}
 
 	applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+	$(tableObj).find("th select.selectpicker").selectpicker();
 }
 
 function applyDropDownFiltersToTable(tableObj)
