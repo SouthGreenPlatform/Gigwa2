@@ -559,7 +559,6 @@
 	            var indOpt = [];
 
 	            var gotMetaData = false;
-	    		var dataRows = new StringBuffer();
 	    		
 	    		// first pass to compile an exhaustive field list
 	    		var headers = new Array();
@@ -611,6 +610,7 @@
 		            	}
 		            	$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
+			    		var dataRows = new StringBuffer();
 			            for (var ind in callSetResponse) {
 			            	dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
 			            	for (var i in headers) {
@@ -619,17 +619,16 @@
 			            	}
 			            	dataRows.append("</tr>");
 			            }
-
 			    		var ifTable = $("table#individualFilteringTable");
 		        		if (headerRow != "")
 		        			ifTable.prepend(headerRow + "</tr>");
 			    		ifTable.append(dataRows.toString());
-			    		
-		                $('#progress').modal('hide');
+
 		            	var tableObj = document.getElementById("individualFilteringTable");
 		    			addSelectionDropDownsToHeaders(tableObj);
-		    			resetDropDownFilterTable(tableObj);
-    	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+
+		                $('#progress').modal('hide');
+						displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
 		            }, 1);
 	            }
 	            else {

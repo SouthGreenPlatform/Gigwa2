@@ -883,11 +883,11 @@ function applyDropDownFiltersToTable(tableObj)
 function resetDropDownFilterTable(tableObj)
 {
 	$(tableObj).find("th select.selectpicker").each(function() {
-		$(this).selectpicker('deselectAll');
+		$(this).val([]);
+		$(this).selectpicker('refresh');
 	});
-	$(tableObj).find("tr").each(function() {
-		$(this).show();
-	});
+	$(tableObj).find("tr").show();
+	updateFilteredIndividualCount();
 }
 
 function selectGroupUsingMetadata(groupNumber) {
