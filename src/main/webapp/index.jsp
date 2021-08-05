@@ -590,6 +590,9 @@
     	                handleError(xhr, thrownError);
     	            }
     	        });
+				$('#exportPanel input#exportedIndividualMetadataCheckBox').prop('checked', false);
+				$('#exportPanel input#exportedIndividualMetadataCheckBox').prop('disabled', !gotMetaData);
+				$('#exportPanel input#exportedIndividualMetadataCheckBox').change();
 	            if (gotMetaData) {
 	            	$('#asyncProgressButton').hide();
 				    $('button#abort').hide();
@@ -604,8 +607,7 @@
 	            		var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
 		            	for (var i in headers) {
 		            		headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
-		            		if (i > 0)
-		            			exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
+	            			exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
 		            	}
 		            	$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
@@ -630,9 +632,10 @@
     	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
 		            }, 1);
 	            }
-	            else
+	            else {
 	            	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
-
+					$("#exportedIndividualMetadata").html("");
+				}
 	    		for (var groupNumber=1; groupNumber<=2; groupNumber++)
 	    			if (gotMetaData)
 	    				$("button#groupSelector" + groupNumber).removeClass("hidden");
@@ -1206,7 +1209,7 @@
 	        "exportFormat": $('#exportFormat').val(),
             "token": token,
             "exportedIndividuals" : indToExport,
-            "metadataFields" : $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
+            "metadataFields" : $('#exportPanel div#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
 	    };
 	    processAborted = false;
 	    $('button#abort').attr('rel', 'export_' + token);
@@ -1638,8 +1641,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 												</div>
 												<div class="col-md-6" style="text-align:center; padding-left:10px;">
 													<div class="individualRelated">
-														<label for="exportedIndividualMetadata">Metadata to export</label>&nbsp;<br/>
-														<select id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
+														<label for="exportedIndividualMetadataCheckBox">
+															<input type="checkbox" class="input-checkbox" id="exportedIndividualMetadataCheckBox" onchange="$('#exportedIndividualMetadata').prop('disabled', !$(this).prop('checked'));" />
+															Export metadata
+														</label>&nbsp;<br/>
+														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
 													</div>
 													<div style="width:100%; text-align:center;">
 														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
