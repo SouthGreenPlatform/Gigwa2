@@ -1,14 +1,18 @@
-version: '3.3'
+version: '3.5'
+
+# You may use the following (Linux) command to start metaXplor by dynamically setting the docker0 IP address:
+# export docker0=$(ip a list docker0 | grep "inet " | sed 's/^ *//g' | awk -F'[ |/]' '{print $2}') && docker-compose up -d && sleep 2 && xdg-open http://$docker0:8080/gigwa &> /dev/null
+
 services:
   tomcat:
     depends_on:
       - mongo
-    image: guilhemsempere/gigwa:2.3-RELEASE
+    image: guilhemsempere/gigwa:2.4-RELEASE
     ports:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
     environment:
-      MONGO_IP: host.ip # Set your host machine IP here
+      MONGO_IP: ${docker0} # Set your host machine IP here
       MONGO_PORT: 59393 # Must match mongo container external port
       MONGO_INITDB_ROOT_USERNAME: yourMongoRootUser
       MONGO_INITDB_ROOT_PASSWORD: yourMongoRootPassword
@@ -19,9 +23,9 @@ services:
         target: /usr/local/tomcat/config
 
   mongo:
-    image: mongo:4.2.3
+    image: mongo:4.2.15
     restart: always
-    command: --profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zlib --directoryperdb --quiet
+    command: --profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet
     ports:
       - 59393:27017 # You may amend the external port only (left hand side), which must match the above MONGO_PORT
     environment:
