@@ -1208,7 +1208,7 @@
 	        "exportFormat": $('#exportFormat').val(),
             "token": token,
             "exportedIndividuals" : indToExport,
-            "metadataFields" : $('#exportPanel div#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
+            "metadataFields" : $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
 	    };
 	    processAborted = false;
 	    $('button#abort').attr('rel', 'export_' + token);
