@@ -16,5 +16,5 @@ RUN echo -e "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<beans xmlns=\"http://w
 && ln -s /usr/local/tomcat/config/datasources.properties webapps/gigwa/WEB-INF/classes/datasources.properties \
 && mv webapps/gigwa/WEB-INF/classes/users.properties config \
 && ln -s /usr/local/tomcat/config/users.properties webapps/gigwa/WEB-INF/classes/users.properties \
-#create setenv.sh
-&& echo -e "export CATALINA_OPTS=\"$CATALINA_OPTS -Xms512m -Xmx2048m\"\nif [ ! -z \"\${HOST_LOCALE}\" ]; then export LANG=\${HOST_LOCALE}; fi" >> /usr/local/tomcat/bin/setenv.sh \
+#create setenv.sh (ends with a line updating applicationContext-data.xml for transition to v2.4 from previous versions)
+&& echo -e "export CATALINA_OPTS=\"$CATALINA_OPTS -Xms512m -Xmx2048m\"\nif [ ! -z \"\${HOST_LOCALE}\" ]; then export LANG=\${HOST_LOCALE}; fi\nif (( \`grep -c UserCredentials /usr/local/tomcat/config/applicationContext-data.xml\` != 0 )); then wget https://github.com/SouthGreenPlatform/Gigwa2/files/7052390/applicationContext-data.xml.txt && mv /usr/local/tomcat/config/applicationContext-data.xml /usr/local/tomcat/config/applicationContext-data_OLD.xml && mv applicationContext-data.xml.txt /usr/local/tomcat/config/applicationContext-data.xml && touch ../web.xml ; fi" >> /usr/local/tomcat/bin/setenv.sh \
