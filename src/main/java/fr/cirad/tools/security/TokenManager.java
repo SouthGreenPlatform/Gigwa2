@@ -301,7 +301,7 @@ public class TokenManager extends AbstractTokenManager {
 	}
     
 	@Override
-    public boolean canUserReadProject(String token, String module, Comparable projectId)
+    public boolean canUserReadProject(String token, String module, int projectId)
     {
     	Authentication authentication = getAuthenticationFromToken(token);
     	if (authentication == null)
@@ -313,7 +313,7 @@ public class TokenManager extends AbstractTokenManager {
     }
     
 	@Override
-	public boolean canUserReadProject(Authentication authentication, String sModule, Comparable projectId)
+	public boolean canUserReadProject(Authentication authentication, String sModule, int projectId)
 	{
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
 		if (fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
@@ -332,6 +332,8 @@ public class TokenManager extends AbstractTokenManager {
 			if (customRolesOnProjects != null)
 			{
 				Collection<Comparable> projectCustomRoles = customRolesOnProjects.get(ROLE_READER);
+				if (projectCustomRoles == null)
+					projectCustomRoles = customRolesOnProjects.get(IRoleDefinition.ENTITY_MANAGER_ROLE);
 				if (projectCustomRoles != null && projectCustomRoles.contains(projectId))
 					return true;
 			}
