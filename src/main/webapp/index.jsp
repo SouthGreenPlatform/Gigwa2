@@ -59,6 +59,8 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
+<script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script>
+<script type="text/javascript" src="js/gigwaSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
@@ -74,6 +76,8 @@
 	var posPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
+	var igvBrowser;
+	
 	// plot graph option 
 	var options = {
 	    legend: {
@@ -212,6 +216,7 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
+	        $('#viewerPanel').fadeIn();
 	        
     	    $.ajax({	// load runs
     	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
@@ -294,6 +299,7 @@
 	    });
 	    getToken();
 	    loadModules();
+	    createIGVBrowser();
 	    
 	    $(window).resize(function() {
 	    	resizeDialogs();
@@ -458,6 +464,7 @@
 	                success = true;
 	            } else {
 	                $('#searchPanel').hide();
+	                $('#viewerPanel').hide();
 	                handleError(null, "Database " + module + " is empty or corrupted");
 	                $('#module').val("");
 	                $('#grpProj').hide();
@@ -466,6 +473,7 @@
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
 	            $('#searchPanel').hide();
+	            $('#viewerPanel').hide();
 	            handleError(xhr, thrownError);
 	            $('#module').val("");
 	            $('#grpProj').hide();
@@ -830,20 +838,12 @@
         $('#exportBoxToggleButton').show();
 	    processAborted = false;
 	    $('button#abort').attr('rel', token);
+	    
+	    currentPageToken = pageToken;
+	    $('#prev').prop('disabled', pageToken === '0');
+	    
 	    if (searchMode === 0 && $('#browsingAndExportingEnabled').prop('checked'))
 	    	searchMode = 3;
-	    currentPageToken = pageToken;
-        $('#prev').prop('disabled', pageToken === '0');
-
-        var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-   		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-   		});
-   		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-   		});
 	    
 	    $.ajax({
 	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
@@ -854,41 +854,7 @@
 	        headers: {
 	            "Authorization": "Bearer " + token
 	        },
-	        data: JSON.stringify({
-	            "variantSetId": $('#project :selected').data("id"),
-	            "searchMode": searchMode,
-	            "getGT": false,
-
-	            "referenceName": getSelectedSequences(),
-	            "selectedVariantTypes": getSelectedTypes(),
-	            "alleleCount": getSelectedNumberOfAlleles(),
-	            "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-	            "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-	            "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-	            "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-
-	            "callSetIds": getSelectedIndividuals(1, true),
-	            "gtPattern": $('#Genotypes1').val(),
-	            "mostSameRatio": $('#mostSameRatio1').val(),
-	            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-   	            "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
- 	            "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
-				"annotationFieldThresholds": annotationFieldThresholds,
-
-	            "callSetIds2": getSelectedIndividuals(2, true),
-	            "gtPattern2": $('#Genotypes2').val(),
-	            "mostSameRatio2": $('#mostSameRatio2').val(),
-	            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-   	            "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
- 	            "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
- 	   			"annotationFieldThresholds2": annotationFieldThresholds2,
-	            
-	            "discriminate": $('#discriminate').prop('checked'),
-	            "pageSize": 100,
-	            "pageToken": pageToken,
-	            "sortBy": sortBy,
-	            "sortDir": sortDesc === true ? 'desc' : 'asc'
-	        }),
+	        data: JSON.stringify(buildSearchQuery(searchMode, currentPageToken)),
 	        success: function(jsonResult) {
 	            $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
 	            if (searchMode === 0) { // count only 
@@ -1306,6 +1272,58 @@
 	igvDataLoadPort = ${igvDataLoadPort};
 	igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
 	</c:if>
+	
+	/**
+	 * IGV.js genome browser integration
+	 */
+
+	function createIGVBrowser(){
+		let browserConfig = {
+			genome: {
+		    	id: "osativa7",
+		        name: "Orysa sativa (v7.0)",
+		        fastaURL: "/gigwa2/res/osativa7.fasta",
+		        indexURL: "/gigwa2/res/osativa7.fasta.fai",
+		        tracks: []
+		    },
+			tracks: [
+				{
+	                name: "Refseq Genes",
+	                type: "annotation",
+	                format: "gff3",
+	                sourceType: "file",
+	                url: "/gigwa2/res/stripped.gff3",
+	                indexed: false,
+	                order: 0
+	            },
+			],
+			queryParametersSupported: true,
+        	showChromosomeWidget: true,
+        	showSVGButton: false,
+		};
+		
+		igvBrowser = igv.createBrowser($("#igvControlled"), browserConfig).then(function (browser){
+			console.log("Created IGV browser");
+			igvBrowser = browser;
+		})
+	}
+	
+	function updateIGVBrowser(jsonResult){
+		let trackConfig = {
+			name: "Query",
+			type: "variant",
+			format: "custom",
+			sourceType: "file",
+			order: 1,
+			visibilityWindow: 100000,
+			reader: new GigwaSearchReader(
+					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
+					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />"),
+		};
+		
+		igvBrowser.removeTrackByName("Query");
+		igvBrowser.loadTrack(trackConfig);
+	}
 </script>
 </head>
 <body>
@@ -1688,6 +1706,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 					</div>
 				</div>
+			</div>
+		</div>
+		
+		<!-- IGV visualizer panel -->
+		<div id="viewerPanel" class="row" hidden>
+			<div id="igvControlled" class="col">
 			</div>
 		</div>
 	</div>

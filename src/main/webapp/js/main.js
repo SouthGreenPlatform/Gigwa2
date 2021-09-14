@@ -439,6 +439,56 @@ function checkBrowsingBoxAccordingToLocalVariable()
 }
 
 
+function buildSearchQuery(searchMode, pageToken){
+    let annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
+	$('#vcfFieldFilterGroup1 input').each(function() {
+		if (parseFloat($(this).val()) > 0)
+			annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+	});
+	$('#vcfFieldFilterGroup2 input').each(function() {
+		if (parseFloat($(this).val()) > 0)
+			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+	});
+	
+	let query = {
+        "variantSetId": $('#project :selected').data("id"),
+        "searchMode": searchMode,
+        "getGT": false,
+
+        "referenceName": getSelectedSequences(),
+        "selectedVariantTypes": getSelectedTypes(),
+        "alleleCount": getSelectedNumberOfAlleles(),
+        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
+        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
+        "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
+        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+
+        "callSetIds": getSelectedIndividuals(1, true),
+        "gtPattern": $('#Genotypes1').val(),
+        "mostSameRatio": $('#mostSameRatio1').val(),
+        "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
+           "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
+         "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
+		"annotationFieldThresholds": annotationFieldThresholds,
+
+        "callSetIds2": getSelectedIndividuals(2, true),
+        "gtPattern2": $('#Genotypes2').val(),
+        "mostSameRatio2": $('#mostSameRatio2').val(),
+        "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
+           "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
+         "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
+			"annotationFieldThresholds2": annotationFieldThresholds2,
+        
+        "discriminate": $('#discriminate').prop('checked'),
+        "pageSize": 100,
+        "pageToken": pageToken,
+        "sortBy": sortBy,
+        "sortDir": sortDesc === true ? 'desc' : 'asc'
+    };
+	return query;
+}
+
+
 function handleCountSuccess() {
     if (!processAborted) {
         $('#rightSidePanel').show();
@@ -532,6 +582,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
             if ($(this).index() < $(this).parent().find("td").length - 1)	// the last column is reserved for extra functionalities
 	            loadVariantAnnotationData();
         });
+        updateIGVBrowser();
     }
 }
 
