@@ -216,7 +216,7 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
-	        $('#viewerPanel').fadeIn();
+	        // $('#viewerPanel').fadeIn();
 	        
     	    $.ajax({	// load runs
     	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
@@ -464,7 +464,7 @@
 	                success = true;
 	            } else {
 	                $('#searchPanel').hide();
-	                $('#viewerPanel').hide();
+	                // $('#viewerPanel').hide();
 	                handleError(null, "Database " + module + " is empty or corrupted");
 	                $('#module').val("");
 	                $('#grpProj').hide();
@@ -473,7 +473,7 @@
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
 	            $('#searchPanel').hide();
-	            $('#viewerPanel').hide();
+                // $('#viewerPanel').hide();
 	            handleError(xhr, thrownError);
 	            $('#module').val("");
 	            $('#grpProj').hide();
@@ -1284,10 +1284,9 @@
 		        name: "Orysa sativa (v7.0)",
 		        fastaURL: "/gigwa2/res/osativa7.fasta",
 		        indexURL: "/gigwa2/res/osativa7.fasta.fai",
-		        tracks: []
-		    },
-			tracks: [
-				{
+		        // cytobandURL: "/gigwa2/res/osativa_7_cytoband.txt",
+		        locus: "all",
+		        tracks: [{
 	                name: "Refseq Genes",
 	                type: "annotation",
 	                format: "gff3",
@@ -1295,14 +1294,14 @@
 	                url: "/gigwa2/res/all-sorted.gff3.gz",
 	                indexURL: "/gigwa2/res/all-sorted.gff3.gz.tbi",
 	                order: 0
-	            },
-			],
+	            }]
+		    },
+			tracks: [],
 			queryParametersSupported: true,
-        	showChromosomeWidget: true,
-        	showSVGButton: false,
+        	loadDefaultGenomes: false,
 		};
 		
-		igvBrowser = igv.createBrowser($("#igvControlled"), browserConfig).then(function (browser){
+		igvBrowser = igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 		})
@@ -1637,6 +1636,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
 									<img title="Variant density chart" src="images/densityIcon.gif" height="25" width="54" />
 								</button>
+								
+								<!-- IGV webapp button -->
+								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="$('#igvPanel').modal('show');igvBrowser.visibilityChange();">
+									IGV viewer
+								</button>
+								
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
 									<div class="panel panel-default panel-grey shadowed-panel">
 										<div class="panel-body panel-center text-center">
@@ -1710,11 +1715,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 		
-		<!-- IGV visualizer panel -->
+		<!-- IGV visualizer panel
 		<div id="viewerPanel" class="row" hidden>
-			<div id="igvControlled" class="col">
+			<div id="igvContainer" class="col">
 			</div>
-		</div>
+		</div> -->
 	</div>
 	</main>
 	<!-- modal which display process progress -->
@@ -1887,5 +1892,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 
+	<!-- IGV modal -->
+	<div class="modal fade" role="dialog" id="igvPanel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header" id="igvContainer"></div>
+			</div>
+		</div>
+	</div>
 </body>
 </html>
