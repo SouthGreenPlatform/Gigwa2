@@ -1292,8 +1292,8 @@
 	                type: "annotation",
 	                format: "gff3",
 	                sourceType: "file",
-	                url: "/gigwa2/res/stripped.gff3",
-	                indexed: false,
+	                url: "/gigwa2/res/all-sorted.gff3.gz",
+	                indexURL: "/gigwa2/res/all-sorted.gff3.gz.tbi",
 	                order: 0
 	            },
 			],
@@ -1318,7 +1318,8 @@
 			visibilityWindow: 100000,
 			reader: new GigwaSearchReader(
 					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
-					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />"),
+					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
+					token),
 		};
 		
 		igvBrowser.removeTrackByName("Query");

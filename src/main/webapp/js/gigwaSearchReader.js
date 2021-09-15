@@ -45,7 +45,6 @@ class GigwaVariant {
     }
 
     init() {
-
         const ref = this.referenceBases;
         const altBases = this.alternateBases;
 
@@ -148,8 +147,6 @@ class GigwaVariant {
 
 
     popupData(genomicLocation, genomeId) {
-
-
         const posString = `${this.pos.toLocaleString()}`;
         const locString = this.start === this.end ?
             `${this.start.toLocaleString()} | ${(this.start + 1).toLocaleString()}` :
