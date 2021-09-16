@@ -183,7 +183,7 @@
                         	            "variantSetId": jsonResult.variantSets[vs].id
                         	        }),
                         	        success: function(individualsResult) {
-                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v1\/?/i);
+                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/?/i);
                         	        	for (var cs in individualsResult.callSets) {
                         	        		var ai = individualsResult.callSets[cs].info;
                         	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString()))
