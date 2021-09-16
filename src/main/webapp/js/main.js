@@ -582,7 +582,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
             if ($(this).index() < $(this).parent().find("td").length - 1)	// the last column is reserved for extra functionalities
 	            loadVariantAnnotationData();
         });
-        updateIGVBrowser();
+        if (igvBrowser) igvUpdateVariants();
     }
 }
 

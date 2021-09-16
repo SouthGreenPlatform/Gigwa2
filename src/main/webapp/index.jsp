@@ -76,7 +76,6 @@
 	var posPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
-	var igvBrowser;
 	
 	// plot graph option 
 	var options = {
@@ -299,7 +298,6 @@
 	    });
 	    getToken();
 	    loadModules();
-	    createIGVBrowser();
 	    
 	    $(window).resize(function() {
 	    	resizeDialogs();
@@ -311,6 +309,7 @@
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
+		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.88 - 20) + "px");
  	    $("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
  	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
 	}
@@ -1273,29 +1272,93 @@
 	igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
 	</c:if>
 	
+	
+	
 	/**
 	 * IGV.js genome browser integration
 	 */
+	
+	var igvBrowser;
+	var igvGenomeListURL = "/gigwa2/res/genomes.json";
+	var igvGenomeList = [];  // Default genomes list
+	var igvDefaultGenome = undefined; // "osativa7";  // TODO : Make this dynamic
+	
+	function igvOpenDialog(){
+		$('#igvPanel').modal('show');
+		
+		if (!igvBrowser){  // FIXME ? : Genomes reload condition
+			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
+				if (igvDefaultGenome){  // TODO : Make this dynamic
+                	igvCreateBrowser(igvDefaultGenome);
+                }
+			});
+		}
+	}
+	
+	function igvLoadGenomeList(url){
+		return $.ajax({
+			url,
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json;charset=utf-8",
+            headers: {
+                "Authorization": "Bearer " + self.token,
+            },
+            success: function(data) {
+            	data.sort((a, b) => a.id > b.id ? 1 : -1)
+                igvGenomeList = data;
+                igvUpdateGenomeMenu();
+                return igvGenomeList;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                handleError(xhr, thrownError);
+            }
+		});
+	}
+	
+	function igvUpdateGenomeMenu(){
+		// Destroy the existing list, if applicable
+		$("#igvDefaultGenomesDivider ~ li").remove();
+		
+		let menu = $("#igvGenomeMenu");
+		for (let genome of igvGenomeList){
+			let link = $('<a href="#"></a>').text(genome.id + " (" + genome.name + ")").click(function(){
+				igvSelectGenomeById(genome.id);
+			});
+			let item = $("<li></li>").append(link);
+			menu.append(item);
+		}
+	}
+	
+	function igvSelectGenomeFromFile(){
+		// TODO
+	}
+	
+	function igvSelectGenomeFromURL(){
+		// TODO
+	}
+	
+	function igvSelectGenomeById(name){
+		if (!igvBrowser){
+			igvCreateBrowser(name);
+		} else {
+			igvBrowser.loadGenome(name);
+		}
+	}
+	
+	function igvSelectTrackFromFile(){
+		// TODO
+	}
+	
+	function igvSelectTrackFromURL(){
+		// TODO
+	}
 
-	function createIGVBrowser(){
+	function igvCreateBrowser(genome){
 		let browserConfig = {
-			genome: {
-		    	id: "osativa7",
-		        name: "Orysa sativa (v7.0)",
-		        fastaURL: "/gigwa2/res/osativa7.fasta",
-		        indexURL: "/gigwa2/res/osativa7.fasta.fai",
-		        // cytobandURL: "/gigwa2/res/osativa_7_cytoband.txt",
-		        tracks: [{
-	                name: "Refseq Genes",
-	                type: "annotation",
-	                format: "gff3",
-	                sourceType: "file",
-	                url: "/gigwa2/res/all-sorted.gff3.gz",
-	                indexURL: "/gigwa2/res/all-sorted.gff3.gz.tbi",
-	                order: 0
-	            }]
-		    },
+			genome: genome,
 			tracks: [],
+			genomeList: igvGenomeList,
 			queryParametersSupported: true,
         	loadDefaultGenomes: false,
         	showSampleNames: true,
@@ -1304,10 +1367,11 @@
 		igvBrowser = igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
+			igvUpdateVariants();
 		})
 	}
 	
-	function updateIGVBrowser(jsonResult){
+	function igvUpdateVariants(){
 		let trackConfig = {
 			name: "Query",
 			type: "variant",
@@ -1632,15 +1696,20 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 				<div id="rightSidePanel">
 					<div class="row text-center" id="navigationPanel">
+						<div id="navigationDiv">
+							<div style="float:left;"><button class="btn btn-primary btn-sm" type="button" id="prev" onclick="iteratePages(false);"> &lt; </button></div>					
+							<div style="float:right;"><button class="col btn btn-primary btn-sm" type="button" id="next" onclick="iteratePages(true);"> &gt; </button></div>
+							<div id="currentPage"></div>
+						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
 								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
 									<img title="Variant density chart" src="images/densityIcon.gif" height="25" width="54" />
 								</button>
 								
-								<!-- IGV webapp button -->
-								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="$('#igvPanel').modal('show');">
-									IGV viewer
+								<!-- IGV.js browser button -->
+								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
+									IGV browser
 								</button>
 								
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
@@ -1695,11 +1764,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
-						</div>
-						<div id="navigationDiv">
-							<div style="float:left;"><button class="btn btn-primary btn-sm" type="button" id="prev" onclick="iteratePages(false);"> &lt; </button></div>					
-							<div style="float:right;"><button class="col btn btn-primary btn-sm" type="button" id="next" onclick="iteratePages(true);"> &gt; </button></div>
-							<div id="currentPage"></div>
 						</div>
 					</div>
 					<div class="panel panel-default panel-grey shadowed-panel" id="countResultPanel">
@@ -1897,6 +1961,42 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div class="modal fade" role="dialog" id="igvPanel" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
+				<!-- IGV menu bar -->
+				<div id="igvNav" class="navbar navbar-default">
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#igvMenu" aria-expanded="false">
+					        <span class="sr-only">Toggle navigation</span>
+					        <span class="icon-bar"></span>
+					        <span class="icon-bar"></span>
+					        <span class="icon-bar"></span>
+						</button>
+				    </div>
+				    <div class="collapse navbar-collapse" id="igvMenu">
+				    	<ul class="nav navbar-nav">
+				    		<li class="dropdown">
+				    			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+				    				Load reference genome <span class="caret"></span>
+				    			</a>
+				    			<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
+				    				<li><a href="#" onclick="igvSelectGenomeFromFile();">Load from file</a></li>
+				    				<li><a href="#" onclick="igvSelectGenomeFromURL();">Load from URL</a></li>
+				    				<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
+				    			</ul>
+							</li>
+							<li class="dropdown">
+				    			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+				    				Load track <span class="caret"></span>
+				    			</a>
+				    			<ul class="dropdown-menu">
+				    				<li><a href="#" onclick="igvSelectTrackFromFile();">Load from file</a></li>
+				    				<li><a href="#" onclick="igvSelectTrackFromURL();">Load from URL</a></li>
+				    			</ul>
+							</li>
+				    	</ul>
+				    </div>
+				</div>
+				
+				<!-- IGV browser container -->
 				<div class="modal-header" id="igvContainer"></div>
 			</div>
 		</div>
