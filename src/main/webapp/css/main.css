@@ -163,6 +163,10 @@ div#density div.graphCustomization p {
 	margin-bottom:5px;
 }
 
+div#igvPanel .modal-content {
+	height: 90vh;  /* FIXME */
+}
+
 div#importFormDiv label {
 	margin:5px 5px 0 0;
 }

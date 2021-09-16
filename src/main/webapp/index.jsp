@@ -1285,7 +1285,6 @@
 		        fastaURL: "/gigwa2/res/osativa7.fasta",
 		        indexURL: "/gigwa2/res/osativa7.fasta.fai",
 		        // cytobandURL: "/gigwa2/res/osativa_7_cytoband.txt",
-		        locus: "all",
 		        tracks: [{
 	                name: "Refseq Genes",
 	                type: "annotation",
@@ -1299,6 +1298,7 @@
 			tracks: [],
 			queryParametersSupported: true,
         	loadDefaultGenomes: false,
+        	showSampleNames: true,
 		};
 		
 		igvBrowser = igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
@@ -1315,6 +1315,7 @@
 			sourceType: "file",
 			order: 1,
 			visibilityWindow: 100000,
+			autoHeight: true,
 			reader: new GigwaSearchReader(
 					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
 					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
@@ -1638,7 +1639,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								</button>
 								
 								<!-- IGV webapp button -->
-								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="$('#igvPanel').modal('show');igvBrowser.visibilityChange();">
+								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="$('#igvPanel').modal('show');">
 									IGV viewer
 								</button>
 								
