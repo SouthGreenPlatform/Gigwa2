@@ -274,19 +274,9 @@ class GigwaSearchReader {
 	            success: function(data) {
 	                self.header.callSets = [];
 	                self.header.callSetIds = [];
-	                let selectedIndividuals = getSelectedIndividuals(1, false);  // FIXME : Ajouter ceux du groupe 2 ?
 	                data.callSets.forEach(function (callset){
-	                	// Filter for the selected individuals. `getSelectedIndividuals` returns an empty array if all of them are selected
-	                	if (selectedIndividuals.includes(callset.name) || selectedIndividuals.length == 0){
-		                	self.header.callSets.push(callset);
-		                	self.header.callSetIds.push(callset.name);
-	                	}
-	                });
-	                
-	                self.header.callSets.sort(function (a, b){
-	                	if (a.name < b.name) return -1;
-	                	if (a.name > b.name) return 1;
-	                	else return 0;
+	                	self.header.callSets.push(callset);
+	                	self.header.callSetIds.push(callset.name);
 	                });
 	                return self.header.callSets;
 	            },
