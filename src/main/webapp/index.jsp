@@ -1281,12 +1281,15 @@
 	var igvBrowser;
 	var igvGenomeListURL = "/gigwa2/res/genomes.json";
 	var igvGenomeList = [];  // Default genomes list
-	var igvDefaultGenome = undefined; // "osativa7";  // TODO : Make this dynamic
+	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
+	var igvVariantTrack;
 	
+	// Open the IGV modal, initialises the browser if a default genome is set
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
 		if (!igvBrowser){  // FIXME ? : Genomes reload condition
+			$("#igvTracksMenu").addClass("disabled");
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
                 	igvCreateBrowser(igvDefaultGenome);
@@ -1295,6 +1298,7 @@
 		}
 	}
 	
+	// Load the default genomes list
 	function igvLoadGenomeList(url){
 		return $.ajax({
 			url,
@@ -1316,13 +1320,14 @@
 		});
 	}
 	
+	// Update the default genomes list in the `load genome` menu
 	function igvUpdateGenomeMenu(){
-		// Destroy the existing list, if applicable
-		$("#igvDefaultGenomesDivider ~ li").remove();
+		// Discard the existing list, if applicable
+		$("#igvDefaultGenomesDivider").nextAll().remove();
 		
 		let menu = $("#igvGenomeMenu");
 		for (let genome of igvGenomeList){
-			let link = $('<a href="#"></a>').text(genome.id + " (" + genome.name + ")").click(function(){
+			let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
 				igvSelectGenomeById(genome.id);
 			});
 			let item = $("<li></li>").append(link);
@@ -1330,19 +1335,40 @@
 		}
 	}
 	
-	function igvSelectGenomeFromFile(){
-		// TODO
+	function igvLoadGenomeFromFile(){
+		// TODO : Input check
+		let genome = {
+			fastaURL: $("#igvGenomeFileInput").get(0).files[0],
+			indexURL: $("#igvGenomeIndexFileInput").get(0).files[0],
+		}
+		
+		igvSwitchGenome(genome);
 	}
 	
-	function igvSelectGenomeFromURL(){
-		// TODO
+	function igvLoadGenomeFromURL(){
+		// TODO : Input check
+		let genome = {
+			fastaURL: $("#igvGenomeURLInput").val(),
+			indexURL: $("#igvGenomeIndexURLInput").val(),
+		};
+		
+		igvSwitchGenome(genome);
 	}
 	
 	function igvSelectGenomeById(name){
+		igvSwitchGenome(name);
+	}
+	
+	function igvSwitchGenome(genome){
 		if (!igvBrowser){
-			igvCreateBrowser(name);
+			igvCreateBrowser(genome);
 		} else {
-			igvBrowser.loadGenome(name);
+			igvVariantTrack = undefined;
+			igvBrowser.removeAllTracks();
+			igvBrowser.loadGenome(genome).then(function () {
+				igvUpdateVariants();
+			});
+			
 		}
 	}
 	
@@ -1368,26 +1394,33 @@
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 			igvUpdateVariants();
-		})
+		});
+		
+		$("#igvTracksMenu").removeClass("disabled");
 	}
 	
+	// Update the browser's variant track
 	function igvUpdateVariants(){
 		let trackConfig = {
 			name: "Query",
 			type: "variant",
 			format: "custom",
 			sourceType: "file",
-			order: 1,
+			order: Number.MAX_SAFE_INTEGER,
 			visibilityWindow: 100000,
-			autoHeight: true,
 			reader: new GigwaSearchReader(
 					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
 					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
 					token),
 		};
 		
-		igvBrowser.removeTrackByName("Query");
-		igvBrowser.loadTrack(trackConfig);
+		if (igvVariantTrack){
+			igvVariantTrack.updateConfig(trackConfig);
+		} else {
+			igvBrowser.loadTrack(trackConfig).then(function (track){
+				igvVariantTrack = track;
+			});
+		}
 	}
 </script>
 </head>
@@ -1978,13 +2011,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				    				Load reference genome <span class="caret"></span>
 				    			</a>
 				    			<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
-				    				<li><a href="#" onclick="igvSelectGenomeFromFile();">Load from file</a></li>
-				    				<li><a href="#" onclick="igvSelectGenomeFromURL();">Load from URL</a></li>
+				    				<li><a href="#" data-toggle="modal" data-target="#igvGenomeFileModal">Load from file</a></li>
+				    				<li><a href="#" data-toggle="modal" data-target="#igvGenomeURLModal">Load from URL</a></li>
 				    				<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
 				    			</ul>
 							</li>
 							<li class="dropdown">
-				    			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+				    			<a href="#" id="igvTracksMenu" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 				    				Load track <span class="caret"></span>
 				    			</a>
 				    			<ul class="dropdown-menu">
@@ -1997,9 +2030,77 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 				
 				<!-- IGV browser container -->
-				<div class="modal-header" id="igvContainer"></div>
+				<div id="igvContainer"></div>
 			</div>
 		</div>
 	</div>
+	
+	<!-- IGV menu submodals -->
+	
+	<!-- Load genome by URL -->
+	<div id="igvGenomeURLModal" class="modal fade" role="dialog" aria-hidden=true>
+		<div class="modal-md modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="modal-title"><h4>Load genome from URL</h4></div>
+					<button type="button" class="close" data-dismiss="modal">
+						<span>×</span>
+					</button>
+				</div>
+				
+				<div class="modal-body">
+					<table style="width:100%;">
+						<tr><td>Genome URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
+						<tr><td>Index URL (recommanded)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
+					</table>
+				</div>
+	
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromURL()">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Load genome from local file -->
+	<!-- Load genome by URL -->
+	<div id="igvGenomeFileModal" class="modal fade" role="dialog" aria-hidden=true>
+		<div class="modal-md modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="modal-title"><h4>Load genome from local file</h4></div>
+					<button type="button" class="close" data-dismiss="modal">
+						<span>×</span>
+					</button>
+				</div>
+				
+				<div class="modal-body">
+					<table style="width:100%;">
+						<tr><td>Genome file</td><td><input type="file" id="igvGenomeFileInput" style="width:100%;"/></td></tr>
+						<tr><td>Index file (recommanded)</td><td><input type="file" id="igvGenomeIndexFileInput" style="width:100%;" /></td></tr>
+					</table>
+				</div>
+	
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromFile()">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script type="text/javascript">
+		// Allow stacking modals
+		$('.modal').on('show.bs.modal', function(event) {
+		    var idx = $('.modal:visible').length;
+		    $(this).css('z-index', 1040 + (10 * idx));
+		});
+		$('.modal').on('shown.bs.modal', function(event) {
+		    var idx = ($('.modal:visible').length) -1; // raise backdrop after animation.
+		    $('.modal-backdrop').not('.stacked').css('z-index', 1039 + (10 * idx));
+		    $('.modal-backdrop').not('.stacked').addClass('stacked');
+		});
+	</script>
 </body>
 </html>

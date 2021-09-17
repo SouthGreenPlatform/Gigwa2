@@ -192,6 +192,17 @@ div#brapiDataSelectionDiv select{
 	color:#000000;
 }
 
+/* Browsers fixes for IGV styles */
+
+.igv-ui-dialog {
+	width: fit-content;
+	width: -moz-fit-content;
+	height: fit-content;
+	height: -moz-fit-content;
+}
+
+/* End browsers fixes */
+
 small a, .small a {
     font-size: inherit;
 }
@@ -463,7 +474,7 @@ div.allele {
     margin-left:7px;
     padding:1px;
     text-align:center;
-    text-overflow:visible;
+    text-overflow:ellipsis;
     display:inline-block;
     font-size:10px;
 }
