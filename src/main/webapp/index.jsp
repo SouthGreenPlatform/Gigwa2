@@ -1283,6 +1283,7 @@
 	var igvGenomeList = [];  // Default genomes list
 	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
 	var igvVariantTrack;
+	var igvBrowserResizeHandler;
 	
 	// Open the IGV modal, initialises the browser if a default genome is set
 	function igvOpenDialog(){
@@ -1337,9 +1338,19 @@
 	
 	function igvLoadGenomeFromFile(){
 		// TODO : Input check
-		let genome = {
-			fastaURL: $("#igvGenomeFileInput").get(0).files[0],
-			indexURL: $("#igvGenomeIndexFileInput").get(0).files[0],
+		let fastaFile = $("#igvGenomeFileInput").get(0).files[0];
+		let indexFile = $("#igvGenomeIndexFileInput").get(0).files[0];
+		let genome;
+		if (indexFile){
+			genome = {
+				fastaURL: fastaFile,
+				indexURL: indexFile,
+			};
+		} else {
+			genome = {
+				fastaURL: fastaFile,
+				indexed: false,
+			};
 		}
 		
 		igvSwitchGenome(genome);
@@ -1347,10 +1358,20 @@
 	
 	function igvLoadGenomeFromURL(){
 		// TODO : Input check
-		let genome = {
-			fastaURL: $("#igvGenomeURLInput").val(),
-			indexURL: $("#igvGenomeIndexURLInput").val(),
-		};
+		let fastaURL = $("#igvGenomeURLInput").val();
+		let indexURL = $("#igvGenomeIndexURLInput").val();
+		let genome;
+		if (indexURL){
+			genome = {
+				fastaURL,
+				indexURL,
+			};
+		} else {
+			genome = {
+				fastaURL,
+				indexed: false,
+			};
+		}
 		
 		igvSwitchGenome(genome);
 	}
@@ -1395,8 +1416,6 @@
 			igvBrowser = browser;
 			igvUpdateVariants();
 		});
-		
-		$("#igvTracksMenu").removeClass("disabled");
 	}
 	
 	// Update the browser's variant track
@@ -2051,7 +2070,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Genome URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
-						<tr><td>Index URL (recommanded)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
+						<tr><td>Index URL (recommended)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
 	
@@ -2078,7 +2097,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Genome file</td><td><input type="file" id="igvGenomeFileInput" style="width:100%;"/></td></tr>
-						<tr><td>Index file (recommanded)</td><td><input type="file" id="igvGenomeIndexFileInput" style="width:100%;" /></td></tr>
+						<tr><td>Index file (recommended)</td><td><input type="file" id="igvGenomeIndexFileInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
 	
@@ -2089,18 +2108,5 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
-	
-	<script type="text/javascript">
-		// Allow stacking modals
-		$('.modal').on('show.bs.modal', function(event) {
-		    var idx = $('.modal:visible').length;
-		    $(this).css('z-index', 1040 + (10 * idx));
-		});
-		$('.modal').on('shown.bs.modal', function(event) {
-		    var idx = ($('.modal:visible').length) -1; // raise backdrop after animation.
-		    $('.modal-backdrop').not('.stacked').css('z-index', 1039 + (10 * idx));
-		    $('.modal-backdrop').not('.stacked').addClass('stacked');
-		});
-	</script>
 </body>
 </html>
