@@ -1381,24 +1381,59 @@
 	}
 	
 	function igvSwitchGenome(genome){
+		let promise;
 		if (!igvBrowser){
-			igvCreateBrowser(genome);
+			return igvCreateBrowser(genome);
 		} else {
 			igvVariantTrack = undefined;
 			igvBrowser.removeAllTracks();
-			igvBrowser.loadGenome(genome).then(function () {
+			return igvBrowser.loadGenome(genome).then(function () {
 				igvUpdateVariants();
 			});
-			
 		}
 	}
 	
-	function igvSelectTrackFromFile(){
-		// TODO
+	function igvLoadTrackFromFile(){
+		// TODO : Input check
+		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
+			let trackFile = $("#igvTrackFileInput").get(0).files[0];
+			let indexFile = $("#igvTrackIndexFileInput").get(0).files[0];
+			let trackConfig = {
+				name: trackFile.name,
+				removable: true,
+			};
+			if (indexFile){
+				trackConfig.url = trackFile;
+				trackConfig.indexURL = indexFile;
+			} else {
+				trackConfig.url = trackFile;
+				trackConfig.indexed = false;
+			}
+			
+			igvBrowser.loadTrack(trackConfig);
+		}
 	}
 	
-	function igvSelectTrackFromURL(){
-		// TODO
+	function igvLoadTrackFromURL(){
+		// TODO : Input check
+		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
+			let trackURL = $("#igvTrackURLInput").val();
+			let indexURL = $("#igvTrackIndexURLInput").val();
+			let filename = trackURL.split('/').pop().split('#')[0].split('?')[0];  // Get the file name from the given URL
+			let trackConfig = {
+				name: filename,
+				removable: true,
+			};
+			if (indexURL){
+				trackConfig.url = trackURL;
+				trackConfig.indexURL = indexURL;
+			} else {
+				trackConfig.url = trackURL;
+				trackConfig.indexed = false;
+			}
+			
+			igvBrowser.loadTrack(trackConfig);
+		}
 	}
 
 	function igvCreateBrowser(genome){
@@ -1411,7 +1446,7 @@
         	showSampleNames: true,
 		};
 		
-		igvBrowser = igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
+		return igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 			igvUpdateVariants();
@@ -2040,8 +2075,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				    				Load track <span class="caret"></span>
 				    			</a>
 				    			<ul class="dropdown-menu">
-				    				<li><a href="#" onclick="igvSelectTrackFromFile();">Load from file</a></li>
-				    				<li><a href="#" onclick="igvSelectTrackFromURL();">Load from URL</a></li>
+				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackFileModal">Load from file</a></li>
+				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackURLModal">Load from URL</a></li>
 				    			</ul>
 							</li>
 				    	</ul>
@@ -2069,8 +2104,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				
 				<div class="modal-body">
 					<table style="width:100%;">
-						<tr><td>Genome URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
-						<tr><td>Index URL (recommended)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
+						<tr><td>Genome file URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
+						<tr><td>Index file URL (recommended)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
 	
@@ -2083,7 +2118,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	
 	<!-- Load genome from local file -->
-	<!-- Load genome by URL -->
 	<div id="igvGenomeFileModal" class="modal fade" role="dialog" aria-hidden=true>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
@@ -2104,6 +2138,58 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromFile()">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Load track by URL -->
+	<div id="igvTrackURLModal" class="modal fade" role="dialog" aria-hidden=true>
+		<div class="modal-md modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="modal-title"><h4>Load track from URL</h4></div>
+					<button type="button" class="close" data-dismiss="modal">
+						<span>×</span>
+					</button>
+				</div>
+				
+				<div class="modal-body">
+					<table style="width:100%;">
+						<tr><td>Track file URL</td><td><input type="url" id="igvTrackURLInput" style="width:100%;"/></td></tr>
+						<tr><td>Index file URL (optional)</td><td><input type="url" id="igvTrackIndexURLInput" style="width:100%;" /></td></tr>
+					</table>
+				</div>
+	
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromURL()">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Load genome from local file -->
+	<div id="igvTrackFileModal" class="modal fade" role="dialog" aria-hidden=true>
+		<div class="modal-md modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="modal-title"><h4>Load genome from local file</h4></div>
+					<button type="button" class="close" data-dismiss="modal">
+						<span>×</span>
+					</button>
+				</div>
+				
+				<div class="modal-body">
+					<table style="width:100%;">
+						<tr><td>Track file</td><td><input type="file" id="igvTrackFileInput" style="width:100%;"/></td></tr>
+						<tr><td>Index file (optional)</td><td><input type="file" id="igvTrackIndexFileInput" style="width:100%;" /></td></tr>
+					</table>
+				</div>
+	
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromFile()">OK</button>
 				</div>
 			</div>
 		</div>
