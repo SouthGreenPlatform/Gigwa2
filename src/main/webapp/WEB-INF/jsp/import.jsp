@@ -56,6 +56,7 @@
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
+                        var extRefSrcType = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {

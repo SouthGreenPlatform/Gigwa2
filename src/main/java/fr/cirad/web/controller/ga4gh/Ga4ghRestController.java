@@ -66,6 +66,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
  *
@@ -353,6 +354,7 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+                    SearchCallSetsResponse resp = service.searchCallSets(callSetsRequest);
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);

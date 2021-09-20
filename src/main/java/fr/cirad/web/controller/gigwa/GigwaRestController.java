@@ -90,6 +90,7 @@ import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
+import fr.cirad.io.brapi.BrapiSource;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
@@ -953,6 +954,7 @@ public class GigwaRestController extends ControllerInterface {
 //			mav.addObject("limitToTempData", true);
 		return mav;
 	}
+        
 
 	/**
 	 * import reference sequence from a fasta file in a specific module
@@ -1089,7 +1091,7 @@ public class GigwaRestController extends ControllerInterface {
 					}
 				}
 				else if (brapiUrlList.size() > 0) {	// we've got BrAPI endpoints to pull metadata from
-					HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
+					HashMap<String /*BrAPI url*/, HashMap<String /*sourceType*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>>> brapiUrlToIndividualsMap = new HashMap<>();
 					MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 					for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {	// invoke searchCallSets for each project to treat all individuals in the DB 
 						SearchCallSetsRequest scsr = new SearchCallSetsRequest();
@@ -1097,7 +1099,8 @@ public class GigwaRestController extends ControllerInterface {
 						for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
 							List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
 							List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
-							if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
+                                                        List<String> extRefTypesValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceType);
+							if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty() || extRefTypesValues == null || extRefTypesValues.isEmpty())
 								continue;
 
 							if (extRefIdValues.size() != 1)
@@ -1106,13 +1109,19 @@ public class GigwaRestController extends ControllerInterface {
 								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for individual " + ga4ghCallSet.getId());
 
 							String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
-							HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(extRefSrcValues.get(0));
-							if (individualsCurrentEndpointHasDataFor == null) {
-								individualsCurrentEndpointHasDataFor = new HashMap<>();
-								brapiUrlToIndividualsMap.put(extRefSrcValues.get(0), individualsCurrentEndpointHasDataFor);
-							}
+                                                        
+                                                        if (brapiUrlToIndividualsMap.get(extRefSrcValues.get(0)) == null) {
+                                                            brapiUrlToIndividualsMap.put(extRefSrcValues.get(0), new HashMap<>());
+                                                        }
+                                                        
+                                                        HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(extRefSrcValues.get(0)).get(extRefTypesValues.get(0));
+                                                        if (individualsCurrentEndpointHasDataFor == null) {
+                                                            individualsCurrentEndpointHasDataFor = new HashMap<>();                                                            
+                                                            brapiUrlToIndividualsMap.get(extRefSrcValues.get(0)).put(extRefTypesValues.get(0),individualsCurrentEndpointHasDataFor);
+                                                        }
+                 
 							individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
-						}
+                                                }
 					}
 
 					nModifiedRecords = 0;
