@@ -1283,14 +1283,28 @@
 	var igvGenomeList = [];  // Default genomes list
 	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
 	var igvVariantTrack;
-	var igvBrowserResizeHandler;
+	var igvCheckGenomeExistence = true;
+	
+	// Extract the file name from an URL object
+	function filenameFromURL(url){
+		return url.pathname.split("/").pop();
+	}
+	
+	// Promise to read a local text file
+	async function readTextFile(file) {
+	    let result = await new Promise((resolve) => {
+	        let fileReader = new FileReader();
+	        fileReader.onload = (event) => resolve(fileReader.result);
+	        fileReader.readAsText(file);
+	    });
+	    return result;
+	}
 	
 	// Open the IGV modal, initialises the browser if a default genome is set
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
-		if (!igvBrowser){  // FIXME ? : Genomes reload condition
-			$("#igvTracksMenu").addClass("disabled");
+		if (!igvBrowser && igvGenomeListURL){  // FIXME ? : Genomes reload condition
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
                 	igvCreateBrowser(igvDefaultGenome);
@@ -1310,7 +1324,7 @@
                 "Authorization": "Bearer " + self.token,
             },
             success: function(data) {
-            	data.sort((a, b) => a.id > b.id ? 1 : -1)
+            	data.sort((a, b) => a.id > b.id ? 1 : -1);
                 igvGenomeList = data;
                 igvUpdateGenomeMenu();
                 return igvGenomeList;
@@ -1329,55 +1343,122 @@
 		let menu = $("#igvGenomeMenu");
 		for (let genome of igvGenomeList){
 			let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
-				igvSelectGenomeById(genome.id);
+				igvSwitchGenome(genome.id);
 			});
 			let item = $("<li></li>").append(link);
 			menu.append(item);
 		}
 	}
 	
+	// Load genome configuration(s) from JSON object
+	function igvLoadJSONGenome(config){
+		if (Array.isArray(config)){
+			igvGenomeList.push(...config);
+			igvGenomeList.sort((a, b) => a.id > b.id ? 1 : -1);
+			igvUpdateGenomeMenu();
+			displayMessage("Loaded the genome list");
+		} else {
+			igvSwitchGenome(config);
+		}
+	}
+	
 	function igvLoadGenomeFromFile(){
 		// TODO : Input check
-		let fastaFile = $("#igvGenomeFileInput").get(0).files[0];
+		let genomeFile = $("#igvGenomeFileInput").get(0).files[0];
 		let indexFile = $("#igvGenomeIndexFileInput").get(0).files[0];
-		let genome;
-		if (indexFile){
-			genome = {
-				fastaURL: fastaFile,
-				indexURL: indexFile,
-			};
-		} else {
-			genome = {
-				fastaURL: fastaFile,
-				indexed: false,
-			};
-		}
 		
-		igvSwitchGenome(genome);
+		// Load a JSON genome config
+		if (genomeFile.name.endsWith(".json")){
+			readTextFile(genomeFile).then(function (content){
+				igvLoadJSONGenome(JSON.parse(content));
+			}).catch(function (reason){
+				displayMessage("Error loading genome config : " + reason);
+			});
+		} else {  // FASTA genome
+			let genome;
+			if (indexFile){
+				genome = {
+					fastaURL: genomeFile,
+					indexURL: indexFile,
+				};
+			} else {
+				genome = {
+					fastaURL: fastaFile,
+					indexed: false,
+				};
+			}
+			
+			igvSwitchGenome(genome);
+		}
 	}
 	
 	function igvLoadGenomeFromURL(){
 		// TODO : Input check
-		let fastaURL = $("#igvGenomeURLInput").val();
-		let indexURL = $("#igvGenomeIndexURLInput").val();
-		let genome;
-		if (indexURL){
-			genome = {
-				fastaURL,
-				indexURL,
-			};
-		} else {
-			genome = {
-				fastaURL,
-				indexed: false,
-			};
+		let genomeURL = $("#igvGenomeURLInput").val().trim();
+		let indexURL = $("#igvGenomeIndexURLInput").val().trim();
+		
+		let genomeURLObject, indexURLObject;
+		
+		try {
+			genomeURLObject = new URL(genomeURL);
+		} catch (error){
+			displayMessage("Invalid genome file URL : " + genomeURL);
+			return;
 		}
 		
-		igvSwitchGenome(genome);
-	}
-	
-	function igvSelectGenomeById(name){
-		igvSwitchGenome(name);
+		if (indexURL.length > 0){
+			try {
+				indexURLObject = new URL(indexURL);
+			} catch (error){
+				displayMessage("Invalid index file URL : " + indexURL);
+				return;
+			}
+		}
+		
+		let filename = filenameFromURL(genomeURLObject);		
+		// Load a JSON genome config
+		if (filename.endsWith(".json")){
+			$.ajax({
+				url: genomeURL,
+	            type: "GET",
+	            dataType: "json",
+	            success: function(data) {
+	            	igvLoadJSONGenome(data);
+	            },
+	            error: function(xhr, ajaxOptions, thrownError) {
+	                handleError(xhr, thrownError);
+	            }
+			})
+		} else {
+			let genome;
+			if (indexURL){
+				genome = {
+					fastaURL: genomeURL,
+					indexURL,
+				};
+			} else {
+				genome = {
+					fastaURL: genomeURL,
+					indexed: false,
+				};
+			}
+			
+			if (igvCheckGenomeExistence){
+				$.ajax({
+					url: genomeURL,
+					type: "HEAD",
+					success: function(){
+						igvSwitchGenome(genome);
+					},
+					error: function(xhr, ajaxOptions, thrownError){
+						handleError(xhr, thrownError);
+					}
+				});
+			} else {
+				igvSwitchGenome(genome);
+			}
+			
+		}
 	}
 	
 	function igvSwitchGenome(genome){
@@ -1395,44 +1476,63 @@
 	
 	function igvLoadTrackFromFile(){
 		// TODO : Input check
-		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
-			let trackFile = $("#igvTrackFileInput").get(0).files[0];
-			let indexFile = $("#igvTrackIndexFileInput").get(0).files[0];
-			let trackConfig = {
-				name: trackFile.name,
-				removable: true,
-			};
-			if (indexFile){
-				trackConfig.url = trackFile;
-				trackConfig.indexURL = indexFile;
-			} else {
-				trackConfig.url = trackFile;
-				trackConfig.indexed = false;
-			}
-			
-			igvBrowser.loadTrack(trackConfig);
+		let trackFile = $("#igvTrackFileInput").get(0).files[0];
+		let indexFile = $("#igvTrackIndexFileInput").get(0).files[0];
+		let trackConfig = {
+			name: trackFile.name,
+			removable: true,
+		};
+		if (indexFile){
+			trackConfig.url = trackFile;
+			trackConfig.indexURL = indexFile;
+		} else {
+			trackConfig.url = trackFile;
+			trackConfig.indexed = false;
 		}
+		
+		igvLoadTrack(trackConfig);
 	}
 	
 	function igvLoadTrackFromURL(){
 		// TODO : Input check
-		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
-			let trackURL = $("#igvTrackURLInput").val();
-			let indexURL = $("#igvTrackIndexURLInput").val();
-			let filename = trackURL.split('/').pop().split('#')[0].split('?')[0];  // Get the file name from the given URL
-			let trackConfig = {
-				name: filename,
-				removable: true,
-			};
-			if (indexURL){
-				trackConfig.url = trackURL;
-				trackConfig.indexURL = indexURL;
-			} else {
-				trackConfig.url = trackURL;
-				trackConfig.indexed = false;
+		let trackURL = $("#igvTrackURLInput").val().trim();
+		let indexURL = $("#igvTrackIndexURLInput").val().trim();
+		
+		let filename;
+		try {
+			filename = filenameFromURL(new URL(trackURL));  // Get the file name from the given URL
+		} catch (error){
+			displayMessage("Invalid track file URL : " + trackURL);
+			return;
+		}
+		
+		if (indexURL.length > 0){
+			try {
+				indexURLObject = new URL(indexURL);
+			} catch (error){
+				displayMessage("Invalid index file URL : " + indexURL);
+				return;
 			}
+		}
+		
+		let trackConfig = {
+			name: filename,
+			removable: true,
+		};
+		if (indexURL){
+			trackConfig.url = trackURL;
+			trackConfig.indexURL = indexURL;
+		} else {
+			trackConfig.url = trackURL;
+			trackConfig.indexed = false;
+		}
 			
-			igvBrowser.loadTrack(trackConfig);
+		igvLoadTrack(trackConfig);
+	}
+	
+	function igvLoadTrack(config){
+		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
+			igvBrowser.loadTrack(config);
 		}
 	}
 

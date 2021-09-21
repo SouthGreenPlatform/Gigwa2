@@ -264,7 +264,6 @@ class GigwaSearchReader {
 			return $.ajax({
 	            url: self.callsetSearch,
 	            type: "POST",
-	            async: false,
 	            dataType: "json",
 	            contentType: "application/json;charset=utf-8",
 	            headers: {
@@ -313,7 +312,6 @@ class GigwaSearchReader {
 			return $.ajax({
 	            url: self.variantSearch,
 	            type: "POST",
-	            async: false,
 	            dataType: "json",
 	            contentType: "application/json;charset=utf-8",
 	            headers: {
