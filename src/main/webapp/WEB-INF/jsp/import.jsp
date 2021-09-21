@@ -122,12 +122,12 @@
                         $('.importFormDiv textarea').prop('disabled', true);
                         if ($('#metadataTab').hasClass("active")) {
                             var link = "<c:url value='/' />?module=" + $('#moduleExistingMD').val(); 
-                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Amended data is now <a href="' + link + '">available here</a>');
+                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Amended data is now <a href="' + link + '">available here</a></p>');
                             $('#progress').modal('show');
                             new Dropzone("#importDropzoneMD").destroy();
                         } else {
-                            var link = "<c:url value='/' />?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val();
-                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link + '">available here</a>');
+                            var link1 = "<c:url value='/' />?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val(), link2 = "<c:url value='<%=GigwaRestController.IMPORT_PAGE_URL%>' />?module=" + $("#moduleToImport").val() + "&type=metadata";
+                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata to individuals <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
                             $('#progress').modal('show');
                             new Dropzone("#importDropzoneG").destroy();
                         }
@@ -504,7 +504,6 @@
                 displayProcessProgress(5, token);
        		}
 
-            <c:if test="${!isAnonymous}">
             function importMetadata() {
                 var importDropzoneMD = new Dropzone("#importDropzoneMD");                 
                 if (importDropzoneMD.getRejectedFiles().length > 0) {
@@ -561,10 +560,8 @@
 
                 displayProcessProgress(5, token);
             }
-			</c:if>
             
-        	function isValidKeyForNewName(evt)
-        	{
+        	function isValidKeyForNewName(evt) {
                  return isValidCharForNewName((evt.which) ? evt.which : evt.keyCode);
         	}
 
@@ -574,9 +571,8 @@
 
             function isValidNewName(newName) {
                 for (var i = 0; i < newName.length; i++)
-                    if (!isValidCharForNewName(newName.charCodeAt(i))) {
+                    if (!isValidCharForNewName(newName.charCodeAt(i)))
                         return false;
-                    }
                 return true;
             }
 
@@ -623,13 +619,15 @@
                     success: function (jsonResult) {
                         $('#moduleExistingG').html("<option>- new database -</option>").selectpicker('refresh');
 
-                        var option = "";
+                        var options = "";
                         for (var set in jsonResult.referenceSets)
-                            option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+                            options += '<option>' + jsonResult.referenceSets[set].name + '</option>';
 
-                        $('#moduleExistingG').append(option).selectpicker('refresh');
-                        $('#moduleExistingG').val(0).selectpicker('refresh');
-                        $('#moduleExistingG').change();
+                        $('#moduleExistingG').append(options).selectpicker('refresh');
+                        <c:if test="${!(empty param.module)}">
+	                        $('#moduleExistingG').val('${param.module}').selectpicker('refresh');
+	                        $('#moduleExistingG').change();
+                        </c:if>
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         handleError(xhr, thrownError);
@@ -652,12 +650,37 @@
                         "pageToken": null
                     }),
                     success: function (jsonResult) {
-                        var option = "";
+                        var options = "";
                         for (var set in jsonResult.referenceSets)
-                            option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+                            options += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+                            
+//         	        		$('#module').append('<option>' + passedModule + '</option>').selectpicker('refresh');
+//         	        		$('#module').val(passedModule);
 
-                        $('#moduleExistingMD').append(option).selectpicker('refresh');
-                        $('#moduleExistingMD').val(0).selectpicker('refresh');
+                        $('#moduleExistingMD').append(options).selectpicker('refresh');
+
+    	        		var passedModule = $_GET("module");
+    	        		if (passedModule != null)
+    	        			passedModule = passedModule.replace(new RegExp('#([^\\s]*)', 'g'), '');
+//     	        		console.log($('#moduleExistingMD option').map((index, option) => option.value));
+                        <c:if test="${!(empty param.module)}">
+    	        			if (!arrayContains($('#moduleExistingMD option').map((index, option) => option.value), passedModule)) {
+    	    	        		$('#moduleExistingMD').append('<option>' + passedModule + '</option>').selectpicker('refresh');
+    	    	        		$('#moduleExistingMD').val(passedModule);
+//     	    	        		referenceset = passedModule;
+//     	    	        		if (passedModule.length >= 15 && passedModule.length <= 17)
+//     	    	        		{
+//     	    	        			var splitModule = passedModule.split("O");
+//     	    	        			if (splitModule.length == 2 && isHex(splitModule[0]) && isHex(splitModule[1]))
+//     	    	        				alert("This data will be accessible only via the current URL. It will be erased 24h after its creation.");
+//     	    	        		}
+    	        			}
+                        </c:if>
+
+                        <c:if test="${!(empty param.module)}">
+	                        $('#moduleExistingMD').val('${param.module}').selectpicker('refresh');
+	                        $('#moduleExistingMD').change();
+                  		</c:if>
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         handleError(xhr, thrownError);
@@ -735,16 +758,14 @@
         </script>
     </head>
     <body>
-        <%@include file="../../../navbar.jsp" %>    
+        <%@include file="../../../navbar.jsp" %>
         <div class="container margin-top-md">
-			<c:if test="${!isAnonymous}">
             <ul class="nav nav-tabs" style="border-bottom:0;">
-                <li id="vcfTab" class="active"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
-                <li id="metadataTab"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
+                <li id="vcfTab" class="<c:if test='${param.type ne "metadata"}'> active</c:if>"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
+                <li id="metadataTab" class="<c:if test='${param.type eq "metadata"}'> active</c:if>"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
             </ul>
-            </c:if>
             <div class="tab-content">
-                <div class="tab-pane active" id="tab1">
+                <div class="tab-pane<c:if test='${param.type ne "metadata"}'> active</c:if>" id="tab1">
             	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL%>' />" method="post">
 	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
 	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
@@ -761,7 +782,7 @@
                                 <div class="row">
                                     <div class="col-md-1" style="text-align:right;"></div>
                                     <div class="col-md-10">
-                                        <div class="form-group margin-top-md text-left"<c:if test="${limeitToTempData}"> hidden</c:if>>
+                                        <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
                                             <div class="row" id="rowModuleExisting">
 	                                        	<div class="col-md-2" style="text-align:right;">
 		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
@@ -903,8 +924,7 @@
 	                </form>
                 </div>
                 
-                <c:if test="${!isAnonymous}">
-                <div class="tab-pane" id="tab2">
+                <div class="tab-pane<c:if test='${param.type eq "metadata"}'> active</c:if>" id="tab2">
                    	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
                     <input type="hidden" name="brapiURLs" id="brapiURLs"/>
                     <input type="hidden" name="brapiTokens" id="brapiTokens"/>
@@ -975,7 +995,6 @@
                     </div>
                     </form>
                 </div>
-                </c:if>
             </div>
         </div>
         <!-- modal which prompts BrAPI user password -->

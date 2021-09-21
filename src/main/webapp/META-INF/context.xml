@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context antiJARLocking="true">
 	<WatchedResource>WEB-INF/classes/config.properties</WatchedResource>
+
+	<Manager className="org.apache.catalina.session.PersistentManager" maxActiveSessions="-1" maxIdleBackup="0" maxIdleSwap="0" minIdleSwap="0">
+		<Store className="org.apache.catalina.session.FileStore" directory="sessions"/>
+	</Manager>
 </Context>

@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.Normalizer;
@@ -1076,7 +1077,7 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						progress.addStep("Importing metadata for individuals");
 						progress.moveToNextStep();
-						nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, url, "individual", null, username);
+						nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, request.getSession(), url, "individual", null, username);
 					}
 					catch (IOException ioe)
 					{
@@ -1122,7 +1123,7 @@ public class GigwaRestController extends ControllerInterface {
 						else
 							try {
 								String sToken = brapiTokenArray.get(tokenIndex);
-								nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
+								nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
 							}
 							catch (Throwable err) {
 								progress.setError(err.getMessage() + " - " + sBrapiUrl);
@@ -1240,101 +1241,104 @@ public class GigwaRestController extends ControllerInterface {
 			{
 				uri = uri == null ? null : uri.trim();
 				if (uri != null && uri.trim().length() > 0)
-				{
-					String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
-					if (filesByExtension.containsKey(fileExtension))
-						progress.setError("Each provided file must have a different extension!");
-					else {
-						String lcURI = uri.toLowerCase();
-						boolean fIsFtp = lcURI.startsWith("ftp://");
-						if (lcURI.startsWith("http://") || lcURI.startsWith("https://") || fIsFtp)
-						{
-							URL url = new URL(uri);
-							boolean fValidURL = false;
-							if (fIsFtp)
-							{	// FTP is disabled for now (too slow for some unknown reason)
-//									try
-//									{
-//										url.openStream();
-//										fValidURL = true;
-//									}
-//									catch (FileNotFoundException fnfe)
-//									{
-//										progress.setError("Invalid FTP URL " + url);
-//								    }
-								progress.setError("FTP protocol not supported");
-							}
-							else
-								try
-								{
-									HttpURLConnection httpConn = ((HttpURLConnection) url.openConnection());
-									httpConn.setInstanceFollowRedirects(true);
-									fValidURL = Arrays.asList(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP).contains(httpConn.getResponseCode());
-									if (fValidURL && HttpURLConnection.HTTP_OK != httpConn.getResponseCode())
-									{	// there's a redirection: try and handle it
-										String sNewUrl = httpConn.getHeaderField("Location");
-										if (sNewUrl == null || !sNewUrl.toLowerCase().startsWith("http"))
-										{
-											fValidURL = false;
-											progress.setError("Unable to handle redirected URL (http code " + httpConn.getResponseCode() + ")");
-										}
-										else
-											url = new URL(sNewUrl);
-									}
-
-									if (!fAdminImporter)
-									{
-										Integer fileSize = null;
-										try
-										{
-											fileSize = Integer.parseInt(httpConn.getHeaderField("Content-Length"));
-										}
-										catch (Exception ignored)
-										{}
-										if (fileSize == null)
-											progress.setError("Only administrators may upload files with unspecified Content-Length");
-										else
-											nTotalImportSize += fileSize * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
-									}
-										
-								}
-								catch (Exception e)
-								{
-									progress.setError("Unable to connect to " + url + " - " + e.getMessage());
-								}
-							if (fValidURL)
+					try {
+						String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
+						if (filesByExtension.containsKey(fileExtension))
+							progress.setError("Each provided file must have a different extension!");
+						else {
+							String lcURI = uri.toLowerCase();
+							boolean fIsFtp = lcURI.startsWith("ftp://");
+							if (lcURI.startsWith("http://") || lcURI.startsWith("https://") || fIsFtp)
 							{
-								if (!"ped".equals(fileExtension))
-									filesByExtension.put(fileExtension, url);
+								URL url = new URL(uri);
+								boolean fValidURL = false;
+								if (fIsFtp)
+								{	// FTP is disabled for now (too slow for some unknown reason)
+	//									try
+	//									{
+	//										url.openStream();
+	//										fValidURL = true;
+	//									}
+	//									catch (FileNotFoundException fnfe)
+	//									{
+	//										progress.setError("Invalid FTP URL " + url);
+	//								    }
+									progress.setError("FTP protocol not supported");
+								}
 								else
 									try
 									{
-							            progress.addStep("Downloading PED file");
-							            progress.moveToNextStep();
-										File localPedCopy = File.createTempFile("tmp_", "_" + FilenameUtils.getName(uri));
-										InputStream urlStream = url.openStream();
-										FileUtils.copyInputStreamToFile(urlStream, localPedCopy);
-										uploadedFiles.add(localPedCopy);
-										filesByExtension.put(fileExtension, localPedCopy);
-										urlStream.close();
+										HttpURLConnection httpConn = ((HttpURLConnection) url.openConnection());
+										httpConn.setInstanceFollowRedirects(true);
+										fValidURL = Arrays.asList(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP).contains(httpConn.getResponseCode());
+										if (fValidURL && HttpURLConnection.HTTP_OK != httpConn.getResponseCode())
+										{	// there's a redirection: try and handle it
+											String sNewUrl = httpConn.getHeaderField("Location");
+											if (sNewUrl == null || !sNewUrl.toLowerCase().startsWith("http"))
+											{
+												fValidURL = false;
+												progress.setError("Unable to handle redirected URL (http code " + httpConn.getResponseCode() + ")");
+											}
+											else
+												url = new URL(sNewUrl);
+										}
+	
+										if (!fAdminImporter)
+										{
+											Integer fileSize = null;
+											try
+											{
+												fileSize = Integer.parseInt(httpConn.getHeaderField("Content-Length"));
+											}
+											catch (Exception ignored)
+											{}
+											if (fileSize == null)
+												progress.setError("Only administrators may upload files with unspecified Content-Length");
+											else
+												nTotalImportSize += fileSize * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
+										}
+											
 									}
-									catch (FileNotFoundException fnfe)
+									catch (Exception e)
 									{
-										LOG.error("Error downloading ped file: " + uri, fnfe);
+										progress.setError("Unable to connect to " + url + " - " + e.getMessage());
 									}
-							}
-						}
-						else
-						{
-							File f = new File(uri);
-							if (f.exists() && !f.isDirectory() && f.length() > 0) {
-								nTotalImportSize += f.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);									
-								filesByExtension.put(fileExtension, f);
+								if (fValidURL)
+								{
+									if (!"ped".equals(fileExtension))
+										filesByExtension.put(fileExtension, url);
+									else
+										try
+										{
+								            progress.addStep("Downloading PED file");
+								            progress.moveToNextStep();
+											File localPedCopy = File.createTempFile("tmp_", "_" + FilenameUtils.getName(uri));
+											InputStream urlStream = url.openStream();
+											FileUtils.copyInputStreamToFile(urlStream, localPedCopy);
+											uploadedFiles.add(localPedCopy);
+											filesByExtension.put(fileExtension, localPedCopy);
+											urlStream.close();
+										}
+										catch (FileNotFoundException fnfe)
+										{
+											LOG.error("Error downloading ped file: " + uri, fnfe);
+										}
+								}
 							}
 							else
-								progress.setError("Found no data to import from " + uri);
+							{
+								File f = new File(uri);
+								if (f.exists() && !f.isDirectory() && f.length() > 0) {
+									nTotalImportSize += f.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);									
+									filesByExtension.put(fileExtension, f);
+								}
+								else
+									progress.setError("Found no data to import from " + uri);
+							}
 						}
 					}
+				catch (URISyntaxException use) {
+					progress.setError("Error parsing URI: " + use.getMessage());
 				}
 			}
 		}
