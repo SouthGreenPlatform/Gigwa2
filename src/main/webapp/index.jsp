@@ -1281,6 +1281,7 @@
 	var igvBrowser;
 	var igvGenomeListURL = "/gigwa2/res/genomes.json";
 	var igvGenomeList = [];  // Default genomes list
+	var igvGenomeListLoaded = false;
 	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
 	var igvVariantTrack;
 	var igvCheckGenomeExistence = true;
@@ -1304,7 +1305,8 @@
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
-		if (!igvBrowser && igvGenomeListURL){  // FIXME ? : Genomes reload condition
+		if (!igvGenomeListLoaded && igvGenomeListURL){  // FIXME ? : Genomes reload condition
+			igvGenomeListLoaded = true;  // Set before the promise and not after it, to avoid duplicate requests if the modal is closed and reopened meanwhile
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
                 	igvCreateBrowser(igvDefaultGenome);
@@ -1363,7 +1365,6 @@
 	}
 	
 	function igvLoadGenomeFromFile(){
-		// TODO : Input check
 		let genomeFile = $("#igvGenomeFileInput").get(0).files[0];
 		let indexFile = $("#igvGenomeIndexFileInput").get(0).files[0];
 		
@@ -1393,7 +1394,6 @@
 	}
 	
 	function igvLoadGenomeFromURL(){
-		// TODO : Input check
 		let genomeURL = $("#igvGenomeURLInput").val().trim();
 		let indexURL = $("#igvGenomeIndexURLInput").val().trim();
 		
@@ -1475,7 +1475,6 @@
 	}
 	
 	function igvLoadTrackFromFile(){
-		// TODO : Input check
 		let trackFile = $("#igvTrackFileInput").get(0).files[0];
 		let indexFile = $("#igvTrackIndexFileInput").get(0).files[0];
 		let trackConfig = {
@@ -1494,7 +1493,6 @@
 	}
 	
 	function igvLoadTrackFromURL(){
-		// TODO : Input check
 		let trackURL = $("#igvTrackURLInput").val().trim();
 		let indexURL = $("#igvTrackIndexURLInput").val().trim();
 		
@@ -1549,9 +1547,11 @@
 		return igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
+			$("#igvTracksDropdown").removeClass("disabled");
+			$("#igvTracksDropdown ul").addClass("dropdown-menu").attr("hidden", "false");
 			igvUpdateVariants();
 		}).catch(function (reason){
-			displayMessage("Error while initialising IGV browser : " + reason);
+			displayMessage("Error during the creation of the IGV browser : " + reason);
 			igv.removeAllBrowsers();
 		});
 	}
@@ -1584,6 +1584,10 @@
 	function igvRemoveExistingBrowser(){
 		if (igvBrowser){
 			igv.removeBrowser(igvBrowser);
+			igvBrowser = undefined;
+			igvVariantTrack = undefined;
+			$("#igvTracksDropdown").addClass("disabled");
+			$("#igvTracksDropdown ul").removeClass("dropdown-menu").attr("hidden", "true");
 		}
 	}
 </script>
@@ -2180,11 +2184,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				    				<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
 				    			</ul>
 							</li>
-							<li class="dropdown">
-				    			<a href="#" id="igvTracksMenu" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+							<li id="igvTracksDropdown" class="dropdown disabled">
+				    			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 				    				Load track <span class="caret"></span>
 				    			</a>
-				    			<ul class="dropdown-menu">
+				    			<ul hidden="true">
 				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackFileModal">Load from file</a></li>
 				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackURLModal">Load from URL</a></li>
 				    			</ul>
