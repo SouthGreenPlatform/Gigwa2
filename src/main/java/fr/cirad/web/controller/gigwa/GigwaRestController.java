@@ -90,7 +90,6 @@ import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
-import fr.cirad.io.brapi.BrapiSource;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
@@ -121,7 +120,6 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
