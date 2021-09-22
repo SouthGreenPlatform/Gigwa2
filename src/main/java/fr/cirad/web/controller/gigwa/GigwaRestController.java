@@ -90,7 +90,6 @@ import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
-import fr.cirad.io.brapi.BrapiSource;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
@@ -121,7 +120,6 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -1107,6 +1105,8 @@ public class GigwaRestController extends ControllerInterface {
 								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for individual " + ga4ghCallSet.getId());
 							if (extRefSrcValues.size() != 1)
 								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for individual " + ga4ghCallSet.getId());
+                                                        if (extRefTypesValues.size() != 1)
+								LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceType + " expected for individual " + ga4ghCallSet.getId());
 
 							String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
                                                         
