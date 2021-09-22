@@ -215,7 +215,7 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
-	        // $('#viewerPanel').fadeIn();
+	        igvRemoveExistingBrowser();
 	        
     	    $.ajax({	// load runs
     	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
@@ -1550,6 +1550,9 @@
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 			igvUpdateVariants();
+		}).catch(function (reason){
+			displayMessage("Error while initialising IGV browser : " + reason);
+			igv.removeAllBrowsers();
 		});
 	}
 	
@@ -1574,6 +1577,13 @@
 			igvBrowser.loadTrack(trackConfig).then(function (track){
 				igvVariantTrack = track;
 			});
+		}
+	}
+	
+	// Remove the browser if it is initialised
+	function igvRemoveExistingBrowser(){
+		if (igvBrowser){
+			igv.removeBrowser(igvBrowser);
 		}
 	}
 </script>
