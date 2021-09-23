@@ -200,7 +200,9 @@
 	        	        
 	        checkBrowsingBoxAccordingToLocalVariable();
 	        $('input#browsingAndExportingEnabled').change();
+	        igvRemoveExistingBrowser();
 	    });
+	    
 	    $('#project').on('change', function() {
 	    	count = 0;
 	    	$("table#individualFilteringTable").html("");
@@ -215,7 +217,6 @@
 			else
 				$("#projectInfoLink").hide();
 	        $('#searchPanel').fadeIn();
-	        igvRemoveExistingBrowser();
 	        
     	    $.ajax({	// load runs
     	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
@@ -1305,7 +1306,7 @@
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
-		if (!igvGenomeListLoaded && igvGenomeListURL){  // FIXME ? : Genomes reload condition
+		if (!igvGenomeListLoaded && igvGenomeListURL){
 			igvGenomeListLoaded = true;  // Set before the promise and not after it, to avoid duplicate requests if the modal is closed and reopened meanwhile
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
@@ -1558,25 +1559,49 @@
 	
 	// Update the browser's variant track
 	function igvUpdateVariants(){
-		let trackConfig = {
-			name: "Query",
-			type: "variant",
-			format: "custom",
-			sourceType: "file",
-			order: Number.MAX_SAFE_INTEGER,
-			visibilityWindow: 100000,
-			reader: new GigwaSearchReader(
-					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
-					"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
-					token),
-		};
-		
-		if (igvVariantTrack){
-			igvVariantTrack.updateConfig(trackConfig);
-		} else {
-			igvBrowser.loadTrack(trackConfig).then(function (track){
-				igvVariantTrack = track;
-			});
+		if (igvBrowser){
+			let trackConfig = {
+				name: "Query",
+				type: "variant",
+				format: "custom",
+				sourceType: "file",
+				order: Number.MAX_SAFE_INTEGER,
+				visibilityWindow: 100000,
+				reader: new GigwaSearchReader(
+						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
+						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
+						token),
+			};
+			
+			
+			// updateConfig updates the config but makes the track display bug
+			/*if (igvVariantTrack){
+				igvVariantTrack.updateConfig(trackConfig);
+				igvBrowser.updateViews(true);
+			} else {
+				igvBrowser.loadTrack(trackConfig).then(function (track){
+					igvVariantTrack = track;
+				});
+			}*/
+			
+			// Display bug when updating while hidden
+			// So we delay it until the modal is shown again
+			let updateFunction = function (){
+				if (igvVariantTrack){
+					igvBrowser.removeTrack(igvVariantTrack);
+					igvVariantTrack = undefined;	
+				}
+				igvBrowser.loadTrack(trackConfig).then(function (track){
+					igvVariantTrack = track;
+				});
+			}
+			
+			// Or .hasClass("in") ?
+			if ($("#igvPanel").is(":visible")){
+				updateFunction();
+			} else {
+				$("#igvPanel").one("shown.bs.modal", updateFunction);
+			}
 		}
 	}
 	

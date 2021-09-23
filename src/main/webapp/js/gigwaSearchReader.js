@@ -252,52 +252,56 @@ class GigwaSearchReader {
 	}
 	
 	readHeader() {
-		let self = this;
-		if (!self.header){
-			self.header = {};
-			
-			let query = {
-				variantSetId: $('#project :selected').data("id"),
-				pageSize: 10000,
-			};
-			
-			return $.ajax({
-	            url: self.callsetSearch,
-	            type: "POST",
-	            dataType: "json",
-	            contentType: "application/json;charset=utf-8",
-	            headers: {
-	                "Authorization": "Bearer " + self.token,
-	            },
-	            data: JSON.stringify(query),
-	            success: function(data) {
-	                self.header.callSets = [];
-	                self.header.callSetIds = [];
-	                let selectedIndividuals = getSelectedIndividuals(1, false);  // FIXME : Add group 2 ? 
-	                data.callSets.forEach(function (callset){
-	                	// Filter for the selected individuals. `getSelectedIndividuals` returns an empty array if all of them are selected
-	                	if (selectedIndividuals.includes(callset.name) || selectedIndividuals.length == 0){
-		                	self.header.callSets.push(callset);
-		                	self.header.callSetIds.push(callset.name);
-	                	}
-	                });
-	                
-	                self.header.callSets.sort(function (a, b){
-	                	if (a.name < b.name) return -1;
-	                	if (a.name > b.name) return 1;
-	                	else return 0;
-	                });
-	                return self.header.callSets;
-	            },
-	            error: function(xhr, ajaxOptions, thrownError) {
-	                handleError(xhr, thrownError);
-	            }
-	        }).then(function (callsets){
-	        	return self.header;
-	        });
+		if (!this.header){
+			return this.updateHeader();
 		} else {
-			return Promise.resolve(self.header);
+			return Promise.resolve(this.header);
 		}
+	}
+	
+	updateHeader(){
+		let self = this;
+		self.header = {};
+		
+		let query = {
+			variantSetId: $('#project :selected').data("id"),
+			pageSize: 10000,
+		};
+		
+		return $.ajax({
+            url: self.callsetSearch,
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json;charset=utf-8",
+            headers: {
+                "Authorization": "Bearer " + self.token,
+            },
+            data: JSON.stringify(query),
+            success: function(data) {
+                self.header.callSets = [];
+                self.header.callSetIds = [];
+                let selectedIndividuals = getSelectedIndividuals(1, false);  // FIXME : Add group 2 ? 
+                data.callSets.forEach(function (callset){
+                	// Filter for the selected individuals. `getSelectedIndividuals` returns an empty array if all of them are selected
+                	if (selectedIndividuals.includes(callset.name) || selectedIndividuals.length == 0){
+	                	self.header.callSets.push(callset);
+	                	self.header.callSetIds.push(callset.name);
+                	}
+                });
+                
+                self.header.callSets.sort(function (a, b){
+                	if (a.name < b.name) return -1;
+                	if (a.name > b.name) return 1;
+                	else return 0;
+                });
+                return self.header.callSets;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                handleError(xhr, thrownError);
+            }
+        }).then(function (callsets){
+        	return self.header;
+        });
 	}
 	
 	readFeatures(chr, bpStart, bpEnd){
