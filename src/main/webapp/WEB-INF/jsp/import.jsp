@@ -56,7 +56,7 @@
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
-                        var extRefSrcType = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
+                        var extRefTypeField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
@@ -184,7 +184,7 @@
                         	            "variantSetId": jsonResult.variantSets[vs].id
                         	        }),
                         	        success: function(individualsResult) {
-                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/?/i);
+                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
                         	        	for (var cs in individualsResult.callSets) {
                         	        		var ai = individualsResult.callSets[cs].info;
                         	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString()))
@@ -303,7 +303,9 @@
             	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.size > 0)
 	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains individuals that are linked to BrAPI germplasm records. You may directly click on SUBMIT to import their metadata</span>");
 	        	else
-	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1's germplasm-search call is supported in a two-step procedure: (1) Importing metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>germplasmDbId</b> and <b>BrAPI base-URLs</b>; (2) Coming back to this form and submitting<span style='color:#;'>");
+	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1 and v2's search/germplasm or search/samples call is supported in a two-step procedure: <br> \n\
+                    (1) Importing metadata fields named <b>" + extRefIdField + "</b>, <b>" + extRefSrcField + "</b> and <b>" + extRefTypeField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b>, <b>BrAPI base-URLs</b> and <b>germplasm</b> or <b>sample</b>; <br> \n\
+                    (2) Coming back to this form and submitting<span style='color:#;'>");
             }
             
             function submitBrapiForm() {
