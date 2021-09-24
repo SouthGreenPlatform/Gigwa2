@@ -121,6 +121,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
+	
 	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
@@ -312,7 +313,6 @@
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
 		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.9 - 20) + "px");
-		// igvResizeVariantTrack();
  	    $("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
  	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
 	}
@@ -1283,6 +1283,7 @@
 	 * IGV.js genome browser integration
 	 */
 	
+	// Global variables
 	var igvBrowser;
 	var igvGenomeListURL = "/gigwa2/res/genomes.json";
 	var igvGenomeList = [];  // Default genomes list
@@ -1290,7 +1291,9 @@
 	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
 	var igvVariantTrack;
 	var igvCheckGenomeExistence = true;
+	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	
+	// ----- Utilities
 	
 	// Extract the file name from an URL object
 	function filenameFromURL(url){
@@ -1307,7 +1310,33 @@
 	    return result;
 	}
 	
-	// Open the IGV modal, initialises the browser if a default genome is set
+	// Get the constant prefix in each element of a list of strings
+	function getPrefix(names){
+		let terminate = false;
+		let prefix = "";
+		for (let index in names[0]){
+			let character = names[0][index]
+			for (let name of names){
+				if (name[index] != character){
+					terminate = true;
+					break;
+				}
+			}
+			if (terminate){
+				break;
+			} else {
+				prefix += character;
+			}
+		}
+		return prefix;
+	}
+	
+	// Check whether a string represents a valid number
+	function isNumeric(str){
+		return !isNaN(str) && !isNaN(parseFloat(str));
+	}
+	
+	// Open the IGV modal, initialise the browser if a default genome is set
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
@@ -1315,7 +1344,7 @@
 			igvGenomeListLoaded = true;  // Set before the promise and not after it, to avoid duplicate requests if the modal is closed and reopened meanwhile
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
-                	igvCreateBrowser(igvDefaultGenome);
+                	igvSwitchGenome(igvDefaultGenome);
                 }
 			});
 		}
@@ -1467,26 +1496,7 @@
 		}
 	}
 	
-	function getPrefix(names){
-		let terminate = false;
-		let prefix = "";
-		for (let index in names[0]){
-			let character = names[0][index]
-			for (let name of names){
-				if (name[index] != character){
-					terminate = true;
-					break;
-				}
-			}
-			if (terminate){
-				break;
-			} else {
-				prefix += character;
-			}
-		}
-		return prefix;
-	}
-	
+	// Change the current genome, create the browser if it doesn't exist
 	function igvSwitchGenome(genome){
 		if (typeof genome == "string"){
 			genome = {...igvGenomeList.filter(config => config.id == genome)[0]};  // Shallow copy as we modify it later
@@ -1501,9 +1511,7 @@
 		} else {
 			igvVariantTrack = undefined;
 			igvBrowser.removeAllTracks();
-			promise = igvBrowser.loadGenome(genome).then(function () {
-				igvUpdateVariants();
-			});
+			promise = igvBrowser.loadGenome(genome);
 		}
 		
 		// Build the alias table
@@ -1511,15 +1519,18 @@
 			let targetNames = igvBrowser.genome.chromosomeNames;
 			let variantPrefix = getPrefix(referenceNames);
 			let targetPrefix = getPrefix(targetNames);
+			igvGenomeRefTable = {};
 			for (let target of targetNames){
 				let zeroname = target.replace(targetPrefix, "");
 				let basename = zeroname.replace(/^0+/, '');
+				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname
 				igvBrowser.genome.chrAliasTable[zeroname] = target;
 				igvBrowser.genome.chrAliasTable[basename] = target;
 				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;
 				igvBrowser.genome.chrAliasTable["chr" + basename] = target;
 				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;
 				igvBrowser.genome.chrAliasTable[variantPrefix + basename] = target;
+				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(/^0+/, "") == basename)[0];
 			}
 		});
 		
@@ -1528,7 +1539,12 @@
 			for (let trackConfig of tracks){
 				igvBrowser.loadTrack(trackConfig);
 			}
-		})
+		});
+		
+		// Add the variant track
+		promise.then(function (){
+			igvUpdateVariants();
+		});
 		
 		return promise;
 	}
@@ -1608,7 +1624,6 @@
 			igvBrowser = browser;
 			$("#igvTracksDropdown").removeClass("disabled");
 			$("#igvTracksDropdown ul").addClass("dropdown-menu").attr("hidden", "false");
-			igvUpdateVariants().then(igvResizeVariantTrack);
 			
 			// Fix IGV browser resizing bug
 		    // Trigger a resize when we show the modal back
@@ -1644,17 +1659,6 @@
 						token),
 			};
 			
-			
-			// updateConfig updates the config but makes the track display bug
-			/*if (igvVariantTrack){
-				igvVariantTrack.updateConfig(trackConfig);
-				igvBrowser.updateViews(true);
-			} else {
-				igvBrowser.loadTrack(trackConfig).then(function (track){
-					igvVariantTrack = track;
-				});
-			}*/
-			
 			// Display bug when updating while hidden
 			// So we delay it until the modal is shown again
 			let updateFunction = function (){
@@ -1665,7 +1669,7 @@
 				return igvBrowser.loadTrack(trackConfig).then(function (track){
 					igvVariantTrack = track;
 					igvVariantTrack.trackView.viewports[0].$viewport.attr("id", "igvVariantTrack");
-				});
+				}).then(igvResizeVariantTrack);
 			}
 			
 			// Or .hasClass("in") ?
@@ -1693,12 +1697,13 @@
 		}
 	}
 	
+	// Automatically adjust the variant track's height to fit the available space
 	function igvResizeVariantTrack(){
 		let viewport = igvVariantTrack.trackView.viewports[0].$viewport;
 		let previous = viewport.prev();
-		let top = previous.offset().top + previous.outerHeight();
+		let top = previous.offset().top + previous.outerHeight();  // Top limit : bottom of the track immediately above
 		let modal = $("#igvPanel div.modal-lg div.modal-content");
-		let bottom = modal.offset().top + modal.innerHeight();
+		let bottom = modal.offset().top + modal.innerHeight();  // Bottom limit : size of the modal content
 		let height = bottom - top - 20;
 		igvVariantTrack.trackView.setTrackHeight(height);
 	}

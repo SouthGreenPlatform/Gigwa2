@@ -308,7 +308,7 @@ class GigwaSearchReader {
 		let self = this;
 		return this.readHeader().then(function(header){
 			let query = buildSearchQuery(2, 0);
-			query.referenceName = chr;
+			query.referenceName = igvGenomeRefTable[chr];
 			query.start = Math.max(parseInt(bpStart), query.start);
 			query.end = query.end < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), query.end);
 			query.pageSize = 2147483647;  // FIXME : ?
