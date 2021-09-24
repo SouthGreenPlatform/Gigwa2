@@ -310,7 +310,8 @@
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
-		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.88 - 20) + "px");
+		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.9 - 20) + "px");
+		// igvResizeVariantTrack();
  	    $("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
  	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
 	}
@@ -1287,6 +1288,7 @@
 	var igvVariantTrack;
 	var igvCheckGenomeExistence = true;
 	
+	
 	// Extract the file name from an URL object
 	function filenameFromURL(url){
 		return url.pathname.split("/").pop();
@@ -1530,7 +1532,7 @@
 	}
 	
 	function igvLoadTrack(config){
-		if (igvBrowser) {  // TODO : Disable track menu when the browser is not initialized
+		if (igvBrowser) {
 			igvBrowser.loadTrack(config);
 		}
 	}
@@ -1550,7 +1552,19 @@
 			igvBrowser = browser;
 			$("#igvTracksDropdown").removeClass("disabled");
 			$("#igvTracksDropdown ul").addClass("dropdown-menu").attr("hidden", "false");
-			igvUpdateVariants();
+			igvUpdateVariants().then(igvResizeVariantTrack);
+			
+			// Fix IGV browser resizing bug
+		    // Trigger a resize when we show the modal back
+		    $("#igvPanel").on("shown.bs.modal", function(){
+				if (igvBrowser){
+					// Check whether it bugged (negative range)
+					let posString = igvBrowser.currentLoci()[0].split(":").pop().replace(/,/g, "").split(/\-(.+)/);
+					if (posString.length >= 2 && parseInt(posString[0]) >= parseInt(posString[1])){
+						igvBrowser.resize();
+					}					
+				}
+			});
 		}).catch(function (reason){
 			displayMessage("Error during the creation of the IGV browser : " + reason);
 			igv.removeAllBrowsers();
@@ -1567,6 +1581,7 @@
 				sourceType: "file",
 				order: Number.MAX_SAFE_INTEGER,
 				visibilityWindow: 100000,
+				minHeight: 200,
 				reader: new GigwaSearchReader(
 						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
 						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
@@ -1591,16 +1606,22 @@
 					igvBrowser.removeTrack(igvVariantTrack);
 					igvVariantTrack = undefined;	
 				}
-				igvBrowser.loadTrack(trackConfig).then(function (track){
+				return igvBrowser.loadTrack(trackConfig).then(function (track){
 					igvVariantTrack = track;
+					igvVariantTrack.trackView.viewports[0].$viewport.attr("id", "igvVariantTrack");
 				});
 			}
 			
 			// Or .hasClass("in") ?
 			if ($("#igvPanel").is(":visible")){
-				updateFunction();
+				return updateFunction();
 			} else {
-				$("#igvPanel").one("shown.bs.modal", updateFunction);
+				return new Promise(function(resolve, reject) {
+					$("#igvPanel").one("shown.bs.modal", function() {
+						updateFunction().then(resolve).catch(reject);
+					});
+				});
+				
 			}
 		}
 	}
@@ -1614,6 +1635,16 @@
 			$("#igvTracksDropdown").addClass("disabled");
 			$("#igvTracksDropdown ul").removeClass("dropdown-menu").attr("hidden", "true");
 		}
+	}
+	
+	function igvResizeVariantTrack(){
+		let viewport = igvVariantTrack.trackView.viewports[0].$viewport;
+		let previous = viewport.prev();
+		let top = previous.offset().top + previous.outerHeight();
+		let modal = $("#igvPanel div.modal-lg div.modal-content");
+		let bottom = modal.offset().top + modal.innerHeight();
+		let height = bottom - top - 20;
+		igvVariantTrack.trackView.setTrackHeight(height);
 	}
 </script>
 </head>
