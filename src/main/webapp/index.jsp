@@ -121,6 +121,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
+	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
 
@@ -536,6 +537,8 @@
 	                data: seqOpt,
 	                placeholder: 'sequence'
 	            });
+	            referenceNames = [];
+	            jsonResult.references.forEach(ref => referenceNames.push(ref.name))
 	        },
 	        error: function(xhr, ajaxOptions, thrownError) {
 	            handleError(xhr, thrownError);
@@ -1432,7 +1435,7 @@
 	                handleError(xhr, thrownError);
 	            }
 			})
-		} else {
+		} else {  // FASTA config
 			let genome;
 			if (indexURL){
 				genome = {
@@ -1464,17 +1467,70 @@
 		}
 	}
 	
+	function getPrefix(names){
+		let terminate = false;
+		let prefix = "";
+		for (let index in names[0]){
+			let character = names[0][index]
+			for (let name of names){
+				if (name[index] != character){
+					terminate = true;
+					break;
+				}
+			}
+			if (terminate){
+				break;
+			} else {
+				prefix += character;
+			}
+		}
+		return prefix;
+	}
+	
 	function igvSwitchGenome(genome){
+		if (typeof genome == "string"){
+			genome = {...igvGenomeList.filter(config => config.id == genome)[0]};  // Shallow copy as we modify it later
+		}
+		
+		let tracks = genome.tracks;
+		genome.tracks = [];
+		
 		let promise;
 		if (!igvBrowser){
-			return igvCreateBrowser(genome);
+			promise = igvCreateBrowser(genome);
 		} else {
 			igvVariantTrack = undefined;
 			igvBrowser.removeAllTracks();
-			return igvBrowser.loadGenome(genome).then(function () {
+			promise = igvBrowser.loadGenome(genome).then(function () {
 				igvUpdateVariants();
 			});
 		}
+		
+		// Build the alias table
+		promise.then(function (){
+			let targetNames = igvBrowser.genome.chromosomeNames;
+			let variantPrefix = getPrefix(referenceNames);
+			let targetPrefix = getPrefix(targetNames);
+			for (let target of targetNames){
+				let zeroname = target.replace(targetPrefix, "");
+				let basename = zeroname.replace(/^0+/, '');
+				igvBrowser.genome.chrAliasTable[zeroname] = target;
+				igvBrowser.genome.chrAliasTable[basename] = target;
+				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;
+				igvBrowser.genome.chrAliasTable["chr" + basename] = target;
+				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;
+				igvBrowser.genome.chrAliasTable[variantPrefix + basename] = target;
+			}
+		});
+		
+		// Load the default tracks
+		promise.then(function (){
+			for (let trackConfig of tracks){
+				igvBrowser.loadTrack(trackConfig);
+			}
+		})
+		
+		return promise;
 	}
 	
 	function igvLoadTrackFromFile(){
