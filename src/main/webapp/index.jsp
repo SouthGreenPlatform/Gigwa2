@@ -1289,7 +1289,7 @@
 	var igvGenomeList = [];  // Default genomes list
 	var igvGenomeListLoaded = false;
 	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
-	var igvVariantTrack;
+	var igvVariantTracks;
 	var igvCheckGenomeExistence = true;
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	
@@ -1509,7 +1509,7 @@
 		if (!igvBrowser){
 			promise = igvCreateBrowser(genome);
 		} else {
-			igvVariantTrack = undefined;
+			igvVariantTracks = undefined;
 			igvBrowser.removeAllTracks();
 			promise = igvBrowser.loadGenome(genome);
 		}
@@ -1520,16 +1520,18 @@
 			let variantPrefix = getPrefix(referenceNames);
 			let targetPrefix = getPrefix(targetNames);
 			igvGenomeRefTable = {};
-			for (let target of targetNames){
+			for (let target of targetNames){  // target = chromosome name in the genome file, as used by IGV
 				let zeroname = target.replace(targetPrefix, "");
-				let basename = zeroname.replace(/^0+/, '');
-				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname
-				igvBrowser.genome.chrAliasTable[zeroname] = target;
-				igvBrowser.genome.chrAliasTable[basename] = target;
-				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;
-				igvBrowser.genome.chrAliasTable["chr" + basename] = target;
-				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;
+				let basename = zeroname.replace(/^0+/, '');  // Base chromosome name
+				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
+				igvBrowser.genome.chrAliasTable[zeroname] = target;  // 02 -> target
+				igvBrowser.genome.chrAliasTable[basename] = target;  // 2 -> target
+				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;  // chr2 -> target
+				igvBrowser.genome.chrAliasTable["chr" + basename] = target;  // chr02 -> target
+				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;  // With prefix used by variants
 				igvBrowser.genome.chrAliasTable[variantPrefix + basename] = target;
+				
+				// Associate the target name to the variants reference name
 				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(/^0+/, "") == basename)[0];
 			}
 		});
@@ -1541,7 +1543,7 @@
 			}
 		});
 		
-		// Add the variant track
+		// Add the variant tracks
 		promise.then(function (){
 			igvUpdateVariants();
 		});
@@ -1645,31 +1647,41 @@
 	// Update the browser's variant track
 	function igvUpdateVariants(){
 		if (igvBrowser){
-			let trackConfig = {
-				name: "Query",
-				type: "variant",
-				format: "custom",
-				sourceType: "file",
-				order: Number.MAX_SAFE_INTEGER,
-				visibilityWindow: 100000,
-				minHeight: 200,
-				reader: new GigwaSearchReader(
-						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
-						"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
-						token),
-			};
+			let trackIndividuals = igvSelectedIndividuals();
+			let trackConfigs = [];
+			trackIndividuals.forEach (function(individuals, index, array) {
+				trackConfigs.push({
+					name: array.length > 1 ? "Group " + (index+1) : "Query",
+					type: "variant",
+					format: "custom",
+					sourceType: "file",
+					order: Number.MAX_SAFE_INTEGER,
+					visibilityWindow: 100000,
+					minHeight: 200,
+					reader: new GigwaSearchReader(
+							individuals,
+							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
+							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
+							token),
+				});
+			})
+			
 			
 			// Display bug when updating while hidden
 			// So we delay it until the modal is shown again
-			let updateFunction = function (){
-				if (igvVariantTrack){
-					igvBrowser.removeTrack(igvVariantTrack);
-					igvVariantTrack = undefined;	
+			let updateFunction = async function (){
+				if (igvVariantTracks){
+					for (let track of igvVariantTracks)
+						igvBrowser.removeTrack(track);
+					igvVariantTracks = undefined;	
 				}
-				return igvBrowser.loadTrack(trackConfig).then(function (track){
-					igvVariantTrack = track;
-					igvVariantTrack.trackView.viewports[0].$viewport.attr("id", "igvVariantTrack");
-				}).then(igvResizeVariantTrack);
+				
+				for (let config of trackConfigs){
+					let track = await igvBrowser.loadTrack(config);
+					if (!igvVariantTracks) igvVariantTracks = [];
+					igvVariantTracks.push(track);
+				}
+				igvResizeVariantTracks();
 			}
 			
 			// Or .hasClass("in") ?
@@ -1691,21 +1703,50 @@
 		if (igvBrowser){
 			igv.removeBrowser(igvBrowser);
 			igvBrowser = undefined;
-			igvVariantTrack = undefined;
+			igvVariantTracks = undefined;
 			$("#igvTracksDropdown").addClass("disabled");
 			$("#igvTracksDropdown ul").removeClass("dropdown-menu").attr("hidden", "true");
 		}
 	}
 	
 	// Automatically adjust the variant track's height to fit the available space
-	function igvResizeVariantTrack(){
-		let viewport = igvVariantTrack.trackView.viewports[0].$viewport;
-		let previous = viewport.prev();
-		let top = previous.offset().top + previous.outerHeight();  // Top limit : bottom of the track immediately above
-		let modal = $("#igvPanel div.modal-lg div.modal-content");
-		let bottom = modal.offset().top + modal.innerHeight();  // Bottom limit : size of the modal content
-		let height = bottom - top - 20;
-		igvVariantTrack.trackView.setTrackHeight(height);
+	function igvResizeVariantTracks(){
+		if (igvVariantTracks){
+			let viewport = igvVariantTracks[0].trackView.viewports[0].$viewport;
+			let previous = viewport.prev();
+			let top = previous.offset().top + previous.outerHeight();  // Top limit : bottom of the track immediately above
+			let modal = $("#igvPanel div.modal-lg div.modal-content");
+			let bottom = modal.offset().top + modal.innerHeight();  // Bottom limit : size of the modal content
+			let height = bottom - top - 20;
+			for (let track of igvVariantTracks){
+				track.trackView.setTrackHeight(height / igvVariantTracks.length);
+			}
+		}
+	}
+	
+	// Select a group of individuals to display.
+	function igvSelectGroup(){
+		igvUpdateVariants();
+	}
+	
+	// Get the list of individuals to display in IGV
+	// Return an empty array for all individuals
+	function igvSelectedIndividuals(){
+		let group = $('input[name="igvGroupsButton"]:checked').val();
+		let trackIndividuals;
+		switch (group){
+			case "0":  // Selected
+				trackIndividuals = [getAllSelectedIndividuals(false)]; break;
+			case "1":  // Group 1
+				trackIndividuals = [getSelectedIndividuals(1, false)]; break;
+			case "2":  // Group 2
+				trackIndividuals = [getSelectedIndividuals(2, false)]; break;
+			case "3":  // Separate
+				trackIndividuals = [getSelectedIndividuals(1, false), getSelectedIndividuals(2, false)]; break;
+			case "4":  // All
+				trackIndividuals = [[]]; break;
+		}
+		return trackIndividuals;
 	}
 </script>
 </head>
@@ -2308,6 +2349,18 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				    			<ul hidden="true">
 				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackFileModal">Load from file</a></li>
 				    				<li><a href="#" data-toggle="modal" data-target="#igvTrackURLModal">Load from URL</a></li>
+				    			</ul>
+							</li>
+							<li class="dropdown" id="igvGroupsMenu" hidden="true">
+				    			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+				    				Groups <span class="caret"></span>
+				    			</a>
+				    			<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
+				    				<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="0" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>
+				    				<li id="igvGroups1"><a href="#"><label><input type="radio" name="igvGroupsButton" value="1" onchange="igvSelectGroup();" /> Group 1</label></a></li>
+				    				<li id="igvGroups2"><a href="#"><label><input type="radio" name="igvGroupsButton" value="2" onchange="igvSelectGroup();" /> Group 2</label></a></li>
+				    				<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="3" onChange="igvSelectGroup();" /> Separate groups</label></a></li>
+				    				<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="4" onchange="igvSelectGroup();" checked="checked" /> All individuals</label></a></li>
 				    			</ul>
 							</li>
 				    	</ul>

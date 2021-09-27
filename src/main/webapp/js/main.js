@@ -54,6 +54,10 @@ function idLooksGenerated(id)
 	return id.length == 20 && regex.exec(id) != null;
 }
 
+function getProjectId(){
+	return $('#project :selected').data("id");
+}
+
 // function to get url param
 function $_GET(param) {
     var vars = {};
@@ -308,6 +312,19 @@ function getSelectedNumberOfAlleles() {
     return selectedNbAlleles.join(";");
 }
 
+function getSearchMinPosition(){
+	return $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val());
+}
+
+function getSearchMaxPosition(){
+	return $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val());
+}
+
+// 0 = Disabled, 1 = 1 group, 2 = 2 groups
+function getGenotypeInvestigationMode(){
+	return parseInt($("#genotypeInvestigationMode").val());
+}
+
 // fill all widgets for a specific module & project
 function fillWidgets() {
     loadVariantTypes();
@@ -325,7 +342,7 @@ function fillWidgets() {
 function loadSearchableVcfFields()
 {
     $.ajax({	// load searchable annotations
-        url: searchableVcfFieldListURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+        url: searchableVcfFieldListURL + '/' + encodeURIComponent(getProjectId()),
         type: "GET",
         dataType: "json",
         async: false,
@@ -351,7 +368,7 @@ function loadSearchableVcfFields()
 
 function loadVcfFieldHeaders() {
     $.ajax({
-        url: vcfFieldHeadersURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+        url: vcfFieldHeadersURL + '/' + encodeURIComponent(getProjectId()),
         type: "GET",
         dataType: "json",
         async: false,
@@ -451,15 +468,15 @@ function buildSearchQuery(searchMode, pageToken){
 	});
 	
 	let query = {
-        "variantSetId": $('#project :selected').data("id"),
+        "variantSetId": getProjectId(),
         "searchMode": searchMode,
         "getGT": false,
 
         "referenceName": getSelectedSequences(),
         "selectedVariantTypes": getSelectedTypes(),
         "alleleCount": getSelectedNumberOfAlleles(),
-        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
+        "start": getSearchMinPosition(),
+        "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
@@ -671,6 +688,7 @@ function markAsMissingData(individual) {
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
     var selectedIndividuals = [];
     var groups = groupNumber == null ? [1, 2] : [groupNumber];
+    var ga4ghId = getProjectId() + "§";
     for (var groupKey in groups)
     {
     	var groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('value');
@@ -678,9 +696,28 @@ function getSelectedIndividuals(groupNumber, provideGa4ghId) {
         	groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('option')
     	for (var indKey in groupIndividuals)
     		if (!arrayContains(selectedIndividuals, groupIndividuals[indKey]))
-    			selectedIndividuals.push((provideGa4ghId ? $('#project :selected').data("id") + "§" : "") + groupIndividuals[indKey]);
+    			selectedIndividuals.push((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
     }
     return selectedIndividuals.length == indCount ? [] : selectedIndividuals;
+}
+
+function getAllSelectedIndividuals(provideGa4ghId){
+	let individuals;
+	let investigationMode = getGenotypeInvestigationMode();
+	if (investigationMode == 0){
+		individuals = [];
+	} else {
+		individuals = getSelectedIndividuals(1, provideGa4ghId);
+		if (investigationMode >= 2){
+			let group2 = getSelectedIndividuals(2, provideGa4ghId);
+			if (group2.length == 0){
+				individuals = [];
+			} else {
+				individuals = individuals.concat(group2);
+			}
+		}
+	}
+	return individuals;
 }
 
 function getAnnotationThresholds(individual, indArray1, indArray2)
@@ -743,6 +780,7 @@ function setGenotypeInvestigationMode(mode) {
 	    $('#minmaf2').val("0");
 	    $('#maxmaf2').val("50");
 	    $('div#genotypeInvestigationDiv2').hide(300);
+	    
 		if (mode == 0)
 		{
 		    $('#Individuals1').selectmultiple('deselectAll');
@@ -752,13 +790,29 @@ function setGenotypeInvestigationMode(mode) {
 		    $('#minmaf1').val("0");
 		    $('#maxmaf1').val("50");
 		    $('div#genotypeInvestigationDiv1').hide(300);
+
+		    $("#igvGroupsAll input").prop("checked", true);
+		    $("#igvGroupsMenu").hide();
 		}
-		else
+		else {
 			$('div#genotypeInvestigationDiv1').show(300);
+
+			$("#igvGroupsMenu").show();
+			$("#igvGroups1").hide();
+		    $("#igvGroups2").hide();
+		    $("#igvGroupsSeparate").hide();
+			$("#igvGroupsSelected input").prop("checked", true);
+		}
 	}
 	else {
  	    $('#discriminationDiv').show(300);
 		$('div.genotypeInvestigationDiv').show(300);
+		
+		$("#igvGroupsMenu").show();
+		$("#igvGroups1").show();
+		$("#igvGroups2").show();
+		$("#igvGroupsSeparate").show();
+		$("#igvGroupsSelected input").prop("checked", true);
 	}
 	
 	$('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
@@ -1109,15 +1163,15 @@ function saveQuery() {
             "Authorization": "Bearer " + token,
         },
         data: JSON.stringify({
-            "variantSetId": $('#project :selected').data("id"),
+            "variantSetId": getProjectId(),
             "getGT": false,
             "queryLabel": queryName,
             
             "referenceName": getSelectedSequences(),
             "selectedVariantTypes": getSelectedTypes(),
             "alleleCount": getSelectedNumberOfAlleles(),
-            "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-            "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
+            "start": getSearchMinPosition(),
+            "end": getSearchMaxPosition(),
             "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
             "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
@@ -1215,7 +1269,7 @@ function listQueries(){
 	                    "Authorization": "Bearer " + token,
 	                },
 	                data: JSON.stringify({
-	                    "variantSetId": $('#project :selected').data("id"),
+	                    "variantSetId": getProjectId(),
 	                    "getGT": false,
 	                    "queryLabel": queryName,
 

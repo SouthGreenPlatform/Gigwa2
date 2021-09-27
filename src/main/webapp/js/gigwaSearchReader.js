@@ -245,7 +245,8 @@ function arrayToString(value, delim) {
 
 
 class GigwaSearchReader {
-	constructor(variantSearch, callsetSearch, token) {
+	constructor(individuals, variantSearch, callsetSearch, token) {
+		this.selectedIndividuals = individuals;
 		this.variantSearch = variantSearch;
 		this.callsetSearch = callsetSearch;
 		this.token = token;
@@ -280,10 +281,9 @@ class GigwaSearchReader {
             success: function(data) {
                 self.header.callSets = [];
                 self.header.callSetIds = [];
-                let selectedIndividuals = getSelectedIndividuals(1, false);  // FIXME : Add group 2 ? 
                 data.callSets.forEach(function (callset){
                 	// Filter for the selected individuals. `getSelectedIndividuals` returns an empty array if all of them are selected
-                	if (selectedIndividuals.includes(callset.name) || selectedIndividuals.length == 0){
+                	if (self.selectedIndividuals.includes(callset.name) || self.selectedIndividuals.length == 0){
 	                	self.header.callSets.push(callset);
 	                	self.header.callSetIds.push(callset.name);
                 	}
@@ -307,12 +307,25 @@ class GigwaSearchReader {
 	readFeatures(chr, bpStart, bpEnd){
 		let self = this;
 		return this.readHeader().then(function(header){
-			let query = buildSearchQuery(2, 0);
+			/*let query = buildSearchQuery(2, 0);
 			query.referenceName = igvGenomeRefTable[chr];
 			query.start = Math.max(parseInt(bpStart), query.start);
 			query.end = query.end < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), query.end);
 			query.pageSize = 2147483647;  // FIXME : ?
-			query.getGT = true;
+			query.getGT = true;*/
+			let searchStart = getSearchMinPosition();
+			let searchEnd = getSearchMaxPosition();
+			
+			let query = {
+				variantSetId: getProjectId(),
+		        searchMode: 2,
+		        getGT: true,
+		        pageSize: 2147483647,  // FIXME ?
+				referenceName: igvGenomeRefTable[chr],
+				start: Math.max(parseInt(bpStart), searchStart),
+				end: searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd),  // searchEnd = -1 -> all
+				callSetIds: self.header.callSetIds,
+			};
 			
 			return $.ajax({
 	            url: self.variantSearch,
