@@ -1286,14 +1286,16 @@
 	
 	// Global variables
 	var igvBrowser;
-	var igvGenomeListURL = "/gigwa2/res/genomes.json";
 	var igvGenomeList = [];  // Default genomes list
 	var igvGenomeListLoaded = false;
-	var igvDefaultGenome; // "osativa7";  // TODO : Make this dynamic
-	var igvVariantTracks;
-	var igvCheckGenomeExistence = true;
+	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	var igvCallSets;  // List of callsets
+	
+	// Configuration
+	var igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
+	var igvDefaultGenome;  // TODO : Make this dynamic
+	var igvGenomeListURL = "/gigwa2/res/genomes.json";  // URL to the default genomes list
 	
 	// ----- Utilities
 	
@@ -1338,12 +1340,14 @@
 		return !isNaN(str) && !isNaN(parseFloat(str));
 	}
 	
+	
+	// ----- Functions
+	
 	// Open the IGV modal, initialise the browser if a default genome is set
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
 		if (!igvGenomeListLoaded && igvGenomeListURL){
-			igvGenomeListLoaded = true;  // Set before the promise and not after it, to avoid duplicate requests if the modal is closed and reopened meanwhile
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
 				if (igvDefaultGenome){  // TODO : Make this dynamic
                 	igvSwitchGenome(igvDefaultGenome);
@@ -1354,6 +1358,7 @@
 	
 	// Load the default genomes list
 	function igvLoadGenomeList(url){
+		igvGenomeListLoaded = true;  // Set before the request to avoid duplicate requests if the modal is closed and reopened meanwhile
 		return $.ajax({
 			url,
             type: "GET",
@@ -1363,12 +1368,13 @@
                 "Authorization": "Bearer " + self.token,
             },
             success: function(data) {
-            	data.sort((a, b) => a.id > b.id ? 1 : -1);
+            	data.sort((a, b) => a.id > b.id ? 1 : -1);  // Sort by id
                 igvGenomeList = data;
                 igvUpdateGenomeMenu();
                 return igvGenomeList;
             },
             error: function(xhr, ajaxOptions, thrownError) {
+            	igvGenomeListLoaded = false;
                 handleError(xhr, thrownError);
             }
 		});
@@ -1376,7 +1382,7 @@
 	
 	// Update the default genomes list in the `load genome` menu
 	function igvUpdateGenomeMenu(){
-		// Discard the existing list, if applicable
+		// Discard the existing list, if it exists
 		$("#igvDefaultGenomesDivider").nextAll().remove();
 		
 		let menu = $("#igvGenomeMenu");
@@ -1391,16 +1397,17 @@
 	
 	// Load genome configuration(s) from JSON object
 	function igvLoadJSONGenome(config){
-		if (Array.isArray(config)){
+		if (Array.isArray(config)){  // Genome list
 			igvGenomeList.push(...config);
 			igvGenomeList.sort((a, b) => a.id > b.id ? 1 : -1);
 			igvUpdateGenomeMenu();
 			displayMessage("Loaded the genome list");
-		} else {
+		} else {  // Genome config
 			igvSwitchGenome(config);
 		}
 	}
 	
+	// Load a genome file from the modal
 	function igvLoadGenomeFromFile(){
 		let genomeFile = $("#igvGenomeFileInput").get(0).files[0];
 		let indexFile = $("#igvGenomeIndexFileInput").get(0).files[0];
@@ -1430,13 +1437,14 @@
 		}
 	}
 	
+	// Load a genome file by URL with the modal
 	function igvLoadGenomeFromURL(){
 		let genomeURL = $("#igvGenomeURLInput").val().trim();
 		let indexURL = $("#igvGenomeIndexURLInput").val().trim();
 		
 		let genomeURLObject, indexURLObject;
 		
-		try {
+		try {  // Check whether the genome URL is valid
 			genomeURLObject = new URL(genomeURL);
 		} catch (error){
 			displayMessage("Invalid genome file URL : " + genomeURL);
@@ -1444,7 +1452,7 @@
 		}
 		
 		if (indexURL.length > 0){
-			try {
+			try {  // Check whether the index URL is valid
 				indexURLObject = new URL(indexURL);
 			} catch (error){
 				displayMessage("Invalid index file URL : " + indexURL);
@@ -1452,7 +1460,8 @@
 			}
 		}
 		
-		let filename = filenameFromURL(genomeURLObject);		
+		let filename = filenameFromURL(genomeURLObject);
+		
 		// Load a JSON genome config
 		if (filename.endsWith(".json")){
 			$.ajax({
@@ -1480,6 +1489,9 @@
 				};
 			}
 			
+			// Check the genome file existence beforehand by sending a HEAD request
+			// Configurable with igvCheckGenomeExistence
+			// Default behaviour of IGV is to only download the index, and throwing errors only when zoomed enough to show the genome
 			if (igvCheckGenomeExistence){
 				$.ajax({
 					url: genomeURL,
@@ -1504,7 +1516,8 @@
 			genome = {...igvGenomeList.filter(config => config.id == genome)[0]};  // Shallow copy as we modify it later
 		}
 		
-		let tracks = genome.tracks;
+		// Take the default tracks separately to ensure the alias table is build before them loading
+		let tracks = genome.tracks || [];
 		genome.tracks = [];
 		
 		let promise;
@@ -1516,8 +1529,8 @@
 			promise = igvBrowser.loadGenome(genome);
 		}
 		
-		// Build the alias table
-		promise.then(function (){
+		return promise.then(async function (){
+			// Build the alias table
 			let targetNames = igvBrowser.genome.chromosomeNames;
 			let variantPrefix = getPrefix(referenceNames);
 			let targetPrefix = getPrefix(targetNames);
@@ -1536,23 +1549,18 @@
 				// Associate the target name to the variants reference name
 				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(/^0+/, "") == basename)[0];
 			}
-		});
-		
-		// Load the default tracks
-		promise.then(function (){
+			
+			// Load the default tracks
 			for (let trackConfig of tracks){
-				igvBrowser.loadTrack(trackConfig);
+				await igvBrowser.loadTrack(trackConfig);
 			}
+
+			// Add the variant tracks
+			await igvUpdateVariants();
 		});
-		
-		// Add the variant tracks
-		promise.then(function (){
-			igvUpdateVariants();
-		});
-		
-		return promise;
 	}
 	
+	// Load a track from a file with the modal
 	function igvLoadTrackFromFile(){
 		let trackFile = $("#igvTrackFileInput").get(0).files[0];
 		let indexFile = $("#igvTrackIndexFileInput").get(0).files[0];
@@ -1571,12 +1579,13 @@
 		igvLoadTrack(trackConfig);
 	}
 	
+	// Load a track by URL with the modal
 	function igvLoadTrackFromURL(){
 		let trackURL = $("#igvTrackURLInput").val().trim();
 		let indexURL = $("#igvTrackIndexURLInput").val().trim();
 		
 		let filename;
-		try {
+		try {  // Check whether the file URL is valid
 			filename = filenameFromURL(new URL(trackURL));  // Get the file name from the given URL
 		} catch (error){
 			displayMessage("Invalid track file URL : " + trackURL);
@@ -1584,7 +1593,7 @@
 		}
 		
 		if (indexURL.length > 0){
-			try {
+			try {  // Check whether the index URL is valid
 				indexURLObject = new URL(indexURL);
 			} catch (error){
 				displayMessage("Invalid index file URL : " + indexURL);
@@ -1607,12 +1616,14 @@
 		igvLoadTrack(trackConfig);
 	}
 	
+	// Load a track with a track config
 	function igvLoadTrack(config){
 		if (igvBrowser) {
 			igvBrowser.loadTrack(config);
 		}
 	}
 
+	// Create the IGV browser, provided a genome config
 	function igvCreateBrowser(genome){
 		let browserConfig = {
 			genome: genome,
@@ -1630,7 +1641,7 @@
 			$("#igvTracksDropdown ul").addClass("dropdown-menu").attr("hidden", "false");
 			
 			// Fix IGV browser resizing bug
-		    // Trigger a resize when we show the modal back
+		    // Trigger a resize on modal reopening if it bugged
 		    $("#igvPanel").on("shown.bs.modal", function(){
 				if (igvBrowser){
 					// Check whether it bugged (negative range)
@@ -1642,7 +1653,7 @@
 			});
 		}).catch(function (reason){
 			displayMessage("Error during the creation of the IGV browser : " + reason);
-			igv.removeAllBrowsers();
+			igv.removeAllBrowsers();  // Delete the parasite browser
 		});
 	}
 	
@@ -1651,6 +1662,7 @@
 		if (igvBrowser){
 			let trackIndividuals = igvSelectedIndividuals();
 			let trackConfigs = [];
+			
 			trackIndividuals.forEach (function(individuals, index, array) {
 				trackConfigs.push({
 					name: array.length > 1 ? "Group " + (index+1) : "Query",
@@ -1659,12 +1671,9 @@
 					sourceType: "file",
 					order: Number.MAX_SAFE_INTEGER,
 					visibilityWindow: 100000,
-					minHeight: 200,
 					reader: new GigwaSearchReader(
-							individuals,
-							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />",
-							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />",
-							token),
+							individuals, token,
+							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
 				});
 			})
 			
@@ -1672,25 +1681,30 @@
 			// Display bug when updating while hidden
 			// So we delay it until the modal is shown again
 			let updateFunction = async function (){
+				// Remove the existing variant tracks
 				if (igvVariantTracks){
 					for (let track of igvVariantTracks)
-						igvBrowser.removeTrack(track);
+						await igvBrowser.removeTrack(track);
 					igvVariantTracks = undefined;	
 				}
 				
+				// Add the new tracks
+				let availableHeight = igvAvailableHeight();
 				for (let config of trackConfigs){
+					config.height = Math.max(200, availableHeight / trackConfigs.length);
 					let track = await igvBrowser.loadTrack(config);
 					if (!igvVariantTracks) igvVariantTracks = [];
 					igvVariantTracks.push(track);
 				}
-				igvResizeVariantTracks();
 			}
 			
 			// Or .hasClass("in") ?
-			if ($("#igvPanel").is(":visible")){
+			if ($("#igvPanel").is(":visible")){  // Already visible -> update right away
 				return updateFunction();
-			} else {
-				$("#igvPanel").off("shown.bs.modal.updateVariants");  // In case several searches are made without showing the browser
+			} else {  // Not visible -> hook it on the modal opening event
+				// In case several searches are made without showing the browser, prevents obsolete requests from triggering
+				$("#igvPanel").off("shown.bs.modal.updateVariants");
+			
 				return new Promise(function(resolve, reject) {
 					$("#igvPanel").one("shown.bs.modal.updateVariants", function() {
 						updateFunction().then(resolve).catch(reject);
@@ -1707,27 +1721,25 @@
 			igv.removeBrowser(igvBrowser);
 			igvBrowser = undefined;
 			igvVariantTracks = undefined;
+			
+			// Disable the tracks menu again
 			$("#igvTracksDropdown").addClass("disabled");
 			$("#igvTracksDropdown ul").removeClass("dropdown-menu").attr("hidden", "true");
 		}
 	}
 	
-	// Automatically adjust the variant track's height to fit the available space
-	function igvResizeVariantTracks(){
-		if (igvVariantTracks){
-			let viewport = igvVariantTracks[0].trackView.viewports[0].$viewport;
-			let previous = viewport.prev();
-			let top = previous.offset().top + previous.outerHeight();  // Top limit : bottom of the track immediately above
-			let modal = $("#igvPanel div.modal-lg div.modal-content");
-			let bottom = modal.offset().top + modal.innerHeight();  // Bottom limit : size of the modal content
-			let height = bottom - top - 20;
-			for (let track of igvVariantTracks){
-				track.trackView.setTrackHeight(height / igvVariantTracks.length);
-			}
-		}
+	// Calculate the available height in the browser
+	function igvAvailableHeight(){
+		// NOTE : Hack with internal attributes, high risk of breaking in future IGV releases
+		let viewport = igvBrowser.trackViews[igvBrowser.trackViews.length - 1].viewports[0].$viewport;
+		let top = viewport.offset().top + viewport.outerHeight();  // Top limit : bottom of the track immediately above
+		let modal = $("#igvPanel div.modal-lg div.modal-content");
+		let bottom = modal.offset().top + modal.innerHeight();  // Bottom limit : size of the modal content
+		let height = bottom - top - 20;
+		return height;
 	}
 	
-	// Select a group of individuals to display.
+	// Select a group of individuals to display
 	function igvSelectGroup(){
 		igvUpdateVariants();
 	}

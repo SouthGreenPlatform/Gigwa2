@@ -245,10 +245,9 @@ function arrayToString(value, delim) {
 
 
 class GigwaSearchReader {
-	constructor(individuals, variantSearch, callsetSearch, token) {
+	constructor(individuals, token, variantSearch) {
 		this.selectedIndividuals = individuals;
 		this.variantSearch = variantSearch;
-		this.callsetSearch = callsetSearch;
 		this.token = token;
 	}
 	
@@ -271,45 +270,6 @@ class GigwaSearchReader {
         	else return 0;
         });
 		return this.header;
-		
-		/*let query = {
-			variantSetId: $('#project :selected').data("id"),
-			pageSize: 10000,
-		};
-		
-		return $.ajax({
-            url: self.callsetSearch,
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json;charset=utf-8",
-            headers: {
-                "Authorization": "Bearer " + self.token,
-            },
-            data: JSON.stringify(query),
-            success: function(data) {
-                self.header.callSets = [];
-                self.header.callSetIds = [];
-                data.callSets.forEach(function (callset){
-                	// Filter for the selected individuals. `getSelectedIndividuals` returns an empty array if all of them are selected
-                	if (self.selectedIndividuals.includes(callset.name) || self.selectedIndividuals.length == 0){
-	                	self.header.callSets.push(callset);
-	                	self.header.callSetIds.push(callset.name);
-                	}
-                });
-                
-                self.header.callSets.sort(function (a, b){
-                	if (a.name < b.name) return -1;
-                	if (a.name > b.name) return 1;
-                	else return 0;
-                });
-                return self.header.callSets;
-            },
-            error: function(xhr, ajaxOptions, thrownError) {
-                handleError(xhr, thrownError);
-            }
-        }).then(function (callsets){
-        	return self.header;
-        });*/
 	}
 	
 	readFeatures(chr, bpStart, bpEnd){
