@@ -221,7 +221,7 @@
 	        $('#searchPanel').fadeIn();
 	        
     	    $.ajax({	// load runs
-    	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+    	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
     	        type: "GET",
     	        dataType: "json",
     	        contentType: "application/json;charset=utf-8",
@@ -446,7 +446,7 @@
 	                }
 	                // project id is stored in each <option> tag, project name is displayed. 
 	                // project id is formatted as follows: moduleId§projId
-	                // we can retrieve it with encodeURIComponent($('#project :selected').data("id"))
+	                // we can retrieve it with encodeURIComponent(getProjectId())
 	                $('#project').html(option).selectpicker('refresh');
 	                if (passedProject !== null) {
 	                    // sometimes a # appears at the end of the url so we remove it with regexp
@@ -487,7 +487,7 @@
 
 	function loadVariantTypes() {
 	    $.ajax({
-	        url: variantTypesListURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+	        url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
@@ -519,7 +519,7 @@
 	        },
 	        data: JSON.stringify({
 	            "referenceSetId": $('#module').val(),
-	            "variantSetId": $('#project :selected').data("id"),
+	            "variantSetId": getProjectId(),
 	            "md5checksum": null,
 	            "accession": null,
 	            "pageSize": null,
@@ -561,13 +561,14 @@
 	            "Authorization": "Bearer " + token
 	        },
 	        data: JSON.stringify({
-	            "variantSetId": $('#project :selected').data("id"),
+	            "variantSetId": getProjectId(),
 	            "name": null,
 	            "pageSize": null,
 	            "pageToken": null
 	        }),
 	        success: function(jsonResult) {
 	            var callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
+	            igvCallSets = callSetResponse;
 	            var indOpt = [];
 
 	            var gotMetaData = false;
@@ -695,7 +696,7 @@
 
 	function loadVariantEffects() {
 	    $.ajax({
-	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent($('#project :selected').data("id")),
+	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent(getProjectId()),
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
@@ -726,7 +727,7 @@
 
 	function loadNumberOfAlleles() {
 	    $.ajax({
-	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.NUMBER_ALLELE_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.NUMBER_ALLELE_PATH%>" />/' + encodeURIComponent(getProjectId()),
 	        type: "GET",
 	        dataType: "json",
 	        async:false,
@@ -753,7 +754,7 @@
 	
 	function readPloidyLevel() {
 	    $.ajax({
-	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent($('#project :selected').data("id")),
+	        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
 	        type: "GET",
 	        dataType: "json",
 	        contentType: "application/json;charset=utf-8",
@@ -1147,7 +1148,7 @@
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 		var data = {
-            "variantSetId": $('#project :selected').data("id"),
+            "variantSetId": getProjectId(),
 
             "referenceName": getSelectedSequences(),
             "selectedVariantTypes": getSelectedTypes(),
@@ -1292,6 +1293,7 @@
 	var igvVariantTracks;
 	var igvCheckGenomeExistence = true;
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
+	var igvCallSets;  // List of callsets
 	
 	// ----- Utilities
 	
@@ -1526,8 +1528,8 @@
 				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
 				igvBrowser.genome.chrAliasTable[zeroname] = target;  // 02 -> target
 				igvBrowser.genome.chrAliasTable[basename] = target;  // 2 -> target
-				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;  // chr2 -> target
-				igvBrowser.genome.chrAliasTable["chr" + basename] = target;  // chr02 -> target
+				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;  // chr02 -> target
+				igvBrowser.genome.chrAliasTable["chr" + basename] = target;  // chr2 -> target
 				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;  // With prefix used by variants
 				igvBrowser.genome.chrAliasTable[variantPrefix + basename] = target;
 				
@@ -1688,8 +1690,9 @@
 			if ($("#igvPanel").is(":visible")){
 				return updateFunction();
 			} else {
+				$("#igvPanel").off("shown.bs.modal.updateVariants");  // In case several searches are made without showing the browser
 				return new Promise(function(resolve, reject) {
-					$("#igvPanel").one("shown.bs.modal", function() {
+					$("#igvPanel").one("shown.bs.modal.updateVariants", function() {
 						updateFunction().then(resolve).catch(reject);
 					});
 				});

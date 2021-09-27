@@ -260,11 +260,19 @@ class GigwaSearchReader {
 		}
 	}
 	
-	updateHeader(){
-		let self = this;
-		self.header = {};
+	async updateHeader(){
+		this.header = {};
+		this.header.callSets = igvCallSets.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
+		this.header.callSetIds = this.header.callSets.map(callset => callset.name);
 		
-		let query = {
+		this.header.callSets.sort(function (a, b){
+        	if (a.name < b.name) return -1;
+        	if (a.name > b.name) return 1;
+        	else return 0;
+        });
+		return this.header;
+		
+		/*let query = {
 			variantSetId: $('#project :selected').data("id"),
 			pageSize: 10000,
 		};
@@ -301,7 +309,7 @@ class GigwaSearchReader {
             }
         }).then(function (callsets){
         	return self.header;
-        });
+        });*/
 	}
 	
 	readFeatures(chr, bpStart, bpEnd){
