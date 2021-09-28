@@ -723,7 +723,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		MongoCollection collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
-        String header = "variant" + "\t" + "chrom" + "\t" + "pos";
+        String header = "variant\talleles\tchrom\tpos";
         resp.getWriter().append(header);
         for (String individual : individualPositions.keySet())
             resp.getWriter().write(("\t" + individual));
@@ -748,7 +748,7 @@ public class GigwaRestController extends ControllerInterface {
 		                VariantRunData vrd = runsToWrite.get(0);
 
 		                ReferencePosition rp = vrd.getReferencePosition();
-		                sb.append(idOfVarToWrite + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
+		                sb.append(idOfVarToWrite + "\t" + StringUtils.join((vrd).getKnownAlleleList(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
 
@@ -795,17 +795,12 @@ public class GigwaRestController extends ControllerInterface {
 		                            genotypeCounts.put(genotype, gtCount);
 		                        }
 		                    }
-	
-		                    String exportedGT = genotypeStringCache.get(mostFrequentGenotype);
-		                    if (exportedGT == null) {
-		                    	exportedGT = mostFrequentGenotype == null ? missingGenotype : ("\t" + StringUtils.join(vrd.safelyGetAllelesFromGenotypeCode(mostFrequentGenotype, mongoTemplate), "/"));
-		                    	genotypeStringCache.put(mostFrequentGenotype, exportedGT);
-		                    }
-		                    sb.append(exportedGT);
+
+		                    sb.append("\t" + mostFrequentGenotype);
 		                    writtenGenotypeCount++;
 	
 		                    if (genotypeCounts.size() > 1)
-		                        LOG.info("Dissimilar genotypes found for variant " + /*(variantId == null ? variant.getId() : */idOfVarToWrite/*)*/ + ", individual " + individual + ". Exporting most frequent: " + new String(exportedGT) + "\n");
+		                        LOG.info("Dissimilar genotypes found for variant " + /*(variantId == null ? variant.getId() : */idOfVarToWrite/*)*/ + ", individual " + individual + ". Exporting most frequent: " + mostFrequentGenotype + "\n");
 		                }
 	
 		                while (writtenGenotypeCount < individualPositions.size()) {
