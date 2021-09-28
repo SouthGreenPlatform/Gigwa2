@@ -58,6 +58,10 @@ function getProjectId(){
 	return $('#project :selected').data("id");
 }
 
+function getModuleName(){
+	return $('#module').val();
+}
+
 // function to get url param
 function $_GET(param) {
     var vars = {};

@@ -60,7 +60,7 @@
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script>
-<script type="text/javascript" src="js/gigwaSearchReader.js"></script>
+<script type="text/javascript" src="js/gigwaGa4ghSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
@@ -203,6 +203,7 @@
 	        checkBrowsingBoxAccordingToLocalVariable();
 	        $('input#browsingAndExportingEnabled').change();
 	        igvRemoveExistingBrowser();
+	        igvChangeModule(referenceset)
 	    });
 	    
 	    $('#project').on('change', function() {
@@ -1291,11 +1292,13 @@
 	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	var igvCallSets;  // List of callsets
+	var igvCurrentModule;  // Currently loaded module
 	
 	// Configuration
+	var igvDefaultGenome;
 	var igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
-	var igvDefaultGenome;  // TODO : Make this dynamic
 	var igvGenomeListURL = "/gigwa2/res/genomes.json";  // URL to the default genomes list
+	var igvDefaultMatchingGenome = true;  // True to load a genome with the same name as the module if it exists by default
 	
 	// ----- Utilities
 	
@@ -1343,16 +1346,29 @@
 	
 	// ----- Functions
 	
+	// Initialize the IGV functionalities for a given module
+	function igvChangeModule(name){
+		igvDefaultGenome = localStorage.getItem("igvDefaultGenome::" + name);
+		if (!igvDefaultGenome){  // Not by name : check if stored by config (url)
+			let jsonValue = localStorage.getItem("igvDefaultGenomeConfig::" + name);
+			if (jsonValue){
+				igvDefaultGenome = JSON.parse(jsonValue);
+			} else {  // Not stored at all : Default to the matching genome if the list is loaded (otherwise delayed to the list loading)
+				igvDefaultGenome = igvMatchingGenome();
+			}
+		}
+	}
+	
 	// Open the IGV modal, initialise the browser if a default genome is set
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
 		if (!igvGenomeListLoaded && igvGenomeListURL){
 			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
-				if (igvDefaultGenome){  // TODO : Make this dynamic
-                	igvSwitchGenome(igvDefaultGenome);
-                }
+				igvCheckModuleChange();
 			});
+		} else {
+			igvCheckModuleChange();
 		}
 	}
 	
@@ -1378,6 +1394,37 @@
                 handleError(xhr, thrownError);
             }
 		});
+	}
+	
+	// Check whether the loaded module changed and do all actions that apply (load the default genome, set the current module)
+	function igvCheckModuleChange(){
+		if (getModuleName() != igvCurrentModule){
+			igvLoadDefaultGenome();
+			igvCurrentModule = getModuleName();
+		}
+	}
+	
+	// Find a genome that matches the module name if it exists and if igvDefaultMatchingGenome is set to true
+	// Returns undefined if no matching genome exists, if the configuration forbids it or if the genome list is not loaded
+	function igvMatchingGenome(){
+		if (igvDefaultMatchingGenome && igvGenomeListLoaded){
+        	let moduleName = getModuleName();
+        	return igvGenomeList.find(genome => genome.id == moduleName).id;
+        } else {
+        	return undefined;
+        }
+	}
+	
+	// Load the default genome, or the matching one if applicable
+	function igvLoadDefaultGenome(){
+		if (igvDefaultGenome){
+        	igvSwitchGenome(igvDefaultGenome);
+        } else {  // Load the matching genome if applicable
+        	let genome = igvMatchingGenome();
+        	if (genome){
+        		igvSwitchGenome(genome);
+        	}
+        }
 	}
 	
 	// Update the default genomes list in the `load genome` menu
@@ -1512,9 +1559,15 @@
 	
 	// Change the current genome, create the browser if it doesn't exist
 	function igvSwitchGenome(genome){
-		if (typeof genome == "string"){
-			genome = {...igvGenomeList.filter(config => config.id == genome)[0]};  // Shallow copy as we modify it later
-		}
+		let moduleName = getModuleName();
+		if (typeof genome == "string"){  // Genome ID in the default list
+			localStorage.removeItem("igvDefaultGenomeConfig::" + moduleName);
+			localStorage.setItem("igvDefaultGenome::" + moduleName, genome);
+			genome = {...igvGenomeList.find(config => config.id == genome)};  // Shallow copy as we modify it later
+		} else if (typeof genome.fastaURL == "string"){  // By URL
+			localStorage.removeItem("igvDefaultGenome::" + moduleName);
+			localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));
+		}  // Impossible to save and reload with local files
 		
 		// Take the default tracks separately to ensure the alias table is build before them loading
 		let tracks = genome.tracks || [];
@@ -1632,6 +1685,7 @@
 			queryParametersSupported: true,
         	loadDefaultGenomes: false,
         	showSampleNames: true,
+        	sampleNameViewportWidth: 120,
 		};
 		
 		return igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){

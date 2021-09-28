@@ -34,7 +34,7 @@ class GigwaVariant {
         self.calls = {};
         if (data.calls) {
             data.calls.forEach(function (call) {
-            	if (call.genotype.length > 0){
+            	if (call.genotype.length > 0){  // Filter out missing data
             		self.calls[call.callSetId] = call;
             	}
             });
