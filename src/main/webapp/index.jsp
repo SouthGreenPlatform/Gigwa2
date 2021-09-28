@@ -60,7 +60,7 @@
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script>
-<script type="text/javascript" src="js/gigwaGa4gh)SearchReader.js"></script>
+<script type="text/javascript" src="js/gigwaGa4ghSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
