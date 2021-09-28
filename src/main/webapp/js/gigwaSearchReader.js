@@ -32,14 +32,12 @@ class GigwaVariant {
         self.info = info;
         
         self.calls = {};
-        var order = 0, id;
         if (data.calls) {
             data.calls.forEach(function (call) {
-                id = call.callSetId;
-                self.calls[id] = call;
-                order++;
-
-            })
+            	if (call.genotype.length > 0){
+            		self.calls[call.callSetId] = call;
+            	}
+            });
         }
         self.init();
     }
@@ -267,7 +265,7 @@ class GigwaSearchReader {
 		this.header.callSets.sort(function (a, b){
         	if (a.name < b.name) return -1;
         	if (a.name > b.name) return 1;
-        	else return 0;
+        	return 0;
         });
 		return this.header;
 	}
@@ -275,12 +273,7 @@ class GigwaSearchReader {
 	readFeatures(chr, bpStart, bpEnd){
 		let self = this;
 		return this.readHeader().then(function(header){
-			/*let query = buildSearchQuery(2, 0);
-			query.referenceName = igvGenomeRefTable[chr];
-			query.start = Math.max(parseInt(bpStart), query.start);
-			query.end = query.end < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), query.end);
-			query.pageSize = 2147483647;  // FIXME : ?
-			query.getGT = true;*/
+			// let query = buildSearchQuery(2, 0);
 			let searchStart = getSearchMinPosition();
 			let searchEnd = getSearchMaxPosition();
 			

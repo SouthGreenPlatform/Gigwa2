@@ -2078,12 +2078,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
 								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
-									<img title="Variant density chart" src="images/densityIcon.gif" height="25" width="54" />
+									<img title="Variant density chart" src="images/density.webp" height="25" width="25" />
 								</button>
 								
 								<!-- IGV.js browser button -->
-								<button title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
-									IGV browser
+								<button style="padding:2px;" title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
+									<img title="IGV genome browser" src="images/igvjs.png" height="25" width="25" />
 								</button>
 								
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
@@ -2135,7 +2135,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 12px;">
 								External tools
 								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
-								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
+								<!-- <img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" /> -->
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>
