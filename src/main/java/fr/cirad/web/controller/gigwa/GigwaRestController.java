@@ -37,12 +37,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
@@ -55,6 +57,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchCallSetsRequest;
@@ -86,10 +89,14 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.mongodb.BasicDBList;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
+import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
+import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
@@ -99,16 +106,22 @@ import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
+import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
+import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
+import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaDensityRequest;
+import fr.cirad.model.GigwaIgvRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.base.IRoleDefinition;
+import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
@@ -120,7 +133,6 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -181,6 +193,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DROP_TEMP_COL_PATH = "/dropTempCol";
 	static public final String CLEAR_TOKEN_PATH = "/clearToken";
 	static public final String DENSITY_DATA_PATH = "/densityData";
+	static public final String IGV_DATA_PATH = "/igvData";
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
 	static public final String DISTINCT_SEQUENCE_SELECTED_PATH = "/distinctSelectedSequences";
 	static public final String EXPORT_DATA_PATH = "/exportData";
@@ -641,6 +654,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * get density data
 	 *
 	 * @param request
+	 * @param resp
 	 * @param gdr
 	 * @param variantSetId
 	 * @return Map<String, Map<Long, Long>> containing density data in JSON
@@ -672,7 +686,153 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	/**
-	 * get density data
+	 * get IGV data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gir
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = IGV_DATA_PATH, notes = "get IGV data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
+		String token = tokenManager.readToken(request);
+
+        String info[] = GigwaSearchVariantsRequest.getInfoFromId(gir.getVariantSetId(), 2);
+        if (!tokenManager.canUserReadDB(token, info[0])) {
+			build404Response(resp);
+			return;
+        }
+        
+		final ProgressIndicator progress = new ProgressIndicator("igvViz_" + token, new String[] {"Preparing data for visualization"});
+		ProgressIndicator.registerProgressIndicator(progress);
+        
+		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
+		
+		Map<String, Integer> individualPositions = new LinkedHashMap<>();
+		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
+			individualPositions.put(ind, individualPositions.size());
+		
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
+        MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
+        BasicDBList variantQueryDBList = (BasicDBList) ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]));
+
+		MongoCollection collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
+
+        String header = "variant" + "\t" + "chrom" + "\t" + "pos";
+        resp.getWriter().append(header);
+        for (String individual : individualPositions.keySet())
+            resp.getWriter().write(("\t" + individual));
+        resp.getWriter().write("\n");
+
+		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
+		for (GenotypingSample gs : samples)
+			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
+
+		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
+			public void run() {				
+                HashMap<Object, Integer> genotypeCounts = new HashMap<Object, Integer>();	// will help us to keep track of missing genotypes
+                for (List<VariantRunData> runsToWrite : markerRunsToWrite) {
+
+					if (runsToWrite == null || runsToWrite.isEmpty())
+						continue;
+
+					String idOfVarToWrite = runsToWrite.get(0).getVariantId();
+					StringBuffer sb = new StringBuffer();
+					try
+					{
+		                VariantRunData vrd = runsToWrite.get(0);
+
+		                ReferencePosition rp = vrd.getReferencePosition();
+		                sb.append(idOfVarToWrite + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
+	
+		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
+
+	                	for (VariantRunData run : runsToWrite) {
+	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
+								SampleGenotype sampleGenotype = run.getSampleGenotypes().get(sampleId);
+	                            String gtCode = sampleGenotype.getCode();
+	                            String individualId = sampleIdToIndividualMap.get(sampleId);
+	                            
+								if (gtCode == null/* || !VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individuals1, new HashMap<>(), individuals2, new HashMap<>())*/)
+									continue;	// skip genotype
+								
+								int individualIndex = individualPositions.get(individualId);
+								if (individualGenotypes[individualIndex] == null)
+									individualGenotypes[individualIndex] = new LinkedHashSet<String>();
+								individualGenotypes[individualIndex].add(gtCode);
+	                        }
+	                    }
+
+		                int writtenGenotypeCount = 0;
+		                
+		                HashMap<String, String> genotypeStringCache = new HashMap<>();
+		                String missingGenotype = "";
+						for (String individual : individualPositions.keySet() /* we use this list because it has the proper ordering */) {
+		                    int individualIndex = individualPositions.get(individual);
+		                    while (writtenGenotypeCount < individualIndex) {
+		                        sb.append(missingGenotype);
+		                        writtenGenotypeCount++;
+		                    }
+
+		                    genotypeCounts.clear();
+		                    int highestGenotypeCount = 0;
+		                    String mostFrequentGenotype = null;
+		                    if (individualGenotypes[individualIndex] != null) {
+		                        for (String genotype : individualGenotypes[individualIndex]) {
+		                            if (genotype == null)
+		                                continue;	/* skip missing genotypes */
+	
+		                            int gtCount = 1 + Helper.getCountForKey(genotypeCounts, genotype);
+		                            if (gtCount > highestGenotypeCount) {
+		                                highestGenotypeCount = gtCount;
+		                                mostFrequentGenotype = genotype;
+		                            }
+		                            genotypeCounts.put(genotype, gtCount);
+		                        }
+		                    }
+	
+		                    String exportedGT = genotypeStringCache.get(mostFrequentGenotype);
+		                    if (exportedGT == null) {
+		                    	exportedGT = mostFrequentGenotype == null ? missingGenotype : ("\t" + StringUtils.join(vrd.safelyGetAllelesFromGenotypeCode(mostFrequentGenotype, mongoTemplate), "/"));
+		                    	genotypeStringCache.put(mostFrequentGenotype, exportedGT);
+		                    }
+		                    sb.append(exportedGT);
+		                    writtenGenotypeCount++;
+	
+		                    if (genotypeCounts.size() > 1)
+		                        LOG.info("Dissimilar genotypes found for variant " + /*(variantId == null ? variant.getId() : */idOfVarToWrite/*)*/ + ", individual " + individual + ". Exporting most frequent: " + new String(exportedGT) + "\n");
+		                }
+	
+		                while (writtenGenotypeCount < individualPositions.size()) {
+		                    sb.append(missingGenotype);
+		                    writtenGenotypeCount++;
+		                }
+		                sb.append("\n");
+			            resp.getWriter().write(sb.toString());
+	                }
+					catch (Exception e)
+					{
+						if (progress.getError() == null)	// only log this once
+							LOG.debug("Unable to export " + idOfVarToWrite, e);
+						progress.setError("Unable to export " + idOfVarToWrite + ": " + e.getMessage());
+					}
+				}
+			}
+		};
+
+		Document varQuery = !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document();
+		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, varQuery, samples, true, 100, writingThread, null, null, progress);
+		exportManager.readAndWrite();
+		progress.markAsComplete();
+	}
+
+	/**
+	 * get VCF field plot data
 	 *
 	 * @param request
 	 * @param gdr
@@ -686,8 +846,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
+	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
