@@ -60,7 +60,7 @@
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script>
-<script type="text/javascript" src="js/gigwaGa4ghSearchReader.js"></script>
+<script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
@@ -1040,7 +1040,7 @@
 	    	markInconsistentGenotypesAsMissing();
 
 	    if (!errorEncountered)
-	        $('#variantDetailPanel').modal('show');
+	        $('#variantDetailPanel').modal('show').css({"z-index": 1100});
 	}
 
 	// create the annotation detail panel 
@@ -1727,7 +1727,8 @@
 					visibilityWindow: 100000,
 					reader: new GigwaSearchReader(
 							individuals, token,
-							"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
+							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
+							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />"),
 				});
 			})
 			
