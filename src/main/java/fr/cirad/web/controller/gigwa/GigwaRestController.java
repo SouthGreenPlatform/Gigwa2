@@ -107,6 +107,7 @@ import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
@@ -758,7 +759,7 @@ public class GigwaRestController extends ControllerInterface {
 	                            String gtCode = sampleGenotype.getCode();
 	                            String individualId = sampleIdToIndividualMap.get(sampleId);
 	                            
-								if (gtCode == null/* || !VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individuals1, new HashMap<>(), individuals2, new HashMap<>())*/)
+								if (gtCode == null/* || !VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds(), gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds2())*/)
 									continue;	// skip genotype
 								
 								int individualIndex = individualPositions.get(individualId);
@@ -770,7 +771,6 @@ public class GigwaRestController extends ControllerInterface {
 
 		                int writtenGenotypeCount = 0;
 		                
-		                HashMap<String, String> genotypeStringCache = new HashMap<>();
 		                String missingGenotype = "";
 						for (String individual : individualPositions.keySet() /* we use this list because it has the proper ordering */) {
 		                    int individualIndex = individualPositions.get(individual);
@@ -796,11 +796,11 @@ public class GigwaRestController extends ControllerInterface {
 		                        }
 		                    }
 
-		                    sb.append("\t" + mostFrequentGenotype);
+		                    sb.append("\t" + (mostFrequentGenotype == null ? missingGenotype : mostFrequentGenotype));
 		                    writtenGenotypeCount++;
 	
 		                    if (genotypeCounts.size() > 1)
-		                        LOG.info("Dissimilar genotypes found for variant " + /*(variantId == null ? variant.getId() : */idOfVarToWrite/*)*/ + ", individual " + individual + ". Exporting most frequent: " + mostFrequentGenotype + "\n");
+		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". Exporting most frequent: " + mostFrequentGenotype + "\n");
 		                }
 	
 		                while (writtenGenotypeCount < individualPositions.size()) {
