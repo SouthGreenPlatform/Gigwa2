@@ -231,7 +231,7 @@ function arrayToString(value, delim) {
 }
 
 
-// Implementation of the IGV Reader interface fo the Gigwa's igvData service
+// Implementation of the IGV Reader interface for the Gigwa's igvData service
 class GigwaSearchReader {
 	constructor(individuals, token, variantSearch) {
 		this.selectedIndividuals = individuals;
@@ -251,11 +251,11 @@ class GigwaSearchReader {
 	async updateHeader(){
 		this.header = {};
 		this.header.callSets = igvCallSets.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
-		this.header.callSetIds = this.header.callSets.map(callset => callset.name);
+		this.header.callSetIds = this.header.callSets.map(callset => callset.id);
 		
 		this.header.callSets.sort(function (a, b){
-			if (a.name < b.name) return -1;
-			if (a.name > b.name) return 1;
+			if (a.id < b.id) return -1;
+			if (a.id > b.id) return 1;
 			return 0;
 		});
 		return this.header;
@@ -303,15 +303,21 @@ class GigwaSearchReader {
 					cols[title] = index;
 				});
 				
+				let individualCols = {};
+				self.header.callSets.forEach(function (callset){
+					individualCols[callset.id] = cols[callset.name];
+				})
+				
 				// Parse the actual data
 				rows.forEach(function (row){
 					// Build the calls object (parse the genotypes)
 					let calls = {};
 					self.header.callSetIds.forEach(function (id){
-						if (row[cols[id]].length > 0){
-							calls[projectId + id] = {
-								callSetId: projectId + id,
-								genotype: row[cols[id]].split("/").map(val => parseInt(val)),
+						let genotype = row[individualCols[id]];
+						if (genotype.length > 0){
+							calls[id] = {
+								callSetId: id,
+								genotype: genotype.split("/").map(val => parseInt(val)),
 								info: {},
 							};
 						}
@@ -324,6 +330,7 @@ class GigwaSearchReader {
 						variants.push(variant);
 					}
 				});
+				
 				return variants;
 			});
 		});
