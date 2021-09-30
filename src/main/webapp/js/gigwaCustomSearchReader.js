@@ -277,6 +277,8 @@ class GigwaSearchReader {
 				callSetIds: self.header.callSetIds,
 			};
 			
+			displayProcessProgress(2, "igvViz_" + token, function() {/*alert(1)*/});
+				
 			return $.ajax({
 				url: self.variantSearch,
 				type: "POST",

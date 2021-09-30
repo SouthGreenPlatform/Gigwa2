@@ -702,15 +702,22 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "text/plain", consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
-		String token = tokenManager.readToken(request);
+		long before = System.currentTimeMillis();
 
+		String token = tokenManager.readToken(request);
         String info[] = GigwaSearchVariantsRequest.getInfoFromId(gir.getVariantSetId(), 2);
         if (!tokenManager.canUserReadDB(token, info[0])) {
 			build404Response(resp);
 			return;
         }
         
-		final ProgressIndicator progress = new ProgressIndicator("igvViz_" + token, new String[] {"Preparing data for visualization"});
+        String processId = "igvViz_" + token;
+        boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
+        if (fPreviousQueryRunning) {
+        	ProgressIndicator progress = ProgressIndicator.get(processId);
+        	progress.abort();
+        }
+		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
 		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
@@ -825,8 +832,10 @@ public class GigwaRestController extends ControllerInterface {
 		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, varQuery, samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
+		
+		LOG.debug("getSelectionIgvData processed range " + gir.getStart() + " - " + gir.getEnd() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
 	}
-	
+
 	/**
 	 * Get the genome configs for the IGV.js browser
 	 */
