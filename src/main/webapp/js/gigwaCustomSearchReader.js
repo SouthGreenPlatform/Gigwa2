@@ -3,7 +3,16 @@
 const knownAltBases = new Set(["A", "C", "T", "G"].map(c => c.charCodeAt(0)))
 
 
+// Object compatible with the IGV's Variant object, to work around the exports
 class GigwaVariant {
+	/**
+	 * id : Variant unique id (in the form module§project§variant)
+	 * reference : Chromosome the variant is on
+	 * position : Position of the variant on the chromosome
+	 * refAllele : Reference allele
+	 * altAlleles : Alternate alleles, as a comma-separated string
+	 * calls : Dictionary of callSetId => {callSetId, genotype, info}
+	 */
 	constructor(id, reference, position, refAllele, altAlleles, calls) {
 		let self = this;
 		self.id = id;
@@ -13,21 +22,6 @@ class GigwaVariant {
 		self.referenceBases = refAllele;
 		self.alternateBases = altAlleles;
 		self.names = [];
-		//self.referenceBases = data.referenceBases;
-		//self.alternateBases = arrayToString(data.alternateBases);
-		/*let info = {}
-		if (data.info) {
-			Object.keys(data.info).forEach(function (key) {
-				var value, valueArray = data.info[key];
-				if (Array.isArray(valueArray)) {
-					value = valueArray.join(",");
-				} else {
-					value = valueArray;
-				}
-				info[key] = value;
-			});
-		}
-		self.info = info;*/
 		
 		self.info = {};
 		self.calls = calls;
@@ -173,12 +167,13 @@ class GigwaVariant {
 			fields.push({name: "Heterozygosity", value: this.heterozygosity});
 		}
 
-		if (this.info) {
+		// No info in this service
+		/*if (this.info) {
 			fields.push({html: '<hr style="border-top: dotted 1px;border-color: #c9c3ba" />'});
 			for (let key of Object.keys(this.info)) {
 				fields.push({name: key, value: arrayToString(decodeURIComponent(this.info[key]))});
 			}
-		}
+		}*/
 
 		return fields;
 
@@ -236,6 +231,7 @@ function arrayToString(value, delim) {
 }
 
 
+// Implementation of the IGV Reader interface fo the Gigwa's igvData service
 class GigwaSearchReader {
 	constructor(individuals, token, variantSearch) {
 		this.selectedIndividuals = individuals;
@@ -251,6 +247,7 @@ class GigwaSearchReader {
 		}
 	}
 	
+	// Retrieve the "header" data (the callsets)
 	async updateHeader(){
 		this.header = {};
 		this.header.callSets = igvCallSets.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
@@ -264,6 +261,7 @@ class GigwaSearchReader {
 		return this.header;
 	}
 	
+	// Read features on chr from bpStart to bpEnd
 	readFeatures(chr, bpStart, bpEnd){
 		let self = this;
 		return self.readHeader().then(function(header){
@@ -294,15 +292,20 @@ class GigwaSearchReader {
 			}).then(function (data){
 				let variants = [];
 				let projectId = getProjectId() + "§";
+				
+				// Split the tabular data in rows and columns, filtering out the empty lines
 				let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
 				let header = rows.shift();
 				
+				// Associate column titles to indices
 				let cols = {};
 				header.forEach(function (title, index){
 					cols[title] = index;
 				});
 				
+				// Parse the actual data
 				rows.forEach(function (row){
+					// Build the calls object (parse the genotypes)
 					let calls = {};
 					self.header.callSetIds.forEach(function (id){
 						if (row[cols[id]].length > 0){

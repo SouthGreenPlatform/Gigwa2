@@ -1287,7 +1287,8 @@
 	
 	// Global variables
 	var igvBrowser;
-	var igvGenomeList = [];  // Default genomes list
+	var igvGenomeList = [];  // Default genomes list, with sections
+	var igvFlatGenomeList = [];  // Default genomes list, flat
 	var igvGenomeListLoaded = false;
 	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
@@ -1297,7 +1298,7 @@
 	// Configuration
 	var igvDefaultGenome;
 	var igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
-	var igvGenomeListURL = "/gigwa2/res/genomes.json";  // URL to the default genomes list
+	var igvGenomeConfigURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_CONFIG_PATH %>" />';  // URL to the default genomes list
 	var igvDefaultMatchingGenome = true;  // True to load a genome with the same name as the module if it exists by default
 	
 	// ----- Utilities
@@ -1363,8 +1364,8 @@
 	function igvOpenDialog(){
 		$('#igvPanel').modal('show');
 		
-		if (!igvGenomeListLoaded && igvGenomeListURL){
-			igvLoadGenomeList(igvGenomeListURL).then(function (genomeList){
+		if (!igvGenomeListLoaded && igvGenomeConfigURL){
+			igvLoadGenomeList().then(function (genomeList){
 				igvCheckModuleChange();
 			});
 		} else {
@@ -1372,27 +1373,63 @@
 		}
 	}
 	
-	// Load the default genomes list
-	function igvLoadGenomeList(url){
-		igvGenomeListLoaded = true;  // Set before the request to avoid duplicate requests if the modal is closed and reopened meanwhile
-		return $.ajax({
-			url,
-            type: "GET",
-            dataType: "json",
-            contentType: "application/json;charset=utf-8",
-            headers: {
-                "Authorization": "Bearer " + self.token,
-            },
-            success: function(data) {
-            	data.sort((a, b) => a.id > b.id ? 1 : -1);  // Sort by id
-                igvGenomeList = data;
-                igvUpdateGenomeMenu();
-                return igvGenomeList;
-            },
-            error: function(xhr, ajaxOptions, thrownError) {
-            	igvGenomeListLoaded = false;
-                handleError(xhr, thrownError);
-            }
+	/* Load the default genomes list
+	   More or less equivalent to this, but all requests are asynchronous :
+		|	configList = get(igvGenomeConfigURL)
+		|	igvGenomeList = []
+		|	for config of configList:
+		|		genomeList = get(config.url)
+		|		igvGenomeList.push({
+		|			name: config.name,
+		|			url: config.url,
+		|			genomes: genomeList,
+		|		})
+		|	igvUpdateGenomeMenu()
+		|	return igvGenomeList */
+	async function igvLoadGenomeList(configURL){
+		// Set before the requests to avoid duplicate requests if the modal is closed and reopened meanwhile
+		igvGenomeListLoaded = true;
+		
+		// Get the list of genome lists to download, then…
+		return await $.get(igvGenomeConfigURL).then(function (configList){
+			// Wait until all downloads completed (successfully or not)
+			return Promise.allSettled(
+				// For each config, download the genome list
+				configList.map(
+					config => $.ajax({
+						url: config.url,
+						method: "GET",
+						dataType: "json",
+					}).then(function(genomeList){
+						genomeList.sort((a, b) => a.id > b.id ? 1 : -1);
+						return {
+							name: config.name,
+							url: config.url,
+							genomes: genomeList,
+						}
+					}, function (xhr, ajaxOption, thrownError){
+						// Error handler for each genome list download : show an error but do not abort
+						handleError(xhr, thrownError);
+					})
+				)
+			).then(function (results){
+				// Once all requests completed
+				// results is an array that contains the results of all promises in Promise.allSettled
+				// Filter out the failed requests and keep only their value (the genome list + name + url above)
+				igvGenomeList = results.filter(result => result.status == "fulfilled").map(result => result.value);
+				
+				// Flatten the genome list for search and IGV
+				igvFlatGenomeList = [];
+				igvGenomeList.forEach(function (listConfig){
+					igvFlatGenomeList = igvFlatGenomeList.concat(listConfig.genomes);
+				});
+				
+				igvUpdateGenomeMenu();
+				return igvGenomeList;
+			});
+		}, function (xhr, ajaxOption, thrownError){  // Error loading the genome list configs : show an error, abort
+			igvGenomeListLoaded = false;
+			handleError(xhr, thrownError);
 		});
 	}
 	
@@ -1409,7 +1446,7 @@
 	function igvMatchingGenome(){
 		if (igvDefaultMatchingGenome && igvGenomeListLoaded){
         	let moduleName = getModuleName();
-        	return igvGenomeList.find(genome => genome.id == moduleName).id;
+        	return igvFlatGenomeList.find(genome => genome.id == moduleName).id;
         } else {
         	return undefined;
         }
@@ -1433,20 +1470,34 @@
 		$("#igvDefaultGenomesDivider").nextAll().remove();
 		
 		let menu = $("#igvGenomeMenu");
-		for (let genome of igvGenomeList){
-			let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
-				igvSwitchGenome(genome.id);
+		igvGenomeList.forEach(function (listConfig, index){
+			// Make a section header
+			if (index > 0){  // The divider already exists for the first one
+				let divider = $('<li class="divider" role="separator"></li>');
+				menu.append(divider);
+			}
+			let header = $('<li class="dropdown-header"></li>').text(listConfig.name);
+			menu.append(header);
+			
+			listConfig.genomes.forEach(function (genome){
+				let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
+					igvSwitchGenome(genome.id);
+				});
+				let item = $("<li></li>").append(link);
+				menu.append(item);
 			});
-			let item = $("<li></li>").append(link);
-			menu.append(item);
-		}
+		});
 	}
 	
 	// Load genome configuration(s) from JSON object
-	function igvLoadJSONGenome(config){
+	function igvLoadJSONGenome(name, config){
 		if (Array.isArray(config)){  // Genome list
-			igvGenomeList.push(...config);
-			igvGenomeList.sort((a, b) => a.id > b.id ? 1 : -1);
+			config.sort((a, b) => a.id > b.id ? 1 : -1);
+			igvGenomeList.push({
+				name: name,
+				genomes: config,
+			});
+			igvFlatGenomeList = igvFlatGenomeList.concat(config);
 			igvUpdateGenomeMenu();
 			displayMessage("Loaded the genome list");
 		} else {  // Genome config
@@ -1462,7 +1513,7 @@
 		// Load a JSON genome config
 		if (genomeFile.name.endsWith(".json")){
 			readTextFile(genomeFile).then(function (content){
-				igvLoadJSONGenome(JSON.parse(content));
+				igvLoadJSONGenome(genomeFile.name, JSON.parse(content));
 			}).catch(function (reason){
 				displayMessage("Error loading genome config : " + reason);
 			});
@@ -1516,7 +1567,7 @@
 	            type: "GET",
 	            dataType: "json",
 	            success: function(data) {
-	            	igvLoadJSONGenome(data);
+	            	igvLoadJSONGenome(genomeURL, data);
 	            },
 	            error: function(xhr, ajaxOptions, thrownError) {
 	                handleError(xhr, thrownError);
@@ -1563,7 +1614,7 @@
 		if (typeof genome == "string"){  // Genome ID in the default list
 			localStorage.removeItem("igvDefaultGenomeConfig::" + moduleName);
 			localStorage.setItem("igvDefaultGenome::" + moduleName, genome);
-			genome = {...igvGenomeList.find(config => config.id == genome)};  // Shallow copy as we modify it later
+			genome = {...igvFlatGenomeList.find(config => config.id == genome)};  // Shallow copy as we modify it later
 		} else if (typeof genome.fastaURL == "string"){  // By URL
 			localStorage.removeItem("igvDefaultGenome::" + moduleName);
 			localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));
@@ -1681,7 +1732,7 @@
 		let browserConfig = {
 			genome: genome,
 			tracks: [],
-			genomeList: igvGenomeList,
+			genomeList: igvFlatGenomeList,
 			queryParametersSupported: true,
         	loadDefaultGenomes: false,
         	showSampleNames: true,

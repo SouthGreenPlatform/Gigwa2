@@ -195,6 +195,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String CLEAR_TOKEN_PATH = "/clearToken";
 	static public final String DENSITY_DATA_PATH = "/densityData";
 	static public final String IGV_DATA_PATH = "/igvData";
+	static public final String IGV_GENOME_CONFIG_PATH = "/igvGenomeConfig";
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
 	static public final String DISTINCT_SEQUENCE_SELECTED_PATH = "/distinctSelectedSequences";
 	static public final String EXPORT_DATA_PATH = "/exportData";
@@ -824,6 +825,29 @@ public class GigwaRestController extends ControllerInterface {
 		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, varQuery, samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
+	}
+	
+	/**
+	 * Get the genome configs for the IGV.js browser
+	 */
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + IGV_GENOME_CONFIG_PATH, method = RequestMethod.GET, produces = "application/json")
+	public List<HashMap<String, String>> getIGVGenomeConfig() {
+		List<HashMap<String, String>> configs = new ArrayList<>();
+		for (int i=1; ; i++) {
+			String configInfo = appConfig.get("igvGenomeConfig_" + i);
+			if (configInfo == null)
+				break;
+			
+			String[] splitConfigInfo = configInfo.split(";");
+			if (splitConfigInfo.length >= 2 && splitConfigInfo[0].trim().length() > 0 && splitConfigInfo[1].trim().length() > 0) {
+				HashMap<String, String> config = new HashMap<>();
+				config.put("name", splitConfigInfo[0]);
+				config.put("url", splitConfigInfo[1]);
+				configs.add(config);
+			}
+		}
+		return configs;
 	}
 
 	/**
