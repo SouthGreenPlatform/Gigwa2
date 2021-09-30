@@ -700,7 +700,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "text/plain", consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
 		String token = tokenManager.readToken(request);
 
