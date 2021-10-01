@@ -59,7 +59,8 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
-<script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script>
+<!-- <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script> -->
+<script type="text/javascript" src="js/igv.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
@@ -1745,7 +1746,7 @@
         	sampleNameViewportWidth: 120,
 		};
 		
-		return igv.createBrowser($("#igvContainer"), browserConfig).then(function (browser){
+		return igv.createBrowser($("#igvContainer")[0], browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 			$("#igvTracksDropdown").removeClass("disabled");
@@ -1782,6 +1783,7 @@
 					sourceType: "file",
 					order: Number.MAX_SAFE_INTEGER,
 					visibilityWindow: 100000,
+					panContinuousUpdate: false,
 					reader: new GigwaSearchReader(
 							individuals, token,
 							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),

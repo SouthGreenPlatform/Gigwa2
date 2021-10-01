@@ -283,6 +283,7 @@ class GigwaSearchReader {
 		this.selectedIndividuals = individuals;
 		this.variantSearch = variantSearch;
 		this.token = token;
+		this.header = null;
 		this.lastRead = null;
 	}
 	
@@ -314,6 +315,8 @@ class GigwaSearchReader {
 	 * This allows to request only the necessary data from the server, and to limit simultaneous, redundant requests
 	 */
 	async readFeatures(chr, bpStart, bpEnd){
+		if (!self.header) await this.readHeader();
+		
 		if (this.lastRead){
 			this.lastRead = this.lastRead.then(this.retrieveFeatures(chr, bpStart, bpEnd));
 		} else {
@@ -336,7 +339,7 @@ class GigwaSearchReader {
 		bpEnd = searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd);  // searchEnd = -1 -> all
 		
 		// Function to chain
-		async function requestChain(previousResult){
+		async function requestChain(previousResult){			
 			let overlap;
 			// FIXME : Open / closed intervals ?
 			// FIXME : For dezoom, use the cache and make 2 requests or make a whole new request ?

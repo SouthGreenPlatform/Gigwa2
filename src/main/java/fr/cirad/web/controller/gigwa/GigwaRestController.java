@@ -715,11 +715,11 @@ public class GigwaRestController extends ControllerInterface {
         resp.setContentType("text/plain;charset=UTF-8");
         
         String processId = "igvViz_" + token;
-        boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
+        /*boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
         if (fPreviousQueryRunning) {
         	ProgressIndicator progress = ProgressIndicator.get(processId);
         	progress.abort();
-        }
+        }*/
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
