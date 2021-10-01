@@ -711,6 +711,9 @@ public class GigwaRestController extends ControllerInterface {
 			return;
         }
         
+        // Avoid errors when receiving text AJAX responses without content type in some browsers
+        resp.setContentType("text/plain;charset=UTF-8");
+        
         String processId = "igvViz_" + token;
         boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
         if (fPreviousQueryRunning) {

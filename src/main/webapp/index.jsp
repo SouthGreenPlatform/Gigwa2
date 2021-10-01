@@ -1614,7 +1614,13 @@
 		if (typeof genome == "string"){  // Genome ID in the default list
 			localStorage.removeItem("igvDefaultGenomeConfig::" + moduleName);
 			localStorage.setItem("igvDefaultGenome::" + moduleName, genome);
-			genome = {...igvFlatGenomeList.find(config => config.id == genome)};  // Shallow copy as we modify it later
+			let matchingConfig = igvFlatGenomeList.find(config => config.id == genome);
+			if (matchingConfig){
+				genome = {...matchingConfig};  // Shallow copy as we modify it later
+			} else {
+				displayMessage("Default genome " + genome + " not found");
+				return;
+			}
 		} else if (typeof genome.fastaURL == "string"){  // By URL
 			localStorage.removeItem("igvDefaultGenome::" + moduleName);
 			localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));

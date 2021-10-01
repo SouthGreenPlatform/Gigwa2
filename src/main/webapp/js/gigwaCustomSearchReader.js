@@ -231,12 +231,59 @@ function arrayToString(value, delim) {
 }
 
 
+function parseFeatures(data, dataHeader){
+	let variants = [];
+	let projectId = getProjectId() + "§";
+	
+	// Split the tabular data in rows and columns, filtering out the empty lines
+	let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
+	let header = rows.shift();
+	
+	// Associate column titles to indices
+	let cols = {};
+	header.forEach(function (title, index){
+		cols[title] = index;
+	});
+	
+	let individualCols = {};
+	dataHeader.callSets.forEach(function (callset){
+		individualCols[callset.id] = cols[callset.name];
+	})
+	
+	// Parse the actual data
+	rows.forEach(function (row){
+		// Build the calls object (parse the genotypes)
+		let calls = {};
+		dataHeader.callSetIds.forEach(function (id){
+			let genotype = row[individualCols[id]];
+			if (genotype.length > 0){
+				calls[id] = {
+					callSetId: id,
+					genotype: genotype.split("/").map(val => parseInt(val)),
+					info: {},
+				};
+			}
+		});
+		
+		let alleles = row[cols.alleles].split("/");
+		let refAllele = alleles.shift();
+		let variant = new GigwaVariant(projectId + row[cols.variant], row[cols.chrom], parseInt(row[cols.pos]), refAllele, alleles.join(","), calls);
+		if (!variant.isRefBlock()){
+			variants.push(variant);
+		}
+	});
+	
+	return variants;
+}
+
+
 // Implementation of the IGV Reader interface for the Gigwa's igvData service
 class GigwaSearchReader {
 	constructor(individuals, token, variantSearch) {
 		this.selectedIndividuals = individuals;
 		this.variantSearch = variantSearch;
 		this.token = token;
+		this.lastRead = null;
 	}
 	
 	readHeader() {
@@ -261,25 +308,81 @@ class GigwaSearchReader {
 		return this.header;
 	}
 	
-	// Read features on chr from bpStart to bpEnd
-	readFeatures(chr, bpStart, bpEnd){
+	/* Read features on chr from bpStart to bpEnd
+	 * This works with a chain of promises. Every new demand by IGV is materialised by a promise added on the chain
+	 * Each new promise gets its own parameters, and the results from its predecessor on the chain
+	 * This allows to request only the necessary data from the server, and to limit simultaneous, redundant requests
+	 */
+	async readFeatures(chr, bpStart, bpEnd){
+		if (this.lastRead){
+			this.lastRead = this.lastRead.then(this.retrieveFeatures(chr, bpStart, bpEnd));
+		} else {
+			this.lastRead = this.retrieveFeatures(chr, bpStart, bpEnd)({chr: null, start: -1, end: -1, features: []});
+		}
+		let result = await this.lastRead;
+		return result.features;
+	}
+	
+	// Return an async function to chain after the last one
+	// A closure is necessary as the chained promise must get the return value from its predecessor and its own parameters
+	retrieveFeatures(chr, bpStart, bpEnd){
 		let self = this;
-		return self.readHeader().then(function(header){
-			// let query = buildSearchQuery(2, 0);
-			let searchStart = getSearchMinPosition();
-			let searchEnd = getSearchMaxPosition();
+		let searchStart = getSearchMinPosition();
+		let searchEnd = getSearchMaxPosition();
+		
+		chr = igvGenomeRefTable[chr];  // Resolve chromosome aliases
+		// Limit the request to the searched range
+		bpStart = Math.max(parseInt(bpStart), searchStart);
+		bpEnd = searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd);  // searchEnd = -1 -> all
+		
+		// Function to chain
+		async function requestChain(previousResult){
+			let overlap;
+			// FIXME : Open / closed intervals ?
+			// FIXME : For dezoom, use the cache and make 2 requests or make a whole new request ?
+			//         Currently, does a new request
+			if (previousResult.chr != chr || previousResult.start > bpEnd || previousResult.end < bpStart || (previousResult.start > bpStart && previousResult.end < bpEnd)){
+				// No overlap at all
+				overlap = null;
+			} else if (previousResult.start <= bpStart && previousResult.end >= bpEnd) {
+				// The new request is a subset of the previous one : just return cached features without making a new request
+				return {
+					chr: chr,
+					start: bpStart,
+					end: bpEnd,
+					features: previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd)),
+				};
+			} else {  // Overlapping range
+				overlap = [Math.max(previousResult.start, bpStart), Math.min(previousResult.end, bpEnd)];
+			}
+			console.log("\n----------\nNew IGV query : " + chr + " : " + bpStart + " - " + bpEnd);
+			console.log("Last query : " + previousResult.chr + " : " + previousResult.start + " - " + previousResult.end);
+			console.log("Overlap : " + overlap);
 			
 			let query = {
 				variantSetId: getProjectId(),
-				referenceName: igvGenomeRefTable[chr],
-				start: Math.max(parseInt(bpStart), searchStart),
-				end: searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd),  // searchEnd = -1 -> all
+				referenceName: chr,
 				callSetIds: self.header.callSetIds,
 			};
 			
-			displayProcessProgress(2, "igvViz_" + token, function() {/*alert(1)*/});
-				
-			return $.ajax({
+			if (overlap){
+				if (overlap[0] > bpStart){
+					// Shift to the left : only keep the interval left of the overlap
+					query.start = bpStart;
+					query.end = overlap[0];
+				} else {
+					// Shift to the right : only keep the interval right of the overlap
+					query.start = overlap[1];
+					query.end = bpEnd;
+				}
+			} else {  // Full request
+				query.start = bpStart;
+				query.end = bpEnd;
+			}
+			
+			console.log("Resulting request interval : " + query.start + " - " + query.end);
+			
+			let data = await $.ajax({
 				url: self.variantSearch,
 				type: "POST",
 				dataType: "text",
@@ -291,50 +394,28 @@ class GigwaSearchReader {
 				error: function (xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);
 				}
-			}).then(function (data){
-				let variants = [];
-				let projectId = getProjectId() + "§";
-				
-				// Split the tabular data in rows and columns, filtering out the empty lines
-				let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
-				let header = rows.shift();
-				
-				// Associate column titles to indices
-				let cols = {};
-				header.forEach(function (title, index){
-					cols[title] = index;
-				});
-				
-				let individualCols = {};
-				self.header.callSets.forEach(function (callset){
-					individualCols[callset.id] = cols[callset.name];
-				})
-				
-				// Parse the actual data
-				rows.forEach(function (row){
-					// Build the calls object (parse the genotypes)
-					let calls = {};
-					self.header.callSetIds.forEach(function (id){
-						let genotype = row[individualCols[id]];
-						if (genotype.length > 0){
-							calls[id] = {
-								callSetId: id,
-								genotype: genotype.split("/").map(val => parseInt(val)),
-								info: {},
-							};
-						}
-					});
-					
-					let alleles = row[cols.alleles].split("/");
-					let refAllele = alleles.shift();
-					let variant = new GigwaVariant(projectId + row[cols.variant], row[cols.chrom], parseInt(row[cols.pos]), refAllele, alleles.join(","), calls);
-					if (!variant.isRefBlock()){
-						variants.push(variant);
-					}
-				});
-				
-				return variants;
 			});
-		});
+			
+			let features;
+			let newFeatures = parseFeatures(data, self.header);
+			console.log("Amount of new features retrieved : " + newFeatures.length);
+			
+			if (overlap){  // Get the features in the overlapping interval from the previous results
+				let cachedFeatures = previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd));
+				features = newFeatures.concat(cachedFeatures);
+			} else {
+				features = newFeatures;
+			}
+			console.log("Amount of features returned : " + features.length);
+			
+			return {
+				chr: chr,
+				start: bpStart,
+				end: bpEnd,
+				features: features,
+			};
+		}
+		
+		return requestChain;
 	}
 };
