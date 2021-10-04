@@ -187,8 +187,11 @@
                         	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
                         	        	for (var cs in individualsResult.callSets) {
                         	        		var ai = individualsResult.callSets[cs].info;
-                        	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString()))
-                        	        			distinctBrapiMetadataURLs.add(ai[extRefSrcField].toString());
+                        	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
+                                                            var url = ai[extRefSrcField].toString();                                                               
+                                                            url = url.replace(/\/$/,"");                                                                
+                                                            distinctBrapiMetadataURLs.add(url.replace(/\/$/,""));
+                                                        }
                         	        	}
                         	        	updateBrapiNotice();
                         	        },
