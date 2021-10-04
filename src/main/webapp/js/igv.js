@@ -63835,12 +63835,12 @@
       }
 
       dispose() {
-        this.removeMouseHandlers();
-        this.eventHandlers = undefined;
-
         for (let trackView of this.trackViews) {
           trackView.dispose();
         }
+
+        this.removeMouseHandlers();
+        this.eventHandlers = undefined;
       }
 
       toJSON() {
