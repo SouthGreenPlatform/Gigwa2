@@ -1339,6 +1339,28 @@
 		}
 		return prefix;
 	}
+
+	// Get the constant prefix in each element of a list of strings
+	function getSuffix(names){
+		let terminate = false;
+		let suffix = "";
+		let reversed = names.map(name => name.split("").reverse().join(""));
+		for (let index in reversed[0]){
+			let character = reversed[0][index]
+			for (let name of reversed){
+				if (name[index] != character){
+					terminate = true;
+					break;
+				}
+			}
+			if (terminate){
+				break;
+			} else {
+				suffix = character + suffix;
+			}
+		}
+		return suffix;
+	}
 	
 	// Check whether a string represents a valid number
 	function isNumeric(str){
@@ -1644,21 +1666,27 @@
 			// Build the alias table
 			let targetNames = igvBrowser.genome.chromosomeNames;
 			let variantPrefix = getPrefix(referenceNames);
+			let variantSuffix = getSuffix(referenceNames);
+			let variantSuffixRegex = new RegExp(variantSuffix + "$");
 			let targetPrefix = getPrefix(targetNames);
+			let targetSuffix = getSuffix(targetNames);
+			let targetSuffixRegex = new RegExp(targetSuffix + "$");
 			igvGenomeRefTable = {};
 			for (let target of targetNames){  // target = chromosome name in the genome file, as used by IGV
-				let zeroname = target.replace(targetPrefix, "");
-				let basename = zeroname.replace(/^0+/, '');  // Base chromosome name
+				let zeroname = target.replace(targetPrefix, "").replace(targetSuffixRegex, "");
+				let basename = zeroname.replace(/^0+/, "");  // Base chromosome name
 				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
-				igvBrowser.genome.chrAliasTable[zeroname] = target;  // 02 -> target
-				igvBrowser.genome.chrAliasTable[basename] = target;  // 2 -> target
-				igvBrowser.genome.chrAliasTable["chr" + zeroname] = target;  // chr02 -> target
-				igvBrowser.genome.chrAliasTable["chr" + basename] = target;  // chr2 -> target
-				igvBrowser.genome.chrAliasTable[variantPrefix + zeroname] = target;  // With prefix used by variants
-				igvBrowser.genome.chrAliasTable[variantPrefix + basename] = target;
+				igvBrowser.genome.chrAliasTable[zeroname.toLowerCase()] = target;  // 02 -> target
+				igvBrowser.genome.chrAliasTable[basename.toLowerCase()] = target;  // 2 -> target
+				igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
+				igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
+				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname).toLowerCase()] = target;  // With prefix used by variants
+				igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
+				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target;  // With prefix and suffix used by variants
+				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
 				
 				// Associate the target name to the variants reference name
-				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(/^0+/, "") == basename)[0];
+				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename)[0];
 			}
 			
 			// Load the default tracks

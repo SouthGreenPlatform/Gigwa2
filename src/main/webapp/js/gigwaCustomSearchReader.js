@@ -358,9 +358,9 @@ class GigwaSearchReader {
 			} else {  // Overlapping range
 				overlap = [Math.max(previousResult.start, bpStart), Math.min(previousResult.end, bpEnd)];
 			}
-			console.log("\n----------\nNew IGV query : " + chr + " : " + bpStart + " - " + bpEnd);
-			console.log("Last query : " + previousResult.chr + " : " + previousResult.start + " - " + previousResult.end);
-			console.log("Overlap : " + overlap);
+			// console.log("\n----------\nNew IGV query : " + chr + " : " + bpStart + " - " + bpEnd);
+			// console.log("Last query : " + previousResult.chr + " : " + previousResult.start + " - " + previousResult.end);
+			// console.log("Overlap : " + overlap);
 			
 			let query = {
 				variantSetId: getProjectId(),
@@ -383,7 +383,7 @@ class GigwaSearchReader {
 				query.end = bpEnd;
 			}
 			
-			console.log("Resulting request interval : " + query.start + " - " + query.end);
+			// console.log("Resulting request interval : " + query.start + " - " + query.end);
 			
 			let data = await $.ajax({
 				url: self.variantSearch,
@@ -401,7 +401,7 @@ class GigwaSearchReader {
 			
 			let features;
 			let newFeatures = parseFeatures(data, self.header);
-			console.log("Amount of new features retrieved : " + newFeatures.length);
+			// console.log("Amount of new features retrieved : " + newFeatures.length);
 			
 			if (overlap){  // Get the features in the overlapping interval from the previous results
 				let cachedFeatures = previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd));
@@ -409,7 +409,7 @@ class GigwaSearchReader {
 			} else {
 				features = newFeatures;
 			}
-			console.log("Amount of features returned : " + features.length);
+			// console.log("Amount of features returned : " + features.length);
 			
 			return {
 				chr: chr,
