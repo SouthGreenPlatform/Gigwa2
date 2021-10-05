@@ -700,7 +700,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "text/plain", consumes = "application/json")
+	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "text/plain;charset=UTF-8", consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
 		long before = System.currentTimeMillis();
 
@@ -711,8 +711,13 @@ public class GigwaRestController extends ControllerInterface {
 			return;
         }
         
-        // Avoid errors when receiving text AJAX responses without content type in some browsers
-        resp.setContentType("text/plain;charset=UTF-8");
+        if (gir.getReferenceName() == null) {
+        	build400Response(resp, "Missing parameter: ReferenceName");
+        	return;
+        }
+        
+        // Avoid errors when receiving text AJAX responses without content type in some browsers  -->  this should be managed with the RequestMapping annotation
+//        resp.setContentType("text/plain;charset=UTF-8");	
         
         String processId = "igvViz_" + token;
         /*boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
@@ -1821,6 +1826,12 @@ public class GigwaRestController extends ControllerInterface {
 		return Math.min(uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
 
+	public void build400Response(HttpServletResponse resp, String message) throws IOException {
+		resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		if (message != null)
+		resp.getWriter().write(message);
+	}
+	
 	public void build401Response(HttpServletResponse resp) throws IOException {
 		resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		resp.getWriter().write("You are not allowed to access this resource");
