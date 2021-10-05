@@ -433,6 +433,8 @@ function updateGtPatterns() {
 	    $('#Genotypes' + i).html(option).val(previousVal).selectpicker('refresh');
 	    $('#Genotypes' + i).change();
 	}
+	
+	igvUpdateIndividuals();
 }
 
 function browsingBoxChanged()

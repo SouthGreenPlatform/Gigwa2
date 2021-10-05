@@ -1797,6 +1797,14 @@
 		});
 	}
 	
+	// Called when the individuals groups have been changed
+	// Update the browser's variant track if necessary
+	function igvUpdateIndividuals(){
+		if (igvBrowser){
+			igvUpdateVariants();
+		}
+	}
+	
 	// Update the browser's variant track
 	function igvUpdateVariants(){
 		if (igvBrowser){
