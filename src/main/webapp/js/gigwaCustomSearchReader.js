@@ -285,6 +285,7 @@ class GigwaSearchReader {
 		this.token = token;
 		this.header = null;
 		this.lastRead = null;
+		this.lastIGVChromosome = null;
 	}
 	
 	readHeader() {
@@ -328,18 +329,27 @@ class GigwaSearchReader {
 	
 	// Return an async function to chain after the last one
 	// A closure is necessary as the chained promise must get the return value from its predecessor and its own parameters
-	retrieveFeatures(chr, bpStart, bpEnd){
+	retrieveFeatures(igvChr, bpStart, bpEnd){
 		let self = this;
 		let searchStart = getSearchMinPosition();
 		let searchEnd = getSearchMaxPosition();
+
+		let chr = igvGenomeRefTable[igvChr];  // Resolve chromosome aliases
 		
-		chr = igvGenomeRefTable[chr];  // Resolve chromosome aliases
 		// Limit the request to the searched range
 		bpStart = Math.max(parseInt(bpStart), searchStart);
 		bpEnd = searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd);  // searchEnd = -1 -> all
 		
 		// Function to chain
-		async function requestChain(previousResult){			
+		async function requestChain(previousResult){
+			if (!chr){  // Chromosome not found, probably because gigwa has no data for it
+				if (self.lastIGVChromosome != igvChr){
+					displayMessage("No data found for the sequence " + igvChr + " in Gigwa");
+				}
+				return {chr: null, start: -1, end: -1, features: []};
+			}
+			self.lastIGVChromosome = igvChr;
+			
 			let overlap;
 			// FIXME : Open / closed intervals ?
 			// FIXME : For dezoom, use the cache and make 2 requests or make a whole new request ?

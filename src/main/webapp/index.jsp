@@ -1323,6 +1323,7 @@
 	
 	// Get the constant prefix in each element of a list of strings
 	function getPrefix(names){
+		if (names.length <= 1) return "";  // Prevent returning the whole name as a prefix if there's only one
 		let terminate = false;
 		let prefix = "";
 		for (let index in names[0]){
@@ -1344,6 +1345,7 @@
 
 	// Get the constant prefix in each element of a list of strings
 	function getSuffix(names){
+		if (names.length <= 1) return "";  // Prevent returning the whole name as a suffix if there's only one
 		let terminate = false;
 		let suffix = "";
 		let reversed = names.map(name => name.split("").reverse().join(""));
@@ -1688,7 +1690,7 @@
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
 				
 				// Associate the target name to the variants reference name
-				igvGenomeRefTable[target] = referenceNames.filter(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename)[0];
+				igvGenomeRefTable[target] = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
 			}
 			
 			// Load the default tracks
