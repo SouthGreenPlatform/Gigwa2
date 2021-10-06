@@ -1295,12 +1295,14 @@
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	var igvCallSets;  // List of callsets
 	var igvCurrentModule;  // Currently loaded module
+	var igvDefaultGenome;
 	
 	// Configuration
-	var igvDefaultGenome;
-	var igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
-	var igvGenomeConfigURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_CONFIG_PATH %>" />';  // URL to the default genomes list
-	var igvDefaultMatchingGenome = true;  // True to load a genome with the same name as the module if it exists by default
+	const igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
+	const igvGenomeConfigURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_CONFIG_PATH %>" />';  // URL to the default genomes list
+	const igvDefaultMatchingGenome = true;  // True to load a genome with the same name as the module if it exists by default
+	const igvCheckReferenceCountDifference = true;  // True to alert the user if the amounts of sequences in the genome and in gigwa do not match by at least a given difference
+	const igvReferenceCountDifferenceThreshold = 0.3;  // Difference from which to alert the user. Ex : 0.3 -> 30% difference to alert
 	
 	// ----- Utilities
 	
@@ -1504,7 +1506,7 @@
 			
 			listConfig.genomes.forEach(function (genome){
 				let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
-					igvSwitchGenome(genome.id);
+					igvSwitchGenome(genome.id).then(igvCheckReferenceCounts);
 				});
 				let item = $("<li></li>").append(link);
 				menu.append(item);
@@ -1524,7 +1526,7 @@
 			igvUpdateGenomeMenu();
 			displayMessage("Loaded the genome list");
 		} else {  // Genome config
-			igvSwitchGenome(config);
+			igvSwitchGenome(config).then(igvCheckReferenceCounts);
 		}
 	}
 	
@@ -1554,7 +1556,7 @@
 				};
 			}
 			
-			igvSwitchGenome(genome);
+			igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 		}
 	}
 	
@@ -1618,14 +1620,14 @@
 					url: genomeURL,
 					type: "HEAD",
 					success: function(){
-						igvSwitchGenome(genome);
+						igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 					},
 					error: function(xhr, ajaxOptions, thrownError){
 						handleError(xhr, thrownError);
 					}
 				});
 			} else {
-				igvSwitchGenome(genome);
+				igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 			}
 			
 		}
@@ -1697,6 +1699,16 @@
 			// Add the variant tracks
 			await igvUpdateVariants();
 		});
+	}
+	
+	// Alert the user if the number of sequences do not match by a given ratio
+	// This can be configured with igvCheckReferenceCountDifference and igvReferenceCountDifferenceThreshold
+	function igvCheckReferenceCounts(){
+		if (igvCheckReferenceCountDifference && (
+					referenceNames.length > igvBrowser.genome.chromosomeNames.length * (1 + igvReferenceCountDifferenceThreshold) ||
+					igvBrowser.genome.chromosomeNames.length > referenceNames.length * (1 + igvReferenceCountDifferenceThreshold))){
+			displayMessage("The amount of sequences in the selected genome (" + igvBrowser.genome.chromosomeNames.length + " sequences) is substancially different from the amount in the Gigwa-provided data (" + referenceNames + " sequences). It it possible that you selected a wrong genome");
+		}
 	}
 	
 	// Load a track from a file with the modal
