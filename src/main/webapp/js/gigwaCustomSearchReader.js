@@ -343,7 +343,7 @@ class GigwaSearchReader {
 			let overlap;
 			// FIXME : Open / closed intervals ?
 			// FIXME : For dezoom, use the cache and make 2 requests or make a whole new request ?
-			//         Currently, does a new request
+			//		 Currently, does a new request
 			if (previousResult.chr != chr || previousResult.start > bpEnd || previousResult.end < bpStart || (previousResult.start > bpStart && previousResult.end < bpEnd)){
 				// No overlap at all
 				overlap = null;
