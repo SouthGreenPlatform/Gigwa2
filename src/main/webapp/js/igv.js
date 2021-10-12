@@ -1445,7 +1445,9 @@
 
             if (match[3]) {
               match[2] = match[4] || match[5] || ""; // Strip excess characters from unquoted arguments
-            } else if (unquoted && rpseudo.test(unquoted) && (excess = tokenize(unquoted, true)) && (excess = unquoted.indexOf(")", unquoted.length - excess) - unquoted.length)) {
+            } else if (unquoted && rpseudo.test(unquoted) && ( // Get excess from tokenize (recursively)
+            excess = tokenize(unquoted, true)) && ( // advance to the next closing parenthesis
+            excess = unquoted.indexOf(")", unquoted.length - excess) - unquoted.length)) {
               // excess is a negative index
               match[0] = match[0].slice(0, excess);
               match[2] = unquoted.slice(0, excess);
@@ -1540,7 +1542,8 @@
                   diff = nodeIndex && cache[2];
                   node = nodeIndex && parent.childNodes[nodeIndex];
 
-                  while (node = ++nodeIndex && node && node[dir] || (diff = nodeIndex = 0) || start.pop()) {
+                  while (node = ++nodeIndex && node && node[dir] || ( // Fallback to seeking `elem` from the start
+                  diff = nodeIndex = 0) || start.pop()) {
                     // When found, cache indexes on `parent` and break
                     if (node.nodeType === 1 && ++diff && node === elem) {
                       uniqueCache[type] = [dirruns, nodeIndex, diff];
@@ -1748,7 +1751,9 @@
           },
           "text": function (elem) {
             var attr;
-            return elem.nodeName.toLowerCase() === "input" && elem.type === "text" && ((attr = elem.getAttribute("type")) == null || attr.toLowerCase() === "text");
+            return elem.nodeName.toLowerCase() === "input" && elem.type === "text" && ( // Support: IE<8
+            // New HTML5 attribute values (e.g., "search") appear with elem.type === "text"
+            (attr = elem.getAttribute("type")) == null || attr.toLowerCase() === "text");
           },
           // Position-in-collection
           "first": createPositionalPseudo(function () {
@@ -3029,7 +3034,10 @@
                   // Retrieve `then` only once
 
 
-                  then = returned && (typeof returned === "object" || typeof returned === "function") && returned.then; // Handle a returned thenable
+                  then = returned && ( // Support: Promises/A+ section 2.3.4
+                  // https://promisesaplus.com/#point-64
+                  // Only check objects and functions for thenability
+                  typeof returned === "object" || typeof returned === "function") && returned.then; // Handle a returned thenable
 
                   if (isFunction(then)) {
                     // Special processors (notify) just wait for resolution
@@ -5653,7 +5661,13 @@
           if (computed) {
             // Certain elements can have dimension info if we invisibly show them
             // but it must have a current display style that would benefit
-            return rdisplayswap.test(jQuery.css(elem, "display")) && (!elem.getClientRects().length || !elem.getBoundingClientRect().width) ? swap(elem, cssShow, function () {
+            return rdisplayswap.test(jQuery.css(elem, "display")) && ( // Support: Safari 8+
+            // Table columns in Safari have non-zero offsetWidth & zero
+            // getBoundingClientRect().width unless display is changed.
+            // Support: IE <=11 only
+            // Running getBoundingClientRect on a disconnected node
+            // in IE throws an error.
+            !elem.getClientRects().length || !elem.getBoundingClientRect().width) ? swap(elem, cssShow, function () {
               return getWidthOrHeight(elem, dimension, extra);
             }) : getWidthOrHeight(elem, dimension, extra);
           }
@@ -12814,7 +12828,9 @@
                 }
               } else if ((op & 64) === 0) {
                 /* 2nd level distance code */
-                here = dcode[(here & 0xffff) + (hold & (1 << op) - 1)];
+                here = dcode[(here & 0xffff
+                /*here.val*/
+                ) + (hold & (1 << op) - 1)];
                 continue dodist;
               } else {
                 strm.msg = 'invalid distance code';
@@ -12826,7 +12842,9 @@
             }
           } else if ((op & 64) === 0) {
             /* 2nd level length code */
-            here = lcode[(here & 0xffff) + (hold & (1 << op) - 1)];
+            here = lcode[(here & 0xffff
+            /*here.val*/
+            ) + (hold & (1 << op) - 1)];
             continue dolen;
           } else if (op & 32) {
             /* end-of-block */
@@ -13927,13 +13945,17 @@
 
             if (!(state.wrap & 1) ||
             /* check if zlib header allowed */
-            (((hold & 0xff) << 8) + (hold >> 8)) % 31) {
+            (((hold & 0xff
+            /*BITS(8)*/
+            ) << 8) + (hold >> 8)) % 31) {
               strm.msg = 'incorrect header check';
               state.mode = BAD;
               break;
             }
 
-            if ((hold & 0x0f) !== Z_DEFLATED) {
+            if ((hold & 0x0f
+            /*BITS(4)*/
+            ) !== Z_DEFLATED) {
               strm.msg = 'unknown compression method';
               state.mode = BAD;
               break;
@@ -13943,7 +13965,9 @@
             hold >>>= 4;
             bits -= 4; //---//
 
-            len = (hold & 0x0f) + 8;
+            len = (hold & 0x0f
+            /*BITS(4)*/
+            ) + 8;
 
             if (state.wbits === 0) {
               state.wbits = len;
@@ -14354,7 +14378,9 @@
             hold >>>= 1;
             bits -= 1; //---//
 
-            switch (hold & 0x03) {
+            switch (hold & 0x03
+            /*BITS(2)*/
+            ) {
               case 0:
                 /* stored block */
                 //Tracev((stderr, "inflate:     stored block%s\n",
@@ -14485,17 +14511,23 @@
             } //===//
 
 
-            state.nlen = (hold & 0x1f) + 257; //--- DROPBITS(5) ---//
+            state.nlen = (hold & 0x1f
+            /*BITS(5)*/
+            ) + 257; //--- DROPBITS(5) ---//
 
             hold >>>= 5;
             bits -= 5; //---//
 
-            state.ndist = (hold & 0x1f) + 1; //--- DROPBITS(5) ---//
+            state.ndist = (hold & 0x1f
+            /*BITS(5)*/
+            ) + 1; //--- DROPBITS(5) ---//
 
             hold >>>= 5;
             bits -= 5; //---//
 
-            state.ncode = (hold & 0x0f) + 4; //--- DROPBITS(4) ---//
+            state.ncode = (hold & 0x0f
+            /*BITS(4)*/
+            ) + 4; //--- DROPBITS(4) ---//
 
             hold >>>= 4;
             bits -= 4; //---//
@@ -14812,7 +14844,9 @@
               last_val = here_val;
 
               for (;;) {
-                here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1
+                /*BITS(last.bits + last.op)*/
+                ) >> last_bits)];
                 here_bits = here >>> 24;
                 here_op = here >>> 16 & 0xff;
                 here_val = here & 0xffff;
@@ -14932,7 +14966,9 @@
               last_val = here_val;
 
               for (;;) {
-                here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1
+                /*BITS(last.bits + last.op)*/
+                ) >> last_bits)];
                 here_bits = here >>> 24;
                 here_op = here >>> 16 & 0xff;
                 here_val = here & 0xffff;
@@ -15115,7 +15151,9 @@
               state.total += _out;
 
               if (_out) {
-                strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, put - _out) : adler32_1(state.check, output, _out, put - _out);
+                strm.adler = state.check =
+                /*UPDATE(state.check, put - _out, _out);*/
+                state.flags ? crc32_1(state.check, output, _out, put - _out) : adler32_1(state.check, output, _out, put - _out);
               }
 
               _out = left; // NB: crc32 stored as signed 32-bit int, zswap32 returns signed too
@@ -15212,7 +15250,9 @@
       state.total += _out;
 
       if (state.wrap && _out) {
-        strm.adler = state.check = state.flags ? crc32_1(state.check, output, _out, strm.next_out - _out) : adler32_1(state.check, output, _out, strm.next_out - _out);
+        strm.adler = state.check =
+        /*UPDATE(state.check, strm.next_out - _out, _out);*/
+        state.flags ? crc32_1(state.check, output, _out, strm.next_out - _out) : adler32_1(state.check, output, _out, strm.next_out - _out);
       }
 
       strm.data_type = state.bits + (state.last ? 64 : 0) + (state.mode === TYPE ? 128 : 0) + (state.mode === LEN_ || state.mode === COPY_ ? 256 : 0);
@@ -22273,6 +22313,14 @@
       };
     };
     /**
+     * The ellipse() method creates an elliptical arc centered at (x, y) with the radii radiusX and radiusY. The path
+     * starts at startAngle and ends at endAngle, and travels in the direction given by counterclockwise (defaulting to clockwise).
+     */
+    // ctx.prototype.ellipse = function (x, y, radiusX, radiusY, rotation, startAngle, endAngle, counterclockwise) {
+    //     // TODO -- implement
+    // }
+
+    /**
      * Generates a ClipPath from the clip command.
      */
 
@@ -22919,10 +22967,16 @@
               processJson(jsonArray);
             } catch (e) {
               console.error(e);
-              const url = BACKUP_GENOMES_URL + `?randomSeed=${Math.random().toString(36)}&version=${version$1()}`; // prevent caching
 
-              const jsonArray = await igvxhr.loadJson(url, {});
-              processJson(jsonArray);
+              try {
+                const url = BACKUP_GENOMES_URL + `?randomSeed=${Math.random().toString(36)}&version=${version$1()}`; // prevent caching
+
+                const jsonArray = await igvxhr.loadJson(url, {});
+                processJson(jsonArray);
+              } catch (e) {
+                console.error(e);
+                console.warn("Errors loading default genome definitions.");
+              }
             }
           } // Add user-defined genomes
 
@@ -23416,10 +23470,11 @@
         const chr = referenceFrame.chr; // Expand the requested range so we can pan a bit without reloading.  But not beyond chromosome bounds
 
         const chrLength = this.browser.genome.getChromosome(chr).bpLength;
-        const pixelWidth = this.$content.width() * 3;
+        const pixelWidth = this.$content.width(); // * 3;
+
         const bpWidth = pixelWidth * referenceFrame.bpPerPixel;
-        const bpStart = Math.floor(Math.max(0, referenceFrame.start - bpWidth / 3));
-        const bpEnd = Math.ceil(Math.min(chrLength, bpStart + bpWidth));
+        const bpStart = Math.floor(Math.max(0, referenceFrame.start - bpWidth));
+        const bpEnd = Math.ceil(Math.min(chrLength, referenceFrame.start + bpWidth + bpWidth)); // Add one screen width to end
 
         if (this.loading && this.loading.start === bpStart && this.loading.end === bpEnd) {
           return undefined;
@@ -23429,7 +23484,7 @@
           start: bpStart,
           end: bpEnd
         };
-        this.startSpinner(); // console.log('get features');
+        this.startSpinner();
 
         try {
           const features = await this.getFeatures(this.trackView.track, chr, bpStart, bpEnd, referenceFrame.bpPerPixel);
@@ -24225,6 +24280,7 @@
         document.addEventListener('mousemove', this.boundDocumentMouseMoveHandler);
 
         function documentMouseMoveHandler(event) {
+          // console.log(`${ Date.now() } RulerSweeper - documentMouseMoveHandler - target ${ event.target.nodeName }`)
           let mouseCurrentX;
 
           if (isMouseDown && isMouseIn) {
@@ -24247,6 +24303,7 @@
         document.addEventListener('mouseup', this.boundDocumentMouseUpHandler);
 
         function documentMouseUpHandler(event) {
+          // console.log(`${ Date.now() } RulerSweeper - documentMouseUpHandler - target ${ event.target.nodeName }`)
           let extent;
 
           if (true === isMouseDown && true === isMouseIn) {
@@ -25634,47 +25691,50 @@
 
 
       async updateViews(force) {
-        const isDragging = this.browser.dragObject;
         if (!(this.browser && this.browser.referenceFrameList)) return;
         const visibleViewports = this.viewports.filter(viewport => viewport.isVisible()); // Shift viewports left/right to current genomic state (pans canvas)
 
-        visibleViewports.forEach(viewport => viewport.shift()); // rpv: viewports whose image (canvas) does not fully cover current genomic range
+        visibleViewports.forEach(viewport => viewport.shift());
+        const isDragging = this.browser.dragObject;
 
-        const reloadableViewports = this.viewportsToReload(force); // Do not update data if currently dragging and continuous update disabled
-
-        if (!isDragging || this.track.panContinuousUpdate) {
-          // Trigger viewport to load features needed to cover current genomic range
-          for (let viewport of reloadableViewports) {
-            await viewport.loadFeatures();
-          } // Very special case for variant tracks in multilocus view.  The # of rows to allocate to the variant (site)
-          // section depends on data from all the views.  We only need to adjust this however if any data was loaded
-          // (i.e. reloadableViewports.length > 0)
+        if (isDragging) {
+          return;
+        } // rpv: viewports whose image (canvas) does not fully cover current genomic range
 
 
-          if (typeof this.track.variantRowCount === 'function') {
-            let maxRow = 0;
+        const reloadableViewports = this.viewportsToReload(force); // Trigger viewport to load features needed to cover current genomic range
+        // NOTE: these must be loaded synchronously, do not user Promise.all,  not all file readers are thread safe
+
+        for (let viewport of reloadableViewports) {
+          await viewport.loadFeatures();
+        } // Very special case for variant tracks in multilocus view.  The # of rows to allocate to the variant (site)
+        // section depends on data from all the views.  We only need to adjust this however if any data was loaded
+        // (i.e. reloadableViewports.length > 0)
+
+
+        if (typeof this.track.variantRowCount === 'function' && reloadableViewports.length > 0) {
+          let maxRow = 0;
+
+          for (let viewport of this.viewports) {
+            if (viewport.tile && viewport.tile.features) {
+              maxRow = Math.max(maxRow, viewport.tile.features.reduce((a, f) => Math.max(a, f.row || 0), 0));
+            }
+          }
+
+          const current = this.track.nVariantRows;
+
+          if (current !== maxRow + 1) {
+            this.track.variantRowCount(maxRow + 1);
 
             for (let viewport of this.viewports) {
-              if (viewport.tile && viewport.tile.features) {
-                maxRow = Math.max(maxRow, viewport.tile.features.reduce((a, f) => Math.max(a, f.row || 0), 0));
-              }
-            }
-
-            const current = this.track.nVariantRows;
-
-            if (current !== maxRow + 1) {
-              this.track.variantRowCount(maxRow + 1);
-
-              for (let viewport of this.viewports) {
-                viewport.checkContentHeight();
-              }
+              viewport.checkContentHeight();
             }
           }
         }
 
         if (this.disposed) return; // Track was removed during load
 
-        if (!isDragging && this.track.autoscale) {
+        if (this.track.autoscale) {
           let allFeatures = [];
 
           for (let visibleViewport of visibleViewports) {
@@ -25706,7 +25766,7 @@
           for (let visibleViewport of visibleViewports) {
             visibleViewport.repaint();
           }
-        } else if (!isDragging || this.track.panContinuousUpdate) {
+        } else {
           for (let vp of reloadableViewports) {
             vp.repaint();
           }
@@ -25935,7 +25995,7 @@
           document.addEventListener('mouseup', this.boundDocumentTrackDragMouseUpHandler);
 
           function documentTrackDragMouseUpHandler(event) {
-            event.preventDefault();
+            // console.log(`${ Date.now() } TrackView - documentTrackDragMouseUpHandler - target ${ event.target.nodeName }`)
             browser.endTrackDrag();
 
             if (currentDragHandle && event.target !== currentDragHandle) {
@@ -28069,7 +28129,6 @@
         this.minHeight = config.minHeight || Math.min(25, this.height);
         this.maxHeight = config.maxHeight || Math.max(1000, this.height);
         this.visibilityWindow = config.visibilityWindow;
-        this.panContinuousUpdate = config.panContinuousUpdate === undefined ? true : config.panContinuousUpdate;
         this.trackView = undefined;
       }
 
@@ -28267,6 +28326,12 @@
 
               break;
 
+            case "graphtype":
+              tracklineConfg["graphType"] = properties[key];
+              break;
+
+            default:
+              tracklineConfg[key] = properties[key];
           }
         } // Track configuration objects have precedence over track line properties in general.  The "name" property
         // is an exception if it was derived and not explicitly entered (that is derived from the web app from filename).
@@ -31946,9 +32011,10 @@
       return Object(requireObjectCoercible(argument));
     };
 
-    var hasOwnProperty = {}.hasOwnProperty;
+    var hasOwnProperty = {}.hasOwnProperty; // `HasOwnProperty` abstract operation
+    // https://tc39.es/ecma262/#sec-hasownproperty
 
-    var has$1 = Object.hasOwn || function hasOwn(it, key) {
+    var hasOwnProperty_1 = Object.hasOwn || function hasOwn(it, key) {
       return hasOwnProperty.call(toObject(it), key);
     };
 
@@ -31975,7 +32041,7 @@
       (module.exports = function (key, value) {
         return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
       })('versions', []).push({
-        version: '3.18.1',
+        version: '3.18.2',
         mode: 'global',
         copyright: '© 2021 Denis Pushkarev (zloirock.ru)'
       });
@@ -32036,8 +32102,8 @@
     var createWellKnownSymbol = useSymbolAsUid ? Symbol$1 : Symbol$1 && Symbol$1.withoutSetter || uid;
 
     var wellKnownSymbol = function (name) {
-      if (!has$1(WellKnownSymbolsStore, name) || !(nativeSymbol || typeof WellKnownSymbolsStore[name] == 'string')) {
-        if (nativeSymbol && has$1(Symbol$1, name)) {
+      if (!hasOwnProperty_1(WellKnownSymbolsStore, name) || !(nativeSymbol || typeof WellKnownSymbolsStore[name] == 'string')) {
+        if (nativeSymbol && hasOwnProperty_1(Symbol$1, name)) {
           WellKnownSymbolsStore[name] = Symbol$1[name];
         } else {
           WellKnownSymbolsStore[name] = createWellKnownSymbol('Symbol.' + name);
@@ -32268,18 +32334,18 @@
       hiddenKeys$1[STATE] = true;
 
       set$1 = function (it, metadata) {
-        if (has$1(it, STATE)) throw new TypeError(OBJECT_ALREADY_INITIALIZED);
+        if (hasOwnProperty_1(it, STATE)) throw new TypeError(OBJECT_ALREADY_INITIALIZED);
         metadata.facade = it;
         createNonEnumerableProperty(it, STATE, metadata);
         return metadata;
       };
 
       get = function (it) {
-        return has$1(it, STATE) ? it[STATE] : {};
+        return hasOwnProperty_1(it, STATE) ? it[STATE] : {};
       };
 
       has = function (it) {
-        return has$1(it, STATE);
+        return hasOwnProperty_1(it, STATE);
       };
     }
 
@@ -32294,7 +32360,7 @@
     var FunctionPrototype = Function.prototype; // eslint-disable-next-line es/no-object-getownpropertydescriptor -- safe
 
     var getDescriptor = descriptors && Object.getOwnPropertyDescriptor;
-    var EXISTS = has$1(FunctionPrototype, 'name'); // additional protection from minified / mangled / dropped function names
+    var EXISTS = hasOwnProperty_1(FunctionPrototype, 'name'); // additional protection from minified / mangled / dropped function names
 
     var PROPER = EXISTS && function something() {
       /* empty */
@@ -32324,7 +32390,7 @@
             name = '[' + String(name).replace(/^Symbol\(([^)]*)\)/, '$1') + ']';
           }
 
-          if (!has$1(value, 'name') || CONFIGURABLE_FUNCTION_NAME && value.name !== name) {
+          if (!hasOwnProperty_1(value, 'name') || CONFIGURABLE_FUNCTION_NAME && value.name !== name) {
             createNonEnumerableProperty(value, 'name', name);
           }
 
@@ -32367,7 +32433,7 @@
 
     var objectGetPrototypeOf = correctPrototypeGetter ? Object.getPrototypeOf : function (O) {
       var object = toObject(O);
-      if (has$1(object, IE_PROTO)) return object[IE_PROTO];
+      if (hasOwnProperty_1(object, IE_PROTO)) return object[IE_PROTO];
       var constructor = object.constructor;
 
       if (isCallable(constructor) && object instanceof constructor) {
@@ -32444,13 +32510,13 @@
     var isView = function isView(it) {
       if (!isObject(it)) return false;
       var klass = classof(it);
-      return klass === 'DataView' || has$1(TypedArrayConstructorsList, klass) || has$1(BigIntArrayConstructorsList, klass);
+      return klass === 'DataView' || hasOwnProperty_1(TypedArrayConstructorsList, klass) || hasOwnProperty_1(BigIntArrayConstructorsList, klass);
     };
 
     var isTypedArray = function (it) {
       if (!isObject(it)) return false;
       var klass = classof(it);
-      return has$1(TypedArrayConstructorsList, klass) || has$1(BigIntArrayConstructorsList, klass);
+      return hasOwnProperty_1(TypedArrayConstructorsList, klass) || hasOwnProperty_1(BigIntArrayConstructorsList, klass);
     };
 
     var aTypedArray$1 = function (it) {
@@ -32467,7 +32533,7 @@
       if (!descriptors) return;
       if (forced) for (var ARRAY in TypedArrayConstructorsList) {
         var TypedArrayConstructor = global$1[ARRAY];
-        if (TypedArrayConstructor && has$1(TypedArrayConstructor.prototype, KEY)) try {
+        if (TypedArrayConstructor && hasOwnProperty_1(TypedArrayConstructor.prototype, KEY)) try {
           delete TypedArrayConstructor.prototype[KEY];
         } catch (error) {
           /* empty */
@@ -32486,7 +32552,7 @@
       if (objectSetPrototypeOf) {
         if (forced) for (ARRAY in TypedArrayConstructorsList) {
           TypedArrayConstructor = global$1[ARRAY];
-          if (TypedArrayConstructor && has$1(TypedArrayConstructor, KEY)) try {
+          if (TypedArrayConstructor && hasOwnProperty_1(TypedArrayConstructor, KEY)) try {
             delete TypedArrayConstructor[KEY];
           } catch (error) {
             /* empty */
@@ -32548,7 +32614,7 @@
       objectSetPrototypeOf(Uint8ClampedArrayPrototype, TypedArrayPrototype);
     }
 
-    if (descriptors && !has$1(TypedArrayPrototype, TO_STRING_TAG)) {
+    if (descriptors && !hasOwnProperty_1(TypedArrayPrototype, TO_STRING_TAG)) {
       TYPED_ARRAY_TAG_REQIRED = true;
       defineProperty(TypedArrayPrototype, TO_STRING_TAG, {
         get: function () {
@@ -32576,18 +32642,26 @@
     };
 
     var ceil = Math.ceil;
-    var floor$1 = Math.floor; // `ToInteger` abstract operation
-    // https://tc39.es/ecma262/#sec-tointeger
+    var floor$1 = Math.floor; // `ToIntegerOrInfinity` abstract operation
+    // https://tc39.es/ecma262/#sec-tointegerorinfinity
 
-    var toInteger = function (argument) {
-      return isNaN(argument = +argument) ? 0 : (argument > 0 ? floor$1 : ceil)(argument);
+    var toIntegerOrInfinity = function (argument) {
+      var number = +argument; // eslint-disable-next-line no-self-compare -- safe
+
+      return number !== number || number === 0 ? 0 : (number > 0 ? floor$1 : ceil)(number);
     };
 
     var min$1 = Math.min; // `ToLength` abstract operation
     // https://tc39.es/ecma262/#sec-tolength
 
     var toLength = function (argument) {
-      return argument > 0 ? min$1(toInteger(argument), 0x1FFFFFFFFFFFFF) : 0; // 2 ** 53 - 1 == 9007199254740991
+      return argument > 0 ? min$1(toIntegerOrInfinity(argument), 0x1FFFFFFFFFFFFF) : 0; // 2 ** 53 - 1 == 9007199254740991
+    };
+
+    // https://tc39.es/ecma262/#sec-lengthofarraylike
+
+    var lengthOfArrayLike = function (obj) {
+      return toLength(obj.length);
     };
 
     // TODO: use something more complex like timsort?
@@ -32700,7 +32774,7 @@
       if (comparefn !== undefined) aCallable(comparefn);
       if (STABLE_SORT) return nativeSort.call(array, comparefn);
       aTypedArray(array);
-      var arrayLength = toLength(array.length);
+      var arrayLength = lengthOfArrayLike(array);
       var items = Array(arrayLength);
       var index;
 
@@ -35015,129 +35089,131 @@
      */
 
     function renderFeature(feature, bpStart, xScale, pixelHeight, ctx, options) {
-      ctx.save(); // Set ctx color to a known valid color.  If getColorForFeature returns an invalid color string it is ignored, and
-      // this default will be used.
+      try {
+        ctx.save(); // Set ctx color to a known valid color.  If getColorForFeature returns an invalid color string it is ignored, and
+        // this default will be used.
 
-      ctx.fillStyle = this.defaultColor;
-      ctx.strokeStyle = this.defaultColor;
-      const color = getColorForFeature.call(this, feature);
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color;
-      let h;
-      let py;
+        ctx.fillStyle = this.defaultColor;
+        ctx.strokeStyle = this.defaultColor;
+        const color = getColorForFeature.call(this, feature);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        let h;
+        let py;
 
-      if (this.displayMode === "SQUISHED" && feature.row !== undefined) {
-        h = this.featureHeight / 2;
-        py = this.margin + this.squishedRowHeight * feature.row;
-      } else if (this.displayMode === "EXPANDED" && feature.row !== undefined) {
-        h = this.featureHeight;
-        py = this.margin + this.expandedRowHeight * feature.row;
-      } else {
-        // collapsed
-        h = this.featureHeight;
-        py = this.margin;
-      }
+        if (this.displayMode === "SQUISHED" && feature.row !== undefined) {
+          h = this.featureHeight / 2;
+          py = this.margin + this.squishedRowHeight * feature.row;
+        } else if (this.displayMode === "EXPANDED" && feature.row !== undefined) {
+          h = this.featureHeight;
+          py = this.margin + this.expandedRowHeight * feature.row;
+        } else {
+          // collapsed
+          h = this.featureHeight;
+          py = this.margin;
+        }
 
-      const cy = py + h / 2;
-      const h2 = h / 2;
-      const py2 = cy - h2 / 2;
-      const exonCount = feature.exons ? feature.exons.length : 0;
-      const coord = calculateFeatureCoordinates(feature, bpStart, xScale);
-      const step = this.arrowSpacing;
-      const direction = feature.strand === '+' ? 1 : feature.strand === '-' ? -1 : 0;
+        const cy = py + h / 2;
+        const h2 = h / 2;
+        const py2 = cy - h2 / 2;
+        const exonCount = feature.exons ? feature.exons.length : 0;
+        const coord = calculateFeatureCoordinates(feature, bpStart, xScale);
+        const step = this.arrowSpacing;
+        const direction = feature.strand === '+' ? 1 : feature.strand === '-' ? -1 : 0;
 
-      if (exonCount === 0) {
-        // single-exon transcript
-        ctx.fillRect(coord.px, py, coord.pw, h); // Arrows
-        // Do not draw if strand is not +/-
+        if (exonCount === 0) {
+          // single-exon transcript
+          ctx.fillRect(coord.px, py, coord.pw, h); // Arrows
+          // Do not draw if strand is not +/-
 
-        if (direction !== 0) {
-          ctx.fillStyle = "white";
-          ctx.strokeStyle = "white";
+          if (direction !== 0) {
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "white";
 
-          for (let x = coord.px + step / 2; x < coord.px1; x += step) {
+            for (let x = coord.px + step / 2; x < coord.px1; x += step) {
+              // draw arrowheads along central line indicating transcribed orientation
+              IGVGraphics.strokeLine(ctx, x - direction * 2, cy - 2, x, cy);
+              IGVGraphics.strokeLine(ctx, x - direction * 2, cy + 2, x, cy);
+            }
+
+            ctx.fillStyle = color;
+            ctx.strokeStyle = color;
+          }
+        } else {
+          // multi-exon transcript
+          IGVGraphics.strokeLine(ctx, coord.px + 1, cy, coord.px1 - 1, cy); // center line for introns
+
+          const pixelWidth = options.pixelWidth;
+          const xLeft = Math.max(0, coord.px) + step / 2;
+          const xRight = Math.min(pixelWidth, coord.px1);
+
+          for (let x = xLeft; x < xRight; x += step) {
             // draw arrowheads along central line indicating transcribed orientation
             IGVGraphics.strokeLine(ctx, x - direction * 2, cy - 2, x, cy);
             IGVGraphics.strokeLine(ctx, x - direction * 2, cy + 2, x, cy);
           }
 
-          ctx.fillStyle = color;
-          ctx.strokeStyle = color;
-        }
-      } else {
-        // multi-exon transcript
-        IGVGraphics.strokeLine(ctx, coord.px + 1, cy, coord.px1 - 1, cy); // center line for introns
+          for (let e = 0; e < exonCount; e++) {
+            // draw the exons
+            const exon = feature.exons[e];
+            let ePx = Math.round((exon.start - bpStart) / xScale);
+            let ePx1 = Math.round((exon.end - bpStart) / xScale);
+            let ePw = Math.max(1, ePx1 - ePx);
+            let ePxU;
 
-        const pixelWidth = options.pixelWidth;
-        const xLeft = Math.max(0, coord.px) + step / 2;
-        const xRight = Math.min(pixelWidth, coord.px1);
-
-        for (let x = xLeft; x < xRight; x += step) {
-          // draw arrowheads along central line indicating transcribed orientation
-          IGVGraphics.strokeLine(ctx, x - direction * 2, cy - 2, x, cy);
-          IGVGraphics.strokeLine(ctx, x - direction * 2, cy + 2, x, cy);
-        }
-
-        for (let e = 0; e < exonCount; e++) {
-          // draw the exons
-          const exon = feature.exons[e];
-          let ePx = Math.round((exon.start - bpStart) / xScale);
-          let ePx1 = Math.round((exon.end - bpStart) / xScale);
-          let ePw = Math.max(1, ePx1 - ePx);
-          let ePxU;
-
-          if (ePx + ePw < 0) {
-            continue; // Off the left edge
-          }
-
-          if (ePx > pixelWidth) {
-            break; // Off the right edge
-          }
-
-          if (exon.utr) {
-            ctx.fillRect(ePx, py2, ePw, h2); // Entire exon is UTR
-          } else {
-            if (exon.cdStart) {
-              ePxU = Math.round((exon.cdStart - bpStart) / xScale);
-              ctx.fillRect(ePx, py2, ePxU - ePx, h2); // start is UTR
-
-              ePw -= ePxU - ePx;
-              ePx = ePxU;
+            if (ePx + ePw < 0) {
+              continue; // Off the left edge
             }
 
-            if (exon.cdEnd) {
-              ePxU = Math.round((exon.cdEnd - bpStart) / xScale);
-              ctx.fillRect(ePxU, py2, ePx1 - ePxU, h2); // start is UTR
-
-              ePw -= ePx1 - ePxU;
-              ePx1 = ePxU;
+            if (ePx > pixelWidth) {
+              break; // Off the right edge
             }
 
-            ePw = Math.max(ePw, 1);
-            ctx.fillRect(ePx, py, ePw, h); // Arrows
+            if (exon.utr) {
+              ctx.fillRect(ePx, py2, ePw, h2); // Entire exon is UTR
+            } else {
+              if (exon.cdStart) {
+                ePxU = Math.round((exon.cdStart - bpStart) / xScale);
+                ctx.fillRect(ePx, py2, ePxU - ePx, h2); // start is UTR
 
-            if (ePw > step + 5 && direction !== 0) {
-              ctx.fillStyle = "white";
-              ctx.strokeStyle = "white";
-
-              for (let x = ePx + step / 2; x < ePx1; x += step) {
-                // draw arrowheads along central line indicating transcribed orientation
-                IGVGraphics.strokeLine(ctx, x - direction * 2, cy - 2, x, cy);
-                IGVGraphics.strokeLine(ctx, x - direction * 2, cy + 2, x, cy);
+                ePw -= ePxU - ePx;
+                ePx = ePxU;
               }
 
-              ctx.fillStyle = color;
-              ctx.strokeStyle = color;
+              if (exon.cdEnd) {
+                ePxU = Math.round((exon.cdEnd - bpStart) / xScale);
+                ctx.fillRect(ePxU, py2, ePx1 - ePxU, h2); // start is UTR
+
+                ePw -= ePx1 - ePxU;
+                ePx1 = ePxU;
+              }
+
+              ePw = Math.max(ePw, 1);
+              ctx.fillRect(ePx, py, ePw, h); // Arrows
+
+              if (ePw > step + 5 && direction !== 0) {
+                ctx.fillStyle = "white";
+                ctx.strokeStyle = "white";
+
+                for (let x = ePx + step / 2; x < ePx1; x += step) {
+                  // draw arrowheads along central line indicating transcribed orientation
+                  IGVGraphics.strokeLine(ctx, x - direction * 2, cy - 2, x, cy);
+                  IGVGraphics.strokeLine(ctx, x - direction * 2, cy + 2, x, cy);
+                }
+
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+              }
             }
           }
         }
-      }
 
-      if (options.drawLabel && this.displayMode !== "SQUISHED") {
-        renderFeatureLabel.call(this, ctx, feature, coord.px, coord.px1, py, options.referenceFrame, options);
+        if (options.drawLabel && this.displayMode !== "SQUISHED") {
+          renderFeatureLabel.call(this, ctx, feature, coord.px, coord.px1, py, options.referenceFrame, options);
+        }
+      } finally {
+        ctx.restore();
       }
-
-      ctx.restore();
     }
     /**
      * @param ctx       the canvas 2d context
@@ -35152,51 +35228,53 @@
      */
 
     function renderFeatureLabel(ctx, feature, featureX, featureX1, featureY, referenceFrame, options) {
-      ctx.save();
-      let name = feature.name;
-      if (name === undefined && feature.gene) name = feature.gene.name;
-      if (name === undefined) name = feature.id || feature.ID;
-      if (!name || name === '.') return;
-      let pixelXOffset = options.pixelXOffset || 0;
-      const t1 = Math.max(featureX, -pixelXOffset);
-      const t2 = Math.min(featureX1, -pixelXOffset + options.viewportWidth);
-      const centerX = (t1 + t2) / 2;
-      let transform;
+      try {
+        ctx.save();
+        let name = feature.name;
+        if (name === undefined && feature.gene) name = feature.gene.name;
+        if (name === undefined) name = feature.id || feature.ID;
+        if (!name || name === '.') return;
+        let pixelXOffset = options.pixelXOffset || 0;
+        const t1 = Math.max(featureX, -pixelXOffset);
+        const t2 = Math.min(featureX1, -pixelXOffset + options.viewportWidth);
+        const centerX = (t1 + t2) / 2;
+        let transform;
 
-      if (this.displayMode === "COLLAPSED" && this.labelDisplayMode === "SLANT") {
-        transform = {
-          rotate: {
-            angle: 45
-          }
+        if (this.displayMode === "COLLAPSED" && this.labelDisplayMode === "SLANT") {
+          transform = {
+            rotate: {
+              angle: 45
+            }
+          };
+        }
+
+        const labelY = getFeatureLabelY(featureY, transform);
+        let color = getColorForFeature.call(this, feature);
+        let geneColor;
+        let gtexSelection = false;
+
+        if (referenceFrame.selection && GtexUtils.gtexLoaded) {
+          // TODO -- for gtex, figure out a better way to do this
+          gtexSelection = true;
+          geneColor = referenceFrame.selection.colorForGene(name);
+        }
+
+        const geneFontStyle = {
+          textAlign: "SLANT" === this.labelDisplayMode ? undefined : 'center',
+          fillStyle: geneColor || color,
+          strokeStyle: geneColor || color
         };
+        const textBox = ctx.measureText(name);
+        const xleft = centerX - textBox.width / 2;
+        const xright = centerX + textBox.width / 2;
+
+        if (options.labelAllFeatures || xleft > options.rowLastX[feature.row] || gtexSelection) {
+          options.rowLastX[feature.row] = xright;
+          IGVGraphics.fillText(ctx, name, centerX, labelY, geneFontStyle, transform);
+        }
+      } finally {
+        ctx.restore();
       }
-
-      const labelY = getFeatureLabelY(featureY, transform);
-      let color = getColorForFeature.call(this, feature);
-      let geneColor;
-      let gtexSelection = false;
-
-      if (referenceFrame.selection && GtexUtils.gtexLoaded) {
-        // TODO -- for gtex, figure out a better way to do this
-        gtexSelection = true;
-        geneColor = referenceFrame.selection.colorForGene(name);
-      }
-
-      const geneFontStyle = {
-        textAlign: "SLANT" === this.labelDisplayMode ? undefined : 'center',
-        fillStyle: geneColor || color,
-        strokeStyle: geneColor || color
-      };
-      const textBox = ctx.measureText(name);
-      const xleft = centerX - textBox.width / 2;
-      const xright = centerX + textBox.width / 2;
-
-      if (options.labelAllFeatures || xleft > options.rowLastX[feature.row] || gtexSelection) {
-        options.rowLastX[feature.row] = xright;
-        IGVGraphics.fillText(ctx, name, centerX, labelY, geneFontStyle, transform);
-      }
-
-      ctx.restore();
     }
 
     function getFeatureLabelY(featureY, transform) {
@@ -38999,8 +39077,6 @@
             return alignmentContainer;
           }
 
-          let counter = 1;
-
           for (let c of chunks) {
             let lastBlockSize;
 
@@ -39031,11 +39107,9 @@
             const done = BamUtils.decodeBamRecords(ba, c.minv.offset, alignmentContainer, this.indexToChr, chrId, bpStart, bpEnd, this.filter);
 
             if (done) {
-              console.log(`Loaded ${counter} chunks out of  ${chunks.length}`);
+              //    console.log(`Loaded ${counter} chunks out of  ${chunks.length}`);
               break;
             }
-
-            counter++;
           }
 
           alignmentContainer.finish();
@@ -39335,7 +39409,7 @@
       } catch (error) {
         /* empty */
       }
-      if (has$1(O, P)) return createPropertyDescriptor(!objectPropertyIsEnumerable.f.call(O, P), O[P]);
+      if (hasOwnProperty_1(O, P)) return createPropertyDescriptor(!objectPropertyIsEnumerable.f.call(O, P), O[P]);
     };
     var objectGetOwnPropertyDescriptor = {
       f: f$2
@@ -39347,14 +39421,14 @@
     // If integer < 0, let result be max((length + integer), 0); else let result be min(integer, length).
 
     var toAbsoluteIndex = function (index, length) {
-      var integer = toInteger(index);
+      var integer = toIntegerOrInfinity(index);
       return integer < 0 ? max(integer + length, 0) : min(integer, length);
     };
 
     var createMethod = function (IS_INCLUDES) {
       return function ($this, el, fromIndex) {
         var O = toIndexedObject($this);
-        var length = toLength(O.length);
+        var length = lengthOfArrayLike(O);
         var index = toAbsoluteIndex(fromIndex, length);
         var value; // Array#includes uses SameValueZero equality algorithm
         // eslint-disable-next-line no-self-compare -- NaN check
@@ -39387,10 +39461,10 @@
       var result = [];
       var key;
 
-      for (key in O) !has$1(hiddenKeys$1, key) && has$1(O, key) && result.push(key); // Don't enum bug & hidden keys
+      for (key in O) !hasOwnProperty_1(hiddenKeys$1, key) && hasOwnProperty_1(O, key) && result.push(key); // Don't enum bug & hidden keys
 
 
-      while (names.length > i) if (has$1(O, key = names[i++])) {
+      while (names.length > i) if (hasOwnProperty_1(O, key = names[i++])) {
         ~indexOf(result, key) || result.push(key);
       }
 
@@ -39431,7 +39505,7 @@
 
       for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
-        if (!has$1(target, key)) defineProperty(target, key, getOwnPropertyDescriptor(source, key));
+        if (!hasOwnProperty_1(target, key)) defineProperty(target, key, getOwnPropertyDescriptor(source, key));
       }
     };
 
@@ -57384,7 +57458,13 @@
         const pixelHeight = options.pixelHeight;
         const bpPerPixel = options.bpPerPixel;
         const bpStart = options.bpStart;
-        const xScale = bpPerPixel;
+        const xScale = bpPerPixel; // SVG output for proportional arcs are currently not supported because "ellipse" is not implemented
+
+        if (typeof ctx.ellipse !== 'function') {
+          Alert$1.presentAlert("SVG output of proportional arcs is currently not supported.");
+          return;
+        }
+
         IGVGraphics.fillRect(ctx, 0, options.pixelTop, pixelWidth, pixelHeight, {
           'fillStyle': "rgb(255, 255, 255)"
         });
@@ -57395,7 +57475,6 @@
           const y = this.arcOrientation ? options.pixelHeight : 0;
 
           for (let feature of featureList) {
-            ctx.save();
             const value = this.valueColumn ? feature[this.valueColumn] : feature.score;
             if (value === undefined || Number.isNaN(value)) continue;
             const radiusY = this.logScale ? Math.log10(value + 1) * yScale : value * yScale;
@@ -57442,7 +57521,6 @@
                 ctx.fill();
               }
 
-              ctx.restore();
               feature.drawState = {
                 xc,
                 yc: y,
@@ -58620,7 +58698,6 @@
         IGVGraphics.strokeLine(ctx, 0, pixelHeight - 1, pixelWidth, pixelHeight - 1, {
           'strokeStyle': this.divider
         });
-        ctx.save();
 
         const drawEqtls = drawSelected => {
           const radius = drawSelected ? 2 * this.dotSize : this.dotSize;
@@ -58684,7 +58761,6 @@
 
         drawEqtls(false);
         drawEqtls(true);
-        ctx.restore();
       }
       /**
        * Return "popup data" for feature @ genomic location.  Data is an array of key-value pairs
@@ -61514,19 +61590,16 @@
     };
 
     ChromosomeSelectWidget.prototype.update = function (genome) {
-      this.select.innerHeight = '';
-      const list = this.showAllChromosomes ? genome.chromosomeNames.slice() : genome.wgChromosomeNames.slice();
+      const list = this.showAllChromosomes ? genome.chromosomeNames.slice() : genome.wgChromosomeNames.slice(); // console.log(`${ this.showAllChromosomes ? 'Do' : 'Do not'} show all chromosomes. List ${ list }`)
 
       if (genome.showWholeGenomeView()) {
         list.unshift('all');
         list.unshift('');
       }
 
+      this.select.innerHTML = '';
+
       for (let name of list) {
-        // var $o;
-        // $o = $('<option>', {'value': name});
-        // this.$select.append($o);
-        // $o.text(name);
         const option = document.createElement('option');
         option.setAttribute('value', name);
         option.innerText = name;
@@ -62011,6 +62084,8 @@
       this.slider.max = `${sliderMax}`;
       el.appendChild(this.slider);
       this.slider.addEventListener('change', e => {
+        e.preventDefault();
+        e.stopPropagation();
         const referenceFrame = browser.referenceFrameList[0];
         const {
           bpLength
@@ -62740,7 +62815,7 @@
        * Render browse display as SVG
        * @returns {string}
        */
-      async toSVG() {
+      toSVG() {
         let {
           x,
           y,
@@ -62773,15 +62848,15 @@
         return context.getSerializedSvg(true);
       }
 
-      async renderSVG($container) {
-        const svg = await this.toSVG();
+      renderSVG($container) {
+        const svg = this.toSVG();
         $container.empty();
         $container.append(svg);
         return svg;
       }
 
-      async saveSVGtoFile(config) {
-        let svg = await this.toSVG();
+      saveSVGtoFile(config) {
+        let svg = this.toSVG();
 
         if (config.$container) {
           config.$container.empty();
@@ -62969,7 +63044,11 @@
         if (!locusFound) {
           console.log("Initial locus not found: " + locus);
           locus = genome.getHomeChromosomeName();
-          await this.search(locus);
+          const locusFound = await this.search(locus, true);
+
+          if (!locusFound) {
+            throw new Error("Cannot set initial locus");
+          }
         }
       }
 
@@ -63552,18 +63631,21 @@
               }
 
               dataRange = doAutoscale(allFeatures);
+              const p = [];
 
               for (let trackView of groupTrackViews) {
                 trackView.track.dataRange = dataRange;
                 trackView.track.autoscale = false;
-                await trackView.updateViews(force);
+                p.push(trackView.updateViews(force));
               }
+
+              await Promise.all(p);
             }
           }
 
-          for (let trackView of otherTracks) {
-            await trackView.updateViews(force);
-          }
+          await Promise.all(otherTracks.map(tv => tv.updateViews(force))); // for (let trackView of otherTracks) {
+          //     await trackView.updateViews(force);
+          // }
         }
       }
 
@@ -63835,12 +63917,11 @@
       }
 
       dispose() {
+        this.removeMouseHandlers();
+
         for (let trackView of this.trackViews) {
           trackView.dispose();
         }
-
-        this.removeMouseHandlers();
-        this.eventHandlers = undefined;
       }
 
       toJSON() {

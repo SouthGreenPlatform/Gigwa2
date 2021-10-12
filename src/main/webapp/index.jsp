@@ -1834,7 +1834,6 @@
 					sourceType: "file",
 					order: Number.MAX_SAFE_INTEGER,
 					visibilityWindow: 100000,
-					panContinuousUpdate: false,
 					reader: new GigwaSearchReader(
 							individuals, token,
 							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
