@@ -63,3 +63,7 @@ maxExportableBillionGenotypes = 2
 
 # Set your Google Analytics id for the tag to be automatically added into the main page
 #googleAnalyticsId = SOME_GA_ID
+
+# Properties named igvGenomeConfig_N with N being an integer >= 1 defines a genome list to be retrieved as a default genomes list for the integrated IGV.js genome browser
+# Each property is of the form igvGenomeConfig_N = Name;URL
+igvGenomeConfig_1 = IGV default genomes;https://igv.org/genomes/genomes.json

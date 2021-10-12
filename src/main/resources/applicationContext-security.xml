@@ -17,7 +17,7 @@
     <secur:http request-matcher="regex" pattern="^.*\/.*filt\/tmpOutput\/.*\.zip.*$" security="none" />
 	
     <secur:http realm="GIGwA WebApp Security Administration" request-matcher="regex" access-decision-manager-ref="accessDecisionManager">
-		<secur:intercept-url pattern="^.*\.json.*$" access="IS_AUTHENTICATED_FULLY" />
+		<!-- <secur:intercept-url pattern="^.*\.json.*$" access="IS_AUTHENTICATED_FULLY" /> -->
 		<secur:intercept-url pattern="^.*\/permissionManagement\.jsp.*$" access="IS_AUTHENTICATED_FULLY" />
 		<secur:intercept-url pattern="^.*\/login\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY" requires-channel="http" />
         <secur:intercept-url pattern="^.*\/index\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY,IS_AUTHENTICATED_FULLY,IS_AUTHENTICATED_REMEMBERED,ROLE_ADMIN" requires-channel="http" />
