@@ -188,9 +188,11 @@
                         	        	for (var cs in individualsResult.callSets) {
                         	        		var ai = individualsResult.callSets[cs].info;
                         	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
-                                                            var url = ai[extRefSrcField].toString();                                                               
-                                                            url = url.replace(/\/$/,"");                                                                
-                                                            distinctBrapiMetadataURLs.add(url.replace(/\/$/,""));
+                                                            var url = ai[extRefSrcField].toString();
+                                                            if (!url.endsWith("/")) {
+                                                                url = url + "/";
+                                                            }                                                               
+                                                            distinctBrapiMetadataURLs.add(url);
                                                         }
                         	        	}
                         	        	updateBrapiNotice();

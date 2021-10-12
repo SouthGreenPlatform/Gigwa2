@@ -1167,8 +1167,8 @@ public class GigwaRestController extends ControllerInterface {
                             String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
 
                             String endPointUrl = extRefSrcValues.get(0);
-                            if (endPointUrl.endsWith("/")) {
-                                endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+                            if (!endPointUrl.endsWith("/")) {
+                                endPointUrl = endPointUrl + "/";
                             }
 
                             if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
