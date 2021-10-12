@@ -41,58 +41,93 @@
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
-            <P STYLE="margin-bottom: 0.14in">Choosing &ldquo;Manage
-               data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal menu leads to a page dedicated to data imports.
-            </P>
-            <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data
-               into temporary databases that remain accessible for 24h. These databases are hidden (only visible to people knowing their precise
-               URL and to administrators).
-            </P>
-            <P STYLE="margin-bottom: 0.14in">In the case where the importing person is logged in as administrator or as a user with permissions
-               to write into a permanent database, a tabset allows choosing between importing genotyping data or metadata.
-            </P>
-            <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, BrAPI) and in various ways:
-            </P>
             <UL>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By specifying an absolute path on the webserver filesystem (convenient for administrators managing a production instance used as data portal);
-                  </P>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By uploading files from the client computer (with an adjustable size limit: see section B6.2);
-                  </P>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">By providing an http URL, linking either to data files or to a BrAPI v1.1 base-url.
-                  </P>
+                <LI>
+                    <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                      <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.1/ IMPORTING GENOTYPING DATA</FONT></FONT></FONT>
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">Choosing &ldquo;Manage
+                        data&rdquo; then &ldquo;Import data&rdquo; from the main horizontal menu leads to a page dedicated to data imports.
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data
+                        into temporary databases that remain accessible for 24h. These databases are hidden (only visible to people knowing their precise
+                        URL and to administrators).
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">In the case where the importing person is logged in as administrator or as a user with permissions
+                        to write into a permanent database, a tabset allows choosing between importing genotyping data or metadata.
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, BrAPI) and in various ways:
+                    </P>
+                    <UL>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">By specifying an absolute path on the webserver filesystem (convenient for administrators managing a production instance used as data portal);
+                           </P>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">By uploading files from the client computer (with an adjustable size limit: see section B6.2);
+                           </P>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">By providing an http URL, linking either to data files or to a BrAPI v1.1 base-url.
+                           </P>
+                    </UL>
+                    <P STYLE="margin-bottom: 0.14in">On the genotyping data import page, 3 more fields are required:
+                    </P>
+                    <UL>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">Database (not available to anonymous users since a "disposable" database is automatically generated for them): a database may contain one or several projects as long as they all rely on the same reference assembly. In the case of very large datasets, for performance-related matters it is however advised to have a single project per database;
+                           </P>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">Project: a project may contain one or several runs;
+                           </P>
+                        <LI>
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up writing a run into a project. Allowing multiple runs in a project is a way of supporting incremental data loading.
+                           </P>
+                     </UL>
+                     <P STYLE="margin-bottom: 0.14in">A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
+                     </P>
+                     <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
+                     <P STYLE="margin-bottom: 0.14in">Genotyping data import progress can be watched in real time from the upload page, or via a dedicated
+                        asynchronous progress page (convenient for large datasets), as imports run as background processes and may not be interrupted by users.
+                     </P>
+                </LI>
+                <LI>
+                    <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                      <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.2/ IMPORTING METADATA</FONT></FONT></FONT>
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in"><u>Providing individual metadata</u> is only supported for existing databases and aims at enabling users to select
+                    them by filtering on that metadata. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">Metadata may be provided as a simple tabulated file containing user-defined columns (only one is enforced, named "individual").
+                    </P>
+
+                    <P STYLE="margin-bottom: 0.14in">Importing metadata via BrAPI v1 or v2 is also supported. To do that, you first have to import a file with at least the 3 following columns (in addition of "individual" column):
+                    </P>
+                    <UL>
+                        <LI>
+                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefId</B> which contains the germplasmDbId or sampleDbId (of the BrAPI server);
+                            </P>
+                        </LI>
+                        <LI>
+                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefSource</B> which contains the BrAPI url (e.g. https://test-server.brapi.org/brapi/v2);
+                            </P>
+                        </LI>
+                        <LI>
+                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefType</B> which contains germplasm or sample (depending on the resource type you want to get information);
+                            </P>
+                        </LI>
+                    </UL>
+                    <P STYLE="margin-bottom: 0.14in"> Then you have to come back to the metadata importing form and click on submit in order to extract data from the BrAPI server.
+                    </P>
+
+
+                    <IMG class="fullwidth" SRC="shot01bis_import_md.png" BORDER=0>
+                    <P STYLE="margin-bottom: 0.14in">
+                       <BR>
+                    </P>
+                    </LI>
+                </UL>
             </UL>
-            <P STYLE="margin-bottom: 0.14in">On the genotyping data import page, 3 more fields are required:
-            </P>
-            <UL>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">Database (not available to anonymous users since a "disposable" database is automatically generated for them): a database may contain one or several projects as long as they all rely on the same reference assembly. In the case of very large datasets, for performance-related matters it is however advised to have a single project per database;
-                  </P>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">Project: a project may contain one or several runs;
-                  </P>
-               <LI>
-                  <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up writing a run into a project. Allowing multiple runs in a project is a way of supporting incremental data loading.
-                  </P>
-            </UL>
-            <P STYLE="margin-bottom: 0.14in">A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
-            </P>
-            <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
-            <P STYLE="margin-bottom: 0.14in">Genotyping data import progress can be watched in real time from the upload page, or via a dedicated
-               asynchronous progress page (convenient for large datasets), as imports run as background processes and may not be interrupted by users.
-            </P>
-            <P STYLE="margin-bottom: 0.14in"><u>Providing individual metadata</u> is only supported for existing databases and aims at enabling users to select
-                them by filtering on that metadata. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
-            </P>
-            <P STYLE="margin-bottom: 0.14in">Metadata may be provided as a simple tabulated file containing user-defined columns (only one is enforced, named "individual").
-               Import via BrAPI v1 is also supported assuming that germplasmDbId values have been provided  beforehand. It is able to extract single-string germplasm fields and attributes from BrAPI sources.
-            </P>
-            <IMG class="fullwidth" SRC="shot01bis_import_md.png" BORDER=0>
-            <P STYLE="margin-bottom: 0.14in">
-               <BR>
-            </P>
+            
+            
       </UL>
       <UL>
          <LI>
