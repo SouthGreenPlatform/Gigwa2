@@ -1709,7 +1709,7 @@
 		if (igvCheckReferenceCountDifference && (
 					referenceNames.length > igvBrowser.genome.chromosomeNames.length * (1 + igvReferenceCountDifferenceThreshold) ||
 					igvBrowser.genome.chromosomeNames.length > referenceNames.length * (1 + igvReferenceCountDifferenceThreshold))){
-			displayMessage("The amount of sequences in the selected genome (" + igvBrowser.genome.chromosomeNames.length + " sequences) is substancially different from the amount in the Gigwa-provided data (" + referenceNames + " sequences). It it possible that you selected a wrong genome");
+			displayMessage("The amount of sequences in the selected genome (" + igvBrowser.genome.chromosomeNames.length + " sequences) is substancially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It it possible that you selected a wrong genome", null);
 		}
 	}
 	

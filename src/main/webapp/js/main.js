@@ -145,13 +145,16 @@ function abort(token) {
 	});
 }
 
-function displayMessage(message) {
+function displayMessage(message, duration) {
+	duration = duration === undefined ? 5000 : duration;
 	$(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:2000; position:absolute; top:100px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
-	window.setTimeout(function() {
-		$(".alert").fadeTo(500, 0, function(){
-			$(this).remove(); 
-		});
-	}, 5000);
+	if (duration !== null){
+		window.setTimeout(function() {
+			$(".alert").fadeTo(500, 0, function(){
+				$(this).remove(); 
+			});
+		}, duration);
+	}
 }
 
 function handleError(xhr, thrownError) {
