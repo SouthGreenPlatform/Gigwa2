@@ -36,14 +36,14 @@
         
         let renderer = GenotypeRenderer();
         setTimeout( function() { renderer.renderGenotypesUrl("#canvas-holder", window.innerWidth - 30, window.innerHeight - 200, mFile, gFile); }, 1);
-        let intervalId = setInterval(function() {
+        /*let intervalId = setInterval(function() {
         	let progress = renderer.getRenderingProgressPercentage();
         	if (progress > 0)
         		$("div#canvas-holder center span").html("rendering genotypes: " + progress + "%");
         	
         	if (!keepCheckingProgress)
         		clearInterval(intervalId);
-        }, 10);
+        }, 10);*/
       }
       else
         $("div#canvas-holder").html("<center>At least one of the two required file URLs is missing or incorrect</center>");

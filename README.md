@@ -11,12 +11,12 @@ https://github.com/SouthGreenPlatform/Gigwa2/wiki
 
 ## Developer instructions
 
-The source code is available in this repository. It uses Maven for dependency management and requires the following dependencies to be present in your workspace :
+The source code is available in this repository. It uses Maven for dependency management and requires the following dependencies to be present in your workspace (order matters):
 
+##### https://github.com/SouthGreenPlatform/GenotypeFileManipulation
 ##### https://github.com/SouthGreenPlatform/Mgdb2
 ##### https://github.com/SouthGreenPlatform/Mgdb2Export
 ##### https://github.com/SouthGreenPlatform/role_manager
-##### https://github.com/SouthGreenPlatform/GenotypeFileManipulation
 ##### https://github.com/SouthGreenPlatform/Gigwa2ServiceInterface
 ##### https://github.com/SouthGreenPlatform/Gigwa2ServiceImpl
 ##### https://github.com/SouthGreenPlatform/Mgdb2BrapiImpl
