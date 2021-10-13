@@ -783,6 +783,7 @@ function setGenotypeInvestigationMode(mode) {
 	if (mode <= 1)
 	{
 		$('#discriminationDiv').hide(300);
+		$('#discriminate').prop('checked', false);
 		$('#Individuals2').selectmultiple('deselectAll');
 		$('#Genotypes2').selectpicker('deselectAll');
 		$('#missingdata2').val("100");
