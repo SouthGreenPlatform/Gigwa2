@@ -34,8 +34,11 @@
         <secur:authentication-provider user-service-ref='userDetailsService'>
 			<secur:password-encoder ref="passwordEncoder"/>
         </secur:authentication-provider>
-    </secur:authentication-manager>    
-    
+    </secur:authentication-manager>
+
+	<!-- FIXME -->
+	<bean id="backupManager" class="fr.cirad.security.backup.BackupManager" />
+	    
     <bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
 	
     <bean id="userDetailsService" class="fr.cirad.security.ReloadableInMemoryDaoImpl">
