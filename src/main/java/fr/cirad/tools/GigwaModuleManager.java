@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,7 @@ public class GigwaModuleManager implements IModuleManager {
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 	
     @Autowired TokenManager tokenManager;
+    @Autowired ServletContext servletContext;
 
     @Override
     public String getModuleHost(String sModule) {
@@ -207,14 +210,16 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public IBackgroundProcess startDump(String sModule) {
-		GigwaBackupProcess process = new GigwaBackupProcess(sModule);
+		String sHost = this.getModuleHost(sModule);
+		GigwaBackupProcess process = new GigwaBackupProcess(MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""));
 		process.startDump();
 		return process;
 	}
 	
 	@Override
 	public IBackgroundProcess startRestore(String sModule, String backupName) {
-		GigwaBackupProcess process = new GigwaBackupProcess(sModule);
+		String sHost = this.getModuleHost(sModule);
+		GigwaBackupProcess process = new GigwaBackupProcess(MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""));
 		process.startRestore(backupName);
 		return process;
 	}
