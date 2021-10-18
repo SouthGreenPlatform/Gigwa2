@@ -52,6 +52,7 @@ public class GigwaModuleManager implements IModuleManager {
 
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 	
+	@Autowired AppConfig appConfig;
     @Autowired TokenManager tokenManager;
     @Autowired ServletContext servletContext;
 
@@ -211,7 +212,12 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public IBackgroundProcess startDump(String sModule) {
 		String sHost = this.getModuleHost(sModule);
-		GigwaBackupProcess process = new GigwaBackupProcess(MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""));
+		GigwaBackupProcess process = new GigwaBackupProcess(
+				MongoTemplateManager.getDatabaseName(sModule),
+				MongoTemplateManager.getServerHosts(sHost),
+				servletContext.getRealPath(""),
+				appConfig.get("backupOutputDirectory"));
+		
 		process.startDump();
 		return process;
 	}
@@ -219,7 +225,12 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public IBackgroundProcess startRestore(String sModule, String backupName) {
 		String sHost = this.getModuleHost(sModule);
-		GigwaBackupProcess process = new GigwaBackupProcess(MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""));
+		GigwaBackupProcess process = new GigwaBackupProcess(
+				MongoTemplateManager.getDatabaseName(sModule),
+				MongoTemplateManager.getServerHosts(sHost),
+				servletContext.getRealPath(""),
+				appConfig.get("backupOutputDirectory"));
+		
 		process.startRestore(backupName);
 		return process;
 	}

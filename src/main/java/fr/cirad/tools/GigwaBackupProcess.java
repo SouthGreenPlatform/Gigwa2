@@ -12,7 +12,7 @@ import fr.cirad.security.backup.ProcessStatus;
 
 public class GigwaBackupProcess implements IBackgroundProcess {	
 	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String backupDestinationFolder = dumpManagementPath + "/backups";
+	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/backups";
 	private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
 	private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
 	
@@ -20,50 +20,62 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	private List<String> hosts;
 	private Process subprocess = null;
 	private String basePath;
+	private String outPath;
 	
 	private StringBuilder log;
 	private ProcessStatus status;
 	private String statusMessage;
 	
-	public GigwaBackupProcess(String dbName, List<String> hosts, String basePath) {
+	public GigwaBackupProcess(String dbName, List<String> hosts, String basePath, String outPath) {
 		this.hosts = hosts;
 		this.dbName = dbName;
 		this.basePath = basePath;
+		
+		if (outPath == null) {
+			this.outPath = this.basePath + defaultBackupDestinationFolder;
+		} else {
+			this.outPath = outPath;
+		}
+		
+		File outPathCheck = new File(this.outPath);
+		outPathCheck.mkdirs();
+		
 		this.log = new StringBuilder();
 		this.status = ProcessStatus.IDLE;
 	}
 	
 	public void startDump() {
-		File scriptFile = new File(this.basePath + dumpCommand);
-		scriptFile.setReadable(true);
-		scriptFile.setExecutable(true);
-		
-		String hostString = String.join(",", this.hosts);
-		ProcessBuilder builder = new ProcessBuilder(
-			this.basePath + dumpCommand,
-			"--host", hostString,
-			"--output", this.basePath + backupDestinationFolder,
-			"--database", this.dbName,
-			"--log"
-		);
-		builder.redirectErrorStream(true);
-		
-		try {
-			this.status = ProcessStatus.RUNNING;
-			this.statusMessage = "Running " + String.join(" ", builder.command());
-			subprocess = builder.start();
-		} catch (IOException e) {
-			this.status = ProcessStatus.ERROR;
-			this.statusMessage = "Error : " + e.toString();
-			return;
-		} catch (SecurityException e) {
-			this.status = ProcessStatus.ERROR;
-			this.statusMessage = "Error : " + e.toString();
-			return;
-		}
-		
 		(new Thread() {
 			public void run() {
+				File scriptFile = new File(basePath + dumpCommand);
+				scriptFile.setReadable(true);
+				scriptFile.setExecutable(true);
+				
+				String hostString = String.join(",", hosts);
+				ProcessBuilder builder = new ProcessBuilder(
+					basePath + dumpCommand,
+					"--host", hostString,
+					"--output", outPath,
+					"--database", dbName,
+					"--log"
+				);
+				builder.redirectErrorStream(true);
+				
+				try {
+					status = ProcessStatus.RUNNING;
+					statusMessage = "Running " + String.join(" ", builder.command());
+					subprocess = builder.start();
+				} catch (IOException e) {
+					status = ProcessStatus.ERROR;
+					statusMessage = "Error : " + e.toString();
+					return;
+				} catch (SecurityException e) {
+					status = ProcessStatus.ERROR;
+					statusMessage = "Security error : " + e.toString();
+					return;
+				}
+		
+		
 				try {
 					int exitcode = subprocess.waitFor();
 					if (exitcode == 0) {
@@ -103,13 +115,10 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	
 	public String getLog(){
 		try {
-			if (this.subprocess.getInputStream().available() > 0) {
-				InputStream stream = this.subprocess.getInputStream();
-				int character;
-				
-				while ((character = stream.read()) != -1) {
-					this.log.append((char)character);
-				}
+			InputStream stream = this.subprocess.getInputStream();
+			int length = stream.available();
+			for (int i = 0; i < length; i++) {
+				this.log.append((char)stream.read());
 			}
 		} catch (IOException e) {
 			this.statusMessage = "Error : " + e.toString();
