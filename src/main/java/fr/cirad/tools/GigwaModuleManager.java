@@ -39,6 +39,7 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
+import fr.cirad.security.backup.IBackgroundProcess;
 import fr.cirad.security.base.IModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
@@ -191,5 +192,30 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic) throws Exception {
 		return false;
+	}
+	
+	
+	@Override
+	public boolean allowBackups() {
+		return true;
+	}
+	
+	@Override
+	public Collection<String> getBackups(String sModule) {
+		return new ArrayList<String>();  // TODO
+	}
+	
+	@Override
+	public IBackgroundProcess startDump(String sModule) {
+		GigwaBackupProcess process = new GigwaBackupProcess(sModule);
+		process.startDump();
+		return process;
+	}
+	
+	@Override
+	public IBackgroundProcess startRestore(String sModule, String backupName) {
+		GigwaBackupProcess process = new GigwaBackupProcess(sModule);
+		process.startRestore(backupName);
+		return process;
 	}
 }
