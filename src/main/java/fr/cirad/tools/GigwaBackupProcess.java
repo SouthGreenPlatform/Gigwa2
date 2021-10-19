@@ -3,6 +3,8 @@ package fr.cirad.tools;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import fr.cirad.security.backup.IBackgroundProcess;
@@ -61,54 +63,31 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 				);
 				builder.redirectErrorStream(true);
 				
-				try {
-					status = ProcessStatus.RUNNING;
-					statusMessage = "Running " + String.join(" ", builder.command());
-					subprocess = builder.start();
-				} catch (IOException e) {
-					status = ProcessStatus.ERROR;
-					statusMessage = "Error : " + e.toString();
-					return;
-				} catch (SecurityException e) {
-					status = ProcessStatus.ERROR;
-					statusMessage = "Security error : " + e.toString();
-					return;
-				}
-		
-		
-				try {
-					int exitcode = subprocess.waitFor();
-					if (exitcode == 0) {
-						status = ProcessStatus.SUCCESS;
-						statusMessage = "Finished";
-					} else {
-						status = ProcessStatus.ERROR;
-						statusMessage = "Process exited with code " + exitcode;
-					}
-				} catch (InterruptedException e) {
-					status = ProcessStatus.INTERRUPTED;
-					statusMessage = "Interrupted : " + e.toString();
-				}
+				runProcess(builder);
 			}
 		}).start();
 	}
 	
-	public void startRestore(String backupName) {
+	public void startRestore(String backupFile, boolean drop) {
 		(new Thread() {
 			public void run() {
-				for (int i = 0; i < 50; i++) {
-					String logLine = "This is the log line no. " + i + "\n";
-					log.append(logLine);
-					
-					try {
-						Thread.sleep((long) (Math.random() * 1000));
-					} catch (InterruptedException e) {
-						status = ProcessStatus.INTERRUPTED;
-						statusMessage = e.toString();
-						return;
-					}
-				}
-				status = ProcessStatus.SUCCESS;
+				File scriptFile = new File(basePath + restoreCommand);
+				scriptFile.setReadable(true);
+				scriptFile.setExecutable(true);
+				
+				String hostString = String.join(",", hosts);
+				List<String> args = new ArrayList<String>(Arrays.asList(
+					basePath + restoreCommand,
+					"--host", hostString,
+					"--input", backupFile,
+					"--log"
+				));
+				if (drop) args.add("--drop");
+				
+				ProcessBuilder builder = new ProcessBuilder(args);
+				builder.redirectErrorStream(true);
+				
+				runProcess(builder);
 			}
 		}).start();
 	}
@@ -132,5 +111,37 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	
 	public String getStatusMessage() {
 		return this.statusMessage;
+	}
+	
+	
+	private void runProcess(ProcessBuilder builder) {
+		try {
+			status = ProcessStatus.RUNNING;
+			statusMessage = "Running " + String.join(" ", builder.command());
+			subprocess = builder.start();
+		} catch (IOException e) {
+			status = ProcessStatus.ERROR;
+			statusMessage = "Error : " + e.toString();
+			return;
+		} catch (SecurityException e) {
+			status = ProcessStatus.ERROR;
+			statusMessage = "Security error : " + e.toString();
+			return;
+		}
+
+
+		try {
+			int exitcode = subprocess.waitFor();
+			if (exitcode == 0) {
+				status = ProcessStatus.SUCCESS;
+				statusMessage = "Finished";
+			} else {
+				status = ProcessStatus.ERROR;
+				statusMessage = "Process exited with code " + exitcode;
+			}
+		} catch (InterruptedException e) {
+			status = ProcessStatus.INTERRUPTED;
+			statusMessage = "Interrupted : " + e.toString();
+		}
 	}
 }

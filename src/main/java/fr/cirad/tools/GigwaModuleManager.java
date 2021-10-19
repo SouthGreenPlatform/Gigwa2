@@ -16,11 +16,19 @@
  *******************************************************************************/
 package fr.cirad.tools;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletContext;
 
@@ -51,6 +59,9 @@ import fr.cirad.tools.security.base.AbstractTokenManager;
 public class GigwaModuleManager implements IModuleManager {
 
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
+	
+	private static final String dumpManagementPath = "WEB-INF/dump_management";
+	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/backups";
 	
 	@Autowired AppConfig appConfig;
     @Autowired TokenManager tokenManager;
@@ -205,8 +216,21 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 	
 	@Override
-	public Collection<String> getBackups(String sModule) {
-		return new ArrayList<String>();  // TODO
+	public List<String> getBackups(String sModule) {
+		String backupPath = this.getBackupPath(sModule);
+		
+		// List files in the database's backup directory, filter out subdirectories and logs
+		File[] fileList = new File(backupPath).listFiles();
+		if (fileList != null) {
+			return Stream.of(fileList)
+					.filter(file -> !file.isDirectory())
+					.map(File::getName)
+					.filter(filename -> !filename.endsWith(".log"))
+					.sorted(Comparator.reverseOrder())
+					.collect(Collectors.toList());
+		} else {  // The database backup directory does not exist
+			return new ArrayList<String>();
+		}
 	}
 	
 	@Override
@@ -223,15 +247,26 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 	
 	@Override
-	public IBackgroundProcess startRestore(String sModule, String backupName) {
+	public IBackgroundProcess startRestore(String sModule, String backupName, boolean drop) {
 		String sHost = this.getModuleHost(sModule);
+		String backupFile = this.getBackupPath(sModule) + File.separator + backupName;
 		GigwaBackupProcess process = new GigwaBackupProcess(
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
 				appConfig.get("backupOutputDirectory"));
 		
-		process.startRestore(backupName);
+		process.startRestore(backupFile, drop);
 		return process;
+	}
+	
+	private String getBackupPath(String sModule) {
+		String backupBase = appConfig.get("backupOutputDirectory");
+		if (backupBase == null) {
+			backupBase = servletContext.getRealPath("") + defaultBackupDestinationFolder;
+		}
+		
+		String backupPath = backupBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
+		return backupPath;
 	}
 }
