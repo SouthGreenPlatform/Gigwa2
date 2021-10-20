@@ -2,6 +2,7 @@
 
 # Arguments parsing
 OUTPUT="."
+AUTHDB="admin"
 while [ $# -gt 0 ]; do
 	case $1 in
 		-h | --host)
@@ -13,15 +14,23 @@ while [ $# -gt 0 ]; do
 			shift; shift
 			;;
 		-u | --username)
-			USERNAME="$2"
+			DBUSERNAME="$2"
 			shift; shift
 			;;
 		-p | --password)
-			PASSWORD="$2"
+			DBPASSWORD="$2"
 			shift; shift
+			;;
+		-pp | --passwordPrompt)
+			PASSWORD_PROMPT=YES
+			shift;
 			;;
 		-d | --db | --database)
 			DATABASE="$2"
+			shift; shift
+			;;
+		-a | --authenticationDatabase)
+			AUTHDB="$2"
 			shift; shift
 			;;
 		-l | --log)
@@ -56,16 +65,20 @@ if [ ! -d "$OUTPUT/$DATABASE" ]; then
 	mkdir "$OUTPUT/$DATABASE"
 fi
 
-if [ -z $USERNAME ]; then
-	CREDENTIAL_OPTIONS = "--username=$USERNAME --password=$PASSWORD --authenticationDatabase=admin"
-fi 
+if [ ! -z $DBUSERNAME ]; then
+	if [ ! -z PASSWORD_PROMPT ]; then
+		CREDENTIAL_OPTIONS="--username=$DBUSERNAME --authenticationDatabase=$AUTHDB"
+	else
+		CREDENTIAL_OPTIONS="--username=$DBUSERNAME --password=$DBPASSWORD --authenticationDatabase=$AUTHDB"
+	fi
+fi
 
-FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H%M%S`".gz"
+FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`".gz"
 
 
 logged_part(){
 	set -x
-	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollection=cachedCounts --excludeCollection=brapiGermplasmsSearches --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip
+	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollection=cachedCounts --excludeCollection=brapiGermplasmsSearches --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
 }
 
 if [ ! -z $LOGFILE ]; then

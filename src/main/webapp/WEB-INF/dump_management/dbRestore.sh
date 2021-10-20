@@ -17,11 +17,19 @@ while [ $# -gt 0 ]; do
 			shift; shift
 			;;
 		-u | --username)
-			USERNAME="$2"
+			DBUSERNAME="$2"
 			shift; shift
 			;;
 		-p | --password)
-			PASSWORD="$2"
+			DBPASSWORD="$2"
+			shift; shift
+			;;
+		-pp | --passwordPrompt)
+			PASSWORD_PROMPT=YES
+			shift;
+			;;
+		-a | --authenticationDatabase)
+			AUTHDB="$2"
 			shift; shift
 			;;
 		--drop)
@@ -34,7 +42,7 @@ while [ $# -gt 0 ]; do
 			;;
 		*)  # Unknown option
 			echo "Unknown option $1"
-			exit
+			exit 10
 			;;
 	esac
 done
@@ -44,17 +52,21 @@ done
 
 if [ -z $HOST ]; then
 	echo "You must specify the database host"
-	exit
+	exit 11
 fi
 
 if [ ! -f $FILENAME ]; then
 	echo "Archive file $FILENAME not found"
-	exit
+	exit 12
 fi
 
-if [ -z $USERNAME ]; then
-	CREDENTIAL_OPTIONS = "--username=$USERNAME --password=$PASSWORD --authenticationDatabase=admin"
-fi 
+if [ ! -z $DBUSERNAME ]; then
+	if [ ! -z PASSWORD_PROMPT ]; then
+		CREDENTIAL_OPTIONS="--username=$DBUSERNAME --authenticationDatabase=$AUTHDB"
+	else
+		CREDENTIAL_OPTIONS="--username=$DBUSERNAME --password=$DBPASSWORD --authenticationDatabase=$AUTHDB"
+	fi
+fi
 
 
 logged_part(){

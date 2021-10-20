@@ -17,6 +17,7 @@
 package fr.cirad.tools;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +36,7 @@ import javax.servlet.ServletContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -55,6 +57,17 @@ import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
+// FIXME
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 @Component
 public class GigwaModuleManager implements IModuleManager {
 
@@ -64,6 +77,7 @@ public class GigwaModuleManager implements IModuleManager {
 	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/backups";
 	
 	@Autowired AppConfig appConfig;
+	@Autowired ApplicationContext appContext;
     @Autowired TokenManager tokenManager;
     @Autowired ServletContext servletContext;
 
@@ -236,19 +250,21 @@ public class GigwaModuleManager implements IModuleManager {
 	@Override
 	public IBackgroundProcess startDump(String sModule) {
 		String sHost = this.getModuleHost(sModule);
+		String credentials = this.getHostCredentials(sHost);
 		GigwaBackupProcess process = new GigwaBackupProcess(
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
 				appConfig.get("backupOutputDirectory"));
 		
-		process.startDump();
+		process.startDump(credentials);
 		return process;
 	}
 	
 	@Override
 	public IBackgroundProcess startRestore(String sModule, String backupName, boolean drop) {
 		String sHost = this.getModuleHost(sModule);
+		String credentials = this.getHostCredentials(sHost);
 		String backupFile = this.getBackupPath(sModule) + File.separator + backupName;
 		GigwaBackupProcess process = new GigwaBackupProcess(
 				MongoTemplateManager.getDatabaseName(sModule),
@@ -256,7 +272,7 @@ public class GigwaModuleManager implements IModuleManager {
 				servletContext.getRealPath(""),
 				appConfig.get("backupOutputDirectory"));
 		
-		process.startRestore(backupFile, drop);
+		process.startRestore(backupFile, drop, credentials);
 		return process;
 	}
 	
@@ -268,5 +284,33 @@ public class GigwaModuleManager implements IModuleManager {
 		
 		String backupPath = backupBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
 		return backupPath;
+	}
+	
+	// FIXME
+	private String getHostCredentials(String sHost) {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		try {
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document document = builder.parse(appContext.getResource("classpath:/applicationContext-data.xml").getFile());
+			
+			NodeList clients = document.getElementsByTagName("mongo:mongo-client");
+			for (int i = 0; i < clients.getLength(); i++) {
+				Node node = clients.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element client = (Element) node;
+					String credentialString = client.getAttribute("credential");
+					if (credentialString.length() == 0) {
+						return null;
+					} else {
+						return credentialString;
+					}
+				}
+			}
+			return null;
+		} catch (ParserConfigurationException | IOException | SAXException e) {
+			LOG.error(e.getMessage());
+			e.printStackTrace();
+			return null;
+		}		
 	}
 }

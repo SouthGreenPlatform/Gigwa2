@@ -3,6 +3,7 @@ package fr.cirad.tools;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,7 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 		this.status = ProcessStatus.IDLE;
 	}
 	
-	public void startDump() {
+	public void startDump(String credentials) {
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
@@ -54,21 +55,33 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 				scriptFile.setExecutable(true);
 				
 				String hostString = String.join(",", hosts);
-				ProcessBuilder builder = new ProcessBuilder(
+				List<String> args = new ArrayList<String>(Arrays.asList(
 					basePath + dumpCommand,
 					"--host", hostString,
 					"--output", outPath,
 					"--database", dbName,
 					"--log"
-				);
+				));
+				
+				String password = null;
+				if (credentials != null) {
+					String[] loginAndAuthDb = credentials.split("@");
+					String[] userAndPass = loginAndAuthDb[0].split(":");
+					password = userAndPass[1];
+					args.add("--username"); args.add(userAndPass[0]);
+					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
+					args.add("--passwordPrompt");
+				}
+				
+				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder);
+				runProcess(builder, password);
 			}
 		}).start();
 	}
 	
-	public void startRestore(String backupFile, boolean drop) {
+	public void startRestore(String backupFile, boolean drop, String credentials) {
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + restoreCommand);
@@ -82,12 +95,22 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 					"--input", backupFile,
 					"--log"
 				));
+				
+				String password = null;
 				if (drop) args.add("--drop");
+				if (credentials != null) {
+					String[] loginAndAuthDb = credentials.split("@");
+					String[] userAndPass = loginAndAuthDb[0].split(":");
+					args.add("--username"); args.add(userAndPass[0]);
+					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
+					args.add("--passwordPrompt"); 
+					password = userAndPass[1];
+				}
 				
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder);
+				runProcess(builder, password);
 			}
 		}).start();
 	}
@@ -114,11 +137,16 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	}
 	
 	
-	private void runProcess(ProcessBuilder builder) {
+	private void runProcess(ProcessBuilder builder, String password) {
 		try {
 			status = ProcessStatus.RUNNING;
 			statusMessage = "Running " + String.join(" ", builder.command());
 			subprocess = builder.start();
+			if (password != null) {
+				OutputStream stdin = subprocess.getOutputStream();
+				stdin.write((password + "\n").getBytes("utf-8"));
+				stdin.flush();
+			}
 		} catch (IOException e) {
 			status = ProcessStatus.ERROR;
 			statusMessage = "Error : " + e.toString();
