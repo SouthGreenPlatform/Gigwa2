@@ -168,17 +168,17 @@ function handleError(xhr, thrownError) {
 	{
 		processAborted = true;
 		$('div.modal').modal('hide');
-		alert(xhr.responseText);
+		alert(xhr.statusText + ": " + xhr.responseText);
 		return;
 	}
 		
 	var errorMsg;
 	if (xhr != null && xhr.responseText != null) {
 		try {
-			errorMsg = $.parseJSON(xhr.responseText)['errorMsg'];
+			errorMsg = xhr.statusText + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
 		}
 		catch (err) {
-			errorMsg = xhr.responseText;
+			errorMsg = xhr.statusText + ": " + xhr.responseText;
 		}
 	}
 	$(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
@@ -783,6 +783,7 @@ function setGenotypeInvestigationMode(mode) {
 	if (mode <= 1)
 	{
 		$('#discriminationDiv').hide(300);
+		$('#discriminate').prop('checked', false);
 		$('#Individuals2').selectmultiple('deselectAll');
 		$('#Genotypes2').selectpicker('deselectAll');
 		$('#missingdata2').val("100");

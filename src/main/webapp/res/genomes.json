@@ -1,0 +1,89 @@
+[
+ {
+   "id": "osativa_nipponbare_7",
+   "name": "Oryza sativa Nipponbare (v7.0)",
+   "fastaURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/seq/Oryza_sativa_Nipponbare_7.0.assembly.fasta",
+   "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/seq/Oryza_sativa_Nipponbare_7.0.assembly.fasta.fai",
+   "tracks": [
+     {
+       "name": "Genes (RAPDB)",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/RAPDB_20201202.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/RAPDB_20201202.gff3.gz.tbi",
+       "order": 0
+     },
+     {
+       "name": "Genes (MSU)",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/MSU.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/MSU.gff3.gz.tbi",
+       "order": 0
+     },
+     {
+       "name": "LRR",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/LRR_Nipponbare.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/LRR_Nipponbare.gff3.gz.tbi",
+       "order": 0
+     }
+   ]
+ },
+ {
+   "id": "musa_acuminata_pahang_v2",
+   "name": "Musa acuminata DH Pahang (v2.0)",
+   "fastaURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v2/seq/musa_acuminata_v2_pseudochromosome.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v2/seq/musa_acuminata_v2_pseudochromosome.fna.fai",
+   "tracks": [
+     {
+       "name": "Locus",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v2/gff3/musa_acuminata_v2.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v2/gff3/musa_acuminata_v2.gff3.gz.tbi",
+       "order": 0
+     }
+    ]
+  },
+  {
+   "id": "musa_acuminata_pahang_v4",
+   "name": "Musa acuminata DH Pahang (v4.3)",
+   "fastaURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v4/seq/Musa_acuminata_pahang_v4.fasta",
+   "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v4/seq/Musa_acuminata_pahang_v4.fasta.fai",
+   "tracks": [
+     {
+       "name": "Locus",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v4/gff3/Musa_acuminata_pahang_v4.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_pahang_v4/gff3/Musa_acuminata_pahang_v4.gff3.gz",
+       "order": 0
+     }
+    ]
+  },
+  
+  {
+   "id": "sorghum_bicolor_bt623_v3",
+   "name": "Sorghum bicolor BTx623 (v3.1)",
+   "fastaURL": "https://jbrowse.southgreen.fr/sorghum_bicolor_BTx623_v3.1/seq/Sbicolor_313_v3.1.assembly.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/sorghum_bicolor_BTx623_v3.1/seq/Sbicolor_313_v3.1.assembly.fna.fai",
+   "tracks": [
+     {
+       "name": "Locus",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/sorghum_bicolor_BTx623_v3.1/gff3/Sbicolor_313_v3.1.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/sorghum_bicolor_BTx623_v3.1/gff3/Sbicolor_313_v3.1.gff3.gz",
+       "order": 0
+     }
+    ]
+  }
+]
