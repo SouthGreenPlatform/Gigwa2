@@ -771,14 +771,17 @@ public class GigwaRestController extends ControllerInterface {
 
 	                	for (VariantRunData run : runsToWrite) {
 	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
+                                String individualId = sampleIdToIndividualMap.get(sampleId);
+                                Integer individualIndex = individualPositions.get(individualId);
+                                if (individualIndex == null)
+                                    continue;   // unwanted sample
+                                
 								SampleGenotype sampleGenotype = run.getSampleGenotypes().get(sampleId);
 	                            String gtCode = sampleGenotype.getCode();
-	                            String individualId = sampleIdToIndividualMap.get(sampleId);
 	                            
 								if (gtCode == null/* || !VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds(), gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds2())*/)
 									continue;	// skip genotype
-								
-								int individualIndex = individualPositions.get(individualId);
+
 								if (individualGenotypes[individualIndex] == null)
 									individualGenotypes[individualIndex] = new LinkedHashSet<String>();
 								individualGenotypes[individualIndex].add(gtCode);
