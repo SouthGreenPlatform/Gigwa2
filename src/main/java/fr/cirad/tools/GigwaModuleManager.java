@@ -225,8 +225,8 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	
 	@Override
-	public boolean allowBackups() {
-		return true;
+	public boolean hasBackups() {
+		return appConfig.get("enableBackups").trim().toLowerCase().equals("true");
 	}
 	
 	@Override

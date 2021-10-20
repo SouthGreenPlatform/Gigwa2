@@ -115,7 +115,13 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 		}).start();
 	}
 	
+	
 	public String getLog(){
+		this.updateLog();
+		return this.log.toString();
+	}
+	
+	private void updateLog() {
 		try {
 			InputStream stream = this.subprocess.getInputStream();
 			int length = stream.available();
@@ -125,7 +131,6 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 		} catch (IOException e) {
 			this.statusMessage = "Error : " + e.toString();
 		}
-		return this.log.toString();
 	}
 	
 	public ProcessStatus getStatus() {
