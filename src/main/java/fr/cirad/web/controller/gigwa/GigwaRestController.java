@@ -100,6 +100,7 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
+import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -1695,8 +1696,14 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
+                                                                        else if (filesByExtension.containsKey("csv"))
+									{
+										Serializable s = filesByExtension.get("csv");                                                                               
+										boolean fIsLocalFile = s instanceof File;
+										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									}
 									else {
-										Serializable s = filesByExtension.values().iterator().next();
+										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))

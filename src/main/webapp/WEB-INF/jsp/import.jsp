@@ -263,7 +263,7 @@
               		maxFiles: 2,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.csv",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
