@@ -1779,6 +1779,7 @@
         this.renderCrosshair();
         this.highlightMarker();
         this.highlightLineName();
+        if (this.lineSort.hasScore) this.highlightLineScore();
       }
     }, {
       key: "calcMapMarkerPos",
@@ -1850,13 +1851,13 @@
     }, {
       key: "highlightLineName",
       value: function highlightLineName() {
-        if (this.lineUnderMouse) {
+        if (this.lineUnderMouse !== undefined) {
           this.drawingContext.save();
           this.drawingContext.translate(0, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
 
           var region = new Path2D();
           var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.canvas.height;
-          region.rect(0, 0, this.alleleCanvasXOffset, clipHeight);
+          region.rect(0, 0, this.nameCanvasWidth, clipHeight);
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
@@ -1866,6 +1867,29 @@
           var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
           var y = yPos + (this.boxSize - this.fontSize / 2);
           this.drawingContext.fillText(name, 0, y);
+          this.drawingContext.restore();
+        }
+      }
+    }, {
+      key: "highlightLineScore",
+      value: function highlightLineScore() {
+        if (this.lineUnderMouse !== undefined) {
+          this.drawingContext.save();
+          this.drawingContext.translate(this.nameCanvasWidth, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
+
+          var region = new Path2D();
+          var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.canvas.height;
+          region.rect(0, 0, this.scoreCanvasWidth, clipHeight);
+          this.drawingContext.clip(region);
+          this.drawingContext.fillStyle = '#F00';
+          this.drawingContext.font = this.font;
+          var germplasmStart = Math.floor(this.translatedY / this.boxSize);
+          var yWiggle = this.translatedY - germplasmStart * this.boxSize;
+          var yPos = this.lineUnderMouse * this.boxSize - yWiggle;
+          var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
+          var y = yPos + (this.boxSize - this.fontSize / 2);
+          var score = this.lineSort.getScore(name);
+          this.drawingContext.fillText(score.toFixed(2), 2, y);
           this.drawingContext.restore();
         }
       }
@@ -2520,7 +2544,7 @@
       key: "prerender",
       value: function prerender(redraw) {
         if (redraw) {
-          this.renderImage(this.backContext, this.width, this.height);
+          this.renderImage(this.backContext, this.width, this.height, false);
         }
 
         this.drawingContext.drawImage(this.backBuffer, 0, 0);
@@ -2540,8 +2564,8 @@
       }
     }, {
       key: "renderImage",
-      value: function renderImage(context, width, height) {
-        var imageData = this.createImage(context.createImageData(width, height));
+      value: function renderImage(context, width, height, highlightReference) {
+        var imageData = this.createImage(context.createImageData(width, height), highlightReference);
         context.putImageData(imageData, 0, 0);
       } // Calculate the number of markers and germplasms per pixel in the overview
 
@@ -2557,7 +2581,7 @@
 
     }, {
       key: "createImage",
-      value: function createImage(imageData) {
+      value: function createImage(imageData, highlightReference) {
         var scale = this.renderingScale(imageData.width, imageData.height);
         var germplasmsPerPixel = this.dataSet.germplasmList.length / imageData.height;
         var markersPerPixel = this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
@@ -2566,7 +2590,7 @@
           for (var y = 0; y < imageData.height; y += 1) {
             var marker = Math.floor(x * scale.markersPerPixel);
             var germplasm = Math.floor(y * scale.germplasmsPerPixel);
-            var color = this.colorScheme.getColor(germplasm, this.selectedChromosome, marker);
+            var color = this.colorScheme.getColor(germplasm, this.selectedChromosome, marker, highlightReference);
             var pixelIndex = (y * imageData.width + x) * 4;
             imageData.data[pixelIndex] = color[0];
             imageData.data[pixelIndex + 1] = color[1];
@@ -2671,7 +2695,7 @@
         }
 
         try {
-          this.renderImage(tmpContext, tmpCanvas.width, tmpCanvas.height);
+          this.renderImage(tmpContext, tmpCanvas.width, tmpCanvas.height, true);
           return tmpCanvas.toDataURL(type, encoderOptions);
         } catch (error) {
           window.alert("Overview export failed : the image is probably too large");
@@ -3111,13 +3135,15 @@
 
     _createClass(SimilarityColorScheme, [{
       key: "getColor",
-      value: function getColor(germplasm, chromosome, marker) {
+      value: function getColor(germplasm, chromosome, marker, highlightReference) {
         var compState = this.dataSet.genotypeFor(this.compIndex, chromosome, marker);
         var genoState = this.dataSet.genotypeFor(germplasm, chromosome, marker);
         var lookupValue = this.lookupTable[genoState][compState];
 
         if (genoState === 0) {
           return this.colors.white;
+        } else if (this.compIndex === germplasm && highlightReference) {
+          return this.colors.compGreenLight;
         } else {
           switch (lookupValue) {
             case similarityCases.misMatch:
@@ -4678,7 +4704,7 @@
         this.totalLineCount = lines.length;
         var self = this; // Give the browser some time to keep the page alive between the parsing of each line
         // Avoid a complete freeze during a large file load
-        // This leaves a few milliseconds between the parsing of each line for the browser to refresh itself
+        // This yields control between the parsing of each line for the browser to refresh itself
         // This calls recursively and asynchronously the parsing of the following line
         // In order to get a single promise that returns only once all the lines have been parsed
 
@@ -4689,11 +4715,11 @@
             if (advancementCallback) advancementCallback(self.processedLines / self.totalLineCount);
 
             if (line + 1 < self.totalLineCount) {
-              // Let the browser do its things for a few milliseconds, run the next lines (recursively),
+              // Yield to the browser to let it do its things, run the next lines (recursively),
               // and return once they are done
               setTimeout(function () {
                 doLine(line + 1).then(resolve);
-              }, 2);
+              }, 0);
             } else {
               // Finish
               resolve();
@@ -4995,6 +5021,7 @@
     var canvasController; // Genotype import progress bar
 
     var progressBar;
+    var progressBarLabel;
     var progressBarBackground;
     var boxSize = 16;
     var colorScheme;
@@ -5088,17 +5115,27 @@
         progressBarBackground = document.createElement("div");
         progressBarBackground.style.width = width + "px";
         progressBarBackground.style.backgroundColor = "grey";
+        progressBarBackground.style.position = "relative";
         progressBar = document.createElement("div");
         progressBar.style.width = "1%";
         progressBar.style.height = "30px";
         progressBar.style.backgroundColor = "cyan";
-        progressBarBackground.append(progressBar);
+        var labelContainer = document.createElement("div");
+        labelContainer.style.position = "absolute";
+        labelContainer.style.display = "inline";
+        labelContainer.style.top = "0px";
+        labelContainer.style.left = "15px";
+        labelContainer.style.height = "30px";
+        labelContainer.style.lineHeight = "30px";
+        progressBarLabel = document.createTextNode("");
+        labelContainer.appendChild(progressBarLabel);
+        progressBarBackground.appendChild(progressBar);
+        progressBarBackground.appendChild(labelContainer);
         canvasHolder.append(progressBarBackground);
       }
 
       genotypeCanvas = new GenotypeCanvas(width, height, boxSize, defaultLineSort);
-      canvasHolder.append(genotypeCanvas.canvas); // FIXME ?
-
+      canvasHolder.append(genotypeCanvas.canvas);
       if (!overviewWidth) overviewWidth = width;
       if (!overviewHeight) overviewHeight = 200;
       overviewCanvas = new OverviewCanvas(overviewWidth, overviewHeight);
@@ -5107,11 +5144,6 @@
       var form = document.createElement('div');
       var formRow = document.createElement('div');
       formRow.classList.add('row');
-      /*const colorButton = document.createElement('button');
-      colorButton.id = 'colorButton';
-      const textnode = document.createTextNode('Color schemes...');
-      colorButton.appendChild(textnode);*/
-
       var colorFieldSet = createColorSchemeFieldset();
       var sortFieldSet = createSortFieldSet();
       var exportFieldSet = createExportFieldSet();
@@ -5125,7 +5157,7 @@
       canvasController = new CanvasController(canvasHolder, genotypeCanvas, overviewCanvas, widthValue === null, overviewWidthValue === null, minGenotypeAutoWidth, minOverviewAutoWidth);
     }
 
-    function addRadioButton(name, id, text, checked, parent) {
+    function addRadioButton(name, id, text, checked, parent, subcontrol) {
       var formCheck = document.createElement('div');
       formCheck.classList.add('form-check');
       var radio = document.createElement('input');
@@ -5137,10 +5169,11 @@
       var radioLabel = document.createElement('label');
       radioLabel.htmlFor = id;
       radioLabel.classList.add('form-check-label');
-      var labelText = document.createTextNode(text);
+      var labelText = document.createTextNode(text + " ");
       radioLabel.appendChild(labelText);
       formCheck.appendChild(radio);
       formCheck.appendChild(radioLabel);
+      if (subcontrol) formCheck.appendChild(subcontrol);
       parent.appendChild(formCheck);
     }
 
@@ -5177,22 +5210,15 @@
       var legend = document.createElement('legend');
       var legendText = document.createTextNode('Color Schemes');
       legend.appendChild(legendText);
-      var radioCol = document.createElement('div');
-      radioCol.classList.add('col');
-      addRadioButton('selectedScheme', 'nucleotideScheme', 'Nucleotide', true, radioCol);
-      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line', false, radioCol);
-      var selectLabel = document.createElement('label');
-      selectLabel.htmlFor = 'colorLineSelect';
-      selectLabel.classList.add('col-form-label');
-      var labelText = document.createTextNode('Comparison line:');
-      selectLabel.appendChild(labelText);
       var lineSelect = document.createElement('select');
       lineSelect.id = 'colorLineSelect';
       lineSelect.disabled = true;
+      var radioCol = document.createElement('div');
+      radioCol.classList.add('col');
+      addRadioButton('selectedScheme', 'nucleotideScheme', 'Nucleotide', true, radioCol);
+      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line', false, radioCol, lineSelect);
       fieldset.appendChild(legend);
       fieldset.appendChild(radioCol);
-      fieldset.appendChild(selectLabel);
-      fieldset.appendChild(lineSelect);
       formGroup.appendChild(fieldset);
       formCol.appendChild(formGroup);
       return formCol;
@@ -5208,23 +5234,16 @@
       var legend = document.createElement('legend');
       var legendText = document.createTextNode('Sort lines');
       legend.appendChild(legendText);
+      var lineSelect = document.createElement('select');
+      lineSelect.id = 'sortLineSelect';
+      lineSelect.disabled = true;
       var radioCol = document.createElement('div');
       radioCol.classList.add('col');
       addRadioButton('selectedSort', 'importingOrderSort', 'By importing order', true, radioCol);
       addRadioButton('selectedSort', 'alphabeticSort', 'Alphabetically', false, radioCol);
-      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol);
-      var lineSelectLabel = document.createElement('label');
-      lineSelectLabel.htmlFor = 'sortLineSelect';
-      lineSelectLabel.classList.add('col-form-label');
-      var lineSelectLabelText = document.createTextNode('Comparison line:');
-      lineSelectLabel.appendChild(lineSelectLabelText);
-      var lineSelect = document.createElement('select');
-      lineSelect.id = 'sortLineSelect';
-      lineSelect.disabled = true;
+      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol, lineSelect);
       fieldset.appendChild(legend);
       fieldset.appendChild(radioCol);
-      fieldset.appendChild(lineSelectLabel);
-      fieldset.appendChild(lineSelect);
       formGroup.appendChild(fieldset);
       formCol.appendChild(formGroup);
       return formCol;
@@ -5282,12 +5301,15 @@
       return formCol;
     }
 
+    function setProgressBarLabel(newLabel) {
+      progressBarLabel.data = newLabel;
+    }
+
     function setAdvancement(ratio) {
       progressBar.style.width = Math.floor(100 * ratio) + "%";
     }
 
     function removeAdvancement() {
-      progressBar.remove();
       progressBarBackground.remove();
     }
 
@@ -5431,53 +5453,70 @@
       var mapFile;
       var genotypeFile;
       var germplasmData;
-      var mapPromise = axios$1.get(mapFileURL, {}, {
+      var genotypePromise;
+      setProgressBarLabel("Downloading the genome map...");
+      setAdvancement(0);
+      var mapPromise = axios$1.get(mapFileURL, {
         headers: {
           'Content-Type': 'text/plain'
+        },
+        onDownloadProgress: function onDownloadProgress(progressEvent) {
+          if (progressEvent.lengthComputable) setAdvancement(progressEvent.loaded / progressEvent.total);
         }
       }).then(function (response) {
         mapFile = response.data;
       })["catch"](function (error) {
         console.error(error);
       });
-      var genotypePromise = axios$1.get(genotypeFileURL, {}, {
-        headers: {
-          'Content-Type': 'text/plain'
-        }
-      }).then(function (response) {
-        genotypeFile = response.data;
-      })["catch"](function (error) {
-        console.error(error);
-      });
-      Promise.all([mapPromise, genotypePromise]).then(function () {
-        if (mapFile !== undefined) {
-          var mapImporter = new MapImporter();
-          genomeMap = mapImporter.parseFile(mapFile);
-        }
-
-        genotypeImporter = new GenotypeImporter(genomeMap);
-
-        if (genomeMap === undefined) {
-          genomeMap = genotypeImporter.createFakeMap(genotypeFile);
-        }
-
-        genotypeImporter.parseFile(genotypeFile, setAdvancement, removeAdvancement).then(function (germplasmList) {
-          germplasmData = germplasmList;
-          var _genotypeImporter3 = genotypeImporter,
-              stateTable = _genotypeImporter3.stateTable;
-          dataSet = new DataSet(genomeMap, germplasmData, stateTable);
-          colorScheme = new NucleotideColorScheme(dataSet);
-          populateLineSelect();
-          populateChromosomeSelect();
-          canvasController.init(dataSet, colorScheme); // Tells the dom parent that Flapjack has finished loading. Allows spinners
-          // or similar to be disabled
-
-          sendEvent('FlapjackFinished', domParent);
+      mapPromise = mapPromise.then(function () {
+        setProgressBarLabel("Downloading the genotypes...");
+        setAdvancement(0);
+        genotypePromise = axios$1.get(genotypeFileURL, {
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          onDownloadProgress: function onDownloadProgress(progressEvent) {
+            if (progressEvent.lengthComputable) setAdvancement(progressEvent.loaded / progressEvent.total);
+          }
+        }).then(function (response) {
+          genotypeFile = response.data;
+        })["catch"](function (error) {
+          console.error(error);
         });
-      })["catch"](function (error) {
-        sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+        genotypePromise = genotypePromise.then(function () {
+          setAdvancement(0);
+          setProgressBarLabel("Processing the genome map...");
 
-        console.log(error);
+          if (mapFile !== undefined) {
+            var mapImporter = new MapImporter();
+            genomeMap = mapImporter.parseFile(mapFile);
+          }
+
+          setProgressBarLabel("Processing the genotypes...");
+          genotypeImporter = new GenotypeImporter(genomeMap);
+
+          if (genomeMap === undefined) {
+            genomeMap = genotypeImporter.createFakeMap(genotypeFile);
+          }
+
+          genotypeImporter.parseFile(genotypeFile, setAdvancement, removeAdvancement).then(function (germplasmList) {
+            germplasmData = germplasmList;
+            var _genotypeImporter3 = genotypeImporter,
+                stateTable = _genotypeImporter3.stateTable;
+            dataSet = new DataSet(genomeMap, germplasmData, stateTable);
+            colorScheme = new NucleotideColorScheme(dataSet);
+            populateLineSelect();
+            populateChromosomeSelect();
+            canvasController.init(dataSet, colorScheme); // Tells the dom parent that Flapjack has finished loading. Allows spinners
+            // or similar to be disabled
+
+            sendEvent('FlapjackFinished', domParent);
+          });
+        })["catch"](function (error) {
+          sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+
+          console.log(error);
+        });
       });
       return genotypeRenderer;
     };
@@ -5534,6 +5573,7 @@
       createRendererComponents(domParent, width, height, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth, true); // let qtls = [];
 
       var germplasmData;
+      setProgressBarLabel("Loading file contents...");
       var mapFile = document.getElementById(mapFileDom.slice(1)).files[0];
       var mapPromise = loadFromFile(mapFile); // const qtlPromise = loadFromFile(qtlFileDom);
 
@@ -5563,6 +5603,8 @@
           genomeMap = genotypeImporter.createFakeMap(result);
         }
 
+        setProgressBarLabel("Processing genotypes...");
+        setAdvancement(0);
         genotypeImporter.parseFile(result, setAdvancement, removeAdvancement).then(function (germplasmList) {
           germplasmData = germplasmList;
           var _genotypeImporter4 = genotypeImporter,
