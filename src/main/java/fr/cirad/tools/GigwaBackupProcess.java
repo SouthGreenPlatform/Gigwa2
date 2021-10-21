@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.security.backup.IBackgroundProcess;
 import fr.cirad.security.backup.ProcessStatus;
 
@@ -19,6 +20,7 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
 	private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
 	
+	private String module;
 	private String dbName;
 	private List<String> hosts;
 	private Process subprocess = null;
@@ -29,7 +31,8 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	private ProcessStatus status;
 	private String statusMessage;
 	
-	public GigwaBackupProcess(String dbName, List<String> hosts, String basePath, String outPath) {
+	public GigwaBackupProcess(String module, String dbName, List<String> hosts, String basePath, String outPath) {
+		this.module = module;
 		this.hosts = hosts;
 		this.dbName = dbName;
 		this.basePath = basePath;
@@ -143,6 +146,7 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	
 	
 	private void runProcess(ProcessBuilder builder, String password) {
+		AbstractGenotypeImport.lockModuleForWriting(module);
 		try {
 			status = ProcessStatus.RUNNING;
 			statusMessage = "Running " + String.join(" ", builder.command());
@@ -152,18 +156,7 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 				stdin.write((password + "\n").getBytes("utf-8"));
 				stdin.flush();
 			}
-		} catch (IOException e) {
-			status = ProcessStatus.ERROR;
-			statusMessage = "Error : " + e.toString();
-			return;
-		} catch (SecurityException e) {
-			status = ProcessStatus.ERROR;
-			statusMessage = "Security error : " + e.toString();
-			return;
-		}
-
-
-		try {
+			
 			int exitcode = subprocess.waitFor();
 			if (exitcode == 0) {
 				status = ProcessStatus.SUCCESS;
@@ -172,9 +165,19 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 				status = ProcessStatus.ERROR;
 				statusMessage = "Process exited with code " + exitcode;
 			}
+		} catch (IOException e) {
+			status = ProcessStatus.ERROR;
+			statusMessage = "Error : " + e.toString();
+			return;
+		} catch (SecurityException e) {
+			status = ProcessStatus.ERROR;
+			statusMessage = "Security error : " + e.toString();
+			return;
 		} catch (InterruptedException e) {
 			status = ProcessStatus.INTERRUPTED;
 			statusMessage = "Interrupted : " + e.toString();
+		} finally {
+			AbstractGenotypeImport.unlockModuleForWriting(module);
 		}
 	}
 }

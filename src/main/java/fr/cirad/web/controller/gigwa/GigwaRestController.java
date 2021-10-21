@@ -1412,7 +1412,7 @@ public class GigwaRestController extends ControllerInterface {
 			progress.setError("You must pass a token to be allowed to import.");
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
-		if (AbstractGenotypeImport.getCurrentlyImportedProjectForModule(sNormalizedModule) != null)
+		if (!AbstractGenotypeImport.isModuleAvailableForWriting(sNormalizedModule))
 			progress.setError("Some data is already being imported into this database. Please try again later.");
 
 		HashMap<String, Serializable> filesByExtension = new HashMap<>();

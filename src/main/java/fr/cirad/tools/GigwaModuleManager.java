@@ -44,6 +44,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
@@ -251,7 +252,7 @@ public class GigwaModuleManager implements IModuleManager {
 	public IBackgroundProcess startDump(String sModule) {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
-		GigwaBackupProcess process = new GigwaBackupProcess(
+		GigwaBackupProcess process = new GigwaBackupProcess(sModule,
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
@@ -266,7 +267,7 @@ public class GigwaModuleManager implements IModuleManager {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
 		String backupFile = this.getBackupPath(sModule) + File.separator + backupName;
-		GigwaBackupProcess process = new GigwaBackupProcess(
+		GigwaBackupProcess process = new GigwaBackupProcess(sModule,
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
@@ -274,6 +275,11 @@ public class GigwaModuleManager implements IModuleManager {
 		
 		process.startRestore(backupFile, drop, credentials);
 		return process;
+	}
+	
+	@Override
+	public boolean isModuleAvailableForBackup(String sModule) {
+		return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
 	}
 	
 	private String getBackupPath(String sModule) {
