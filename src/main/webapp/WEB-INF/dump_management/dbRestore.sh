@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 
@@ -70,13 +70,15 @@ fi
 
 
 logged_part(){
-	set -o errexit
 	set -x
 	mongorestore -v $CREDENTIAL_OPTIONS --host=$HOST --archive=$FILENAME --gzip $DROP_OPTION
+	return $?
 }
 
 if [ ! -z $LOGFILE ]; then
 	logged_part 2>&1 | tee "$FILENAME-restore-`date +%Y-%m-%dT%H%M%S`.log"
+	exit ${PIPESTATUS[0]}
 else
 	logged_part
+	exit $?
 fi
