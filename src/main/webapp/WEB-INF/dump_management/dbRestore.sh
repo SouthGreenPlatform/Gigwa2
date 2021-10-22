@@ -70,6 +70,7 @@ fi
 
 
 logged_part(){
+	set -o errexit
 	set -x
 	mongorestore -v $CREDENTIAL_OPTIONS --host=$HOST --archive=$FILENAME --gzip $DROP_OPTION
 }

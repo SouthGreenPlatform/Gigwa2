@@ -282,6 +282,13 @@ public class GigwaModuleManager implements IModuleManager {
 		return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
 	}
 	
+	@Override
+	public boolean deleteBackup(String sModule, String sBackup) {
+		String path = getBackupPath(sModule) + File.separator + sBackup;
+		File file = new File(path);
+		return file.delete();
+	}
+	
 	private String getBackupPath(String sModule) {
 		String backupBase = appConfig.get("backupOutputDirectory");
 		if (backupBase == null) {

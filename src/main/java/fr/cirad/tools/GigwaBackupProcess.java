@@ -26,10 +26,13 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	private Process subprocess = null;
 	private String basePath;
 	private String outPath;
+	private boolean abortable = false;
+	private boolean deleteOnError;
 	
 	private StringBuilder log;
 	private ProcessStatus status;
 	private String statusMessage;
+	private boolean aborted = false;
 	
 	public GigwaBackupProcess(String module, String dbName, List<String> hosts, String basePath, String outPath) {
 		this.module = module;
@@ -51,6 +54,8 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	}
 	
 	public void startDump(String credentials) {
+		abortable = true;
+		deleteOnError = true;
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
@@ -85,6 +90,8 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	}
 	
 	public void startRestore(String backupFile, boolean drop, String credentials) {
+		abortable = false;
+		deleteOnError = false;
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + restoreCommand);
@@ -131,8 +138,8 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 			for (int i = 0; i < length; i++) {
 				this.log.append((char)stream.read());
 			}
-		} catch (IOException e) {
-			this.statusMessage = "Error : " + e.toString();
+		} catch (IOException e) {  // Most likely, stream closed. Just return the last known state.
+			
 		}
 	}
 	
@@ -142,6 +149,17 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	
 	public String getStatusMessage() {
 		return this.statusMessage;
+	}
+	
+	public boolean isAbortable() {
+		return this.abortable;
+	}
+	
+	public void abort() {
+		if (this.abortable) {
+			this.aborted = true;
+			this.subprocess.destroy();
+		}
 	}
 	
 	
@@ -161,23 +179,40 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 			if (exitcode == 0) {
 				status = ProcessStatus.SUCCESS;
 				statusMessage = "Finished";
+			} else if (aborted) {
+				status = ProcessStatus.INTERRUPTED;
+				statusMessage = "Aborted by user";
+				onError();
 			} else {
 				status = ProcessStatus.ERROR;
 				statusMessage = "Process exited with code " + exitcode;
+				onError();
 			}
 		} catch (IOException e) {
 			status = ProcessStatus.ERROR;
 			statusMessage = "Error : " + e.toString();
-			return;
 		} catch (SecurityException e) {
 			status = ProcessStatus.ERROR;
 			statusMessage = "Security error : " + e.toString();
-			return;
 		} catch (InterruptedException e) {
 			status = ProcessStatus.INTERRUPTED;
 			statusMessage = "Interrupted : " + e.toString();
 		} finally {
 			AbstractGenotypeImport.unlockModuleForWriting(module);
+		}
+	}
+	
+	private void onError() {
+		if (deleteOnError) {
+			updateLog();
+			for (String line : this.log.toString().split("\n")) {
+				if (line.startsWith("Name : ")) {
+					String filename = line.split(":")[1].trim();
+					File file = new File(filename);
+					file.delete();
+					break;
+				}
+			}
 		}
 	}
 }

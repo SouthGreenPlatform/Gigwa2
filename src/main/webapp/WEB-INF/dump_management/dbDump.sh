@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Arguments parsing
 OUTPUT="."
@@ -77,12 +77,17 @@ FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`".gz"
 
 
 logged_part(){
+	echo "Name : $FILENAME"
 	set -x
 	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollection=cachedCounts --excludeCollection=brapiGermplasmsSearches --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
+	return $?
 }
+
 
 if [ ! -z $LOGFILE ]; then
 	logged_part 2>&1 | tee "$FILENAME-dump.log"
+	exit ${PIPESTATUS[0]}
 else
 	logged_part
+	exit $?
 fi
