@@ -279,11 +279,6 @@
 			}
 		});
 
-		$(".auto-overflow").on('scroll', function() {
-			var translate = "translate(0," + (this.scrollTop - 1) + "px)";
-			this.querySelector("thead").style.transform = translate;
-		});
-
 		$(window).on('beforeunload', function() {
 			if (!exporting) {
 				if (referenceset != "")
