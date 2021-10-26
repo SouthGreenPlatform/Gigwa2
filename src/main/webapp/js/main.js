@@ -312,6 +312,13 @@ function getSelectedSequences() {
 	return selectedSequences.join(";");
 }
 
+function getSelectedVariantIds() {
+	var selectedVariantIds = $('#variantIdsSelect').val();
+	if (selectedVariantIds === null || selectedVariantIds === undefined)
+		return "";
+	return selectedVariantIds.join(";");
+}
+
 function getSelectedNumberOfAlleles() {
 	var selectedNbAlleles = $('#numberOfAlleles').val();
 	if (selectedNbAlleles === null || selectedNbAlleles.length === alleleCount)
@@ -344,6 +351,7 @@ function fillWidgets() {
 	loadNumberOfAlleles();
 	loadGenotypePatterns();
 	readPloidyLevel();
+        loadVariantIds();
 }
 
 function loadSearchableVcfFields()
@@ -509,7 +517,8 @@ function buildSearchQuery(searchMode, pageToken){
 		"pageSize": 100,
 		"pageToken": pageToken,
 		"sortBy": sortBy,
-		"sortDir": sortDesc === true ? 'desc' : 'asc'
+		"sortDir": sortDesc === true ? 'desc' : 'asc',
+                "selectedVariantIds": getSelectedVariantIds()
 	};
 	return query;
 }
@@ -1024,6 +1033,11 @@ function copyIndividuals(groupNumber) {
 	copyToClipboard((selectedIndividuals != "" ? selectedIndividuals : $('#Individuals1').selectmultiple('option')).join("\n"));
 }
 
+function copyVariantIds() {
+	var selectedVariantIds = $('#variantIdsSelect').val();
+	copyToClipboard((selectedVariantIds != "" ? selectedVariantIds : $('#variantIdsSelect').selectmultiple('option')).join("\n"));
+}
+
 function copyToClipboard(text){
 	var textarea = document.createElement('textarea');
 	document.body.appendChild(textarea);
@@ -1061,6 +1075,32 @@ function onPasteIndividuals(groupNumber, textarea) {
 	$('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
 	applyGroupMemorizing(groupNumber);
 	$("button#pasteIndividuals" + groupNumber).click();
+}
+
+function toggleVariantsPasteBox() {
+	var previousSibling = $("button#pasteVariantIds").prev();
+	if (previousSibling.html() === "")
+	{
+            var pasteBoxHtml = '<div class="panel shadowed-panel group" style="text-align:left; position:absolute; border:1px solid white; left:150px; margin-top:-45px; padding:5px; z-index:200;" id="variantsIdsPastePanel">Please paste your variant ids selection (one per line) in the box below:<textarea id="pasteAreaVariantIds" style="width:100%;" rows="15"></textarea><input type="button" style="float:right;" class="btn btn-primary btn-sm" onclick="onPasteVariantIds($(this).prev());" value="Apply" /><input type="button" class="btn btn-primary btn-sm" onclick="$(this).parent().remove();" value="Cancel" /></div>';
+            $("button#pasteVariantIds").before(pasteBoxHtml);
+	}
+	else
+            previousSibling.remove();
+}
+
+function onPasteVariantIds(textarea) {
+	var cleanSelectionArray = [];
+	var splitSelection = textarea.val().split("\n");
+	for (var selectedVariant in splitSelection)
+	{
+		var trimmedInd = splitSelection[selectedVariant].trim();
+		if (trimmedInd.length > 0)
+			cleanSelectionArray.push(trimmedInd);
+                    $("#variantIdsSelect").append('<option value="'+trimmedInd+'">'+trimmedInd+'</option>');
+	}
+        $("button#pasteVariantIds").click();
+        $("#variantIdsSelect").val(cleanSelectionArray);
+        loadVariantIds();
 }
 
 function displayProjectInfo(projName)

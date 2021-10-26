@@ -69,14 +69,19 @@ function initializeAndShowDensityChart(){
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-        	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
-        		selectedSequences = jsonResult;
+                    if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
+                            selectedSequences = jsonResult;
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
         }
     });
-    feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
+    if (selectedSequences.length == 0) {
+        alert("Nothing to display");
+        return;
+    } else {
+        feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
+    }
 }
 
 function clearVcfFieldBasedSeries() {
