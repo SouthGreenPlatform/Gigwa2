@@ -286,6 +286,7 @@ class GigwaSearchReader {
 		this.header = null;
 		this.lastRead = null;
 		this.lastIGVChromosome = null;
+		this.lastIndex = 0;
 	}
 	
 	readHeader() {
@@ -318,18 +319,19 @@ class GigwaSearchReader {
 	async readFeatures(chr, bpStart, bpEnd){
 		if (!self.header) await this.readHeader();
 		
+		this.lastIndex += 1;
 		if (this.lastRead){
-			this.lastRead = this.lastRead.then(this.retrieveFeatures(chr, bpStart, bpEnd));
+			this.lastRead = this.lastRead.then(this.retrieveFeatures(this.lastIndex, chr, bpStart, bpEnd));
 		} else {
-			this.lastRead = this.retrieveFeatures(chr, bpStart, bpEnd)({chr: null, start: -1, end: -1, features: []});
+			this.lastRead = this.retrieveFeatures(this.lastIndex, chr, bpStart, bpEnd)({chr: null, start: -1, end: -1, features: [], result: []});
 		}
 		let result = await this.lastRead;
-		return result.features;
+		return result.result;
 	}
 	
 	// Return an async function to chain after the last one
 	// A closure is necessary as the chained promise must get the return value from its predecessor and its own parameters
-	retrieveFeatures(igvChr, bpStart, bpEnd){
+	retrieveFeatures(chainIndex, igvChr, bpStart, bpEnd){
 		let self = this;
 		let searchStart = getSearchMinPosition();
 		let searchEnd = getSearchMaxPosition();
@@ -342,11 +344,15 @@ class GigwaSearchReader {
 		
 		// Function to chain
 		async function requestChain(previousResult){
+		    if (self.lastIndex > chainIndex){  // Not the latest request : pass the cached features to the next promise, do not draw anything for this call
+		        return {chr: previousResult.chr, start: previousResult.start, end: previousResult.end, features: previousResult.features, result: []};
+		    }
+		    
 			if (!chr){  // Chromosome not found, probably because gigwa has no data for it
 				if (self.lastIGVChromosome != igvChr){
 					displayMessage("No data found for the sequence " + igvChr + " in Gigwa");
 				}
-				return {chr: null, start: -1, end: -1, features: []};
+				return {chr: null, start: -1, end: -1, features: [], result: []};
 			}
 			self.lastIGVChromosome = igvChr;
 			
@@ -359,18 +365,19 @@ class GigwaSearchReader {
 				overlap = null;
 			} else if (previousResult.start <= bpStart && previousResult.end >= bpEnd) {
 				// The new request is a subset of the previous one : just return cached features without making a new request
+			    // Optimization : keep the whole superset's features to use the cached features without any new request
+			    //   for the whole time we stay within that superset
 				return {
 					chr: chr,
-					start: bpStart,
-					end: bpEnd,
-					features: previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd)),
+					start: previousResult.start,
+					end: previousResult.end,
+					features: previousResult.features,
+					result: previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd)),
 				};
 			} else {  // Overlapping range
 				overlap = [Math.max(previousResult.start, bpStart), Math.min(previousResult.end, bpEnd)];
 			}
-			// console.log("\n----------\nNew IGV query : " + chr + " : " + bpStart + " - " + bpEnd);
-			// console.log("Last query : " + previousResult.chr + " : " + previousResult.start + " - " + previousResult.end);
-			// console.log("Overlap : " + overlap);
+			
 			
 			let query = {
 				variantSetId: getProjectId(),
@@ -392,9 +399,7 @@ class GigwaSearchReader {
 				query.start = bpStart;
 				query.end = bpEnd;
 			}
-			
-			// console.log("Resulting request interval : " + query.start + " - " + query.end);
-			
+						
 			let data = await $.ajax({
 				url: self.variantSearch,
 				type: "POST",
@@ -411,7 +416,6 @@ class GigwaSearchReader {
 			
 			let features;
 			let newFeatures = parseFeatures(data, self.header);
-			// console.log("Amount of new features retrieved : " + newFeatures.length);
 			
 			if (overlap){  // Get the features in the overlapping interval from the previous results
 				let cachedFeatures = previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd));
@@ -419,13 +423,14 @@ class GigwaSearchReader {
 			} else {
 				features = newFeatures;
 			}
-			// console.log("Amount of features returned : " + features.length);
 			
+			// Exploit the retrieved features but do not draw them if there are other promises pending after this one
 			return {
 				chr: chr,
 				start: bpStart,
 				end: bpEnd,
 				features: features,
+				result: (self.lastIndex == chainIndex) ? features : [],
 			};
 		}
 		

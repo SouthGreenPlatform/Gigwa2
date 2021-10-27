@@ -59,7 +59,6 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
-<!-- <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script> -->
 <script type="text/javascript" src="js/igv.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
@@ -1813,7 +1812,7 @@
 		if (igvCheckReferenceCountDifference && (
 					referenceNames.length > igvBrowser.genome.chromosomeNames.length * (1 + igvReferenceCountDifferenceThreshold) ||
 					igvBrowser.genome.chromosomeNames.length > referenceNames.length * (1 + igvReferenceCountDifferenceThreshold))){
-			displayMessage("The amount of sequences in the selected genome (" + igvBrowser.genome.chromosomeNames.length + " sequences) is substancially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It it possible that you selected a wrong genome", null);
+			displayMessage("The amount of sequences (" + igvBrowser.genome.chromosomeNames.length + ") in the selected genome is substantially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It is likely that you selected a wrong genome", 10000);
 		}
 	}
 	
@@ -1941,7 +1940,7 @@
 					reader: new GigwaSearchReader(
 							individuals, token,
 							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
-							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />"),
+							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
 				});
 			})
 			
