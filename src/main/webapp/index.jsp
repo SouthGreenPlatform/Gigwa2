@@ -277,11 +277,7 @@
                         $('#minposition').attr('disabled',true);
                         $('#minposition').selectpicker('refresh');
                         $('#maxposition').attr('disabled',true);
-                        $('#maxposition').selectpicker('refresh');
-                        $('#genotypeInvestigationMode').val("0");
-                        $('#genotypeInvestigationMode').attr('disabled',true);
-                        $('#genotypeInvestigationMode').selectpicker('refresh');
-                   
+                        $('#maxposition').selectpicker('refresh');                   
                         
                         $('#variantIdsSelect').removeAttr('disabled');
                         $('#variantIdsSelect').selectpicker('refresh');
@@ -301,8 +297,6 @@
                         $('#minposition').selectpicker('refresh');
                         $('#maxposition').removeAttr('disabled');
                         $('#maxposition').selectpicker('refresh');
-                        $('#genotypeInvestigationMode').removeAttr('disabled');
-                        $('#genotypeInvestigationMode').selectpicker('refresh');
                         
                         $('#variantIdsSelect').attr('disabled',true);
                         $('#variantIdsSelect').selectpicker('refresh');
@@ -581,8 +575,10 @@
                                 if (seqCount ==0) {
                                     $('#sequenceFilter').hide();
                                     $('#positions').hide();
-                                }
-                                
+                                } else {
+                                    $('#sequenceFilter').show();
+                                    $('#positions').show();
+                                }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
 				for (var ref in jsonResult.references) {
@@ -929,7 +925,6 @@
                                     handleError(xhr, thrownError);
                             }
                     });
-                
 		$('#iconSeq').hide();
 		$('#iconPos').hide();
 		$('#rightSidePanel').hide();
@@ -987,6 +982,7 @@
 		};
                 
             $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
+            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {}
 	}
 	
 	function buildGenotypeTableContents(jsonResult)
@@ -1492,16 +1488,20 @@
 	}
 	
 	// Open the IGV modal, initialise the browser if a default genome is set
-	function igvOpenDialog(){
-		$('#igvPanel').modal('show');
-		
-		if (!igvGenomeListLoaded && igvGenomeConfigURL){
-			igvLoadGenomeList().then(function (genomeList){
-				igvCheckModuleChange();
-			});
-		} else {
-			igvCheckModuleChange();
-		}
+	function igvOpenDialog(){            
+            if (seqCount === 0) {
+                alert("No sequence to display");
+            } else {                
+                $('#igvPanel').modal('show');
+
+                if (!igvGenomeListLoaded && igvGenomeConfigURL){
+                        igvLoadGenomeList().then(function (genomeList){
+                                igvCheckModuleChange();
+                        });
+                } else {
+                        igvCheckModuleChange();
+                }
+            }
 	}
 	
 	/* Load the default genomes list
@@ -2081,10 +2081,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-                                                                <p>                                                                    
-                                                                    <input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox">
-                                                                    Filter by IDs
-                                                                </p>
+                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox">Filter by IDs</p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2151,12 +2148,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									</div>
                                                                         <div id="VariantIds"></div>
                                                                             <div class="custom-label margin-top-md" id="variantIdsLabel">Variant IDs</div>
-                                                                            <div id="VariantIDs"></div>
                                                                             <div class="form-input">
                                                                                 <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="5" disabled></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" onclick="copyVariantIds(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" onclick="toggleVariantsPasteBox()"></button>
                                                                             </div>
 									<div class="margin-top-md">
@@ -2361,7 +2357,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
+								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="initializeAndShowDensityChart();">
 									<img title="Variant density chart" src="images/density.webp" height="25" width="25" />
 								</button>
 								

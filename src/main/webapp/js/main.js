@@ -1033,7 +1033,7 @@ function copyIndividuals(groupNumber) {
 	copyToClipboard((selectedIndividuals != "" ? selectedIndividuals : $('#Individuals1').selectmultiple('option')).join("\n"));
 }
 
-function copyVariantIds() {
+function copyVariants() {
 	var selectedVariantIds = $('#variantIdsSelect').val();
 	copyToClipboard((selectedVariantIds != "" ? selectedVariantIds : $('#variantIdsSelect').selectmultiple('option')).join("\n"));
 }

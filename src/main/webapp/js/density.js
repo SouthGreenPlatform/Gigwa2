@@ -22,6 +22,12 @@ let localmin, localmax;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 
 function initializeAndShowDensityChart(){
+    
+    if (seqCount === 0) {
+        alert("No sequence to display");
+        return;
+    }
+    
     if (distinctSequencesInSelectionURL == null)
     {
         alert("distinctSequencesInSelectionURL is not defined!");
@@ -57,6 +63,8 @@ function initializeAndShowDensityChart(){
         alert("referenceset is not defined!");
         return;
     }
+    
+    $('#density').modal('show');
 
     $('div#chartContainer').html('<div id="densityChartArea" style="min-width:310px; height:370px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
     var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
@@ -76,12 +84,7 @@ function initializeAndShowDensityChart(){
             handleError(xhr, thrownError);
         }
     });
-    if (selectedSequences.length == 0) {
-        alert("Nothing to display");
-        return;
-    } else {
-        feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
-    }
+    feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
 }
 
 function clearVcfFieldBasedSeries() {
