@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
-<script type="text/javascript" src="js/igv.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.2/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
