@@ -262,49 +262,7 @@
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
-		});
-                
-                $('#filterIDsCheckbox').on('change', function() {
-                    
-                    if (this.checked) {
-                        $('#variantTypes').attr('disabled',true);
-                        $('#variantTypes').selectpicker('refresh');
-                        $('#numberOfAlleles').attr('disabled',true);
-                        $('#numberOfAlleles').selectpicker('refresh');
-                        $('#Sequences').find('.btn').attr('disabled',true);
-                        $('#Sequences').find('.btn').selectpicker('refresh');
-                        $('#minposition').attr('disabled',true);
-                        $('#minposition').selectpicker('refresh');
-                        $('#maxposition').attr('disabled',true);
-                        $('#maxposition').selectpicker('refresh');                   
-                        
-                        $('#variantIdsSelect').removeAttr('disabled');
-                        $('#variantIdsSelect').selectpicker('refresh');
-                        $('#copyVariantIds').removeAttr('disabled');
-                        $('#copyVariantIds').selectpicker('refresh');
-                        $('#pasteVariantIds').removeAttr('disabled');
-                        $('#pasteVariantIds').selectpicker('refresh');
-
-                    } else {
-                        $('#variantTypes').removeAttr('disabled');
-                        $('#variantTypes').selectpicker('refresh');
-                        $('#numberOfAlleles').removeAttr('disabled');
-                        $('#numberOfAlleles').selectpicker('refresh');
-                        $('#Sequences').find('.btn').removeAttr('disabled');
-                        $('#Sequences').find('.btn').selectpicker('refresh');
-                        $('#minposition').removeAttr('disabled');
-                        $('#minposition').selectpicker('refresh');
-                        $('#maxposition').removeAttr('disabled');
-                        $('#maxposition').selectpicker('refresh');
-                        
-                        $('#variantIdsSelect').attr('disabled',true);
-                        $('#variantIdsSelect').selectpicker('refresh');
-                        $('#copyVariantIds').attr('disabled',true);
-                        $('#copyVariantIds').selectpicker('refresh');
-                        $('#pasteVariantIds').attr('disabled',true);
-                        $('#pasteVariantIds').selectpicker('refresh');
-                    }
-                });                
+		});            
 
 		$("#variantTable").on('click', 'th', function() { // Sort function on variant table. Enabled for sequence and position only
 			if ($(this).text().trim() === "sequence") {
@@ -2080,7 +2038,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox">Filter by IDs</p>
+                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)">Filter by IDs</p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2108,7 +2066,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									</div>
                                                                         <div id="sequenceFilter">
                                                                             <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
-                                                                            <div id="Sequences" disabled ></div>
+                                                                            <div id="Sequences"></div>
                                                                         </div>
                                                                         <div id="positions" class="margin-top-md">
 										<label id="positionLabel" for="minposition" class="custom-label">Position (bp)</label>
@@ -2148,7 +2106,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                                         <div id="VariantIds"></div>
                                                                             <div class="custom-label margin-top-md" id="variantIdsLabel">Variant IDs</div>
                                                                             <div class="form-input">
-                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="5" disabled></select>
+                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="10" disabled></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>

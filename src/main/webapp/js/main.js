@@ -1163,6 +1163,7 @@ function resetFilters() {
 	$('#maxposition').val("");
 	$('#geneName').val("");
 	$('#variantEffects').selectpicker('deselectAll');
+        $('#variantIdsSelect').selectpicker('deselectAll');
 
 	$('#genotypeInvestigationMode').val(0);
 	$('.selectpicker').selectpicker('refresh')
@@ -1480,4 +1481,45 @@ function listQueries(){
 			});
 		}
 	});
+}
+
+function onFilterByIds(checked) {
+    if (checked) {
+        $('#variantTypes').attr('disabled',true);
+        $('#variantTypes').selectpicker('refresh');
+        $('#numberOfAlleles').attr('disabled',true);
+        $('#numberOfAlleles').selectpicker('refresh');
+        $('#Sequences').find('.btn').attr('disabled',true);
+        $('#Sequences').find('.btn').selectpicker('refresh');
+        $('#minposition').attr('disabled',true);
+        $('#minposition').selectpicker('refresh');
+        $('#maxposition').attr('disabled',true);
+        $('#maxposition').selectpicker('refresh');                   
+
+        $('#variantIdsSelect').removeAttr('disabled');
+        $('#variantIdsSelect').selectpicker('refresh');
+        $('#copyVariantIds').removeAttr('disabled');
+        $('#copyVariantIds').selectpicker('refresh');
+        $('#pasteVariantIds').removeAttr('disabled');
+        $('#pasteVariantIds').selectpicker('refresh');
+
+    } else {
+        $('#variantTypes').removeAttr('disabled');
+        $('#variantTypes').selectpicker('refresh');
+        $('#numberOfAlleles').removeAttr('disabled');
+        $('#numberOfAlleles').selectpicker('refresh');
+        $('#Sequences').find('.btn').removeAttr('disabled');
+        $('#Sequences').find('.btn').selectpicker('refresh');
+        $('#minposition').removeAttr('disabled');
+        $('#minposition').selectpicker('refresh');
+        $('#maxposition').removeAttr('disabled');
+        $('#maxposition').selectpicker('refresh');
+
+        $('#variantIdsSelect').attr('disabled',true);
+        $('#variantIdsSelect').selectpicker('refresh');
+        $('#copyVariantIds').attr('disabled',true);
+        $('#copyVariantIds').selectpicker('refresh');
+        $('#pasteVariantIds').attr('disabled',true);
+        $('#pasteVariantIds').selectpicker('refresh');
+    }
 }

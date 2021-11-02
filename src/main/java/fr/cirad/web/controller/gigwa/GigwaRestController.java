@@ -1704,9 +1704,9 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-                                                                        else if (filesByExtension.containsKey("csv"))
+                                                                        else if (filesByExtension.containsKey("intertek"))
 									{
-										Serializable s = filesByExtension.get("csv");                                                                               
+										Serializable s = filesByExtension.get("intertek");                                                                               
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
