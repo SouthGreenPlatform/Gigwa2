@@ -20,8 +20,29 @@ var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
 let localmin, localmax;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
+var currentChartType = "density";
+const chartTypes = new Map([
+    ["density", {
+        displayName: "Density",
+        queryURL: selectionDensityDataURL,
+        title: "Distribution of {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "The value provided for a position is actually the number of variants around it in an interval of size {{intervalSize}}",
+        yAxisTitle: "Number of variants in interval",
+        xAxisTitle: "Positions on selected sequence",
+        seriesName: "Variants in interval",
+    }],
+    ["fst", {
+        displayName: "Fst",
+        queryURL: selectionFstDataURL,
+        title: "Fst value for {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "The value provided for a position is the Weir and Cockerham Fst estimate over an interval of size {{intervalSize}} between the selected groups",
+        yAxisTitle: "Fst value for the interval",
+        xAxisTitle: "Positions on selected sequence",
+        seriesName: "Fst estimate",
+    }]
+]);
 
-function initializeAndShowDensityChart(){
+async function initializeAndShowDensityChart(){
     if (distinctSequencesInSelectionURL == null)
     {
         alert("distinctSequencesInSelectionURL is not defined!");
@@ -61,9 +82,8 @@ function initializeAndShowDensityChart(){
     $('div#chartContainer').html('<div id="densityChartArea" style="min-width:310px; height:370px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
     var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
     var selectedTypes = getSelectedTypes().split(";");
-    $.ajax({
+    await $.ajax({
         url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
-        async: false,
         type: "GET",
         headers: {
             "Authorization": "Bearer " + token
@@ -76,7 +96,9 @@ function initializeAndShowDensityChart(){
             handleError(xhr, thrownError);
         }
     });
-    feedSequenceSelectAndLoadVariantTypeList(selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences, selectedTypes == "" ? $('#variantTypes option').map(function(){ return this.value; }).get() : selectedTypes);
+    feedSequenceSelectAndLoadVariantTypeList(
+            selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
+            selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
 }
 
 function clearVcfFieldBasedSeries() {
@@ -85,20 +107,29 @@ function clearVcfFieldBasedSeries() {
 }
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    $('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="loadAndDisplayChart();"><div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div><form><div style="padding:3px; width:100%; background-color:#f0f0f0;"> Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadAndDisplayChart();"></select> Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadAndDisplayChart();"><option value="">ANY</option></select></div></form>').insertBefore('div#densityChartArea');
+    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="loadAndDisplayChart();">' +
+                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
+                        '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
+                            'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
+                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadAndDisplayChart();"></select>' + 
+                            'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadAndDisplayChart();"><option value="">ANY</option></select>' +
+                        '</div></form>');
+    $(headerHtml).insertBefore('div#densityChartArea');
 
-    for (var key in sequences)
+    for (const [key, info] of chartTypes)
+        $("#chartTypeList").append("<option value='" + key + "'>" + info.displayName + "</option>");
+    for (let key in sequences)
         $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
-    for (var key in types)
+    for (let key in types)
         $("#chartVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
 
-    var customisationDivHTML = "<div class='panel panel-default two-third-width container-fluid'><div class='row panel-body panel-grey shadowed-panel graphCustomization'><div class='col-md-3'><p>Customisation options</p>";
+    let customisationDivHTML = "<div class='panel panel-default two-third-width container-fluid'><div class='row panel-body panel-grey shadowed-panel graphCustomization'><div class='col-md-3'><p>Customisation options</p>";
     customisationDivHTML += 'Number of Intervals <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
     if ($("#vcfFieldFilterGroup1 input").length > 0)
     {
     	customisationDivHTML += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
 	    $("#vcfFieldFilterGroup1 input").each(function(index) {
-	        var fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
+	        let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
 	        customisationDivHTML += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
 	    });
 	    customisationDivHTML += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
@@ -108,10 +139,14 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     loadAndDisplayChart();
 }
 
+function setChartType(typeSelect){
+    currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
+    loadAndDisplayChart();
+}
+
 function abortOngoingOperation(){
     $.ajax({
         url: abortUrl,
-        async: false,
         type: "DELETE",
         headers: {
             "Authorization": "Bearer " + token
@@ -180,6 +215,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 function loadAndDisplayChart(minPos, maxPos) {
     localmin = minPos;
     localmax = maxPos;
+    typeInfo = chartTypes.get(currentChartType);
     var zoomApplied = minPos != null && maxPos != null;
     $("input#resetZoom").toggle(zoomApplied);
     if (chart != null)
@@ -198,7 +234,7 @@ function loadAndDisplayChart(minPos, maxPos) {
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
 
     $.ajax({
-        url: selectionDensityDataURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+        url: typeInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: {
@@ -227,15 +263,15 @@ function loadAndDisplayChart(minPos, maxPos) {
                     zoomType: 'x'
                 },
                 title: {
-                    text: 'Distribution of ' + totalVariantCount + ' ' + displayedVariantType + ' variants on sequence ' + displayedSequence
+                    text: typeInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
                 },
                 subtitle: {
-                    text: isNaN(intervalSize) ? '' : 'The value provided for a position is actually the number of variants around it in a interval of size ' + intervalSize
+                    text: isNaN(intervalSize) ? '' : typeInfo.subtitle.replace("{{intervalSize}}", intervalSize),
                 },
                 xAxis: {
                     categories: jsonKeys,
                     title: {
-                        text: 'Positions on selected sequence'
+                        text: typeInfo.xAxisTitle,
                     },
                     events: {
                         afterSetExtremes: function(e) {
@@ -252,7 +288,7 @@ function loadAndDisplayChart(minPos, maxPos) {
                 },
                 yAxis: {
                     title: {
-                        text: 'Number of variants in interval'
+                        text: typeInfo.yAxisTitle,
                     }
                 },
                 tooltip: {
@@ -268,7 +304,7 @@ function loadAndDisplayChart(minPos, maxPos) {
                     }
                 },
                 series: [{
-                    name: 'Variants in interval',
+                    name: typeInfo.seriesName,
                     marker: {
 		                enabled: false
 		            },
