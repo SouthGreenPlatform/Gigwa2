@@ -705,7 +705,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Long> getFstData(HttpServletRequest request, HttpServletResponse resp,
+	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
 		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
