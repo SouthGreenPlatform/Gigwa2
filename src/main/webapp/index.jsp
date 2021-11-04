@@ -1108,11 +1108,13 @@
 		exporting = true;
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
+			supportedTypes = supportedTypes.split(";");
 			var selectedTypes = $('#variantTypes').val() === null ? $('#variantTypes option') : $('#variantTypes').val();
-			if (selectedTypes.length !== 1 || (selectedTypes[0] !== supportedTypes && selectedTypes[0].innerHTML !== supportedTypes)) {
-				alert("Error: non supported variant type for this format");
-				return;
-			}
+			for (var i in selectedTypes)
+				if (!arrayContains(supportedTypes, selectedTypes[i])) {
+					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+					return;
+				}
 		}
 		if (keepExportOnServer)
 		{
