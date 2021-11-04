@@ -20,7 +20,7 @@ var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
 let localmin, localmax;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
-var currentChartType = "density";
+var currentChartType = null;
 const chartTypes = new Map([
     ["density", {
         displayName: "Density",
@@ -30,15 +30,18 @@ const chartTypes = new Map([
         yAxisTitle: "Number of variants in interval",
         xAxisTitle: "Positions on selected sequence",
         seriesName: "Variants in interval",
+        enableMarker: false,
     }],
     ["fst", {
         displayName: "Fst",
         queryURL: selectionFstDataURL,
-        title: "Fst value for {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
         subtitle: "The value provided for a position is the Weir and Cockerham Fst estimate over an interval of size {{intervalSize}} between the selected groups",
         yAxisTitle: "Fst value for the interval",
         xAxisTitle: "Positions on selected sequence",
         seriesName: "Fst estimate",
+        enableMarker: true,
+        enableCondition: () => genotypeInvestigationMode == 2 && !areGroupsOverlapping(),
     }]
 ]);
 
@@ -116,8 +119,18 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
                         '</div></form>');
     $(headerHtml).insertBefore('div#densityChartArea');
 
-    for (const [key, info] of chartTypes)
+    let allowedCharts = [];
+    for (const [key, info] of chartTypes){
+        if (info.enableCondition !== undefined)
+            if (!info.enableCondition()) continue;
+        allowedCharts.push(key);
         $("#chartTypeList").append("<option value='" + key + "'>" + info.displayName + "</option>");
+    }
+    if (currentChartType === null || !allowedCharts.includes(currentChartType)){
+        currentChartType = allowedCharts[0];
+    }
+    $("#chartTypeList").val(currentChartType);
+    
     for (let key in sequences)
         $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
     for (let key in types)
@@ -306,7 +319,7 @@ function loadAndDisplayChart(minPos, maxPos) {
                 series: [{
                     name: typeInfo.seriesName,
                     marker: {
-		                enabled: false
+		                enabled: typeInfo.enableMarker,
 		            },
                     lineWidth: 1,
                     color : colorTab[0],

@@ -780,6 +780,7 @@ function isNumberKey(evt) {
 }
 
 function setGenotypeInvestigationMode(mode) {
+    genotypeInvestigationMode = mode;
 	if (mode <= 1)
 	{
 		$('#discriminationDiv').hide(300);
@@ -1074,8 +1075,16 @@ function displayProjectInfo(projName)
 	});
 }
 
+// Check whether some individuals are in both groups at the same time
+function areGroupsOverlapping(){
+    const group1 = getSelectedIndividuals(1);
+    const group2 = getSelectedIndividuals(2);
+    //     Overlapping individuals                         // empty = all selected = overlap
+    return arrayIntersection(group1, group2).length > 0 || group1.length == 0 || group2.length == 0;
+}
+
 function checkGroupOverlap() {
-	$('#overlapWarning').toggle($("#discriminate").prop('checked') && arrayIntersection(getSelectedIndividuals(1), getSelectedIndividuals(2)).length > 0);
+	$('#overlapWarning').toggle($("#discriminate").prop('checked') && areGroupsOverlapping());
 }
 
 function getOutputToolConfig(toolName)
