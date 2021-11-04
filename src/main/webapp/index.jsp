@@ -1109,7 +1109,7 @@
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
 			supportedTypes = supportedTypes.split(";");
-			var selectedTypes = $('#variantTypes').val() === null ? $('#variantTypes option') : $('#variantTypes').val();
+			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
 			for (var i in selectedTypes)
 				if (!arrayContains(supportedTypes, selectedTypes[i])) {
 					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
