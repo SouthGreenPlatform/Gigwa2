@@ -240,14 +240,14 @@ function parseFeatures(data, dataHeader){
 	let header = rows.shift();
 	
 	// Associate column titles to indices
-	let cols = {};
+	let cols = new Map();
 	header.forEach(function (title, index){
-		cols[title] = index;
+		cols.set(title, index);
 	});
 	
-	let individualCols = {};
+	let individualCols = new Map();
 	dataHeader.callSets.forEach(function (callset){
-		individualCols[callset.id] = cols[callset.name];
+		individualCols.set(callset.id, cols.get(callset.name));
 	})
 	
 	// Parse the actual data
@@ -255,7 +255,7 @@ function parseFeatures(data, dataHeader){
 		// Build the calls object (parse the genotypes)
 		let calls = {};
 		dataHeader.callSetIds.forEach(function (id){
-			let genotype = row[individualCols[id]];
+			let genotype = row[individualCols.get(id)];
 			if (genotype.length > 0){
 				calls[id] = {
 					callSetId: id,
@@ -265,9 +265,9 @@ function parseFeatures(data, dataHeader){
 			}
 		});
 		
-		let alleles = row[cols.alleles].split("/");
+		let alleles = row[cols.get("alleles")].split("/");
 		let refAllele = alleles.shift();
-		let variant = new GigwaVariant(projectId + row[cols.variant], row[cols.chrom], parseInt(row[cols.pos]), refAllele, alleles.join(","), calls);
+		let variant = new GigwaVariant(projectId + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
 		if (!variant.isRefBlock()){
 			variants.push(variant);
 		}
