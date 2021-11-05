@@ -58,8 +58,7 @@
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
-<script type="text/javascript" src="js/density.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.2/dist/igv.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
@@ -123,6 +122,8 @@
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
 	var genotypeInvestigationMode = 0;
+	var callSetResponse = [];
+	var callSetMetadataFields = [];
 	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
@@ -564,8 +565,7 @@
 				"pageToken": null
 			}),
 			success: function(jsonResult) {
-				var callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
-				igvCallSets = callSetResponse;
+				callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 				var indOpt = [];
 
 				var gotMetaData = false;
@@ -583,6 +583,7 @@
 					if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
 						indOpt.push(callSetResponse[ind].name);
 				}
+				callSetMetadataFields = headers;
 				
 				var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
 				$.ajax({
@@ -614,8 +615,9 @@
 					});
 					setTimeout(function() {
 						var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
+						headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
 						for (var i in headers) {
-							headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
+							headerRow.append("<th>" + headers[i] + "<br/></th>");
 							exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
 						}
 						$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
@@ -988,10 +990,13 @@
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
 		ind = ind.join(";");
+		//console.log(ind);
 		$("#runButtons").html("");
 		var addedRunCount = 0;
+		
+		let requests = [];
 		for (var runIndex in runList) {
-			$.ajax({	// result of a run for a variant has an id as module§project§variant§run
+			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
 				type: "GET",
 				async: false,
@@ -1029,14 +1034,17 @@
 					handleError(xhr, thrownError);
 					errorEncountered = true;
 				}
-			});
+			}));
 		}
-		$('#gtTable').html(modalContent);
-		if (runList.length > 1)
-			markInconsistentGenotypesAsMissing();
+		
+		Promise.allSettled(requests).then(function(){
+		    $('#gtTable').html(modalContent);
+			if (runList.length > 1)
+				markInconsistentGenotypesAsMissing();
 
-		if (!errorEncountered)
-			$('#variantDetailPanel').modal('show').css({"z-index": 1100});
+			if (!errorEncountered)
+				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
+		});
 	}
 
 	// create the annotation detail panel 
@@ -1290,7 +1298,6 @@
 	var igvGenomeListLoaded = false;
 	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
-	var igvCallSets;  // List of callsets
 	var igvCurrentModule;  // Currently loaded module
 	var igvDefaultGenome;
 	

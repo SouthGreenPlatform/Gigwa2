@@ -300,7 +300,7 @@ class GigwaSearchReader {
 	// Retrieve the "header" data (the callsets)
 	async updateHeader(){
 		this.header = {};
-		this.header.callSets = igvCallSets.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
+		this.header.callSets = callSetResponse.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
 		this.header.callSetIds = this.header.callSets.map(callset => callset.id);
 		
 		this.header.callSets.sort(function (a, b){

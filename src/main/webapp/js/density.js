@@ -31,6 +31,18 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         seriesName: "Variants in interval",
         enableMarker: false,
+        buildCustomisation: function (){
+            let content = ""
+            if ($("#vcfFieldFilterGroup1 input").length > 0) {
+                content += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
+                $("#vcfFieldFilterGroup1 input").each(function(index) {
+                    let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
+                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
+                });
+                content += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+            }
+            return content;
+        }
     }],
     ["fst", {
         displayName: "Fst",
@@ -42,6 +54,41 @@ const chartTypes = new Map([
         seriesName: "Fst estimate",
         enableMarker: true,
         enableCondition: () => genotypeInvestigationMode == 2 && !areGroupsOverlapping(),
+        buildCustomisation: function (){
+            return ('<div>' +
+                        '<div id="plotGroups" class="col-md-3">' +
+                            'Group by <select id="plotGroupingSelectionMode" onchange="clearVcfFieldBasedSeries(); setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
+                        '</div><div id="plotMetadata" style="display: none" class="col-md-6">' +
+                            'Metadata values to select <br/><select id="plotGroupingMetadataValues" onchange="loadAndDisplayChart()" multiple></select>' +
+                    '</div></div>');
+        },
+        buildRequestPayload: function (payload){
+            const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
+            if (groupOption != "__"){
+                const selectedValues = $("#plotGroupingMetadataValues").val();
+                if (selectedValues === null || selectedValues.length < 2){
+                    return null;
+                }
+                
+                let groups = new Map();
+                callSetResponse.forEach(function (callset){
+                    const fieldValue = callset.info[groupOption][0];
+                    if (fieldValue !== undefined){
+                        let valueGroup = groups.get(fieldValue);
+                        if (valueGroup !== undefined){
+                            valueGroup.push(callset.name);
+                        } else if (selectedValues.includes(fieldValue)) {
+                            groups.set(fieldValue, [callset.name]);
+                        }
+                    }
+                });
+
+                payload.displayedAdditionalGroups = [];
+                for (const group of groups.values())
+                    payload.displayedAdditionalGroups.push(group);
+            }
+            return payload;
+        }
     }]
 ]);
 
@@ -109,6 +156,14 @@ function clearVcfFieldBasedSeries() {
 	$('.showHideSeriesBox').change();
 }
 
+function getGroupingOptions() {
+    options = '<option value="__">Investigation groups</option>';
+    callSetMetadataFields.forEach(function (field){
+        options += '<option value="' + field + '">' + field + '</option>';
+    });
+    return options;
+}
+
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="loadAndDisplayChart();">' +
                         '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
@@ -130,6 +185,7 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
         currentChartType = allowedCharts[0];
     }
     $("#chartTypeList").val(currentChartType);
+    const chartInfo = chartTypes.get(currentChartType);
     
     for (let key in sequences)
         $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
@@ -138,22 +194,23 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 
     let customisationDivHTML = "<div class='panel panel-default two-third-width container-fluid'><div class='row panel-body panel-grey shadowed-panel graphCustomization'><div class='col-md-3'><p>Customisation options</p>";
     customisationDivHTML += 'Number of Intervals <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
-    if ($("#vcfFieldFilterGroup1 input").length > 0)
-    {
-    	customisationDivHTML += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
-	    $("#vcfFieldFilterGroup1 input").each(function(index) {
-	        let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-	        customisationDivHTML += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
-	    });
-	    customisationDivHTML += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+    customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
+    if (chartInfo.buildCustomisation !== undefined){
+        customisationDivHTML += chartInfo.buildCustomisation();
     }
-	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
+	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div></div>");
 
     loadAndDisplayChart();
 }
 
 function setChartType(typeSelect){
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
+    const typeInfo = chartTypes.get(currentChartType);
+    if (typeInfo.buildCustomisation !== undefined){
+        $("#chartTypeCustomisationOptions").html(typeInfo.buildCustomisation());
+    } else {
+        $("#chartTypeCustomisationOptions").html("");
+    }
     loadAndDisplayChart();
 }
 
@@ -228,9 +285,19 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 function loadAndDisplayChart(minPos, maxPos) {
     localmin = minPos;
     localmax = maxPos;
+    
     typeInfo = chartTypes.get(currentChartType);
+    
     var zoomApplied = minPos != null && maxPos != null;
     $("input#resetZoom").toggle(zoomApplied);
+    
+    var displayedSequence = $("select#chartSequenceList").val();
+    var displayedVariantType = $("select#chartVariantTypeList").val();
+    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+    if (typeInfo.buildRequestPayload !== undefined)
+        dataPayLoad = typeInfo.buildRequestPayload(dataPayLoad);
+        if (dataPayLoad === null) return;
+    
     if (chart != null)
     {
         if (zoomApplied)
@@ -241,10 +308,6 @@ function loadAndDisplayChart(minPos, maxPos) {
 
     if (dataBeingLoaded)
         abortOngoingOperation();
-    
-    var displayedSequence = $("select#chartSequenceList").val();
-    var displayedVariantType = $("select#chartVariantTypeList").val();
-    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
 
     $.ajax({
         url: typeInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
@@ -470,4 +533,26 @@ function changeIntervalCount() {
     	displayedRangeIntervalCount = tempValue;
     $('#intervalCount').val(displayedRangeIntervalCount);
     loadAndDisplayChart(localmin, localmax);
+}
+
+function setFstGroupingOption() {
+    const option = $("#plotGroupingSelectionMode").find(":selected").val();
+    if (option != "__"){
+        let fieldValues = new Set();
+        callSetResponse.forEach(function (callset){
+            if (callset.info[option] !== undefined && callset.info[option].length > 0){
+                fieldValues.add(callset.info[option][0]);
+            }
+        });
+        
+        let selectOptions = "";
+        fieldValues.forEach(function (value){
+            selectOptions += '<option value="' + value + '">' + value + '</option>';
+        });
+        $("#plotGroupingMetadataValues").html(selectOptions);
+        $("#plotMetadata").css("display", "block");
+    } else {
+        $("#plotMetadata").css("display", "none");
+    }
+    loadAndDisplayChart();
 }
