@@ -1401,6 +1401,7 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
 			@RequestParam(value = "clearProjectData", required = false) final Boolean fClearProjectData,
+			@RequestParam(value = "skipMonomorphic", required = false) final boolean fSkipMonomorphic,
 			@RequestParam(value = "dataFile1", required = false) final String dataUri1, @RequestParam(value = "dataFile2", required = false) final String dataUri2,
 			@RequestParam(value = "brapiParameter_mapDbId", required = false) final String sBrapiMapDbId,
 			@RequestParam(value = "brapiParameter_studyDbId", required = false) final String sBrapiStudyDbId,
@@ -1690,20 +1691,20 @@ public class GigwaRestController extends ControllerInterface {
 									{
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
-										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf"))
 									{
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
-										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
-											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										else
 											throw new Exception("Unsupported file format or extension: " + s);
 									}
@@ -1716,7 +1717,7 @@ public class GigwaRestController extends ControllerInterface {
 										BlockCompressedInputStream.assertNonDefectiveFile((File) s);
 									else
 										LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
-									newProjId = new VcfImport(token).importToMongo((fIsLocalFile ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									newProjId = new VcfImport(token).importToMongo((fIsLocalFile ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 								}
 							}
 							if (newProjId != null)
