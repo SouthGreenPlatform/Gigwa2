@@ -158,7 +158,9 @@ function clearVcfFieldBasedSeries() {
 
 function getGroupingOptions() {
     options = '<option value="__">Investigation groups</option>';
-    callSetMetadataFields.forEach(function (field){
+    const fields = callSetMetadataFields.slice();
+    fields.sort();
+    fields.forEach(function (field){
         options += '<option value="' + field + '">' + field + '</option>';
     });
     return options;
@@ -546,7 +548,9 @@ function setFstGroupingOption() {
         });
         
         let selectOptions = "";
-        fieldValues.forEach(function (value){
+        let orderedValues = Array.from(fieldValues.values());
+        orderedValues.sort();
+        orderedValues.forEach(function (value){
             selectOptions += '<option value="' + value + '">' + value + '</option>';
         });
         $("#plotGroupingMetadataValues").html(selectOptions);
