@@ -352,7 +352,7 @@
         				for (var i=0; i<studyList.length; i++)
         					studyListSelect += "<option value=\"" + studyList[i]['studyDbId'] + "\">" + studyList[i]['name'] + " [" + readMarkerProfiles(studyList[i]['studyDbId']).length + " samples]" + "</option>";
         				studyListSelect += "</select>";
-        				$("div#brapiDataSelectionDiv").html("<div style='float:right; color:#ffffff; font-weight:bold;'><a href='#' title='Close' style='font-weight:bold; float:right; color:#ff0000;' onclick=\"$('div#brapiDataSelectionDiv').remove(); BRAPI_V1_URL_ENDPOINT = null;\">X</a><div style='margin-top:20px;'>Select map and study<br/>then submit again</div></div>" + mapListSelect + "<br/>" + studyListSelect);
+        				$("div#brapiDataSelectionDiv").html("<div style='float:right; color:#ffffff; font-weight:bold;'><a href='#' title='Close' style='font-weight:bold; float:right; color:#ff0000;' onclick=\"$('div#brapiDataSelectionDiv').remove(); BRAPI_V1_URL_ENDPOINT = null;\">X</a><div style='margin-top:20px;'>Select map and study<br/>then submit again</div></div>" + mapListSelect + "<br/>" + studyListSelect + ($("#skipMonomorphic").is(":checked") ? "<div class='margin-top-md bold' style='color:#ff6600;'>BrAPI import doesn't support skipping monomorphic variants!</div>" : ""));
     				}, 1);
     				return;
     			}
@@ -838,7 +838,7 @@
                                                 <div class="col-md-3">
                                                     <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                                 </div>
-                                                <div class="col-md-3" id="emptyBeforeImportDiv" style="display:none;">
+                                                <div class="col-md-4" id="emptyBeforeImportDiv" style="display:none;">
                                                     <input type="checkbox" id="clearProjectData" name="clearProjectData" title="If box is ticked, all project runs will be discarded before import">&nbsp;<label class="label-checkbox" title="If box is ticked, all project runs will be discarded before import" for="clearProjectData"> Clear project before import</label>
                                                 </div>
                                                 <div class="col-md-3">
@@ -879,7 +879,7 @@
                                             <div class="col-md-3">
 	                                            <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
 	                                        </div>
-	                                        <div class="col-md-3"></div>
+	                                        <div class="col-md-4"><input type='checkbox' checked sftyle="margin-top:3px;" id="skipMonomorphic" name="skipMonomorphic" /> <label class="bold text-left" for="skipMonomorphic">Skip monomorphic variants</label></div>
                                         </div>
                                         <div>
 	                                        <div class="row text-left">
