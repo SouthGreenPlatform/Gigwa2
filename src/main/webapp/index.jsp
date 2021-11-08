@@ -57,7 +57,8 @@
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
-<script type="text/javascript" src="js/exporting.js"></script>
+<script type="text/javascript" src="js/highcharts/exporting.js"></script>
+<script type="text/javascript" src="js/highcharts/export-data.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">

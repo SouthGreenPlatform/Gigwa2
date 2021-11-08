@@ -389,7 +389,10 @@ function loadAndDisplayChart(minPos, maxPos) {
                     lineWidth: 1,
                     color : colorTab[0],
                     data: jsonValues
-                }]
+                }],
+                exporting: {
+                    enabled: true,
+                }
             });
             
             $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
