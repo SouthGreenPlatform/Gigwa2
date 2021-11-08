@@ -59,7 +59,7 @@ const chartTypes = new Map([
                         '<div id="plotGroups" class="col-md-3">' +
                             'Group by <select id="plotGroupingSelectionMode" onchange="clearVcfFieldBasedSeries(); setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
                         '</div><div id="plotMetadata" style="display: none" class="col-md-6">' +
-                            'Metadata values to select <br/><select id="plotGroupingMetadataValues" onchange="loadAndDisplayChart()" multiple></select>' +
+                            'Metadata values to select (at least 2) <br/><select id="plotGroupingMetadataValues" onchange="loadAndDisplayChart()" multiple></select>' +
                     '</div></div>');
         },
         buildRequestPayload: function (payload){
