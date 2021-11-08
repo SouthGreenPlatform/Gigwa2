@@ -516,7 +516,8 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, ProgressIndicator>
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), 
+							@ApiResponse(code = 204, message = "No progress indicator") })
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response) {
 		String token = tokenManager.readToken(request);
