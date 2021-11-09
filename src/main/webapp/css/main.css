@@ -378,6 +378,11 @@ table#variantTable>tbody>tr>td, table#variantTable>tbody>tr>th, table#variantTab
     padding:2px;
 }
 
+table#variantTable thead {
+	position: sticky;
+	top: 0;
+}
+
 table#variantTable thead th {
 	color:#ffffff;
 	height:25px;

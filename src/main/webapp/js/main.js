@@ -82,12 +82,13 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
 		$.ajax({
 			url: progressUrl,
 			type: "GET",
-			async: false,
 			headers: {
 				"Authorization": "Bearer " + token
 			},
-			success: function (jsonResult) {
-				if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
+			success: function (jsonResult, textStatus, jqXHR) {
+			    if (jqXHR.status == 204)  // No existing progress indicator
+			        $('#progress').modal('hide');
+			    else if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
 					displayProcessProgress(nbMin, token, onSuccessMethod);
 				else if (jsonResult['complete'] == true) {
 					if (onSuccessMethod != null)

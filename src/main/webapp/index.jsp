@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
-<script type="text/javascript" src="js/igv.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.2/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
 <script type="text/javascript">
@@ -278,11 +278,6 @@
 					sortBy = posPath;
 				searchVariants(2, '0');
 			}
-		});
-
-		$(".auto-overflow").on('scroll', function() {
-			var translate = "translate(0," + (this.scrollTop - 1) + "px)";
-			this.querySelector("thead").style.transform = translate;
 		});
 
 		$(window).on('beforeunload', function() {
@@ -820,7 +815,7 @@
 				for (var format in jsonResult) {
 					if (format == "VCF")
 						gotVCF = true;
-					option += '<option data-ext="' + jsonResult[format].dataFileExtentions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					option += '<option data-pdy="' + jsonResult[format].supportedPloidyLevels + '" data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
 				}
 				if (!gotVCF)
 					$("img#igvTooltip").hide();
@@ -1168,15 +1163,26 @@
 			}
 		}
 
-		exporting = true;
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
-			var selectedTypes = $('#variantTypes').val() === null ? $('#variantTypes option') : $('#variantTypes').val();
-			if (selectedTypes.length !== 1 || (selectedTypes[0] !== supportedTypes && selectedTypes[0].innerHTML !== supportedTypes)) {
-				alert("Error: non supported variant type for this format");
+			supportedTypes = supportedTypes.split(";");
+			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
+			for (var i in selectedTypes)
+				if (!arrayContains(supportedTypes, selectedTypes[i])) {
+					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+					return;
+				}
+		}
+		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+		if (supportedPloidyLevels != null) {
+			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
+			if (!arrayContains(supportedPloidyLevels, ploidy)) {
+				alert("Error: selected export format does not support ploidy level " + ploidy);
 				return;
 			}
 		}
+		
+		exporting = true;
 		if (keepExportOnServer)
 		{
 			$('#ddlWarning').hide();
