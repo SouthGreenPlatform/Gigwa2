@@ -406,19 +406,29 @@ function loadVcfFieldHeaders() {
 }
 
 function enableMafOnlyIfGtPatternAndAlleleNumberAllowTo() {
+        var filter = document.getElementById("filterIDsCheckbox");
+        var filterByVariantIds = document.getElementById("filterIDsCheckbox").checked;
 	var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
 	var enableMaf = onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
-	$('#minmaf1').prop('disabled', enableMaf ? false : "disabled");
-	$('#maxmaf1').prop('disabled', enableMaf ? false : "disabled");
-	$('#minmaf2').prop('disabled', enableMaf ? false : "disabled");
-	$('#maxmaf2').prop('disabled', enableMaf ? false : "disabled");
-	if (!enableMaf)
-	{
+
+	if (enableMaf && !filterByVariantIds) {       
+                $('#minmaf1').prop('disabled', false);
+                $('#maxmaf1').prop('disabled', false);
+                $('#minmaf2').prop('disabled', false);
+                $('#maxmaf2').prop('disabled', false);
+                
 		$('#minmaf1').val(0);
 		$('#maxmaf1').val(50);
 		$('#minmaf2').val(0);
-		$('#maxmaf2').val(50);
-	}
+		$('#maxmaf2').val(50);                
+                
+	} else {
+                            
+                $('#minmaf1').prop('disabled', true);
+                $('#maxmaf1').prop('disabled', true);
+                $('#minmaf2').prop('disabled', true);
+                $('#maxmaf2').prop('disabled', true);
+        }
 }
 
 function updateGtPatterns() {
@@ -1485,41 +1495,56 @@ function listQueries(){
 
 function onFilterByIds(checked) {
     if (checked) {
-        $('#variantTypes').attr('disabled',true);
-        $('#variantTypes').selectpicker('refresh');
-        $('#numberOfAlleles').attr('disabled',true);
-        $('#numberOfAlleles').selectpicker('refresh');
-        $('#Sequences').find('.btn').attr('disabled',true);
-        $('#Sequences').find('.btn').selectpicker('refresh');
-        $('#minposition').attr('disabled',true);
-        $('#minposition').selectpicker('refresh');
-        $('#maxposition').attr('disabled',true);
-        $('#maxposition').selectpicker('refresh');                   
+        $('#variantTypes').prop('disabled',true).val('default').selectpicker('refresh');
+        
+        $('#numberOfAlleles').prop('disabled',true).val('default').selectpicker('refresh');
 
-        $('#variantIdsSelect').removeAttr('disabled');
-        $('#variantIdsSelect').selectpicker('refresh');
-        $('#copyVariantIds').removeAttr('disabled');
-        $('#copyVariantIds').selectpicker('refresh');
-        $('#pasteVariantIds').removeAttr('disabled');
-        $('#pasteVariantIds').selectpicker('refresh');
+        $('#Sequences').selectmultiple('selectAll');
+        $('#Sequences').find('.btn').prop('disabled',true);
+        
+        $('#minposition').val('').prop('disabled',true); 
+        $('#maxposition').val('').prop('disabled',true);
+        $('#geneName').val('').prop('disabled',true);
+        
+        $('#variantEffects').prop('disabled',true).val('default').selectpicker('refresh');        
+
+        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+        $('#copyVariantIds').removeAttr('disabled').selectpicker('refresh');
+        $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
+        
+        $('#missingdata1').val('').prop('disabled',true);
+        $('#missingdata1').val(100);
+        $('#mostSameRatio1').val('').prop('disabled',true);
+        $('#Genotypes1').prop('disabled',true).val('default').selectpicker('refresh');
+        
+        $('#missingdata2').val('').prop('disabled',true);
+        $('#missingdata2').val(100);
+        $('#mostSameRatio2').val('').prop('disabled',true);
+        $('#Genotypes2').prop('disabled',true).val('default').selectpicker('refresh');
 
     } else {
-        $('#variantTypes').removeAttr('disabled');
-        $('#variantTypes').selectpicker('refresh');
-        $('#numberOfAlleles').removeAttr('disabled');
-        $('#numberOfAlleles').selectpicker('refresh');
-        $('#Sequences').find('.btn').removeAttr('disabled');
-        $('#Sequences').find('.btn').selectpicker('refresh');
-        $('#minposition').removeAttr('disabled');
-        $('#minposition').selectpicker('refresh');
-        $('#maxposition').removeAttr('disabled');
-        $('#maxposition').selectpicker('refresh');
+        $('#variantTypes').prop('disabled',false).selectpicker('refresh');
+        $('#numberOfAlleles').prop('disabled',false).selectpicker('refresh');
+        $('#Sequences').find('.btn').prop('disabled',false).selectpicker('refresh');
+        $('#minposition').prop('disabled',false).selectpicker('refresh');
+        $('#maxposition').prop('disabled',false).selectpicker('refresh');     
+        $('#geneName').prop('disabled',false);
+        $('#variantEffects').prop('disabled',false).selectpicker('refresh');
 
-        $('#variantIdsSelect').attr('disabled',true);
-        $('#variantIdsSelect').selectpicker('refresh');
-        $('#copyVariantIds').attr('disabled',true);
-        $('#copyVariantIds').selectpicker('refresh');
-        $('#pasteVariantIds').attr('disabled',true);
-        $('#pasteVariantIds').selectpicker('refresh');
+        $('#variantIdsSelect').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
+        $('#pasteVariantIds').prop('disabled',true).selectpicker('refresh');
+        
+        $('#missingdata1').prop('disabled',false);
+        $('#missingdata1').val(100);
+        $('#mostSameRatio1').prop('disabled',false);
+        $('#Genotypes1').prop('disabled',false).selectpicker('refresh');
+        
+        $('#missingdata2').prop('disabled',false);
+        $('#missingdata2').val(100);
+        $('#mostSameRatio2').prop('disabled',false);
+        $('#Genotypes2').prop('disabled',false).selectpicker('refresh');
     }
+    
+    enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
 }

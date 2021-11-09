@@ -1024,6 +1024,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST)
 	public void exportData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
+                        @RequestParam("variantIds") String variantIds,
 			@RequestParam("keepExportOnServer") boolean keepExportOnServer,
 			@RequestParam("variantEffects") String variantEffects, @RequestParam("exportFormat") String exportFormat,
 			@RequestParam("selectedVariantTypes") String selectedVariantTypes,
@@ -1063,6 +1064,7 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setSelectedVariantTypes(selectedVariantTypes);
 				gsver.setVariantEffect(variantEffects);
 				gsver.setVariantSetId(variantSetId);
+                                gsver.setSelectedVariantIds(variantIds);
 
 				gsver.setMissingData(missingData);
 				gsver.setMinmaf(minmaf);

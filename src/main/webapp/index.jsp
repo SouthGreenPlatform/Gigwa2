@@ -941,7 +941,7 @@
             $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
             $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {}
 	}
-	
+        	
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -1208,7 +1208,7 @@
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 		var data = {
 			"variantSetId": getProjectId(),
-
+                        "variantIds": getSelectedVariantIds(),
 			"referenceName": getSelectedSequences(),
 			"selectedVariantTypes": getSelectedTypes(),
 			"alleleCount": getSelectedNumberOfAlleles(),
@@ -1219,7 +1219,7 @@
 
 			"callSetIds": getSelectedIndividuals(1, true),
 			"gtPattern": $('#Genotypes1').val(),
-			"mostSameRatio": $('#mostSameRatio1').val(),
+			"mostSameRatio": $('#mostSameRatio1').val() === "" ? "100" : $('#mostSameRatio1').val(),
 			"minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
 			"maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
 			"missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
@@ -1227,7 +1227,7 @@
 
 			"callSetIds2": getSelectedIndividuals(2, true),
 			"gtPattern2": $('#Genotypes2').val(),
-			"mostSameRatio2": $('#mostSameRatio2').val(),
+			"mostSameRatio2": $('#mostSameRatio2').val() === "" ? "100" : $('#mostSameRatio2').val(),
 			"minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
 			"maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
 			"missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
@@ -2038,7 +2038,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)">Filter by IDs</p>
+                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)"> Filter by IDs</p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2106,7 +2106,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                                         <div id="VariantIds"></div>
                                                                             <div class="custom-label margin-top-md" id="variantIdsLabel">Variant IDs</div>
                                                                             <div class="form-input">
-                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="10" disabled></select>
+                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="20" disabled data-selected-text-format="count > 3"></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
