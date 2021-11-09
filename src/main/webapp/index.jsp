@@ -807,7 +807,7 @@
 				for (var format in jsonResult) {
 					if (format == "VCF")
 						gotVCF = true;
-					option += '<option data-ext="' + jsonResult[format].dataFileExtentions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					option += '<option data-pdy="' + jsonResult[format].supportedPloidyLevels + '" data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
 				}
 				if (!gotVCF)
 					$("img#igvTooltip").hide();
@@ -1105,7 +1105,6 @@
 			}
 		}
 
-		exporting = true;
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
 			supportedTypes = supportedTypes.split(";");
@@ -1116,6 +1115,16 @@
 					return;
 				}
 		}
+		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+		if (supportedPloidyLevels != null) {
+			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
+			if (!arrayContains(supportedPloidyLevels, ploidy)) {
+				alert("Error: selected export format does not support ploidy level " + ploidy);
+				return;
+			}
+		}
+		
+		exporting = true;
 		if (keepExportOnServer)
 		{
 			$('#ddlWarning').hide();
