@@ -1712,7 +1712,7 @@ public class GigwaRestController extends ControllerInterface {
 									{
 										Serializable s = filesByExtension.get("intertek");                                                                               
 										boolean fIsLocalFile = s instanceof File;
-										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
