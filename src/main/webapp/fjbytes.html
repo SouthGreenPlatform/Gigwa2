@@ -25,7 +25,7 @@
           return http.status==200;
       }
 
-      let gFile = $.urlParam('g'), mFile = $.urlParam('m');
+      let gFile = $.urlParam('g'), mFile = $.urlParam('m'), pFile = $.urlParam('p');
       let keepCheckingProgress = true;
       if ($.urlExists(gFile)) {
         $("div#canvas-holder").html("<center>Please wait while Flapjack-Bytes is <span>loading / analysing data</span> <img src='https://gigwa-dev.southgreen.fr/gigwaV2/private/img/progress.gif'/></center>");
@@ -35,7 +35,14 @@
         });
         
         let renderer = GenotypeRenderer();
-        setTimeout( function() { renderer.renderGenotypesUrl("#canvas-holder", window.innerWidth - 30, window.innerHeight - 200, mFile, gFile); }, 1);
+        setTimeout( function() { renderer.renderGenotypesUrl({
+            domParent: "#canvas-holder",
+            width: window.innerWidth - 30,
+            height: window.innerHeight - 200,
+            mapFileURL: mFile,
+            genotypeFileURL: gFile,
+            phenotypeFileURL: $.urlExists(pFile) ? pFile : undefined,
+        }); }, 1);
         /*let intervalId = setInterval(function() {
         	let progress = renderer.getRenderingProgressPercentage();
         	if (progress > 0)

@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/exporting.js"></script>
 <script type="text/javascript" src="js/density.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.2/dist/igv.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
 	// global variables
@@ -807,7 +807,10 @@
 				for (var format in jsonResult) {
 					if (format == "VCF")
 						gotVCF = true;
-					option += '<option data-pdy="' + jsonResult[format].supportedPloidyLevels + '" data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					option += '<option '
+					if (jsonResult[format].supportedPloidyLevels !== undefined)
+					    option += 'data-pdy="' + jsonResult[format].supportedPloidyLevels + '" ';
+					option += 'data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
 				}
 				if (!gotVCF)
 					$("img#igvTooltip").hide();
@@ -1116,8 +1119,9 @@
 				}
 		}
 		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
-		if (supportedPloidyLevels != null) {
+		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
 			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
+			console.log(supportedPloidyLevels);
 			if (!arrayContains(supportedPloidyLevels, ploidy)) {
 				alert("Error: selected export format does not support ploidy level " + ploidy);
 				return;
@@ -1441,7 +1445,7 @@
 						}
 					}, function (xhr, ajaxOption, thrownError){
 						// Error handler for each genome list download : show an error but do not abort
-						handleError(xhr, thrownError);
+						displayMessage("Loading of genome list from " + config.url + " failed");
 					})
 				)
 			).then(function (results){
