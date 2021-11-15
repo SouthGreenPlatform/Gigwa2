@@ -19,6 +19,7 @@ var chart = null;
 var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
 let localmin, localmax;
+let chartJsonKeys, chartJsonValues;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 const chartTypes = new Map([
@@ -56,7 +57,9 @@ const chartTypes = new Map([
         enableCondition: () => genotypeInvestigationMode == 2 && !areGroupsOverlapping(),
         buildCustomisation: function (){
             return ('<div>' +
-                        '<div id="plotGroups" class="col-md-3">' +
+                        '<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> Show threshold<br />' +
+                            'Significance threshold : <input id="fstThreshold" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" />' +
+                        '</div><div id="plotGroups" class="col-md-3">' +
                             'Group by <select id="plotGroupingSelectionMode" onchange="clearVcfFieldBasedSeries(); setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
                         '</div><div id="plotMetadata" style="display: none" class="col-md-6">' +
                             'Metadata values to select (at least 2) <br/><select id="plotGroupingMetadataValues" onchange="loadAndDisplayChart()" multiple></select>' +
@@ -88,6 +91,9 @@ const chartTypes = new Map([
                     payload.displayedAdditionalGroups.push(group);
             }
             return payload;
+        },
+        onDisplay: function (){
+            displayOrHideThreshold(document.getElementById("showFstThreshold").checked);
         }
     }]
 ]);
@@ -323,18 +329,18 @@ function loadAndDisplayChart(minPos, maxPos) {
             if (jsonResult.length == 0)
                 return;	// probably aborted
 
-            var jsonKeys = Object.keys(jsonResult);
-            var intervalSize = parseInt(jsonKeys[1]) - parseInt(jsonKeys[0]);
+            chartJsonKeys = Object.keys(jsonResult);
+            var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
 
-            var jsonValues = new Array();
+            chartJsonValues = new Array();
             var totalVariantCount = 0;
-            for (var i=0; i<jsonKeys.length; i++)
+            for (var i=0; i<chartJsonKeys.length; i++)
             {
-                jsonValues.push(jsonResult[jsonKeys[i]]);
-                totalVariantCount += jsonResult[jsonKeys[i]];
-                jsonKeys[i] = parseInt(parseInt(jsonKeys[i]) + intervalSize/2);
+                chartJsonValues.push(jsonResult[chartJsonKeys[i]]);
+                totalVariantCount += jsonResult[chartJsonKeys[i]];
+                chartJsonKeys[i] = parseInt(parseInt(chartJsonKeys[i]) + intervalSize/2);
             }
-
+            
             chart = Highcharts.chart('densityChartArea', {
                 chart: {
                     type: 'spline',
@@ -347,7 +353,7 @@ function loadAndDisplayChart(minPos, maxPos) {
                     text: isNaN(intervalSize) ? '' : typeInfo.subtitle.replace("{{intervalSize}}", intervalSize),
                 },
                 xAxis: {
-                    categories: jsonKeys,
+                    categories: chartJsonKeys,
                     title: {
                         text: typeInfo.xAxisTitle,
                     },
@@ -388,7 +394,7 @@ function loadAndDisplayChart(minPos, maxPos) {
 		            },
                     lineWidth: 1,
                     color : colorTab[0],
-                    data: jsonValues
+                    data: chartJsonValues
                 }],
                 exporting: {
                     enabled: true,
@@ -398,6 +404,9 @@ function loadAndDisplayChart(minPos, maxPos) {
             $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
             if (!isNaN(intervalSize))
             	$('.showHideSeriesBox').change();
+            
+            if (typeInfo.onDisplay !== undefined)
+                typeInfo.onDisplay();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -523,6 +532,31 @@ function dispayOrHideSeries(fieldName, isChecked, colorIndex) {
             }
         });
         $('.showHideSeriesBox').prop('disabled', false);
+    }
+}
+
+function displayOrHideThreshold(isChecked) {
+    if (isChecked){
+        const threshold = parseFloat($("#fstThreshold").val());
+        chart.addSeries({
+            id: "threshold",
+            name: "Threshold",
+            marker: {enabled: false},
+            lineWidth: 0.5,
+            color: "#CC0000",
+            data: chartJsonValues.map(val => threshold),
+        }, true);
+    } else {
+        const series = chart.get("threshold");
+        if (series !== undefined) series.remove();
+    }
+}
+
+function setFstThreshold(){
+    const threshold = parseFloat($("#fstThreshold").val());
+    const series = chart.get("threshold");
+    if (series !== undefined){
+        series.setData(chartJsonValues.map(val => threshold), true, true);
     }
 }
 
