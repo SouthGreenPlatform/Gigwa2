@@ -37,7 +37,7 @@
     </secur:authentication-manager>
 
 	<!-- FIXME -->
-	<bean id="backupManager" class="fr.cirad.security.backup.BackupManager" />
+	<bean id="dumpManager" class="fr.cirad.security.dump.DumpManager" />
 	    
     <bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
 	

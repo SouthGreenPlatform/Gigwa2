@@ -52,8 +52,8 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
-import fr.cirad.security.backup.IBackgroundProcess;
 import fr.cirad.security.base.IModuleManager;
+import fr.cirad.security.dump.IBackgroundProcess;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
@@ -75,7 +75,7 @@ public class GigwaModuleManager implements IModuleManager {
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 	
 	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/backups";
+	private static final String defaultDumpFolder = dumpManagementPath + "/dumps";
 	
 	@Autowired AppConfig appConfig;
 	@Autowired ApplicationContext appContext;
@@ -226,16 +226,16 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	
 	@Override
-	public boolean hasBackups() {
-		return appConfig.get("enableBackups").trim().toLowerCase().equals("true");
+	public boolean hasDumps() {
+		return appConfig.get("enableDumps").trim().toLowerCase().equals("true");
 	}
 	
 	@Override
-	public List<String> getBackups(String sModule) {
-		String backupPath = this.getBackupPath(sModule);
+	public List<String> getDumps(String sModule) {
+		String dumpPath = this.getDumpPath(sModule);
 		
-		// List files in the database's backup directory, filter out subdirectories and logs
-		File[] fileList = new File(backupPath).listFiles();
+		// List files in the database's dump directory, filter out subdirectories and logs
+		File[] fileList = new File(dumpPath).listFiles();
 		if (fileList != null) {
 			return Stream.of(fileList)
 					.filter(file -> !file.isDirectory())
@@ -243,7 +243,7 @@ public class GigwaModuleManager implements IModuleManager {
 					.filter(filename -> !filename.endsWith(".log"))
 					.sorted(Comparator.reverseOrder())
 					.collect(Collectors.toList());
-		} else {  // The database backup directory does not exist
+		} else {  // The database dump directory does not exist
 			return new ArrayList<String>();
 		}
 	}
@@ -252,51 +252,51 @@ public class GigwaModuleManager implements IModuleManager {
 	public IBackgroundProcess startDump(String sModule) {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
-		GigwaBackupProcess process = new GigwaBackupProcess(sModule,
+		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
-				appConfig.get("backupOutputDirectory"));
+				appConfig.get("dumpFolder"));
 		
 		process.startDump(credentials);
 		return process;
 	}
 	
 	@Override
-	public IBackgroundProcess startRestore(String sModule, String backupName, boolean drop) {
+	public IBackgroundProcess startRestore(String sModule, String dumpName, boolean drop) {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
-		String backupFile = this.getBackupPath(sModule) + File.separator + backupName;
-		GigwaBackupProcess process = new GigwaBackupProcess(sModule,
+		String dumpFile = this.getDumpPath(sModule) + File.separator + dumpName;
+		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
-				appConfig.get("backupOutputDirectory"));
+				appConfig.get("dumpFolder"));
 		
-		process.startRestore(backupFile, drop, credentials);
+		process.startRestore(dumpFile, drop, credentials);
 		return process;
 	}
 	
 	@Override
-	public boolean isModuleAvailableForBackup(String sModule) {
+	public boolean isModuleAvailableForDump(String sModule) {
 		return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
 	}
 	
 	@Override
-	public boolean deleteBackup(String sModule, String sBackup) {
-		String path = getBackupPath(sModule) + File.separator + sBackup;
+	public boolean deleteDump(String sModule, String sDump) {
+		String path = getDumpPath(sModule) + File.separator + sDump;
 		File file = new File(path);
 		return file.delete();
 	}
 	
-	private String getBackupPath(String sModule) {
-		String backupBase = appConfig.get("backupOutputDirectory");
-		if (backupBase == null) {
-			backupBase = servletContext.getRealPath("") + defaultBackupDestinationFolder;
+	private String getDumpPath(String sModule) {
+		String dumpBase = appConfig.get("dumpFolder");
+		if (dumpBase == null) {
+			dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
 		}
 		
-		String backupPath = backupBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
-		return backupPath;
+		String dumpPath = dumpBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
+		return dumpPath;
 	}
 	
 	// FIXME

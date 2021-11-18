@@ -9,14 +9,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.security.backup.IBackgroundProcess;
-import fr.cirad.security.backup.ProcessStatus;
+import fr.cirad.security.dump.IBackgroundProcess;
+import fr.cirad.security.dump.ProcessStatus;
 
-
-
-public class GigwaBackupProcess implements IBackgroundProcess {	
+public class GigwaDumpProcess implements IBackgroundProcess {	
 	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/backups";
+	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/dumps";
 	private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
 	private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
 	
@@ -34,7 +32,7 @@ public class GigwaBackupProcess implements IBackgroundProcess {
 	private String statusMessage;
 	private boolean aborted = false;
 	
-	public GigwaBackupProcess(String module, String dbName, List<String> hosts, String basePath, String outPath) {
+	public GigwaDumpProcess(String module, String dbName, List<String> hosts, String basePath, String outPath) {
 		this.module = module;
 		this.hosts = hosts;
 		this.dbName = dbName;
