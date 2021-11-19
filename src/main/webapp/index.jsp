@@ -125,6 +125,7 @@
 	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
 	var callSetMetadataFields = [];
+	var gotMetaData = false;
 	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
@@ -569,7 +570,7 @@
 				callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 				var indOpt = [];
 
-				var gotMetaData = false;
+				gotMetaData = false;
 				
 				// first pass to compile an exhaustive field list
 				var headers = new Array();
@@ -1081,9 +1082,9 @@
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
 				
-				var gotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
-				$('#toggleVariantMetadata').css('display', gotMetaData ? 'inline' : 'none');
-				if (gotMetaData)
+				var varGotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
+				$('#toggleVariantMetadata').css('display', varGotMetaData ? 'inline' : 'none');
+				if (varGotMetaData)
 				{
 					var additionalInfo = new StringBuffer();
 					additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
@@ -1933,7 +1934,7 @@
 		return trackIndividuals;
 	}
 </script>
-<script type="text/javascript" src="js/density.js"></script>
+<script type="text/javascript" src="js/charts.js"></script>
 </head>
 <body>
 	<%@include file="navbar.jsp"%>
@@ -2247,8 +2248,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
-									<img title="Variant density chart" src="images/density.webp" height="25" width="25" />
+								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
+									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
 								<!-- IGV.js browser button -->

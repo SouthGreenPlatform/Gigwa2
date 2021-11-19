@@ -32,6 +32,7 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         seriesName: "Variants in interval",
         enableMarker: false,
+        manualDisplay: false,
         buildCustomisation: function (){
             let content = ""
             if ($("#vcfFieldFilterGroup1 input").length > 0) {
@@ -54,16 +55,24 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         seriesName: "Fst estimate",
         enableMarker: true,
-        enableCondition: () => genotypeInvestigationMode == 2 && !areGroupsOverlapping(),
+        manualDisplay: true,
+        enableCondition: function (){
+            if (genotypeInvestigationMode != 2 && !gotMetaData){
+                return "Fst is only defined with at least two groups. You need to set investigation groups or metadata.";
+            } else if (areGroupsOverlapping() && !gotMetaData){
+                return "Investigation groups are overlapping";
+            } else {
+                return null;
+            }
+        },
         buildCustomisation: function (){
-            return ('<div>' +
-                        '<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> Show threshold<br />' +
-                            'Significance threshold : <input id="fstThreshold" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" />' +
-                        '</div><div id="plotGroups" class="col-md-3">' +
-                            'Group by <select id="plotGroupingSelectionMode" onchange="clearVcfFieldBasedSeries(); setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
-                        '</div><div id="plotMetadata" style="display: none" class="col-md-6">' +
-                            'Metadata values to select (at least 2) <br/><select id="plotGroupingMetadataValues" onchange="loadAndDisplayChart()" multiple></select>' +
-                    '</div></div>');
+            return ('<div id="fstThresholdGroup" class="col-md-2"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> Show threshold<br />' +
+                        'Significance threshold : <input id="fstThreshold" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" />' +
+                    '</div><div id="plotGroups" class="col-md-3">' +
+                        'Group by <select id="plotGroupingSelectionMode" onchange="clearVcfFieldBasedSeries(); setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
+                    '</div><div id="plotMetadata" style="display: none" class="col-md-3">' +
+                        'Metadata values to select (at least 2) <br/><select id="plotGroupingMetadataValues" multiple></select>' +
+                    '</div>');
         },
         buildRequestPayload: function (payload){
             const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
@@ -91,6 +100,9 @@ const chartTypes = new Map([
                     payload.displayedAdditionalGroups.push(group);
             }
             return payload;
+        },
+        onLoad: function (){
+            setFstGroupingOption();
         },
         onDisplay: function (){
             displayOrHideThreshold(document.getElementById("showFstThreshold").checked);
@@ -163,7 +175,9 @@ function clearVcfFieldBasedSeries() {
 }
 
 function getGroupingOptions() {
-    options = '<option value="__">Investigation groups</option>';
+    let options = ""
+    if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
+        options += '<option value="__">Investigation groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -173,20 +187,23 @@ function getGroupingOptions() {
 }
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="loadAndDisplayChart();">' +
+    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayChart();">' +
                         '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
-                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadAndDisplayChart();"></select>' + 
-                            'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadAndDisplayChart();"><option value="">ANY</option></select>' +
+                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="displayChart();"></select>' + 
+                            'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                         '</div></form>');
     $(headerHtml).insertBefore('div#densityChartArea');
 
     let allowedCharts = [];
     for (const [key, info] of chartTypes){
-        if (info.enableCondition !== undefined)
-            if (!info.enableCondition()) continue;
-        allowedCharts.push(key);
+        if (info.enableCondition !== undefined){
+            if (info.enableCondition() == null)
+                allowedCharts.push(key);
+        } else {
+            allowedCharts.push(key);
+        }
         $("#chartTypeList").append("<option value='" + key + "'>" + info.displayName + "</option>");
     }
     if (currentChartType === null || !allowedCharts.includes(currentChartType)){
@@ -206,20 +223,51 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     if (chartInfo.buildCustomisation !== undefined){
         customisationDivHTML += chartInfo.buildCustomisation();
     }
+    customisationDivHTML += manualDisplayButton(chartInfo.manualDisplay);
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div></div>");
 
-    loadAndDisplayChart();
+	if (chartInfo.onLoad !== undefined)
+        chartInfo.onLoad();
+	
+    loadChart();
+}
+
+function manualDisplayButton(manualDisplay){
+    let html = "";
+    if (manualDisplay)
+        html += '<div class="col-md-1"><button class="btn btn-success" onclick="displayChart()">Show</button></div>';
+    return html;
 }
 
 function setChartType(typeSelect){
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
     const typeInfo = chartTypes.get(currentChartType);
-    if (typeInfo.buildCustomisation !== undefined){
-        $("#chartTypeCustomisationOptions").html(typeInfo.buildCustomisation());
-    } else {
-        $("#chartTypeCustomisationOptions").html("");
+    
+    if (typeInfo.enableCondition !== undefined){
+        const failMessage = typeInfo.enableCondition();
+        if (failMessage !== null){
+            $("#additionalCharts").hide();
+            $("#densityChartArea").html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
+            return;
+        }
     }
-    loadAndDisplayChart();
+    $("#additionalCharts").show();
+    
+    if (chart != null){
+        chart.destroy();
+        chart = null;
+    }
+    
+    if (typeInfo.buildCustomisation !== undefined){
+        $("#chartTypeCustomisationOptions").html(typeInfo.buildCustomisation() + manualDisplayButton(typeInfo.manualDisplay));
+    } else {
+        $("#chartTypeCustomisationOptions").html(manualDisplayButton(typeInfo.manualDisplay));
+    }
+    
+    if (typeInfo.onLoad !== undefined)
+        typeInfo.onLoad();
+    
+    loadChart();
 }
 
 function abortOngoingOperation(){
@@ -290,14 +338,28 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
     };
 }
 
-function loadAndDisplayChart(minPos, maxPos) {
+function loadChart(minPos, maxPos) {    
+    const typeInfo = chartTypes.get(currentChartType);
+    
+    var zoomApplied = minPos != null && maxPos != null;
+    if (!typeInfo.manualDisplay || zoomApplied)
+        displayChart(minPos, maxPos);
+}
+
+function displayChart(minPos, maxPos){
     localmin = minPos;
     localmax = maxPos;
-    
-    typeInfo = chartTypes.get(currentChartType);
+    const typeInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
     $("input#resetZoom").toggle(zoomApplied);
+    
+    if (chart != null) {
+        if (zoomApplied)
+            chart.showLoading("Zooming in...");
+        else if (!dataBeingLoaded)
+            chart.destroy();
+    }
     
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();
@@ -306,14 +368,6 @@ function loadAndDisplayChart(minPos, maxPos) {
         dataPayLoad = typeInfo.buildRequestPayload(dataPayLoad);
         if (dataPayLoad === null) return;
     
-    if (chart != null)
-    {
-        if (zoomApplied)
-            chart.showLoading("Zooming in...");
-        else if (!dataBeingLoaded)
-            chart.destroy();
-    }
-
     if (dataBeingLoaded)
         abortOngoingOperation();
 
@@ -327,7 +381,7 @@ function loadAndDisplayChart(minPos, maxPos) {
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
-                return;	// probably aborted
+                return; // probably aborted
 
             chartJsonKeys = Object.keys(jsonResult);
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
@@ -360,11 +414,11 @@ function loadAndDisplayChart(minPos, maxPos) {
                     events: {
                         afterSetExtremes: function(e) {
                             if ("zoom" == e.trigger)
-                            {	// reload for best resolution
+                            {   // reload for best resolution
                                 var xAxisDataArray = this.chart.series[0].data;
                                 var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
                                 var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
-                                loadAndDisplayChart(xMin, xMax);
+                                displayChart(xMin, xMax);
                                 e.preventDefault();
                             }
                         }
@@ -390,8 +444,8 @@ function loadAndDisplayChart(minPos, maxPos) {
                 series: [{
                     name: typeInfo.seriesName,
                     marker: {
-		                enabled: typeInfo.enableMarker,
-		            },
+                        enabled: typeInfo.enableMarker,
+                    },
                     lineWidth: 1,
                     color : colorTab[0],
                     data: chartJsonValues
@@ -403,7 +457,7 @@ function loadAndDisplayChart(minPos, maxPos) {
             
             $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
             if (!isNaN(intervalSize))
-            	$('.showHideSeriesBox').change();
+                $('.showHideSeriesBox').change();
             
             if (typeInfo.onDisplay !== undefined)
                 typeInfo.onDisplay();
@@ -571,7 +625,7 @@ function changeIntervalCount() {
     else
     	displayedRangeIntervalCount = tempValue;
     $('#intervalCount').val(displayedRangeIntervalCount);
-    loadAndDisplayChart(localmin, localmax);
+    loadChart(localmin, localmax);
 }
 
 function setFstGroupingOption() {
@@ -595,5 +649,4 @@ function setFstGroupingOption() {
     } else {
         $("#plotMetadata").css("display", "none");
     }
-    loadAndDisplayChart();
 }
