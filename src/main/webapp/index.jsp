@@ -207,7 +207,7 @@
 			checkBrowsingBoxAccordingToLocalVariable();
 			$('input#browsingAndExportingEnabled').change();
 			igvRemoveExistingBrowser();
-			igvChangeModule(referenceset)
+			igvChangeModule(referenceset);
 		});
 		
 		$('#project').on('change', function() {
@@ -224,6 +224,8 @@
 			else
 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
+			
+			currentChartType = null;
 			
 			$.ajax({	// load runs
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),

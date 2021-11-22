@@ -61,6 +61,8 @@ const chartTypes = new Map([
                 return "Fst is only defined with at least two groups. You need to set investigation groups or metadata.";
             } else if (areGroupsOverlapping() && !gotMetaData){
                 return "Investigation groups are overlapping";
+            } else if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
             } else {
                 return null;
             }
