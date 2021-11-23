@@ -407,28 +407,18 @@ function loadVcfFieldHeaders() {
 }
 
 function enableMafOnlyIfGtPatternAndAlleleNumberAllowTo() {
-        var filter = document.getElementById("filterIDsCheckbox");
-        var filterByVariantIds = document.getElementById("filterIDsCheckbox").checked;
 	var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
 	var enableMaf = onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
-
-	if (enableMaf && !filterByVariantIds) {       
-                $('#minmaf1').prop('disabled', false);
-                $('#maxmaf1').prop('disabled', false);
-                $('#minmaf2').prop('disabled', false);
-                $('#maxmaf2').prop('disabled', false);
-                
+	$('#minmaf1').prop('disabled', enableMaf ? false : "disabled");
+	$('#maxmaf1').prop('disabled', enableMaf ? false : "disabled");
+	$('#minmaf2').prop('disabled', enableMaf ? false : "disabled");
+	$('#maxmaf2').prop('disabled', enableMaf ? false : "disabled");
+	if (!enableMaf)
+	{
 		$('#minmaf1').val(0);
 		$('#maxmaf1').val(50);
 		$('#minmaf2').val(0);
 		$('#maxmaf2').val(50);                
-                
-	} else {
-                            
-                $('#minmaf1').prop('disabled', true);
-                $('#maxmaf1').prop('disabled', true);
-                $('#minmaf2').prop('disabled', true);
-                $('#maxmaf2').prop('disabled', true);
         }
 }
 
@@ -1510,7 +1500,6 @@ function onFilterByIds(checked) {
         $('#variantEffects').prop('disabled',true).val('default').selectpicker('refresh');        
 
         $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
-        $('#copyVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         
         $('#missingdata1').val('').prop('disabled',true);
@@ -1546,6 +1535,12 @@ function onFilterByIds(checked) {
         $('#mostSameRatio2').prop('disabled',false);
         $('#Genotypes2').prop('disabled',false).selectpicker('refresh');
     }
-    
-    enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+}
+
+function onVariantIdsSelect() {
+    if ($('#variantIdsSelect').selectpicker().val() === null) {
+        $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
+    } else {
+        $('#copyVariantIds').removeAttr('disabled').selectpicker('refresh');
+    }
 }

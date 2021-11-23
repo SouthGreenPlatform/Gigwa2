@@ -305,6 +305,7 @@
 			if ("progress" != e.target.id)
 				resizeDialogs();
 		});
+
 	});
 	
 	function resizeDialogs() {
@@ -524,12 +525,16 @@
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.references.length;
-                                if (seqCount ==0) {
+                                if (seqCount == 0) {
                                     $('#sequenceFilter').hide();
                                     $('#positions').hide();
+                                    $('#filterIDsCheckbox').prop('checked', true);
+                                    onFilterByIds(true);
                                 } else {
                                     $('#sequenceFilter').show();
                                     $('#positions').show();
+                                    $('#filterIDsCheckbox').prop('checked', false);
+                                    onFilterByIds(false);
                                 }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
@@ -913,7 +918,8 @@
                     preserveSelected: true,
 		    log           : 2 /*warn*/,
                     locale: {
-                        emptyTitle: "Select and begin typing to make IDs appear"
+                        statusInitialized: "&nbsp;&nbsp;&nbsp;Start typing a query",
+                        emptyTitle: "Select to enter IDs"
                     },
 		    preprocessData: function (data) {
 		    	$("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
@@ -935,6 +941,12 @@
                 
             $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
             $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {}
+            
+            let inputObj = $('#VariantIds').find('div.bs-searchbox input');
+            if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {            
+                inputObj.css('width', "calc(100% - 24px)");
+                inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll').selectpicker('toggle');\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+            }
 	}
         	
 	function buildGenotypeTableContents(jsonResult)
@@ -2044,7 +2056,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-                                                                <p><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)"> Filter by IDs</p>
+                                                            <p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)"> Filter by IDs</label></p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2109,15 +2121,16 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
-                                                                        <div id="VariantIds"></div>
+                                                                        <div id="VariantIds">
                                                                             <div class="custom-label margin-top-md" id="variantIdsLabel">Variant IDs</div>
                                                                             <div class="form-input">
-                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="20" disabled data-selected-text-format="count > 3"></select>
+                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="20" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" onclick="toggleVariantsPasteBox()"></button>
+                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox()"></button>
                                                                             </div>
+                                                                        </div>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">
