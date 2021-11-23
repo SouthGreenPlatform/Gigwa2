@@ -940,10 +940,10 @@
 		};
                 
             $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {}
+            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};            
             
-            let inputObj = $('#VariantIds').find('div.bs-searchbox input');
-            if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {            
+            if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
+                let inputObj = $('#VariantIds').find('div.bs-searchbox input');
                 inputObj.css('width', "calc(100% - 24px)");
                 inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll').selectpicker('toggle');\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
             }
@@ -2121,13 +2121,18 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
-                                                                        <div id="VariantIds">
-                                                                            <div class="custom-label margin-top-md" id="variantIdsLabel">Variant IDs</div>
+                                                                        <div id="VariantIds" class="margin-top-md">
+                                                                            <div class="container-fluid">
+                                                                                <div class="row">
+                                                                                    <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
+                                                                                </div>
+                                                                            </div>
+                                                                            
                                                                             <div class="form-input">
                                                                                 <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="20" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox()"></button>
                                                                             </div>
                                                                         </div>
