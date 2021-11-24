@@ -14,7 +14,6 @@ import fr.cirad.security.dump.ProcessStatus;
 
 public class GigwaDumpProcess implements IBackgroundProcess {	
 	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String defaultBackupDestinationFolder = dumpManagementPath + "/dumps";
 	private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
 	private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
 	
@@ -37,12 +36,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		this.hosts = hosts;
 		this.dbName = dbName;
 		this.basePath = basePath;
-		
-		if (outPath == null) {
-			this.outPath = this.basePath + defaultBackupDestinationFolder;
-		} else {
-			this.outPath = outPath;
-		}
+		this.outPath = outPath;
 		
 		File outPathCheck = new File(this.outPath);
 		outPathCheck.mkdirs();
@@ -51,7 +45,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		this.status = ProcessStatus.IDLE;
 	}
 	
-	public void startDump(String credentials) {
+	public void startDump(String fileName, String credentials) {
 		abortable = true;
 		deleteOnError = true;
 		(new Thread() {
@@ -65,6 +59,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					basePath + dumpCommand,
 					"--host", hostString,
 					"--output", outPath,
+					"--name", fileName,
 					"--database", dbName,
 					"--log"
 				));
@@ -136,8 +131,8 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			for (int i = 0; i < length; i++) {
 				this.log.append((char)stream.read());
 			}
-		} catch (IOException e) {  // Most likely, stream closed. Just return the last known state.
-			
+		} catch (IOException e) {
+			// Most likely, stream closed. Just return the last known state.
 		}
 	}
 	

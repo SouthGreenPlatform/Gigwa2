@@ -17,14 +17,17 @@
 package fr.cirad.tools;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,7 @@ import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.security.base.IModuleManager;
+import fr.cirad.security.dump.DumpMetadata;
 import fr.cirad.security.dump.IBackgroundProcess;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
@@ -227,46 +231,82 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public boolean hasDumps() {
-		return appConfig.get("enableDumps").trim().toLowerCase().equals("true");
+		return appConfig.get("enableDumps").trim().toLowerCase().equals("true") &&
+				appConfig.get("dumpFolder") != null;
 	}
 	
 	@Override
-	public List<String> getDumps(String sModule) {
+	public List<DumpMetadata> getDumps(String sModule) {
 		String dumpPath = this.getDumpPath(sModule);
 		
 		// List files in the database's dump directory, filter out subdirectories and logs
 		File[] fileList = new File(dumpPath).listFiles();
 		if (fileList != null) {
-			return Stream.of(fileList)
-					.filter(file -> !file.isDirectory())
-					.map(File::getName)
-					.filter(filename -> !filename.endsWith(".log"))
-					.sorted(Comparator.reverseOrder())
-					.collect(Collectors.toList());
+			ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
+			for (File file : fileList) {
+				String filename = file.getName();
+				if (filename.endsWith(".gz") && !filename.endsWith(".log.gz")) {
+					String prefix = filename.substring(0, filename.lastIndexOf('.'));
+					String[] splitName = prefix.split("__");
+					String module = splitName[0];
+					String name = splitName[1];
+					
+					Date creationDate;
+					try {
+						creationDate = Date.from(Files.readAttributes(file.toPath(), BasicFileAttributes.class).creationTime().toInstant());
+					} catch (IOException e) {
+						LOG.error("Creation date unreadable for dump file " + filename);
+						e.printStackTrace();
+						continue;
+					}
+					
+					File descriptionFile = new File(dumpPath + "/" + prefix + ".txt");
+					String description = "";
+					try {
+						description = new String(Files.readAllBytes(descriptionFile.toPath()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					
+					result.add(new DumpMetadata(prefix, module, name, creationDate, description));
+				}
+			}
+			return result;
 		} else {  // The database dump directory does not exist
-			return new ArrayList<String>();
+			return new ArrayList<DumpMetadata>();
 		}
 	}
 	
 	@Override
-	public IBackgroundProcess startDump(String sModule) {
+	public IBackgroundProcess startDump(String sModule, String sName, String sDescription) {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
+		String databaseName = MongoTemplateManager.getDatabaseName(sModule);
 		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
-				MongoTemplateManager.getDatabaseName(sModule),
+				databaseName,
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
 				appConfig.get("dumpFolder"));
 		
-		process.startDump(credentials);
+		String fileName = sModule + "__" + sName;
+		process.startDump(fileName, credentials);
+		
+		String descriptionPath = appConfig.get("dumpFolder") + "/" + databaseName + "/" + fileName + ".txt";
+		try {
+			FileWriter descriptionWriter = new FileWriter(descriptionPath);
+			descriptionWriter.write(sDescription);
+			descriptionWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return process;
 	}
 	
 	@Override
-	public IBackgroundProcess startRestore(String sModule, String dumpName, boolean drop) {
+	public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
-		String dumpFile = this.getDumpPath(sModule) + File.separator + dumpName;
+		String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
 		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
 				MongoTemplateManager.getDatabaseName(sModule),
 				MongoTemplateManager.getServerHosts(sHost),
@@ -284,9 +324,21 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public boolean deleteDump(String sModule, String sDump) {
-		String path = getDumpPath(sModule) + File.separator + sDump;
-		File file = new File(path);
-		return file.delete();
+		String dumpPath = getDumpPath(sModule);
+		String basename = dumpPath + File.separator + sDump;
+		
+		File archiveFile = new File(basename + ".gz");
+		boolean result = archiveFile.delete();
+		
+		for (File file : new File(dumpPath).listFiles()) {
+			String filename = file.getName();
+			if (filename == basename + ".txt" || 
+					(filename.startsWith(basename) && filename.endsWith(".log")) ||
+					(filename.startsWith(basename) && filename.endsWith(".log.gz")))
+				file.delete();
+		}
+		
+		return result;
 	}
 	
 	private String getDumpPath(String sModule) {
@@ -324,6 +376,17 @@ public class GigwaModuleManager implements IModuleManager {
 			LOG.error(e.getMessage());
 			e.printStackTrace();
 			return null;
-		}		
+		}
+	}
+	
+	private int compareFileCreationDates(File f1, File f2) {
+		try {
+			BasicFileAttributes attr1 = Files.readAttributes(f1.toPath(), BasicFileAttributes.class);
+			BasicFileAttributes attr2 = Files.readAttributes(f2.toPath(), BasicFileAttributes.class);
+			return attr1.creationTime().compareTo(attr2.creationTime());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return f1.getName().compareTo(f2.getName());  // Default to file name ...?
+		}
 	}
 }
