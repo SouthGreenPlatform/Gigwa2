@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
@@ -83,12 +86,12 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder, password, false);
+				runProcess(builder, password, null);
 			}
 		}).start();
 	}
 	
-	public void startRestore(String backupFile, boolean drop, String credentials) {
+	public void startRestore(String dumpFile, boolean drop, String credentials) {
 		abortable = true;
 		deleteOnError = false;
 		abortWarning = "This database may be left in an unstable state if you proceed.";
@@ -102,7 +105,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				List<String> args = new ArrayList<String>(Arrays.asList(
 					basePath + restoreCommand,
 					"--host", hostString,
-					"--input", backupFile,
+					"--input", dumpFile,
 					"--log"
 				));
 				
@@ -120,7 +123,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder, password, true);
+				runProcess(builder, password, dumpFile);
 			}
 		}).start();
 	}
@@ -171,7 +174,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	}
 	
 	
-	private void runProcess(ProcessBuilder builder, String password, boolean updateDatabase) {
+	private void runProcess(ProcessBuilder builder, String password, String dumpFile) {
 		AbstractGenotypeImport.lockModuleForWriting(module);
 		try {
 			status = ProcessStatus.RUNNING;
@@ -187,8 +190,11 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			if (exitcode == 0) {
 				status = ProcessStatus.SUCCESS;
 				statusMessage = "Finished";
-				if (updateDatabase)
-					MongoTemplateManager.updateDatabaseLastModification(this.module);
+				if (dumpFile != null) {
+					MongoTemplateManager.updateDatabaseLastModification(this.module,
+							Date.from(Files.readAttributes(new File(dumpFile).toPath(), BasicFileAttributes.class).creationTime().toInstant()),
+							true);
+				}
 			} else if (aborted) {
 				status = ProcessStatus.INTERRUPTED;
 				statusMessage = "Aborted by user";

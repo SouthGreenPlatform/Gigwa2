@@ -49,6 +49,7 @@ import org.springframework.stereotype.Component;
 
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
+import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.Individual;
@@ -57,6 +58,7 @@ import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.security.base.IModuleManager;
 import fr.cirad.security.dump.DumpMetadata;
+import fr.cirad.security.dump.DumpValidity;
 import fr.cirad.security.dump.IBackgroundProcess;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
@@ -237,6 +239,7 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public List<DumpMetadata> getDumps(String sModule) {
+		DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
 		String dumpPath = this.getDumpPath(sModule);
 		
 		// List files in the database's dump directory, filter out subdirectories and logs
@@ -268,7 +271,19 @@ public class GigwaModuleManager implements IModuleManager {
 						e.printStackTrace();
 					}
 					
-					result.add(new DumpMetadata(prefix, module, name, creationDate, description));
+					DumpValidity validity;
+					
+					// creationDate < lastModification : outdated
+					if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
+						validity = DumpValidity.OUTDATED;
+					// The last modification was a dump restore, and this dump is more recent than the restored dump
+					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.isRestored()) {
+						validity = DumpValidity.DIVERGENT;
+					} else {
+						validity = DumpValidity.VALID;
+					}
+					
+					result.add(new DumpMetadata(prefix, module, name, creationDate, description, validity));
 				}
 			}
 			return result;
