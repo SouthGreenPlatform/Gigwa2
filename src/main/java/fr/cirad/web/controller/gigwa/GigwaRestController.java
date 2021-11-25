@@ -1355,6 +1355,7 @@ public class GigwaRestController extends ControllerInterface {
                             progress.setError("Provided data did not lead to any changes!");
                         }
                     } else {
+                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
                         progress.markAsComplete();
                     }
                 }
@@ -1716,8 +1717,12 @@ public class GigwaRestController extends ControllerInterface {
 									newProjId = new VcfImport(token).importToMongo((fIsLocalFile ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 								}
 							}
-							if (newProjId != null)
+							
+							if (newProjId != null) {
 								createdProjectId.set(newProjId);
+								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
+							}
+							
 							if (fGotProjectDesc)
 								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 						}

@@ -11,6 +11,7 @@ import java.util.List;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.security.dump.IBackgroundProcess;
 import fr.cirad.security.dump.ProcessStatus;
+import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaDumpProcess implements IBackgroundProcess {	
 	private static final String dumpManagementPath = "WEB-INF/dump_management";
@@ -82,7 +83,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder, password);
+				runProcess(builder, password, false);
 			}
 		}).start();
 	}
@@ -119,7 +120,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
 				
-				runProcess(builder, password);
+				runProcess(builder, password, true);
 			}
 		}).start();
 	}
@@ -170,7 +171,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	}
 	
 	
-	private void runProcess(ProcessBuilder builder, String password) {
+	private void runProcess(ProcessBuilder builder, String password, boolean updateDatabase) {
 		AbstractGenotypeImport.lockModuleForWriting(module);
 		try {
 			status = ProcessStatus.RUNNING;
@@ -186,6 +187,8 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			if (exitcode == 0) {
 				status = ProcessStatus.SUCCESS;
 				statusMessage = "Finished";
+				if (updateDatabase)
+					MongoTemplateManager.updateDatabaseLastModification(this.module);
 			} else if (aborted) {
 				status = ProcessStatus.INTERRUPTED;
 				statusMessage = "Aborted by user";
