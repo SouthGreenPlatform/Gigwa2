@@ -76,8 +76,11 @@ logged_part(){
 }
 
 if [ ! -z $LOGFILE ]; then
-	logged_part 2>&1 | tee "$FILENAME-restore-`date +%Y-%m-%dT%H%M%S`.log"
-	exit ${PIPESTATUS[0]}
+	LOGFILENAME="$FILENAME""restore-`date +%Y-%m-%dT%H%M%S`.log"
+	logged_part 2>&1 | tee $LOGFILENAME
+	STATUS=${PIPESTATUS[0]}
+	gzip $LOGFILENAME
+	exit $STATUS
 else
 	logged_part
 	exit $?

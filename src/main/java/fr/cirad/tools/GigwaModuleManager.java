@@ -260,7 +260,7 @@ public class GigwaModuleManager implements IModuleManager {
 						continue;
 					}
 					
-					File descriptionFile = new File(dumpPath + "/" + prefix + ".txt");
+					File descriptionFile = new File(dumpPath + "/" + prefix + "description.txt");
 					String description = "";
 					try {
 						description = new String(Files.readAllBytes(descriptionFile.toPath()));
@@ -288,10 +288,10 @@ public class GigwaModuleManager implements IModuleManager {
 				servletContext.getRealPath(""),
 				appConfig.get("dumpFolder"));
 		
-		String fileName = sModule + "__" + sName;
+		String fileName = sModule + "__" + sName + "__";
 		process.startDump(fileName, credentials);
 		
-		String descriptionPath = appConfig.get("dumpFolder") + "/" + databaseName + "/" + fileName + ".txt";
+		String descriptionPath = appConfig.get("dumpFolder") + "/" + databaseName + "/" + fileName + "description.txt";
 		try {
 			FileWriter descriptionWriter = new FileWriter(descriptionPath);
 			descriptionWriter.write(sDescription);
@@ -332,9 +332,7 @@ public class GigwaModuleManager implements IModuleManager {
 		
 		for (File file : new File(dumpPath).listFiles()) {
 			String filename = file.getName();
-			if (filename == basename + ".txt" || 
-					(filename.startsWith(basename) && filename.endsWith(".log")) ||
-					(filename.startsWith(basename) && filename.endsWith(".log.gz")))
+			if (filename.startsWith(sDump) && (filename.endsWith(".log") || filename.endsWith(".log.gz") || filename.endsWith(".txt")))
 				file.delete();
 		}
 		

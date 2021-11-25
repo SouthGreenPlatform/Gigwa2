@@ -14,7 +14,7 @@ while [ $# -gt 0 ]; do
 			shift; shift
 			;;
 		-n | --name)
-			FILEPREFIX="$2"
+			DUMPNAME="$2"
 			shift; shift
 			;;
 		-u | --username)
@@ -61,8 +61,8 @@ if [ -z $DATABASE ]; then
 	exit 12
 fi
 
-if [ -z $FILEPREFIX ]; then
-	FILEPREFIX=$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`
+if [ -z "$DUMPNAME" ]; then
+	DUMPNAME=$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`
 fi
 
 if [ ! -d $OUTPUT ]; then
@@ -82,10 +82,11 @@ if [ ! -z $DBUSERNAME ]; then
 fi
 
 #FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`".gz"
-FILENAME=$OUTPUT/$DATABASE/$FILEPREFIX".gz"
+FILEPREFIX="$OUTPUT/$DATABASE/$DUMPNAME"
+FILENAME="$FILEPREFIX.gz"
 
 logged_part(){
-	echo "Name : $FILEPREFIX"
+	echo "Name : $DUMPNAME"
 	set -x
 	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollection=cachedCounts --excludeCollection=brapiGermplasmsSearches --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
 	return $?
@@ -93,9 +94,9 @@ logged_part(){
 
 
 if [ ! -z $LOGFILE ]; then
-	logged_part 2>&1 | tee "$FILEPREFIX-dump.log"
+	logged_part 2>&1 | tee "$FILEPREFIX""dump.log"
 	STATUS=${PIPESTATUS[0]}
-	gzip "$FILEPREFIX-dump.log"
+	gzip "$FILEPREFIX""dump.log"
 	exit $STATUS
 else
 	logged_part
