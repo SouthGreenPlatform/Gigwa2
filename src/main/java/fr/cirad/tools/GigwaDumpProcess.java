@@ -25,6 +25,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	private String outPath;
 	private boolean abortable = false;
 	private boolean deleteOnError;
+	private String abortWarning;
 	
 	private StringBuilder log;
 	private ProcessStatus status;
@@ -48,6 +49,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	public void startDump(String fileName, String credentials) {
 		abortable = true;
 		deleteOnError = true;
+		abortWarning = null;
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
@@ -59,10 +61,13 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					basePath + dumpCommand,
 					"--host", hostString,
 					"--output", outPath,
-					"--name", fileName,
 					"--database", dbName,
 					"--log"
 				));
+				
+				if (fileName != null) {
+					args.add("--name"); args.add(fileName);
+				}
 				
 				String password = null;
 				if (credentials != null) {
@@ -71,7 +76,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					password = userAndPass[1];
 					args.add("--username"); args.add(userAndPass[0]);
 					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
-					args.add("--passwordPrompt");
+					args.add("-pp");
 				}
 				
 				ProcessBuilder builder = new ProcessBuilder(args);
@@ -83,8 +88,9 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	}
 	
 	public void startRestore(String backupFile, boolean drop, String credentials) {
-		abortable = false;
+		abortable = true;
 		deleteOnError = false;
+		abortWarning = "This database may be left in an unstable state if you proceed.";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + restoreCommand);
@@ -136,6 +142,10 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		}
 	}
 	
+	public String getModule() {
+		return module;
+	}
+	
 	public ProcessStatus getStatus() {
 		return this.status;
 	}
@@ -146,6 +156,10 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	
 	public boolean isAbortable() {
 		return this.abortable;
+	}
+	
+	public String getAbortWarning() {
+		return this.abortWarning;
 	}
 	
 	public void abort() {
@@ -200,10 +214,13 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			updateLog();
 			for (String line : this.log.toString().split("\n")) {
 				if (line.startsWith("Name : ")) {
-					String filename = line.split(":")[1].trim();
-					File file = new File(filename);
-					file.delete();
-					break;
+					String dumpName = line.split(":")[1].trim();
+					
+					for (File file : new File(this.outPath).listFiles()) {
+						String filename = file.getName();
+						if (filename.startsWith(dumpName) && (filename.endsWith(".log") || filename.endsWith(".gz") || filename.endsWith(".txt")))
+							file.delete();
+					}
 				}
 			}
 		}

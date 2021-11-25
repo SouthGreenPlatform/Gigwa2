@@ -291,7 +291,9 @@ public class GigwaModuleManager implements IModuleManager {
 		String fileName = sModule + "__" + sName + "__";
 		process.startDump(fileName, credentials);
 		
-		String descriptionPath = appConfig.get("dumpFolder") + "/" + databaseName + "/" + fileName + "description.txt";
+		String outPath = appConfig.get("dumpFolder") + File.separator + databaseName + File.separator;
+		new File(outPath).mkdirs();
+		String descriptionPath = outPath + fileName + "description.txt";
 		try {
 			FileWriter descriptionWriter = new FileWriter(descriptionPath);
 			descriptionWriter.write(sDescription);
