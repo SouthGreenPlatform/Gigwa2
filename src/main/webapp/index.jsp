@@ -249,14 +249,17 @@
 			$('#exportPanel div.individualRelated').css("display", $(this).val() == "BED" ? "none" : "block");
 		});
 		$('#Sequences').on('multiple_select_change', function() {
-			$('#sequencesLabel').html("Sequences (" + $('#Sequences').selectmultiple('count') + "/" + seqCount + ")");
+			var nCount = $('#Sequences').selectmultiple('count');
+			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
 		});
-		$('#Individuals1').on('multiple_select_change', function() {// 			async: false,
-			$('#individualsLabel1').html("Individuals (" + $('#Individuals1').selectmultiple('count') + "/" + indCount + ")");
+		$('#Individuals1').on('multiple_select_change', function() {
+			var nCount = $('#Individuals1').selectmultiple('count');
+			$('#individualsLabel1').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#Individuals2').on('multiple_select_change', function() {
-			$('#individualsLabel2').html("Individuals (" + $('#Individuals2').selectmultiple('count') + "/" + indCount + ")");
+			var nCount = $('#Individuals2').selectmultiple('count');
+			$('#individualsLabel2').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#displayAllGt').on('change', function() {
@@ -1845,7 +1848,6 @@
 					visibilityWindow: 100000,
 					reader: new GigwaSearchReader(
 							individuals, token,
-							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
 							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
 				});
 			})
