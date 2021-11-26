@@ -239,6 +239,10 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public List<DumpMetadata> getDumps(String sModule) {
+		return getDumps(sModule, true);
+	}
+	
+	public List<DumpMetadata> getDumps(String sModule, boolean withDescription) {
 		DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
 		String dumpPath = this.getDumpPath(sModule);
 		
@@ -263,22 +267,27 @@ public class GigwaModuleManager implements IModuleManager {
 						continue;
 					}
 					
-					File descriptionFile = new File(dumpPath + "/" + prefix + "description.txt");
-					String description = "";
-					try {
-						description = new String(Files.readAllBytes(descriptionFile.toPath()));
-					} catch (IOException e) {
-						e.printStackTrace();
+					String description = null;
+					if (withDescription) {
+						File descriptionFile = new File(dumpPath + "/" + prefix + "description.txt");
+						try {
+							description = new String(Files.readAllBytes(descriptionFile.toPath()));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 					
 					DumpValidity validity;
 					
+					// No last modification date set : default to valid ?
+					if (dbInfo == null) {
+						validity = DumpValidity.VALID;
 					// creationDate < lastModification : outdated
-					if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
+					} else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
 						validity = DumpValidity.OUTDATED;
 					// The last modification was a dump restore, and this dump is more recent than the restored dump
 					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.isRestored()) {
-						validity = DumpValidity.DIVERGENT;
+						validity = DumpValidity.UNWANTED;
 					} else {
 						validity = DumpValidity.VALID;
 					}
@@ -290,6 +299,17 @@ public class GigwaModuleManager implements IModuleManager {
 		} else {  // The database dump directory does not exist
 			return new ArrayList<DumpMetadata>();
 		}
+	}
+	
+	@Override 
+	public DumpValidity getDumpStatus(String sModule) {
+		DumpValidity result = DumpValidity.NONE;
+		for (DumpMetadata metadata : getDumps(sModule, false)) {
+			if (metadata.getValidity().validity > result.validity)
+				result = metadata.getValidity();
+		}
+		
+		return result;
 	}
 	
 	@Override
