@@ -38,8 +38,8 @@ while [ $# -gt 0 ]; do
 			shift; shift
 			;;
 		-l | --log)
-			LOGFILE=YES
-			shift
+			LOGFILE="$2"
+			shift; shift
 			;;
 		*)  # Unknown option
 			echo "Unknown option $1"
@@ -94,9 +94,9 @@ logged_part(){
 
 
 if [ ! -z $LOGFILE ]; then
-	logged_part 2>&1 | tee "$FILEPREFIX""dump.log"
+	logged_part 2>&1 | tee $LOGFILE
 	STATUS=${PIPESTATUS[0]}
-	gzip "$FILEPREFIX""dump.log"
+	gzip $LOGFILE
 	exit $STATUS
 else
 	logged_part

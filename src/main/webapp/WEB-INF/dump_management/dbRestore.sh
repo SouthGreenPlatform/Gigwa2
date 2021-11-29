@@ -37,8 +37,8 @@ while [ $# -gt 0 ]; do
 			shift
 			;;
 		-l | --log)
-			LOGFILE=YES
-			shift
+			LOGFILE="$2"
+			shift; shift
 			;;
 		*)  # Unknown option
 			echo "Unknown option $1"
@@ -76,10 +76,9 @@ logged_part(){
 }
 
 if [ ! -z $LOGFILE ]; then
-	LOGFILENAME="$FILENAME""restore-`date +%Y-%m-%dT%H%M%S`.log"
-	logged_part 2>&1 | tee $LOGFILENAME
+	logged_part 2>&1 | tee $LOGFILE
 	STATUS=${PIPESTATUS[0]}
-	gzip $LOGFILENAME
+	gzip $LOGFILE
 	exit $STATUS
 else
 	logged_part

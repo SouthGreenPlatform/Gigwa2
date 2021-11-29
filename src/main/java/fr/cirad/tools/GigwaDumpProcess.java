@@ -1,15 +1,21 @@
 package fr.cirad.tools;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.security.dump.IBackgroundProcess;
@@ -32,6 +38,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	private String abortWarning;
 	
 	private StringBuilder log;
+	private String logFile;
 	private ProcessStatus status;
 	private String statusMessage;
 	private boolean aborted = false;
@@ -54,6 +61,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		abortable = true;
 		deleteOnError = true;
 		abortWarning = null;
+		logFile = outPath + File.separator + dbName + File.separator + fileName + "dump.log";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
@@ -66,12 +74,9 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					"--host", hostString,
 					"--output", outPath,
 					"--database", dbName,
-					"--log"
+					"--name", fileName,
+					"--log", logFile
 				));
-				
-				if (fileName != null) {
-					args.add("--name"); args.add(fileName);
-				}
 				
 				String password = null;
 				if (credentials != null) {
@@ -95,6 +100,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		abortable = true;
 		deleteOnError = false;
 		abortWarning = "This database may be left in an unstable state if you proceed.";
+		logFile = dumpFile.substring(0, dumpFile.indexOf(".gz")) + "restore-" + DateTimeFormatter.ofPattern("uuuuMMddHHmmss").format(LocalDateTime.now()) + ".log";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + restoreCommand);
@@ -106,7 +112,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					basePath + restoreCommand,
 					"--host", hostString,
 					"--input", dumpFile,
-					"--log"
+					"--log", logFile
 				));
 				
 				String password = null;
@@ -130,19 +136,56 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	
 	
 	public String getLog(){
-		this.updateLog();
-		return this.log.toString();
+		if (this.log != null) {
+			this.updateLog();
+			return this.log.toString();
+		} else {
+			File baseFile = new File(logFile);
+			File gzipFile = new File(logFile + ".gz");
+			InputStream logInput = null;
+			try {
+				if (Files.exists(baseFile.toPath())) {
+					logInput = new FileInputStream(baseFile);
+				} else if (Files.exists(gzipFile.toPath())){
+					logInput = new GZIPInputStream(new FileInputStream(gzipFile));
+				} else {
+					throw new FileNotFoundException();
+				}
+				
+				int readLength;
+				ByteArrayOutputStream logBuilder = new ByteArrayOutputStream();
+				byte[] buffer = new byte[65536];  // FIXME ?
+				while ((readLength = logInput.read(buffer)) != -1) {
+					logBuilder.write(buffer, 0, readLength);
+				}
+				
+				return logBuilder.toString("UTF-8");
+			} catch (FileNotFoundException e) {
+				return "Log file not found";
+			} catch (IOException e) {
+				return "Error reading the log file";
+			} finally {
+				try {
+					if (logInput != null)
+						logInput.close();
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	private void updateLog() {
-		try {
-			InputStream stream = this.subprocess.getInputStream();
-			int length = stream.available();
-			for (int i = 0; i < length; i++) {
-				this.log.append((char)stream.read());
+		if (this.log != null) {
+			try {
+				InputStream stream = this.subprocess.getInputStream();
+				int length = stream.available();
+				for (int i = 0; i < length; i++) {
+					this.log.append((char)stream.read());
+				}
+			} catch (IOException e) {
+				// Most likely, stream closed. Just return the last known state.
 			}
-		} catch (IOException e) {
-			// Most likely, stream closed. Just return the last known state.
 		}
 	}
 	
@@ -195,6 +238,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 							Date.from(Files.readAttributes(new File(dumpFile).toPath(), BasicFileAttributes.class).creationTime().toInstant()),
 							true);
 				}
+				this.log = null;  // Eventually deletes the log, from now on it will be read from disk
 			} else if (aborted) {
 				status = ProcessStatus.INTERRUPTED;
 				statusMessage = "Aborted by user";

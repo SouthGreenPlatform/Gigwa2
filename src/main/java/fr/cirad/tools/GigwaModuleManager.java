@@ -233,8 +233,13 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	@Override
 	public boolean hasDumps() {
-		return appConfig.get("enableDumps").trim().toLowerCase().equals("true") &&
-				appConfig.get("dumpFolder") != null;
+		String dumpFolder = appConfig.get("dumpFolder");
+		if (dumpFolder == null)
+			return false;
+		else if (Files.isDirectory(Paths.get(dumpFolder)))
+			return true;
+		else
+			return new File(dumpFolder).mkdirs();
 	}
 	
 	@Override
@@ -286,7 +291,7 @@ public class GigwaModuleManager implements IModuleManager {
 					} else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
 						validity = DumpValidity.OUTDATED;
 					// The last modification was a dump restore, and this dump is more recent than the restored dump
-					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.isRestored()) {
+					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.getRestoreDate() != null && creationDate.compareTo(dbInfo.getRestoreDate()) < 0) {
 						validity = DumpValidity.UNWANTED;
 					} else {
 						validity = DumpValidity.VALID;
