@@ -406,20 +406,19 @@ function loadVcfFieldHeaders() {
 	});
 }
 
-function enableMafOnlyIfGtPatternAndAlleleNumberAllowTo() {
+function enableMafOnlyIfApplicable() {
 	var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
-	var enableMaf = onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
+	var enableMaf = !$("#filterIDsCheckbox").is(":checked") && onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
 	$('#minmaf1').prop('disabled', enableMaf ? false : "disabled");
 	$('#maxmaf1').prop('disabled', enableMaf ? false : "disabled");
 	$('#minmaf2').prop('disabled', enableMaf ? false : "disabled");
 	$('#maxmaf2').prop('disabled', enableMaf ? false : "disabled");
-	if (!enableMaf)
-	{
+	if (!enableMaf) {
 		$('#minmaf1').val(0);
 		$('#maxmaf1').val(50);
 		$('#minmaf2').val(0);
 		$('#maxmaf2').val(50);                
-        }
+    }
 }
 
 function updateGtPatterns() {
@@ -1066,13 +1065,11 @@ function toggleIndividualPasteBox(groupNumber) {
 
 function onPasteIndividuals(groupNumber, textarea) {
 	var cleanSelectionArray = [];
-	var splitSelection = textarea.val().split("\n");
-	for (var selectedInd in splitSelection)
-	{
-		var trimmedInd = splitSelection[selectedInd].trim();
-		if (trimmedInd.length > 0)
-			cleanSelectionArray.push(trimmedInd);
-	}
+	$("#variantIdsSelect").html("");
+	var optionSB = new StringBuffer();
+	textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
+		cleanSelectionArray.push(ind);
+	});
 	$('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
 	applyGroupMemorizing(groupNumber);
 	$("button#pasteIndividuals" + groupNumber).click();
@@ -1090,18 +1087,14 @@ function toggleVariantsPasteBox() {
 }
 
 function onPasteVariantIds(textarea) {
-	var cleanSelectionArray = [];
-	var splitSelection = textarea.val().split("\n");
-	for (var selectedVariant in splitSelection)
-	{
-		var trimmedInd = splitSelection[selectedVariant].trim();
-		if (trimmedInd.length > 0)
-			cleanSelectionArray.push(trimmedInd);
-                    $("#variantIdsSelect").append('<option value="'+trimmedInd+'">'+trimmedInd+'</option>');
-	}
-        $("button#pasteVariantIds").click();
-        $("#variantIdsSelect").val(cleanSelectionArray);
-        loadVariantIds();
+	$("#variantIdsSelect").html("");
+	var optionSB = new StringBuffer();
+	textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (varId) {
+	  optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+	});
+	$("#variantIdsSelect").append(optionSB.toString());
+    $("button#pasteVariantIds").click();
+	$('#variantIdsSelect').trigger('change');
 }
 
 function displayProjectInfo(projName)
@@ -1535,6 +1528,7 @@ function onFilterByIds(checked) {
         $('#mostSameRatio2').prop('disabled',false);
         $('#Genotypes2').prop('disabled',false).selectpicker('refresh');
     }
+	enableMafOnlyIfApplicable();
 }
 
 function onVariantIdsSelect() {
