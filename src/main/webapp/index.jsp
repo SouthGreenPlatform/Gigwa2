@@ -242,7 +242,7 @@
 		});
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
-			enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+			enableMafOnlyIfApplicable();
 		});
 		$('#exportFormat').on('change', function() {
 			var opt = $(this).children().filter(':selected');
@@ -789,13 +789,13 @@
 					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 				$('#Genotypes2').on('change', function() {
 					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -939,7 +939,7 @@
 		        }
 		        return array;
 		    }
-		};            
+		};
             
             $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project            
             $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
@@ -2062,7 +2062,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-                                                            <p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked)"> Filter by IDs</label></p>
+                                                            <p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);"> Filter by IDs</label></p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2088,11 +2088,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										 </div>
 									  </div>
 									</div>
-                                                                        <div id="sequenceFilter">
-                                                                            <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
-                                                                            <div id="Sequences"></div>
-                                                                        </div>
-                                                                        <div id="positions" class="margin-top-md">
+                                    <div id="sequenceFilter">
+                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+                                        <div id="Sequences"></div>
+                                    </div>
+                                    <div id="positions" class="margin-top-md">
 										<label id="positionLabel" for="minposition" class="custom-label">Position (bp)</label>
 										<div class="container-fluid">
 										  <div class="row">
