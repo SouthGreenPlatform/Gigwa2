@@ -921,10 +921,12 @@
                         statusInitialized: "&nbsp;&nbsp;&nbsp;Start typing a query",
                         emptyTitle: "Select to enter IDs"
                     },
+                    minLength: 2,
+                    clearOnEmpty: true,
 		    preprocessData: function (data) {
 		    	$("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
 		    	var asp = this;
-		    	if (data.length == 1 && data[0].indexOf("Too many results (") == 0) {
+		    	if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
 		    		setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
 		    		return;
 		    	}
@@ -937,15 +939,19 @@
 		        }
 		        return array;
 		    }
-		};
-                
-            $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};            
+		};            
             
+            $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project            
+            $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+            $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
+            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+
             if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
                 let inputObj = $('#VariantIds').find('div.bs-searchbox input');
-                inputObj.css('width', "calc(100% - 24px)");
-                inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll').selectpicker('toggle');\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+                inputObj.css('width', "calc(100% - 24px)");                
+                //when clicking on the button, the selected Ids and the search result are cleared
+                inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll'); $('#VariantIds').find('div.bs-searchbox input').val('').trigger('keyup');\" \n\
+                style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
             }
 	}
         	
@@ -2129,7 +2135,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                                             </div>
                                                                             
                                                                             <div class="form-input">
-                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" data-size="20" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
+                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                                                             </div>
                                                                             <div style="margin-top:-25px; text-align:right;">
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>

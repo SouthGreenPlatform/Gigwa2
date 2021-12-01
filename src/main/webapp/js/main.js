@@ -1486,9 +1486,9 @@ function listQueries(){
 
 function onFilterByIds(checked) {
     if (checked) {
-        $('#variantTypes').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#variantTypes').prop('disabled',true).val('').selectpicker('refresh');
         
-        $('#numberOfAlleles').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#numberOfAlleles').prop('disabled',true).val('').selectpicker('refresh');
 
         $('#Sequences').selectmultiple('selectAll');
         $('#Sequences').find('.btn').prop('disabled',true);
@@ -1497,7 +1497,7 @@ function onFilterByIds(checked) {
         $('#maxposition').val('').prop('disabled',true);
         $('#geneName').val('').prop('disabled',true);
         
-        $('#variantEffects').prop('disabled',true).val('default').selectpicker('refresh');        
+        $('#variantEffects').prop('disabled',true).val('').selectpicker('refresh');        
 
         $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
@@ -1505,12 +1505,12 @@ function onFilterByIds(checked) {
         $('#missingdata1').val('').prop('disabled',true);
         $('#missingdata1').val(100);
         $('#mostSameRatio1').val('').prop('disabled',true);
-        $('#Genotypes1').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#Genotypes1').prop('disabled',true).val('').selectpicker('refresh');
         
         $('#missingdata2').val('').prop('disabled',true);
         $('#missingdata2').val(100);
         $('#mostSameRatio2').val('').prop('disabled',true);
-        $('#Genotypes2').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#Genotypes2').prop('disabled',true).val('').selectpicker('refresh');
 
     } else {
         $('#variantTypes').prop('disabled',false).selectpicker('refresh');
@@ -1519,8 +1519,8 @@ function onFilterByIds(checked) {
         $('#minposition').prop('disabled',false).selectpicker('refresh');
         $('#maxposition').prop('disabled',false).selectpicker('refresh');     
         $('#geneName').prop('disabled',false);
-        $('#variantEffects').prop('disabled',false).selectpicker('refresh');
-
+        $('#variantEffects').prop('disabled',false).selectpicker('refresh');        
+        
         $('#variantIdsSelect').prop('disabled',true).val('default').selectpicker('refresh');
         $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
         $('#pasteVariantIds').prop('disabled',true).selectpicker('refresh');
