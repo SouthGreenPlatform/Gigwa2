@@ -895,57 +895,57 @@
         function loadVariantIds() {
             var options = {
                     ajax:{
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
-			type: "GET",
+                        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
+                        type: "GET",
                         headers: {
-                                    "Authorization": "Bearer " + token
-				},
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			data: {
+                                "Authorization": "Bearer " + token
+                        },
+                        dataType: "json",
+                        contentType: "application/json;charset=utf-8",
+                        data: {
                             projectId: getProjectId(),
                             q: '{{{q}}}'
-			},
-			success: function(jsonResult) {
-				return jsonResult;
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
+                        },
+                        success: function(jsonResult) {
+                            return jsonResult;
+                        },
+                        error: function(xhr, ajaxOptions, thrownError) {
+                            handleError(xhr, thrownError);
+                        }
                     },
                     cache : false,
                     preserveSelectedPosition : "before",
                     preserveSelected: true,
-		    log           : 2 /*warn*/,
+                    log: 2 /*warn*/,
                     locale: {
                         statusInitialized: "&nbsp;&nbsp;&nbsp;Start typing a query",
                         emptyTitle: "Select to enter IDs"
                     },
                     minLength: 2,
                     clearOnEmpty: true,
-		    preprocessData: function (data) {
-		    	$("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
-		    	var asp = this;
-		    	if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
-		    		setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
-		    		return;
-		    	}
-		    	
-		        var array = [];
+                    preprocessData: function (data) {
+                        $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                        var asp = this;
+                        if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                            setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                            return;
+                        }
+                        
+                        var array = [];
                         for (i=0; i<data.length; i++) {
                             array.push($.extend(true, data[i], {
                                 value: data[i]
                             }));
-		        }
-		        return array;
-		    }
-		};
+                        }
+                        return array;
+                    }
+                };
             
-            $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project            
+            $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
             $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
             $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
             $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
-
+            
             if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
                 let inputObj = $('#VariantIds').find('div.bs-searchbox input');
                 inputObj.css('width', "calc(100% - 24px)");                
@@ -953,7 +953,7 @@
                 inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll'); $('#VariantIds').find('div.bs-searchbox input').val('').trigger('keyup');\" \n\
                 style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
             }
-	}
+        }
         	
 	function buildGenotypeTableContents(jsonResult)
 	{
