@@ -137,6 +137,17 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+		    <groupId>org.springframework.security</groupId>
+		    <artifactId>spring-security-cas</artifactId>
+		    <version>3.2.10.RELEASE</version>
+		    <exclusions>
+		    	<exclusion>
+				    <groupId>org.slf4j</groupId>
+ 					<artifactId>log4j-over-slf4j</artifactId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springmodules</groupId>
