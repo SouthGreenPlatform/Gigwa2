@@ -10,15 +10,21 @@
     <context:component-scan base-package="fr.cirad.mgdb.model.mongodao,fr.cirad.tools">
 	    <context:exclude-filter type="regex" expression="^fr.cirad.tools.GlobalExceptionHandler$"/>
     </context:component-scan>
+    
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="location" value="classpath:config.properties" />
+	</bean>
+
 	
     <secur:http request-matcher="regex" pattern="^.*/css/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/img/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/js/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*\/.*filt\/tmpOutput\/.*\.zip.*$" security="none" />
 	
-    <secur:http realm="GIGwA WebApp Security Administration" request-matcher="regex" access-decision-manager-ref="accessDecisionManager" entry-point-ref="casEntryPoint">
+    <secur:http realm="GIGwA WebApp Security Administration" request-matcher="regex" access-decision-manager-ref="accessDecisionManager" entry-point-ref="gigwaAuthenticationEntryPoint">
 		<!-- <secur:intercept-url pattern="^.*\.json.*$" access="IS_AUTHENTICATED_FULLY" /> -->
 		<secur:intercept-url pattern="^.*\/permissionManagement\.jsp.*$" access="IS_AUTHENTICATED_FULLY" />
+		<secur:intercept-url pattern="^.*\/login/cas.*$" access="IS_AUTHENTICATED_FULLY,IS_AUTHENTICATED_REMEMBERED,ROLE_ADMIN" />
 		<secur:intercept-url pattern="^.*\/login\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY" requires-channel="http" />
         <secur:intercept-url pattern="^.*\/index\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY,IS_AUTHENTICATED_FULLY,IS_AUTHENTICATED_REMEMBERED,ROLE_ADMIN" requires-channel="http" />
         <secur:form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" />
@@ -38,6 +44,27 @@
         <secur:authentication-provider ref="casAuthenticationProvider" />
     </secur:authentication-manager>
     
+    <bean id="gigwaAuthenticationEntryPoint" class="org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint">
+    	<constructor-arg>
+    		<map>
+    			<entry>
+    				<key>
+    					<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+    						<constructor-arg value="/login/cas.do" />
+    						<constructor-arg><null/></constructor-arg>
+    					</bean>
+    				</key>
+    				<ref bean="casEntryPoint"/>
+    			</entry>
+    		</map>
+    	</constructor-arg>
+    	<property name="defaultEntryPoint" ref="formEntryPoint" />
+    </bean>
+    
+    <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+    	<constructor-arg value="/login.jsp" />
+    </bean>
+    
     <bean id="casAuthenticationProvider" class="org.springframework.security.cas.authentication.CasAuthenticationProvider">
     	<property name="authenticationUserDetailsService">
     		<bean class="fr.cirad.security.GigwaUserDetailsWrapper">
@@ -46,7 +73,7 @@
     	</property>
     	<property name="ticketValidator">
     		<bean class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
-    			<constructor-arg index="0" value="https://localhost:8443" />
+    			<constructor-arg index="0" value="${casServerURL}" />
     		</bean>
     	</property>
     	<property name="serviceProperties" ref="casServiceProperties" />
@@ -54,7 +81,7 @@
     </bean>
     
     <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
-    	<property name="service" value="http://localhost:8080/gigwa2/j_spring_cas_security_check" />
+    	<property name="service" value="${enforcedWebapRootUrl}/j_spring_cas_security_check" />
     	<property name="sendRenew" value="false" />
     </bean>
     
@@ -64,7 +91,7 @@
     </bean>
     
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
-    	<property name="loginUrl" value="https://localhost:8443/login" />
+    	<property name="loginUrl" value="${casServerURL}/login" />
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
     

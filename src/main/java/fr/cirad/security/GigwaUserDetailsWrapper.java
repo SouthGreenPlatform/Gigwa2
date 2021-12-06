@@ -28,7 +28,6 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 			// TODO : Config option to create account automatically or only manually
 			System.out.println(authentication.getClass().getName());
 			if (authentication instanceof CasAssertionAuthenticationToken) {
-				System.out.println("New user");
 				String[] authorities = {"ROLE_USER"};
 				try {
 					service.saveOrUpdateUser(authentication.getName(), null, authorities, true);

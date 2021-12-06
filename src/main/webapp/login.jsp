@@ -64,6 +64,7 @@
                                 <input type="password" name="j_password" id="password" placeholder="Password" required="required" />
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log  me in</button> 
                             </form>
+                            <a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my institutional account</a>
 							<div class="text-red margin-top-md">
 								&nbsp;
 								<c:if test="${param.auth eq 'failure'}">
