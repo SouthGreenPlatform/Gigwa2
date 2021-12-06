@@ -3,18 +3,16 @@ package fr.cirad.security;
 import java.io.IOException;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.UncategorizedDataAccessException;
 import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-public class GigwaCASUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
+public class GigwaUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
 	private ReloadableInMemoryDaoImpl service;
 	
-	public GigwaCASUserDetailsWrapper(ReloadableInMemoryDaoImpl service) {
+	public GigwaUserDetailsWrapper(ReloadableInMemoryDaoImpl service) {
 		this.service = service;
 	}
 	

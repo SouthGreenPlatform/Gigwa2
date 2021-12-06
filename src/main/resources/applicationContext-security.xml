@@ -40,7 +40,7 @@
     
     <bean id="casAuthenticationProvider" class="org.springframework.security.cas.authentication.CasAuthenticationProvider">
     	<property name="authenticationUserDetailsService">
-    		<bean class="fr.cirad.security.GigwaCASUserDetailsWrapper">
+    		<bean class="fr.cirad.security.GigwaUserDetailsWrapper">
     			<constructor-arg ref="userDetailsService" />
     		</bean>
     	</property>
