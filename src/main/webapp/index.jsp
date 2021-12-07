@@ -992,19 +992,18 @@
 		}
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
-		ind = ind.join(";");
 		$("#runButtons").html("");
 		var addedRunCount = 0;
 		for (var runIndex in runList) {
 			$.ajax({	// result of a run for a variant has an id as module§project§variant§run
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
-				type: "GET",
+				type: "POST",
+				data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
 				async: false,
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
 				headers: {
-					"Authorization": "Bearer " + token,
-					"ind": ind
+					"Authorization": "Bearer " + token
 				},
 				success: function(jsonResult) {
 					if (jsonResult.calls.length > 0)

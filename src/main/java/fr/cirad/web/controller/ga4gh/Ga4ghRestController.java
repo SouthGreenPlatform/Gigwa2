@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
@@ -238,7 +240,7 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-	            String indHeader = request.getHeader("ind");
+	            String indHeader = request.getParameter("ind");
 	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList() : Helper.split(indHeader, ";"));
 	            if (variant == null) {
 	                build404Response(response);
@@ -253,6 +255,46 @@ public class Ga4ghRestController extends ControllerInterface {
             build404Response(response);
             return null;
 		}
+    }
+    
+    /**
+     * get a Variant by ID. POST version of a GA4GH compliant method
+     *
+     * @param request
+     * @param id
+     * @return Variant
+     * @throws IOException 
+     */
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantByPost", notes = "get a Variant from its ID. ")
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "Success", response = Variant.class),
+        @ApiResponse(code = 401, message = "Access forbidden"),
+        @ApiResponse(code = 404, message = "no Variant with this ID")
+    })
+    @CrossOrigin
+    @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
+    public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
+
+        String token = tokenManager.readToken(request);
+        try
+        {
+            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+//                String indHeader = request.getHeader("ind");
+                List<String> callSetIds = ((List<String>) body.get("callSetIds"));
+                Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
+                if (variant == null) {
+                    build404Response(response);
+                    return null;
+                } else
+                    return variant;
+            } else {
+                buildForbiddenAccessResponse(token, response);
+                return null;
+            }
+        } catch (ObjectNotFoundException e) {
+            build404Response(response);
+            return null;
+        }
     }
 
     /**
@@ -348,7 +390,7 @@ public class Ga4ghRestController extends ControllerInterface {
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchCallSetsRequest callSetsRequest) throws IOException {
-
+        org.ga4gh.models.Call c;
         String token = tokenManager.readToken(request);
         String id = callSetsRequest.getVariantSetId();
         try

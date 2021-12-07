@@ -759,7 +759,7 @@ public class GigwaRestController extends ControllerInterface {
 		                VariantRunData vrd = runsToWrite.get(0);
 
 		                ReferencePosition rp = vrd.getReferencePosition();
-		                sb.append(idOfVarToWrite + "\t" + StringUtils.join((vrd).getKnownAlleleList(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
+		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
 
