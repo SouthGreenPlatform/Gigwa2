@@ -59,7 +59,7 @@
     	</property>
     	<property name="ticketValidator">
     		<bean class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
-    			<constructor-arg index="0" value="${casServerURL}" />
+    			<constructor-arg index="0" value="${casServerURL:}" />
     		</bean>
     	</property>
     	<property name="serviceProperties" ref="casServiceProperties" />
@@ -89,7 +89,7 @@
     </bean>
     
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
-    	<property name="loginUrl" value="${casServerURL}/login" />
+    	<property name="loginUrl" value="${casServerURL:}/login" />
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
     

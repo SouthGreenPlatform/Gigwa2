@@ -18,7 +18,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %> 
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
+<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <fmt:setBundle basename="config" />
 <html>
     <head>
@@ -64,7 +65,9 @@
                                 <input type="password" name="password" id="password" placeholder="Password" required="required" />
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
-                            <a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my institutional account</a>
+                            <c:if test="${appConfig.get('casServerURL') != null}">
+                            	<a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my institutional account</a>
+							</c:if>
 							<div class="text-red margin-top-md">
 								&nbsp;
 								<c:if test="${param.auth eq 'failure'}">
