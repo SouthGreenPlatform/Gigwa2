@@ -86,9 +86,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
 				"Authorization": "Bearer " + token
 			},
 			success: function (jsonResult, textStatus, jqXHR) {
-			    if (jqXHR.status == 204)  // No existing progress indicator
-			        $('#progress').modal('hide');
-			    else if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
+			    if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
 					displayProcessProgress(nbMin, token, onSuccessMethod);
 				else if (jsonResult['complete'] == true) {
 					if (onSuccessMethod != null)
@@ -255,7 +253,7 @@ function sendToFjBytes() {
 		}
 	});
 
-	let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') + "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype');
+	let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') + "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') + "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype');
 	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" target="_blank">Open in separate window</a></center>');
 	$("#fjBytesFrame").attr('src', url);
 }
