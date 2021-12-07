@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.AuthenticationUserDetailsSe
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import fr.cirad.security.base.IRoleDefinition;
+
 public class GigwaUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
 	private static final Logger LOG = Logger.getLogger(GigwaAccessDecisionManager.class);
 	
@@ -33,7 +35,7 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 			} catch (UsernameNotFoundException exc) {
 				// New CAS user : create account
 				// TODO : Config option to create account automatically or only manually
-				String[] authorities = {"ROLE_USER"};
+				String[] authorities = {IRoleDefinition.DUMMY_EMPTY_ROLE};
 				try {
 					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS);
 				} catch (IOException e) {
