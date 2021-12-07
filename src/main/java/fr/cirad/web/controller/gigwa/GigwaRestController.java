@@ -101,6 +101,7 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
+import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -139,6 +140,9 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import static java.lang.Integer.parseInt;
+import java.util.regex.Pattern;
+import org.ga4gh.models.Variant;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -215,6 +219,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
+        static public final String VARIANTS_BY_IDS = "/variants/byIds";
+        static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	
 	/**
 	 * instance of Service to manage all interaction with database
@@ -1022,6 +1028,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST)
 	public void exportData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
+                        @RequestParam("variantIds") String variantIds,
 			@RequestParam("keepExportOnServer") boolean keepExportOnServer,
 			@RequestParam("variantEffects") String variantEffects, @RequestParam("exportFormat") String exportFormat,
 			@RequestParam("selectedVariantTypes") String selectedVariantTypes,
@@ -1061,6 +1068,7 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setSelectedVariantTypes(selectedVariantTypes);
 				gsver.setVariantEffect(variantEffects);
 				gsver.setVariantSetId(variantSetId);
+                                gsver.setSelectedVariantIds(variantIds);
 
 				gsver.setMissingData(missingData);
 				gsver.setMinmaf(minmaf);
@@ -1703,8 +1711,14 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
+                                                                        else if (filesByExtension.containsKey("intertek"))
+									{
+										Serializable s = filesByExtension.get("intertek");                                                                               
+										boolean fIsLocalFile = s instanceof File;
+										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									}
 									else {
-										Serializable s = filesByExtension.values().iterator().next();
+										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
@@ -1984,4 +1998,31 @@ public class GigwaRestController extends ControllerInterface {
         
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
+        
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VARIANTS_LOOKUP, notes = "Get variants IDs ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + VARIANTS_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<Comparable> searchableVariantsLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
+            int project = parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return service.searchVariantsLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
+    
 }
