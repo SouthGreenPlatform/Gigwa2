@@ -1979,6 +1979,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</c:otherwise>
 		</c:choose>
 	</div>
+	<div>
+		${principal}<br />${isAnonymous}
+	</div>
 	<div class="container-fluid">
 		<div class="row" id="searchPanel" hidden>
 			<div id="searchDiv" class="col-md-3" style="padding: 0px 0px 0px 15px;">

@@ -59,10 +59,10 @@
                     <div class="panel panel-default">
                         <div class="panel-body text-center">
                         	<div style="background-color:white; padding:7px; border:darkblue 5px outset; margin:10px 0 40px 0;"><img alt="Gigwa" height="40" src="images/logo_big.png" /><br/>LOGIN FORM</div>
-                            <form name="f" action='j_spring_security_check' method='POST' id="form-login">
-                                <input type="text" name="j_username" id="username" placeholder="Username" required="required"<c:if test="${param.auth eq 'failure'}"> value="${SPRING_SECURITY_LAST_EXCEPTION.authentication.principal}"</c:if> />
-                                <input type="password" name="j_password" id="password" placeholder="Password" required="required" />
-                                <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log  me in</button> 
+                            <form name="f" action='login' method='POST' id="form-login">
+                                <input type="text" name="username" id="username" placeholder="Username" required="required" />
+                                <input type="password" name="password" id="password" placeholder="Password" required="required" />
+                                <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
                             <a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my institutional account</a>
 							<div class="text-red margin-top-md">

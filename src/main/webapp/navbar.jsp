@@ -52,7 +52,7 @@
 					</c:if>
 					<c:if test="${principal != null && !isAnonymous}">
                         <li>
-                            <a href="<c:url value='/j_spring_security_logout' />" data-toggle="tooltip" data-placement="bottom" title="Log out ${principal.username}" id="logOut"><span class="glyphicon glyphicon-log-out margin-icon" aria-hidden="true"></span>Log out</a>
+                            <a href="<c:url value='logout' />" data-toggle="tooltip" data-placement="bottom" title="Log out ${principal.username}" id="logOut"><span class="glyphicon glyphicon-log-out margin-icon" aria-hidden="true"></span>Log out</a>
                         </li>
 					</c:if>
                 </ul>

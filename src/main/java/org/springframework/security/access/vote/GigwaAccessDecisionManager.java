@@ -17,29 +17,20 @@
 package org.springframework.security.access.vote;
 
 import java.util.Collection;
-//import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//
-//import org.apache.commons.collections.map.UnmodifiableMap;
-//import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.vote.AffirmativeBased;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.FilterInvocation;
 import org.springframework.stereotype.Component;
-//import org.springframework.web.bind.annotation.ExceptionHandler;
-//import org.springframework.web.bind.annotation.ResponseStatus;
-//import org.springframework.web.servlet.ModelAndView;
-//import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
-//import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -48,16 +39,20 @@ import fr.cirad.web.controller.security.UserPermissionController;
 /**
  * The Class GigwaAccessDecisionManager.
  */
-@SuppressWarnings("deprecation")
 @Component
 public class GigwaAccessDecisionManager extends AffirmativeBased
 {
+	@SuppressWarnings("unused")
 	private static final Logger LOG = Logger.getLogger(GigwaAccessDecisionManager.class);
 	
 	/** The role admin. */
 	static public String ROLE_ADMIN = "ROLE_ADMIN";
 
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
+	
+	public GigwaAccessDecisionManager(List<AccessDecisionVoter<?>> decisionVoters) {
+		super(decisionVoters);
+	}
 	
     /* (non-Javadoc)
      * @see org.springframework.security.access.vote.AffirmativeBased#decide(org.springframework.security.core.Authentication, java.lang.Object, java.util.Collection)
@@ -73,8 +68,8 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     		String sModule = fi.getRequest().getParameter("module");
     		if (sModule != null && MongoTemplateManager.get(sModule) != null && !MongoTemplateManager.isModulePublic(sModule))
     		{
-    			boolean fIsAnonymous = authorities != null && authorities.contains(new GrantedAuthorityImpl("ROLE_ANONYMOUS"));
-    			boolean fIsAdmin = authorities != null && authorities.contains(new GrantedAuthorityImpl(ROLE_ADMIN));
+    			boolean fIsAnonymous = authorities != null && authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+    			boolean fIsAdmin = authorities != null && authorities.contains(new SimpleGrantedAuthority(ROLE_ADMIN));
     			boolean fHasRequiredRole;
     			
     			// deal with specific URLs

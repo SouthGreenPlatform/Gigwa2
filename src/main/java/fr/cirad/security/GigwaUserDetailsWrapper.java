@@ -2,7 +2,9 @@ package fr.cirad.security;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.access.vote.GigwaAccessDecisionManager;
 import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
@@ -10,6 +12,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class GigwaUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
+	private static final Logger LOG = Logger.getLogger(GigwaAccessDecisionManager.class);
+	
+	public static final String METHOD_CAS = "CAS";
+	
 	private ReloadableInMemoryDaoImpl service;
 	
 	public GigwaUserDetailsWrapper(ReloadableInMemoryDaoImpl service) {
@@ -21,24 +27,25 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 	}
 	
 	public UserDetails loadUserDetails(T authentication) throws DataAccessException {
-		try {
-			return service.loadUserByUsername(authentication.getName());
-		} catch (UsernameNotFoundException exc) {
-			// New CAS user : create account
-			// TODO : Config option to create account automatically or only manually
-			System.out.println(authentication.getClass().getName());
-			if (authentication instanceof CasAssertionAuthenticationToken) {
+		if (authentication instanceof CasAssertionAuthenticationToken) {  // CAS authentication
+			try {
+				return service.loadUserByUsernameAndMethod(authentication.getName(), METHOD_CAS);
+			} catch (UsernameNotFoundException exc) {
+				// New CAS user : create account
+				// TODO : Config option to create account automatically or only manually
 				String[] authorities = {"ROLE_USER"};
 				try {
-					service.saveOrUpdateUser(authentication.getName(), null, authorities, true);
+					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS);
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e);
 					throw new ExternalUserCreationFailureException("Error while creating the new CAS user", e);
 				}
-				return service.loadUserByUsername(authentication.getName());
-			} else {
-				throw exc;
+				UserDetails user = service.loadUserByUsernameAndMethod(authentication.getName(), METHOD_CAS);
+				System.out.println("success");
+				return user;
 			}
+		} else {  // Traditional authentication
+			return service.loadUserByUsername(authentication.getName());
 		}
 	}
 }
