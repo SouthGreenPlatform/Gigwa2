@@ -16,13 +16,13 @@
 	</bean>
 
 	
+	<!-- HTTP authorization settings -->
     <secur:http request-matcher="regex" pattern="^.*/css/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/img/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/js/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*\/.*filt\/tmpOutput\/.*\.zip.*$" security="none" />
 	
     <secur:http use-expressions="true" request-matcher="ant" realm="GIGwA WebApp Security Administration" access-decision-manager-ref="accessDecisionManager" entry-point-ref="gigwaAuthenticationEntryPoint">
-		<!-- <secur:intercept-url pattern="^.*\.json.*$" access="IS_AUTHENTICATED_FULLY" /> -->
 		<secur:csrf disabled="true" />  <!-- FIXME -->
 		<secur:headers>
 			<secur:frame-options policy="SAMEORIGIN" />
@@ -43,6 +43,7 @@
 	<bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder" />
     <!--<bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" /> -->
 
+	<!-- Authentication providers -->
     <secur:authentication-manager alias="authenticationManager" erase-credentials="false">
         <secur:authentication-provider user-service-ref='userDetailsService'>
 			<secur:password-encoder ref="passwordEncoder"/>
@@ -50,6 +51,22 @@
         <secur:authentication-provider ref="casAuthenticationProvider" />
     </secur:authentication-manager>
     
+    <bean id="casAuthenticationProvider" class="org.springframework.security.cas.authentication.CasAuthenticationProvider">
+    	<property name="authenticationUserDetailsService">
+    		<bean class="fr.cirad.security.GigwaUserDetailsWrapper">
+    			<constructor-arg ref="userDetailsService" />
+    		</bean>
+    	</property>
+    	<property name="ticketValidator">
+    		<bean class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
+    			<constructor-arg index="0" value="${casServerURL}" />
+    		</bean>
+    	</property>
+    	<property name="serviceProperties" ref="casServiceProperties" />
+    	<property name="key" value="CAS_PROVIDER" />
+    </bean>
+    
+    <!-- Authentication entry points -->
     <bean id="gigwaAuthenticationEntryPoint" class="org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint">
     	<constructor-arg>
     		<map>
@@ -71,36 +88,12 @@
     	<constructor-arg value="/login.jsp" />
     </bean>
     
-    <bean id="casAuthenticationProvider" class="org.springframework.security.cas.authentication.CasAuthenticationProvider">
-    	<property name="authenticationUserDetailsService">
-    		<bean class="fr.cirad.security.GigwaUserDetailsWrapper">
-    			<constructor-arg ref="userDetailsService" />
-    		</bean>
-    	</property>
-    	<property name="ticketValidator">
-    		<bean class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
-    			<constructor-arg index="0" value="${casServerURL}" />
-    		</bean>
-    	</property>
-    	<property name="serviceProperties" ref="casServiceProperties" />
-    	<property name="key" value="CAS_PROVIDER" />
-    </bean>
-    
-    <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
-    	<property name="service" value="${enforcedWebapRootUrl}/login/cas" />
-    	<property name="sendRenew" value="false" />
-    </bean>
-    
-    <bean id="casFilter" class="org.springframework.security.cas.web.CasAuthenticationFilter">
-    	<property name="authenticationManager" ref="authenticationManager" />
-    	<property name="serviceProperties" ref="casServiceProperties" />
-    </bean>
-    
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
     	<property name="loginUrl" value="${casServerURL}/login" />
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
     
+    <!-- General beans -->
     <bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
 	
     <bean id="userDetailsService" class="fr.cirad.security.ReloadableInMemoryDaoImpl">
@@ -127,6 +120,17 @@
                 </entry>
             </map>
         </property>
+    </bean>
+    
+    <!-- CAS authentication beans -->
+    <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
+    	<property name="service" value="${enforcedWebapRootUrl}/login/cas" />
+    	<property name="sendRenew" value="false" />
+    </bean>
+    
+    <bean id="casFilter" class="org.springframework.security.cas.web.CasAuthenticationFilter">
+    	<property name="authenticationManager" ref="authenticationManager" />
+    	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
 	
 </beans>

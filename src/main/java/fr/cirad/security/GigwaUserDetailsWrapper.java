@@ -43,7 +43,6 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 					throw new ExternalUserCreationFailureException("Error while creating the new CAS user", e);
 				}
 				UserDetails user = service.loadUserByUsernameAndMethod(authentication.getName(), METHOD_CAS);
-				System.out.println("success");
 				return user;
 			}
 		} else {  // Traditional authentication
