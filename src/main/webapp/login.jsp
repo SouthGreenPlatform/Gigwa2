@@ -19,7 +19,15 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
+
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
+
+<%
+	String casOrganisation = appConfig.get("casOrganisation");
+	if (casOrganisation == null) casOrganisation = "organisation";
+	System.out.println(casOrganisation);
+%>
+
 <fmt:setBundle basename="config" />
 <html>
     <head>
@@ -66,7 +74,7 @@
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
                             <c:if test="${appConfig.get('casServerURL') != null}">
-                            	<a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my institutional account</a>
+                            	<a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my <%= casOrganisation %> account</a>
 							</c:if>
 							<div class="text-red margin-top-md">
 								&nbsp;

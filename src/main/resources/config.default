@@ -78,3 +78,6 @@ maxExportableBillionGenotypes = 2
 
 # If defined, enables CAS authentication and defines the CAS server URL
 #casServerURL = https://localhost:8443/cas
+
+# Defines the name of the organisation providing the CAS authentication. Optional.
+#casOrganisation = MyOrganisation
