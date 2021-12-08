@@ -311,13 +311,6 @@ function getSelectedSequences() {
 	return selectedSequences.join(";");
 }
 
-function getSelectedVariantIds() {
-	var selectedVariantIds = $('#variantIdsSelect').val();
-	if (selectedVariantIds === null || selectedVariantIds === undefined)
-		return "";
-	return selectedVariantIds.join(";");
-}
-
 function getSelectedNumberOfAlleles() {
 	var selectedNbAlleles = $('#numberOfAlleles').val();
 	if (selectedNbAlleles === null || selectedNbAlleles.length === alleleCount)
@@ -350,7 +343,6 @@ function fillWidgets() {
 	loadNumberOfAlleles();
 	loadGenotypePatterns();
 	readPloidyLevel();
-        loadVariantIds();
 }
 
 function loadSearchableVcfFields()
@@ -404,19 +396,20 @@ function loadVcfFieldHeaders() {
 	});
 }
 
-function enableMafOnlyIfApplicable() {
+function enableMafOnlyIfGtPatternAndAlleleNumberAllowTo() {
 	var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
-	var enableMaf = !$("#filterIDsCheckbox").is(":checked") && onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
+	var enableMaf = onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
 	$('#minmaf1').prop('disabled', enableMaf ? false : "disabled");
 	$('#maxmaf1').prop('disabled', enableMaf ? false : "disabled");
 	$('#minmaf2').prop('disabled', enableMaf ? false : "disabled");
 	$('#maxmaf2').prop('disabled', enableMaf ? false : "disabled");
-	if (!enableMaf) {
+	if (!enableMaf)
+	{
 		$('#minmaf1').val(0);
 		$('#maxmaf1').val(50);
 		$('#minmaf2').val(0);
-		$('#maxmaf2').val(50);                
-    }
+		$('#maxmaf2').val(50);
+	}
 }
 
 function updateGtPatterns() {
@@ -515,8 +508,7 @@ function buildSearchQuery(searchMode, pageToken){
 		"pageSize": 100,
 		"pageToken": pageToken,
 		"sortBy": sortBy,
-		"sortDir": sortDesc === true ? 'desc' : 'asc',
-                "selectedVariantIds": getSelectedVariantIds()
+		"sortDir": sortDesc === true ? 'desc' : 'asc'
 	};
 	return query;
 }
@@ -1031,11 +1023,6 @@ function copyIndividuals(groupNumber) {
 	copyToClipboard((selectedIndividuals != "" ? selectedIndividuals : $('#Individuals1').selectmultiple('option')).join("\n"));
 }
 
-function copyVariants() {
-	var selectedVariantIds = $('#variantIdsSelect').val();
-	copyToClipboard((selectedVariantIds != "" ? selectedVariantIds : $('#variantIdsSelect').selectmultiple('option')).join("\n"));
-}
-
 function copyToClipboard(text){
 	var textarea = document.createElement('textarea');
 	document.body.appendChild(textarea);
@@ -1054,7 +1041,7 @@ function toggleIndividualPasteBox(groupNumber) {
 		if (otherGroupBox.html() != "")
 			$("button#pasteIndividuals" + otherGroupNumber).click();
 
-		var pasteBoxHtml = '<div class="panel shadowed-panel group' + groupNumber + '" style="text-align:left; position:absolute; border:1px solid white; left:105px; margin-top:-45px; padding:5px; z-index:200;" id="individualPastePanel' + groupNumber + '">Please paste your individual selection (one per line) in the box below:<textarea id="pastedIndividuals1" style="width:100%;" rows="15"></textarea><input type="button" style="float:right;" class="btn btn-primary btn-sm" onclick="onPasteIndividuals(' + groupNumber + ', $(this).prev());" value="Apply" /><input type="button" class="btn btn-primary btn-sm" onclick="$(this).parent().remove();" value="Cancel" /></div>';
+		var pasteBoxHtml = '<div class="panel shadowed-panel group' + groupNumber + '" style="text-align:left; position:absolute; border:1px solid white; left:150px; margin-top:-45px; padding:5px; z-index:200;" id="individualPastePanel' + groupNumber + '">Please paste your individual selection (one per line) in the box below:<textarea id="pastedIndividuals1" style="width:100%;" rows="15"></textarea><input type="button" style="float:right;" class="btn btn-primary btn-sm" onclick="onPasteIndividuals(' + groupNumber + ', $(this).prev());" value="Apply" /><input type="button" class="btn btn-primary btn-sm" onclick="$(this).parent().remove();" value="Cancel" /></div>';
 		$("button#pasteIndividuals" + groupNumber).before(pasteBoxHtml);
 	}
 	else
@@ -1063,36 +1050,16 @@ function toggleIndividualPasteBox(groupNumber) {
 
 function onPasteIndividuals(groupNumber, textarea) {
 	var cleanSelectionArray = [];
-	$("#variantIdsSelect").html("");
-	var optionSB = new StringBuffer();
-	textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
-		cleanSelectionArray.push(ind);
-	});
+	var splitSelection = textarea.val().split("\n");
+	for (var selectedInd in splitSelection)
+	{
+		var trimmedInd = splitSelection[selectedInd].trim();
+		if (trimmedInd.length > 0)
+			cleanSelectionArray.push(trimmedInd);
+	}
 	$('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
 	applyGroupMemorizing(groupNumber);
 	$("button#pasteIndividuals" + groupNumber).click();
-}
-
-function toggleVariantsPasteBox() {
-	var previousSibling = $("button#pasteVariantIds").prev();
-	if (previousSibling.html() === "")
-	{
-            var pasteBoxHtml = '<div class="panel shadowed-panel panel-grey" style="text-align:left; position:absolute; border:1px solid white; left:105px; margin-top:-45px; padding:5px; z-index:200;" id="variantsIdsPastePanel">Please paste your variant ids selection (one per line) in the box below:<textarea id="pasteAreaVariantIds" style="width:100%;" rows="15"></textarea><input type="button" style="float:right;" class="btn btn-primary btn-sm" onclick="onPasteVariantIds($(this).prev());" value="Apply" /><input type="button" class="btn btn-primary btn-sm" onclick="$(this).parent().remove();" value="Cancel" /></div>';
-            $("button#pasteVariantIds").before(pasteBoxHtml);
-	}
-	else
-            previousSibling.remove();
-}
-
-function onPasteVariantIds(textarea) {
-	$("#variantIdsSelect").html("");
-	var optionSB = new StringBuffer();
-	textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (varId) {
-	  optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
-	});
-	$("#variantIdsSelect").append(optionSB.toString());
-    $("button#pasteVariantIds").click();
-	$('#variantIdsSelect').trigger('change');
 }
 
 function displayProjectInfo(projName)
@@ -1155,7 +1122,6 @@ function resetFilters() {
 	$('#maxposition').val("");
 	$('#geneName').val("");
 	$('#variantEffects').selectpicker('deselectAll');
-        $('#variantIdsSelect').selectpicker('deselectAll');
 
 	$('#genotypeInvestigationMode').val(0);
 	$('.selectpicker').selectpicker('refresh')
@@ -1473,66 +1439,4 @@ function listQueries(){
 			});
 		}
 	});
-}
-
-function onFilterByIds(checked) {
-    if (checked) {
-        $('#variantTypes').prop('disabled',true).val('').selectpicker('refresh');
-        
-        $('#numberOfAlleles').prop('disabled',true).val('').selectpicker('refresh');
-
-        $('#Sequences').selectmultiple('selectAll');
-        $('#Sequences').find('.btn').prop('disabled',true);
-        
-        $('#minposition').val('').prop('disabled',true); 
-        $('#maxposition').val('').prop('disabled',true);
-        $('#geneName').val('').prop('disabled',true);
-        
-        $('#variantEffects').prop('disabled',true).val('').selectpicker('refresh');        
-
-        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
-        $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
-        
-        $('#missingdata1').val('').prop('disabled',true);
-        $('#missingdata1').val(100);
-        $('#mostSameRatio1').val('').prop('disabled',true);
-        $('#Genotypes1').prop('disabled',true).val('').selectpicker('refresh');
-        
-        $('#missingdata2').val('').prop('disabled',true);
-        $('#missingdata2').val(100);
-        $('#mostSameRatio2').val('').prop('disabled',true);
-        $('#Genotypes2').prop('disabled',true).val('').selectpicker('refresh');
-
-    } else {
-        $('#variantTypes').prop('disabled',false).selectpicker('refresh');
-        $('#numberOfAlleles').prop('disabled',false).selectpicker('refresh');
-        $('#Sequences').find('.btn').prop('disabled',false).selectpicker('refresh');
-        $('#minposition').prop('disabled',false).selectpicker('refresh');
-        $('#maxposition').prop('disabled',false).selectpicker('refresh');     
-        $('#geneName').prop('disabled',false);
-        $('#variantEffects').prop('disabled',false).selectpicker('refresh');        
-        
-        $('#variantIdsSelect').prop('disabled',true).val('default').selectpicker('refresh');
-        $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
-        $('#pasteVariantIds').prop('disabled',true).selectpicker('refresh');
-        
-        $('#missingdata1').prop('disabled',false);
-        $('#missingdata1').val(100);
-        $('#mostSameRatio1').prop('disabled',false);
-        $('#Genotypes1').prop('disabled',false).selectpicker('refresh');
-        
-        $('#missingdata2').prop('disabled',false);
-        $('#missingdata2').val(100);
-        $('#mostSameRatio2').prop('disabled',false);
-        $('#Genotypes2').prop('disabled',false).selectpicker('refresh');
-    }
-	enableMafOnlyIfApplicable();
-}
-
-function onVariantIdsSelect() {
-    if ($('#variantIdsSelect').selectpicker().val() === null) {
-        $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
-    } else {
-        $('#copyVariantIds').removeAttr('disabled').selectpicker('refresh');
-    }
 }

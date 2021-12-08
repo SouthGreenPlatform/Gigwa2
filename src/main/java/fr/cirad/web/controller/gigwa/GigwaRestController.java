@@ -101,7 +101,6 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
-import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -1028,7 +1027,6 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST)
 	public void exportData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
-                        @RequestParam("variantIds") String variantIds,
 			@RequestParam("keepExportOnServer") boolean keepExportOnServer,
 			@RequestParam("variantEffects") String variantEffects, @RequestParam("exportFormat") String exportFormat,
 			@RequestParam("selectedVariantTypes") String selectedVariantTypes,
@@ -1068,8 +1066,6 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setSelectedVariantTypes(selectedVariantTypes);
 				gsver.setVariantEffect(variantEffects);
 				gsver.setVariantSetId(variantSetId);
-                                gsver.setSelectedVariantIds(variantIds);
-
 				gsver.setMissingData(missingData);
 				gsver.setMinmaf(minmaf);
 				gsver.setMaxmaf(maxmaf);
@@ -1710,12 +1706,6 @@ public class GigwaRestController extends ControllerInterface {
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-									}
-                                                                        else if (filesByExtension.containsKey("intertek"))
-									{
-										Serializable s = filesByExtension.get("intertek");                                                                               
-										boolean fIsLocalFile = s instanceof File;
-										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
