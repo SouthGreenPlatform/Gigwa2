@@ -128,6 +128,8 @@
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
+        
+        var stringVariantIdsFromUploadFile = null;
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -308,8 +310,39 @@
 			if ("progress" != e.target.id)
 				resizeDialogs();
 		});
+                
+                $("#uploadVariantIdsFile").click(function(){
+                    $(this).val("");
+                });
+
+                $("#uploadVariantIdsFile").change(function(){
+                    if ($(this).val() !== "") {
+                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                        fileReader = new FileReader();
+                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                        fileReader.onload = function(progressEvent) {
+                            stringVariantIdsFromUploadFile = fileReader.result;                            
+                            var variantIdsNumber = stringVariantIdsFromUploadFile.split('\n').length - 1;
+                            if ($('#varIdsFileName').length === 0) {
+                                var infoDiv=$('<label id=\'varIdsFileName\' onclick="removeUploadedFile()"  class=\'col-xl-6 input-group half-width\' style=\'float:right\' title=\'Remove file\'>' + fileName + ' (' + variantIdsNumber + ' ids)</label>'); 
+                                $('#variantIdsLabel').after(infoDiv);                            
+                            } else {
+                                $('#varIdsFileName').text(fileName + ' (' + variantIdsNumber + ' ids)');
+                            }
+                        };
+                        fileReader.readAsText(selectedFile, "UTF-8"); 
+                        $('#variantIdsSelect').prop('disabled',true).val('').selectpicker('refresh');                        
+                    }
+                });
 
 	});
+        
+        function removeUploadedFile() {
+            $('#uploadVariantIdsFile').val('');
+            $('#varIdsFileName').remove();
+            stringVariantIdsFromUploadFile = null;
+            $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
+        }       
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
@@ -864,30 +897,36 @@
 		
 		if (searchMode === 0 && $('#browsingAndExportingEnabled').prop('checked'))
 			searchMode = 3;
-
-                    $.ajax({
-                            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
-                            type: "POST",
-                            dataType: "json",
-                            contentType: "application/json;charset=utf-8",
-                            timeout:0,
-                            headers: {
-                                    "Authorization": "Bearer " + token
-                            },
-                            data: JSON.stringify(buildSearchQuery(searchMode, currentPageToken)),
-                            success: function(jsonResult) {
-                                    $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
-                                    if (searchMode === 0) { // count only 
-                                            count = jsonResult.count;
-                                            handleCountSuccess();
-                                    } else {
-                                            handleSearchSuccess(jsonResult, pageToken);
-                                    }
-                            },
-                            error: function(xhr, ajaxOptions, thrownError) {
-                                    handleError(xhr, thrownError);
-                            }
-                    });
+                
+                var query = buildSearchQuery(searchMode, currentPageToken);
+                if (stringVariantIdsFromUploadFile !== null) {
+                    query.selectedVariantIds = stringVariantIdsFromUploadFile.replaceAll('\n', ';');
+                }
+                
+                $.ajax({
+                        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
+                        type: "POST",
+                        dataType: "json",
+                        contentType: "application/json;charset=utf-8",
+                        timeout:0,
+                        headers: {
+                                "Authorization": "Bearer " + token
+                        },
+                        data: JSON.stringify(query),
+                        success: function(jsonResult) {
+                                $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
+                                if (searchMode === 0) { // count only 
+                                        count = jsonResult.count;
+                                        handleCountSuccess();
+                                } else {
+                                        handleSearchSuccess(jsonResult, pageToken);
+                                }
+                        },
+                        error: function(xhr, ajaxOptions, thrownError) {
+                                handleError(xhr, thrownError);
+                        }
+                });
+                
 		$('#iconSeq').hide();
 		$('#iconPos').hide();
 		$('#rightSidePanel').hide();
@@ -2145,6 +2184,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                                             <div style="margin-top:-25px; text-align:right;">
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
                                                                                 <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox()"></button>
+                                                                                <label for="uploadVariantIdsFile">
+                                                                                   
+                                                                                    <!--<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="upload file with variant ids" id="uploadVariantIds" onclick="uploadVariantIDs()"></button> -->
+                                                                                    <span class="btn btn-default btn-xs glyphicon glyphicon-upload" title="upload file with variant ids" aria-hidden="true"></span>
+                                                                                    <input name="file" type="file" id="uploadVariantIdsFile"  style="display:none" />
+                                                                                </label>
+                                                                               
                                                                             </div>
                                                                         </div>
 									<div class="margin-top-md">

@@ -1512,7 +1512,7 @@ function onFilterByIds(checked) {
         $('#geneName').prop('disabled',false);
         $('#variantEffects').prop('disabled',false).selectpicker('refresh');        
         
-        $('#variantIdsSelect').prop('disabled',true).val('default').selectpicker('refresh');
+        $('#variantIdsSelect').prop('disabled',true).val('').selectpicker('refresh');
         $('#copyVariantIds').prop('disabled',true).selectpicker('refresh');
         $('#pasteVariantIds').prop('disabled',true).selectpicker('refresh');
         
