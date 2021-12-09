@@ -311,38 +311,29 @@
 				resizeDialogs();
 		});
                 
-                $("#uploadVariantIdsFile").click(function(){
-                    $(this).val("");
-                });
+        $("#uploadVariantIdsFile").click(function(){
+            $(this).val("");
+        });
 
-                $("#uploadVariantIdsFile").change(function(){
-                    if ($(this).val() !== "") {
-                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
-                        fileReader = new FileReader();
-                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
-                        fileReader.onload = function(progressEvent) {
-                            stringVariantIdsFromUploadFile = fileReader.result;                            
-                            var variantIdsNumber = stringVariantIdsFromUploadFile.split('\n').length - 1;
-                            if ($('#varIdsFileName').length === 0) {
-                                var infoDiv=$('<label id=\'varIdsFileName\' onclick="removeUploadedFile()"  class=\'col-xl-6 input-group half-width\' style=\'float:right\' title=\'Remove file\'>' + fileName + ' (' + variantIdsNumber + ' ids)</label>'); 
-                                $('#variantIdsLabel').after(infoDiv);                            
-                            } else {
-                                $('#varIdsFileName').text(fileName + ' (' + variantIdsNumber + ' ids)');
-                            }
-                        };
-                        fileReader.readAsText(selectedFile, "UTF-8"); 
-                        $('#variantIdsSelect').prop('disabled',true).val('').selectpicker('refresh');                        
-                    }
-                });
-
+        $("#uploadVariantIdsFile").change(function(){
+            if ($(this).val() !== "") {
+                var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                fileReader = new FileReader();
+                var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                fileReader.onload = function(progressEvent) {
+                	onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                };
+                fileReader.readAsText(selectedFile, "UTF-8");                       
+            }
+        });
 	});
         
-        function removeUploadedFile() {
-            $('#uploadVariantIdsFile').val('');
-            $('#varIdsFileName').remove();
-            stringVariantIdsFromUploadFile = null;
-            $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
-        }       
+    function removeUploadedFile() {
+        $('#uploadVariantIdsFile').val('');
+        $('#varIdsFileName').remove();
+        stringVariantIdsFromUploadFile = null;
+        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
+    }       
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
@@ -937,68 +928,68 @@
 		displayProcessProgress(2, token);
 	}
         
-        function loadVariantIds() {
-            var options = {
-                    ajax:{
-                        url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
-                        type: "GET",
-                        headers: {
-                                "Authorization": "Bearer " + token
-                        },
-                        dataType: "json",
-                        contentType: "application/json;charset=utf-8",
-                        data: {
-                            projectId: getProjectId(),
-                            q: '{{{q}}}'
-                        },
-                        success: function(jsonResult) {
-                            return jsonResult;
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            handleError(xhr, thrownError);
-                        }
+    function loadVariantIds() {
+        var options = {
+                ajax:{
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
+                    type: "GET",
+                    headers: {
+                            "Authorization": "Bearer " + token
                     },
-                    cache : false,
-                    preserveSelectedPosition : "before",
-                    preserveSelected: true,
-                    log: 2 /*warn*/,
-                    locale: {
-                        statusInitialized: "&nbsp;&nbsp;&nbsp;Start typing a query",
-                        emptyTitle: "Select to enter IDs"
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    data: {
+                        projectId: getProjectId(),
+                        q: '{{{q}}}'
                     },
-                    minLength: 2,
-                    clearOnEmpty: true,
-                    preprocessData: function (data) {
-                        $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
-                        var asp = this;
-                        if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
-                            setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
-                            return;
-                        }
-                        
-                        var array = [];
-                        for (i=0; i<data.length; i++) {
-                            array.push($.extend(true, data[i], {
-                                value: data[i]
-                            }));
-                        }
-                        return array;
+                    success: function(jsonResult) {
+                        return jsonResult;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
                     }
-                };
-            
-            $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-            $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
-            $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-            $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
-            
-            if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
-                let inputObj = $('#VariantIds').find('div.bs-searchbox input');
-                inputObj.css('width', "calc(100% - 24px)");                
-                //when clicking on the button, the selected Ids and the search result are cleared
-                inputObj.before("<a href=\"#\" onclick=\"$('#variantIdsSelect').selectpicker('deselectAll'); $('#VariantIds').find('div.bs-searchbox input').val('').trigger('keyup');\" \n\
-                style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
-            }
+                },
+                cache : false,
+                preserveSelectedPosition : "before",
+                preserveSelected: true,
+                log: 2 /*warn*/,
+                locale: {
+                    statusInitialized: "Start typing a query",
+                    emptyTitle: "Input IDs here",
+                    statusTooShort: "Please type more"
+                },
+                minLength: 2,
+                clearOnEmpty: true,
+                preprocessData: function (data) {
+                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                    var asp = this;
+                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                        return;
+                    }
+                    
+                    var array = [];
+                    for (i=0; i<data.length; i++) {
+                        array.push($.extend(true, data[i], {
+                            value: data[i]
+                        }));
+                    }
+                    return array;
+                }
+            };
+        
+        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
+        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
+        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+        
+        if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
+            let inputObj = $('#VariantIds').find('div.bs-searchbox input');
+            inputObj.css('width', "calc(100% - 24px)");               
+            //when clicking on the button, selected IDs and search results are cleared
+            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
         }
+    }
         	
 	function buildGenotypeTableContents(jsonResult)
 	{
@@ -2172,27 +2163,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									   </div>
 									</div>
                                                                         <div id="VariantIds" class="margin-top-md">
-                                                                            <div class="container-fluid">
-                                                                                <div class="row">
-                                                                                    <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
-                                                                                </div>
-                                                                            </div>
-                                                                            
-                                                                            <div class="form-input">
-                                                                                <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
-                                                                            </div>
-                                                                            <div style="margin-top:-25px; text-align:right;">
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id ="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-                                                                                <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox()"></button>
-                                                                                <label for="uploadVariantIdsFile">
-                                                                                   
-                                                                                    <!--<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="upload file with variant ids" id="uploadVariantIds" onclick="uploadVariantIDs()"></button> -->
-                                                                                    <span class="btn btn-default btn-xs glyphicon glyphicon-upload" title="upload file with variant ids" aria-hidden="true"></span>
-                                                                                    <input name="file" type="file" id="uploadVariantIdsFile"  style="display:none" />
-                                                                                </label>
-                                                                               
-                                                                            </div>
-                                                                        </div>
+                                        <div class="container-fluid">
+                                            <div class="row">
+                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-input">
+                                            <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
+                                        </div>
+                                        <div style="margin-top:-25px; text-align:right;">
+											<a id="clearVariantIdSelection" href="#" onclick="clearVariantIdSelection();" style="display:none; font-size:18px; margin-left:-20px; position:absolute; font-weight:bold; text-decoration:none;" title="Clear selection">&nbsp;X&nbsp;</a>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox();"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
+                                            <input name="file" type="file" id="uploadVariantIdsFile" style="display:none" />
+                                        </div>
+                                    </div>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">

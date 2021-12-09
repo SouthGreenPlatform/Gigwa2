@@ -424,8 +424,20 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
 }
 
 .bootstrap-select > .dropdown-toggle {
-    padding-left:10px;
-    padding-right:20px;
+    padding-left:6px;
+    padding-right:17px;
+}
+
+.bootstrap-select.btn-group .dropdown-toggle .caret {
+    right:8px;
+}
+
+div#VariantIds .bootstrap-select.btn-group .dropdown-menu {
+	min-width:150px;
+}
+
+.bootstrap-select div.status {
+	margin:0 5px;
 }
 
 div#exportPanel select[multiple] option {
