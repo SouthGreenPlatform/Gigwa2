@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -138,10 +139,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import static java.lang.Integer.parseInt;
+import java.util.regex.Pattern;
+import org.ga4gh.models.Variant;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
- * The Class GigwaController.
+ * The Class GigwaRestController.
  */
 @RestController
 public class GigwaRestController extends ControllerInterface {
@@ -215,6 +219,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
+        static public final String VARIANTS_BY_IDS = "/variants/byIds";
+        static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	
 	/**
 	 * instance of Service to manage all interaction with database
@@ -753,15 +759,7 @@ public class GigwaRestController extends ControllerInterface {
         	return;
         }
         
-        // Avoid errors when receiving text AJAX responses without content type in some browsers  -->  this should be managed with the RequestMapping annotation
-//        resp.setContentType("text/plain;charset=UTF-8");	
-        
         String processId = "igvViz_" + token;
-        /*boolean fPreviousQueryRunning = ProgressIndicator.get(processId) != null;
-        if (fPreviousQueryRunning) {
-        	ProgressIndicator progress = ProgressIndicator.get(processId);
-        	progress.abort();
-        }*/
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
@@ -802,7 +800,7 @@ public class GigwaRestController extends ControllerInterface {
 		                VariantRunData vrd = runsToWrite.get(0);
 
 		                ReferencePosition rp = vrd.getReferencePosition();
-		                sb.append(idOfVarToWrite + "\t" + StringUtils.join((vrd).getKnownAlleleList(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
+		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
 
@@ -815,9 +813,15 @@ public class GigwaRestController extends ControllerInterface {
                                 
 								SampleGenotype sampleGenotype = run.getSampleGenotypes().get(sampleId);
 	                            String gtCode = sampleGenotype.getCode();
-	                            
-								if (gtCode == null/* || !VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds(), gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()), gir.getAnnotationFieldThresholds2())*/)
-									continue;	// skip genotype
+	                            if (gtCode == null)
+                                    continue;   // skip genotype
+
+	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
+    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList());
+    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList());
+    								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
+    									continue;	// skip genotype
+	                            }
 
 								if (individualGenotypes[individualIndex] == null)
 									individualGenotypes[individualIndex] = new LinkedHashSet<String>();
@@ -855,8 +859,12 @@ public class GigwaRestController extends ControllerInterface {
 		                    sb.append("\t" + (mostFrequentGenotype == null ? missingGenotype : mostFrequentGenotype));
 		                    writtenGenotypeCount++;
 	
-		                    if (genotypeCounts.size() > 1)
-		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". Exporting most frequent: " + mostFrequentGenotype + "\n");
+		                    if (genotypeCounts.size() > 1) {
+		                        List<Integer> reverseSortedGtCounts = genotypeCounts.values().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+		                        if (reverseSortedGtCounts.get(0) == reverseSortedGtCounts.get(1))
+		                            mostFrequentGenotype = null;
+		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". " + (mostFrequentGenotype == null ? "Exporting as missing data" : "Exporting most frequent: " + mostFrequentGenotype) + "\n");
+                            }
 		                }
 	
 		                while (writtenGenotypeCount < individualPositions.size()) {
@@ -869,7 +877,7 @@ public class GigwaRestController extends ControllerInterface {
 					catch (Exception e)
 					{
 						if (progress.getError() == null)	// only log this once
-							LOG.debug("Unable to export " + idOfVarToWrite, e);
+							LOG.error("Unable to export " + idOfVarToWrite, e);
 						progress.setError("Unable to export " + idOfVarToWrite + ": " + e.getMessage());
 					}
 				}
@@ -1094,7 +1102,6 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setSelectedVariantTypes(selectedVariantTypes);
 				gsver.setVariantEffect(variantEffects);
 				gsver.setVariantSetId(variantSetId);
-
 				gsver.setMissingData(missingData);
 				gsver.setMinmaf(minmaf);
 				gsver.setMaxmaf(maxmaf);
@@ -1728,7 +1735,7 @@ public class GigwaRestController extends ControllerInterface {
 									{
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
-										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf"))
 									{
@@ -1737,7 +1744,7 @@ public class GigwaRestController extends ControllerInterface {
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
-										Serializable s = filesByExtension.values().iterator().next();
+										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
@@ -2017,4 +2024,31 @@ public class GigwaRestController extends ControllerInterface {
         
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
+        
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VARIANTS_LOOKUP, notes = "Get variants IDs ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + VARIANTS_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<Comparable> searchableVariantsLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
+            int project = parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return service.searchVariantsLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
+    
 }

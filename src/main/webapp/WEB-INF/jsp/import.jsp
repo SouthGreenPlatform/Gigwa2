@@ -915,7 +915,7 @@
 				       										<b>Accepted extensions:</b>
 				       										<br/>.vcf
 				       										<br/>.hapmap or .txt
-															<br/>.ped + .map
+														<br/>.ped + .map
 				       									</div>
 			       									</div>
 			                                    </div>

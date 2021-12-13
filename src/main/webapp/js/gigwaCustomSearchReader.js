@@ -380,6 +380,7 @@ class GigwaSearchReader {
 			
 			
 			let query = {
+			    ...buildSearchQuery(2, 0),
 				variantSetId: getProjectId(),
 				referenceName: chr,
 				callSetIds: self.header.callSetIds,

@@ -255,14 +255,17 @@
 			$('#exportPanel div.individualRelated').css("display", $(this).val() == "BED" ? "none" : "block");
 		});
 		$('#Sequences').on('multiple_select_change', function() {
-			$('#sequencesLabel').html("Sequences (" + $('#Sequences').selectmultiple('count') + "/" + seqCount + ")");
+			var nCount = $('#Sequences').selectmultiple('count');
+			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
 		});
-		$('#Individuals1').on('multiple_select_change', function() {// 			async: false,
-			$('#individualsLabel1').html("Individuals (" + $('#Individuals1').selectmultiple('count') + "/" + indCount + ")");
+		$('#Individuals1').on('multiple_select_change', function() {
+			var nCount = $('#Individuals1').selectmultiple('count');
+			$('#individualsLabel1').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#Individuals2').on('multiple_select_change', function() {
-			$('#individualsLabel2').html("Individuals (" + $('#Individuals2').selectmultiple('count') + "/" + indCount + ")");
+			var nCount = $('#Individuals2').selectmultiple('count');
+			$('#individualsLabel2').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#displayAllGt').on('change', function() {
@@ -814,7 +817,10 @@
 				for (var format in jsonResult) {
 					if (format == "VCF")
 						gotVCF = true;
-					option += '<option data-ext="' + jsonResult[format].dataFileExtentions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					option += '<option '
+					if (jsonResult[format].supportedPloidyLevels !== undefined)
+					    option += 'data-pdy="' + jsonResult[format].supportedPloidyLevels + '" ';
+					option += 'data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
 				}
 				if (!gotVCF)
 					$("img#igvTooltip").hide();
@@ -993,8 +999,6 @@
 		}
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
-		ind = ind.join(";");
-		//console.log(ind);
 		$("#runButtons").html("");
 		var addedRunCount = 0;
 		
@@ -1002,13 +1006,13 @@
 		for (var runIndex in runList) {
 			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
-				type: "GET",
+				type: "POST",
+				data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
 				async: false,
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
 				headers: {
-					"Authorization": "Bearer " + token,
-					"ind": ind
+					"Authorization": "Bearer " + token
 				},
 				success: function(jsonResult) {
 					if (jsonResult.calls.length > 0)
@@ -1118,7 +1122,6 @@
 			}
 		}
 
-		exporting = true;
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
 			supportedTypes = supportedTypes.split(";");
@@ -1129,6 +1132,17 @@
 					return;
 				}
 		}
+		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
+			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
+			console.log(supportedPloidyLevels);
+			if (!arrayContains(supportedPloidyLevels, ploidy)) {
+				alert("Error: selected export format does not support ploidy level " + ploidy);
+				return;
+			}
+		}
+		
+		exporting = true;
 		if (keepExportOnServer)
 		{
 			$('#ddlWarning').hide();
@@ -1171,7 +1185,7 @@
 
 			"callSetIds": getSelectedIndividuals(1, true),
 			"gtPattern": $('#Genotypes1').val(),
-			"mostSameRatio": $('#mostSameRatio1').val(),
+			"mostSameRatio": $('#mostSameRatio1').val() === "" ? "100" : $('#mostSameRatio1').val(),
 			"minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
 			"maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
 			"missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
@@ -1179,7 +1193,7 @@
 
 			"callSetIds2": getSelectedIndividuals(2, true),
 			"gtPattern2": $('#Genotypes2').val(),
-			"mostSameRatio2": $('#mostSameRatio2').val(),
+			"mostSameRatio2": $('#mostSameRatio2').val() === "" ? "100" : $('#mostSameRatio2').val(),
 			"minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
 			"maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
 			"missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
@@ -1444,7 +1458,7 @@
 						}
 					}, function (xhr, ajaxOption, thrownError){
 						// Error handler for each genome list download : show an error but do not abort
-						handleError(xhr, thrownError);
+						displayMessage("Loading of genome list from " + config.url + " failed");
 					})
 				)
 			).then(function (results){
@@ -1844,7 +1858,6 @@
 					visibilityWindow: 100000,
 					reader: new GigwaSearchReader(
 							individuals, token,
-							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
 							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
 				});
 			})

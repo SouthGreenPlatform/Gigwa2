@@ -50,7 +50,7 @@
 </category>
 
 <category name="fr.cirad">
-    <priority value="INFO"/>
+    <priority value="DEBUG"/>
 </category>
 
 <category name="fr.cirad.io.brapi">
