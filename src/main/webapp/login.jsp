@@ -20,14 +20,8 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
 
-<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
-
-<%
-	String casOrganisation = appConfig.get("casOrganisation");
-	if (casOrganisation == null) casOrganisation = "organisation";
-%>
-
 <fmt:setBundle basename="config" />
+
 <html>
     <head>
         <meta charset="utf-8">
@@ -72,8 +66,13 @@
                                 <input type="password" name="password" id="password" placeholder="Password" required="required" />
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
-                            <c:if test="${appConfig.get('casServerURL') != null}">
-                            	<a class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do">Authenticate using my <%= casOrganisation %> account</a>
+                            <fmt:message var="casServerURL" key="casServerURL" />
+                            <fmt:message var="enforcedWebapRootUrl" key="enforcedWebapRootUrl" />
+                            <c:if test='${!fn:startsWith(casServerURL, "??") && !empty casServerURL && !fn:startsWith(enforcedWebapRootUrl, "??") && !empty enforcedWebapRootUrl}'>
+                            	<a class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do">Authenticate using my
+                            	<fmt:message var="casOrganisation" key="casOrganisation" />
+                            	<c:choose><c:when test='${!fn:startsWith(casOrganisation, "??") && !empty casOrganisation}'>${casOrganisation}</c:when><c:otherwise>organisation</c:otherwise></c:choose>
+                            	account</a>
 							</c:if>
 							<div class="text-red margin-top-md">
 								&nbsp;
