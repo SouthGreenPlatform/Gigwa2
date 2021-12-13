@@ -25,7 +25,6 @@
 <%
 	String casOrganisation = appConfig.get("casOrganisation");
 	if (casOrganisation == null) casOrganisation = "organisation";
-	System.out.println(casOrganisation);
 %>
 
 <fmt:setBundle basename="config" />
@@ -74,7 +73,7 @@
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
                             <c:if test="${appConfig.get('casServerURL') != null}">
-                            	<a class="btn btn-primary btn-block btn-large" href="login/cas.do">Log in with my <%= casOrganisation %> account</a>
+                            	<a class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do">Authenticate using my <%= casOrganisation %> account</a>
 							</c:if>
 							<div class="text-red margin-top-md">
 								&nbsp;
