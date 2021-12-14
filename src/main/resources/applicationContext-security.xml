@@ -162,7 +162,7 @@
 
 <!-- CAS authentication beans -->
     <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
-    	<property name="service" value="${enforcedWebapRootUrl}/login/cas" />
+    	<property name="service" value="${enforcedWebapRootUrl:}/login/cas" />
     	<property name="sendRenew" value="false" />
     </bean>
     
