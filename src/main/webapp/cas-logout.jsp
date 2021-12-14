@@ -54,7 +54,7 @@
 	<main style="max-width:700px; margin: 0 auto;">
 		<h3>You have successfully logged out of Gigwa</h3>
 		<p>
-			You may now <strong>log out from your <%= casOrganisation %> account</strong> by clicking <strong><a href="logout/cas">here</a></strong>
+			You may now <strong>log out from your <%= casOrganisation %> account</strong> by clicking <strong><a href="logout/cas" target="_blank">here</a></strong>
 		</p>
 	</main>
 </body>
