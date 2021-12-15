@@ -420,6 +420,7 @@ function displayChart(minPos, maxPos){
             if (jsonResult.length == 0)
                 return; // probably aborted
             
+            // TODO : Key to the middle of the interval ?
             chartJsonKeys = typeInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
             
