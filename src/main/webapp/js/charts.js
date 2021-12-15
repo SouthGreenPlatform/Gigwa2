@@ -28,10 +28,13 @@ const chartTypes = new Map([
         queryURL: selectionDensityDataURL,
         title: "Distribution of {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
         subtitle: "The value provided for a position is actually the number of variants around it in an interval of size {{intervalSize}}",
-        yAxisTitle: "Number of variants in interval",
         xAxisTitle: "Positions on selected sequence",
-        seriesName: "Variants in interval",
-        enableMarker: false,
+        series: [{
+            name: "Variants in interval",
+            yAxisTitle: "Number of variants in interval",
+            enableMarker: false,
+            lineWidth: 2,
+        }],
         manualDisplay: false,
         buildCustomisation: function (){
             let content = ""
@@ -51,10 +54,13 @@ const chartTypes = new Map([
         queryURL: selectionFstDataURL,
         title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
         subtitle: "The value provided for a position is the Weir and Cockerham Fst estimate over an interval of size {{intervalSize}} between the selected groups",
-        yAxisTitle: "Fst value for the interval",
         xAxisTitle: "Positions on selected sequence",
-        seriesName: "Fst estimate",
-        enableMarker: true,
+        series: [{
+            name: "Fst estimate",
+            yAxisTitle: "Fst value for the interval",
+            enableMarker: true,
+            lineWidth: 2,
+        }],
         manualDisplay: true,
         enableCondition: function (){
             if (genotypeInvestigationMode != 2 && !gotMetaData){
@@ -109,6 +115,35 @@ const chartTypes = new Map([
         onDisplay: function (){
             displayOrHideThreshold(document.getElementById("showFstThreshold").checked);
         }
+    }],
+    ["tajimad", {
+        displayName: "Tajima's D",
+        queryURL: selectionTajimaDDataURL,
+        title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "The value provided is the Tajima's D value (excluding missing and more than biallelic variants)",
+        xAxisTitle: "Positions on selected sequence",
+        series: [
+            {
+                name: "Tajima's D",
+                yAxisTitle: "Tajima's D value for the interval",
+                enableMarker: true,
+                lineWidth: 2,
+            },
+            {
+                name: "Segregating sites",
+                yAxisTitle: "Usable segregating sites to calculate Tajima's D",
+                enableMarker: false,
+                lineWidth: 1,
+            },
+        ],
+        manualDisplay: true,
+        enableCondition: function (){
+            if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
+            } else {
+                return null;
+            }
+        },
     }]
 ]);
 
@@ -384,17 +419,14 @@ function displayChart(minPos, maxPos){
         success: function(jsonResult) {
             if (jsonResult.length == 0)
                 return; // probably aborted
-
-            chartJsonKeys = Object.keys(jsonResult);
+            
+            chartJsonKeys = typeInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
-
-            chartJsonValues = new Array();
-            var totalVariantCount = 0;
-            for (var i=0; i<chartJsonKeys.length; i++)
-            {
-                chartJsonValues.push(jsonResult[chartJsonKeys[i]]);
-                totalVariantCount += jsonResult[chartJsonKeys[i]];
-                chartJsonKeys[i] = parseInt(parseInt(chartJsonKeys[i]) + intervalSize/2);
+            
+            let totalVariantCount = 0;
+            if (currentChartType == "density"){
+                for (let key of chartJsonKeys)
+                    totalVariantCount += jsonResult[key];
             }
             
             chart = Highcharts.chart('densityChartArea', {
@@ -426,11 +458,6 @@ function displayChart(minPos, maxPos){
                         }
                     }
                 },
-                yAxis: {
-                    title: {
-                        text: typeInfo.yAxisTitle,
-                    }
-                },
                 tooltip: {
                     shared: true,
                     crosshairs: true
@@ -443,19 +470,38 @@ function displayChart(minPos, maxPos){
                         enableMouseTracking: true
                     }
                 },
-                series: [{
-                    name: typeInfo.seriesName,
-                    marker: {
-                        enabled: typeInfo.enableMarker,
-                    },
-                    lineWidth: 1,
-                    color : colorTab[0],
-                    data: chartJsonValues
-                }],
                 exporting: {
                     enabled: true,
                 }
             });
+            
+            for (let seriesIndex in typeInfo.series){
+                const series = typeInfo.series[seriesIndex];
+                const seriesData = (typeInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
+                const seriesValues = new Array();
+                for (let key of chartJsonKeys)
+                    seriesValues.push(seriesData[key]);
+                
+                chart.addAxis({
+                    id: series.name,
+                    title: {
+                        text: series.yAxisTitle,
+                    },
+                    lineWidth: 3,
+                    lineColor: colorTab[seriesIndex],
+                });
+                
+                chart.addSeries({
+                    name: series.name,
+                    marker: {
+                        enabled: series.enableMarker,
+                    },
+                    lineWidth: series.lineWidth,
+                    color: colorTab[seriesIndex],
+                    data: seriesValues,
+                    yAxis: series.name,
+                });
+            }
             
             $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
             if (!isNaN(intervalSize))
