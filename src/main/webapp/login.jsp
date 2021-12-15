@@ -13,7 +13,7 @@
  *
  * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
  * Public License V3.
---%>
+--%><% response.setHeader("Content-Security-Policy", "frame-ancestors *"); %>
 <!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
