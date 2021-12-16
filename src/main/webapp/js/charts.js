@@ -459,6 +459,10 @@ function displayChart(minPos, maxPos){
                         }
                     }
                 },
+                yAxis: {
+                    text: undefined,
+                    visible: false,
+                },
                 tooltip: {
                     shared: true,
                     crosshairs: true
@@ -486,7 +490,7 @@ function displayChart(minPos, maxPos){
                 chart.addAxis({
                     id: series.name,
                     title: {
-                        text: series.yAxisTitle,
+                        text: undefined,  //series.yAxisTitle,
                     },
                     lineWidth: 3,
                     lineColor: colorTab[seriesIndex],
