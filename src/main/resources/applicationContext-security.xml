@@ -171,7 +171,6 @@
     
     <bean id="casFilter" class="org.springframework.security.cas.web.CasAuthenticationFilter">
     	<property name="authenticationManager" ref="authenticationManager" />
-    	<property name="authenticationSuccessHandler" ref="authenticationSuccessHandler" />
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
 	
