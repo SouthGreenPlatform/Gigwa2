@@ -12,10 +12,12 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
+@CrossOrigin
 public class GigwaAuthenticationController {	
 	private static final String LOGIN_CAS_URL = "/login/cas.do";
 	private static final String LOGIN_FORM_URL = "/login.do";
