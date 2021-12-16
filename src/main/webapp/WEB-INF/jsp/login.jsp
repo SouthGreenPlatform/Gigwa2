@@ -69,7 +69,7 @@
                             <fmt:message var="casServerURL" key="casServerURL" />
                             <fmt:message var="enforcedWebapRootUrl" key="enforcedWebapRootUrl" />
                             <c:if test='${!fn:startsWith(casServerURL, "??") && !empty casServerURL && !fn:startsWith(enforcedWebapRootUrl, "??") && !empty enforcedWebapRootUrl}'>
-                            	<a class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do">Authenticate using my
+                            	<a id="casAuthenticationEntryPoint" class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do?url=${loginOrigin}">Authenticate using my
                             	<fmt:message var="casOrganisation" key="casOrganisation" />
                             	<c:choose><c:when test='${!fn:startsWith(casOrganisation, "??") && !empty casOrganisation}'>${casOrganisation}</c:when><c:otherwise>organisation</c:otherwise></c:choose>
                             	account</a>

@@ -32,11 +32,11 @@
 		</secur:headers>
 		<secur:intercept-url pattern="/permissionManagement.jsp*" access="isFullyAuthenticated()" />
 		<secur:intercept-url pattern="/login/cas.do*" access="isRememberMe() or isFullyAuthenticated()" />
-		<secur:intercept-url pattern="/login.jsp*" access="permitAll" />
+		<secur:intercept-url pattern="/login.do*" access="permitAll" />
         <secur:intercept-url pattern="/index.jsp*" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
         <secur:intercept-url pattern="/rest/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
         <secur:intercept-url pattern="/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
-        <secur:form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" />
+        <secur:form-login login-page="/login.do" authentication-failure-url="/login.do?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" authentication-success-handler-ref="authenticationSuccessHandler" />
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />		 
         <secur:logout success-handler-ref="logoutDispatchHandler" invalidate-session="true"/>
         <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
@@ -84,7 +84,7 @@
     			<entry>
     				<key>
     					<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
-    						<constructor-arg value="/login/cas.do" />
+    						<constructor-arg value="/login/cas.do**" />
     						<constructor-arg><null/></constructor-arg>
     					</bean>
     				</key>
@@ -96,7 +96,7 @@
     </bean>
     
     <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
-    	<constructor-arg value="/login.jsp" />
+    	<constructor-arg value="/login.do" />
     </bean>
     
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
@@ -158,6 +158,9 @@
         </property>
     </bean>
 
+	<bean id="authenticationSuccessHandler" class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+		<property name="defaultTargetUrl" value="/index.jsp" />
+	</bean>
 
 
 <!-- CAS authentication beans -->
@@ -168,6 +171,7 @@
     
     <bean id="casFilter" class="org.springframework.security.cas.web.CasAuthenticationFilter">
     	<property name="authenticationManager" ref="authenticationManager" />
+    	<property name="authenticationSuccessHandler" ref="authenticationSuccessHandler" />
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
 	
