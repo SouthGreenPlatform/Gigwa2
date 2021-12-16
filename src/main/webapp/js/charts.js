@@ -144,10 +144,22 @@ const chartTypes = new Map([
                 return null;
             }
         },
+        buildCustomisation: function (){
+            let content = ""
+            if ($("#vcfFieldFilterGroup1 input").length > 0) {
+                content += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
+                $("#vcfFieldFilterGroup1 input").each(function(index) {
+                    let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
+                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
+                });
+                content += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+            }
+            return content;
+        }
     }]
 ]);
 
-async function initializeAndShowDensityChart(){
+function initializeAndShowDensityChart(){
     if (distinctSequencesInSelectionURL == null)
     {
         alert("distinctSequencesInSelectionURL is not defined!");
@@ -187,7 +199,7 @@ async function initializeAndShowDensityChart(){
     $('div#chartContainer').html('<div id="densityChartArea" style="min-width:310px; height:370px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
     var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
     var selectedTypes = getSelectedTypes().split(";");
-    await $.ajax({
+    $.ajax({
         url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
         type: "GET",
         headers: {
@@ -196,14 +208,14 @@ async function initializeAndShowDensityChart(){
         success: function (jsonResult) {
         	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
         		selectedSequences = jsonResult;
+        	feedSequenceSelectAndLoadVariantTypeList(
+                    selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
+                    selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
         }
     });
-    feedSequenceSelectAndLoadVariantTypeList(
-            selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-            selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
 }
 
 function clearVcfFieldBasedSeries() {
@@ -381,6 +393,8 @@ function loadChart(minPos, maxPos) {
     var zoomApplied = minPos != null && maxPos != null;
     if (!typeInfo.manualDisplay || zoomApplied)
         displayChart(minPos, maxPos);
+    else if (typeInfo.manualDisplay)
+        $("div#chartContainer div#additionalCharts").show();
 }
 
 function displayChart(minPos, maxPos){
