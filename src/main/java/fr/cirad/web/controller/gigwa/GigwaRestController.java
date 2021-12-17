@@ -139,6 +139,9 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import static java.lang.Integer.parseInt;
+import java.util.regex.Pattern;
+import org.ga4gh.models.Variant;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -215,6 +218,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
+        static public final String VARIANTS_BY_IDS = "/variants/byIds";
+        static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	
 	/**
 	 * instance of Service to manage all interaction with database
@@ -759,7 +764,7 @@ public class GigwaRestController extends ControllerInterface {
 		                VariantRunData vrd = runsToWrite.get(0);
 
 		                ReferencePosition rp = vrd.getReferencePosition();
-		                sb.append(idOfVarToWrite + "\t" + StringUtils.join((vrd).getKnownAlleleList(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
+		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
 
@@ -1061,7 +1066,6 @@ public class GigwaRestController extends ControllerInterface {
 				gsver.setSelectedVariantTypes(selectedVariantTypes);
 				gsver.setVariantEffect(variantEffects);
 				gsver.setVariantSetId(variantSetId);
-
 				gsver.setMissingData(missingData);
 				gsver.setMinmaf(minmaf);
 				gsver.setMaxmaf(maxmaf);
@@ -1704,7 +1708,7 @@ public class GigwaRestController extends ControllerInterface {
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
-										Serializable s = filesByExtension.values().iterator().next();
+										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
@@ -1984,4 +1988,31 @@ public class GigwaRestController extends ControllerInterface {
         
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
+        
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VARIANTS_LOOKUP, notes = "Get variants IDs ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + VARIANTS_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<Comparable> searchableVariantsLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
+            int project = parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return service.searchVariantsLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
+    
 }
