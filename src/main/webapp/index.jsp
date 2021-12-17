@@ -311,21 +311,21 @@
 				resizeDialogs();
 		});
                 
-        $("#uploadVariantIdsFile").click(function(){
-            $(this).val("");
-        });
+                $("#uploadVariantIdsFile").click(function(){
+                    $(this).val("");
+                });
 
-        $("#uploadVariantIdsFile").change(function(){
-            if ($(this).val() !== "") {
-                var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
-                fileReader = new FileReader();
-                var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
-                fileReader.onload = function(progressEvent) {
-                	onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
-                };
-                fileReader.readAsText(selectedFile, "UTF-8");                       
-            }
-        });
+                $("#uploadVariantIdsFile").change(function(){
+                    if ($(this).val() !== "") {
+                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                        fileReader = new FileReader();
+                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                        fileReader.onload = function(progressEvent) {
+                                onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                        };
+                        fileReader.readAsText(selectedFile, "UTF-8");                       
+                    }
+                });
 	});
         
     function removeUploadedFile() {
@@ -1266,64 +1266,67 @@
    		});
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
-		var data = {
-			"variantSetId": getProjectId(),
-                        "variantIds": getSelectedVariantIds(),
-			"referenceName": getSelectedSequences(),
-			"selectedVariantTypes": getSelectedTypes(),
-			"alleleCount": getSelectedNumberOfAlleles(),
-			"minposition": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-			"maxposition": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-			"variantEffects": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-			"geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
-			"callSetIds": getSelectedIndividuals(1, true),
-			"gtPattern": $('#Genotypes1').val(),
-			"mostSameRatio": $('#mostSameRatio1').val() === "" ? "100" : $('#mostSameRatio1').val(),
-			"minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-			"maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-			"missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
-			"annotationFieldThresholds": annotationFieldThresholds,
+                var query = buildSearchQuery(3, currentPageToken);
+                query["keepExportOnServer"] =  keepExportOnServer;
+                query["exportFormat"] =  $('#exportFormat').val();
+                query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
+                query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
-			"callSetIds2": getSelectedIndividuals(2, true),
-			"gtPattern2": $('#Genotypes2').val(),
-			"mostSameRatio2": $('#mostSameRatio2').val() === "" ? "100" : $('#mostSameRatio2').val(),
-			"minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-			"maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-			"missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-			"annotationFieldThresholds2": annotationFieldThresholds2,
-			
-			"keepExportOnServer": keepExportOnServer,
-			"discriminate": $('#discriminate').prop('checked'),
-			"exportFormat": $('#exportFormat').val(),
-			"token": token,
-			"exportedIndividuals" : indToExport,
-			"metadataFields" : $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
-		};
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
 		if (keepExportOnServer) {
-			$.ajax({
-				url: url,
-				type: "POST",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
-				traditional: true,
-				data: data,
-				success: function(response) {
-					downloadURL = response;
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					downloadURL = null;
-					$("div#exportPanel").hide();
-					$("a#exportBoxToggleButton").removeClass("active");
-					handleError(xhr, thrownError);
-				}
-			});
+                    $.ajax({
+                            url: url,
+                            type: "POST",       
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                    "Authorization": "Bearer " + token
+                            },
+                            data: JSON.stringify(query),
+                            success: function(response) {
+                                    downloadURL = response;
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                    downloadURL = null;
+                                    $("div#exportPanel").hide();
+                                    $("a#exportBoxToggleButton").removeClass("active");
+                                    handleError(xhr, thrownError);
+                            }
+                    });
 		} else {
+                    var headers = {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json;charset=utf-8" 
+                    };
+
+                    var request = {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(query)
+                    };
+                    
+                    var filename = '';
+                    
+                    fetch(url, request).then((response) => {
+                            var header = response.headers.get('Content-Disposition');
+                            var parts = header.split(';');
+                            filename = parts[1].split('=')[1];
+                            return response.blob();
+                    })
+                    .then((result) => {
+                        if (result !== undefined) {
+                            var objectURL = URL.createObjectURL(result);
+                            var link = document.createElement("a");
+                            link.setAttribute("href", objectURL);
+                            link.setAttribute("download", filename);
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
 			downloadURL = null;
-			postDataToIFrame("outputFrame", url, data);
+			//postDataToIFrame("outputFrame", url, query);
 			$("div#exportPanel").hide();
 			$("a#exportBoxToggleButton").removeClass("active");
 		}

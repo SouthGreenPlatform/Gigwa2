@@ -534,7 +534,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
     @CrossOrigin
-	@RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
 
         String token = tokenManager.readToken(request);
@@ -549,21 +549,21 @@ public class Ga4ghRestController extends ControllerInterface {
         }
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-	            gsvr.setRequest(request);
-				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)));
-	            return service.searchVariants(gsvr);
-	        } else {
-	            buildForbiddenAccessResponse(token, response);
-	            return null;
-	        }
-		}
+            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+                gsvr.setRequest(request);
+                Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+                gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)));
+                return service.searchVariants(gsvr);
+            } else {
+                buildForbiddenAccessResponse(token, response);
+                return null;
+            }
+        }
         catch (ObjectNotFoundException e)
         {
             build404Response(response);
             return null;
-		}
+        }
     }
 
     /**
