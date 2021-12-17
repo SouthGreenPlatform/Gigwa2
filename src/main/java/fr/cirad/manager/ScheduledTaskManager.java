@@ -17,6 +17,7 @@
 package fr.cirad.manager;
 
 import fr.cirad.mgdb.importing.OntologyImport;
+import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 
@@ -40,6 +41,7 @@ public class ScheduledTaskManager {
 
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(ScheduledTaskManager.class);
     
+    @Autowired private AppConfig appConfig;
     @Autowired TokenManager tokenManager;
 
     /**
@@ -64,15 +66,25 @@ public class ScheduledTaskManager {
     }
 
     /**
-     * launched once at startup: load ontology terms from .obo file
+     * launched once at startup
      */
     @PostConstruct
-    public void importOntology() {
-        try {
+    public void onStartup() {
+        try {	// load ontology terms from .obo file
             String url = new ClassPathResource("/res/so-xp-simple.obo").getFile().getAbsolutePath();
             OntologyImport.main(new String[]{url});
         } catch (Exception ex) {
             LOG.debug("error while parsing ontology file in /resources/res", ex);
+        }
+        
+        // check if CAS configuration looks complete
+        String casServerURL = appConfig.get("casServerURL");
+        if (casServerURL != null && !casServerURL.trim().isEmpty()) {
+        	String enforcedWebapRootUrl = appConfig.get("enforcedWebapRootUrl");
+        	if (enforcedWebapRootUrl == null || enforcedWebapRootUrl.trim().isEmpty())
+        		LOG.warn("CAS authentication disabled because no enforcedWebapRootUrl property was provided!");
+        	else
+        		LOG.info("CAS authentication enabled with " + casServerURL);
         }
     }
 }

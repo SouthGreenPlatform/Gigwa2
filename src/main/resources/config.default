@@ -70,8 +70,22 @@ maxExportableBillionGenotypes = 2
 #googleAnalyticsId = SOME_GA_ID
 
 
+<<<<<<< HEAD
+# In some situations the system needs to provide externally visible file URLs for remote applications to download.
+# In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL.
+# This also provides the base service URL and needs to be set for CAS authentication
+# Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395  
+#enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
+
+# If defined, enables CAS authentication and defines the CAS server URL
+#casServerURL = https://localhost:8443/cas
+
+# Defines the name of the organisation providing the CAS authentication. Optional.
+#casOrganisation = MyOrganisation
+=======
 # In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395  
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
 # Defines the limit number of variant ids that are returned in the variant IDs filter
 variantIdLookupMaxSize = 50
+>>>>>>> master
