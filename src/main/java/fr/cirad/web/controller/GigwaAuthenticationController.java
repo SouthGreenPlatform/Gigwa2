@@ -33,6 +33,7 @@ public class GigwaAuthenticationController {
 				String redirectUrl = URLEncoder.encode(targetUrl, StandardCharsets.UTF_8.name());
 				request.setAttribute("loginOrigin", redirectUrl);
 			} catch (UnsupportedEncodingException ignored) {}
+			requestCache.removeRequest(request, response);
 		}
 		
 

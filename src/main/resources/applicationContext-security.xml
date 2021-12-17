@@ -108,7 +108,7 @@
 
 <!-- Logout handling -->
     <bean id="logoutDispatchHandler" class="fr.cirad.security.GigwaLogoutDispatchHandler">
-    	<constructor-arg name="defaultRedirect" value="/index.jsp" />
+    	<constructor-arg name="defaultRedirect" value="index.jsp" />
 		<constructor-arg name="methodRedirects">
 			<map>
 				<entry key="" value="index.jsp" />
