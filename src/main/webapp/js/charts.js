@@ -31,7 +31,6 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Variants in interval",
-            yAxisTitle: "Number of variants in interval",
             enableMarker: false,
             lineWidth: 2,
         }],
@@ -44,8 +43,10 @@ const chartTypes = new Map([
                     let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
                     content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
                 });
-                content += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+                content += "</div>"
             }
+            if (getGenotypeInvestigationMode() != 0)
+                content += '<div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
             return content;
         }
     }],
@@ -57,7 +58,6 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
-            yAxisTitle: "Fst value for the interval",
             enableMarker: true,
             lineWidth: 2,
         }],
@@ -125,13 +125,11 @@ const chartTypes = new Map([
         series: [
             {
                 name: "Tajima's D",
-                yAxisTitle: "Tajima's D value for the interval",
                 enableMarker: true,
                 lineWidth: 2,
             },
             {
                 name: "Segregating sites",
-                yAxisTitle: "Usable segregating sites to calculate Tajima's D",
                 enableMarker: false,
                 lineWidth: 1,
             },
@@ -152,8 +150,10 @@ const chartTypes = new Map([
                     let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
                     content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
                 });
-                content += '</div><div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+                content += "</div>";
             }
+            if (getGenotypeInvestigationMode() != 0)
+                content += '<div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
             return content;
         }
     }]
