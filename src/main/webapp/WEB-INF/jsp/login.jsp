@@ -13,13 +13,15 @@
  *
  * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
  * Public License V3.
---%><% response.setHeader("Content-Security-Policy", "frame-ancestors *"); %>
+--%>
 <!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %> 
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
+
 <fmt:setBundle basename="config" />
+
 <html>
     <head>
         <meta charset="utf-8">
@@ -59,11 +61,19 @@
                     <div class="panel panel-default">
                         <div class="panel-body text-center">
                         	<div style="background-color:white; padding:7px; border:darkblue 5px outset; margin:10px 0 40px 0;"><img alt="Gigwa" height="40" src="images/logo_big.png" /><br/>LOGIN FORM</div>
-                            <form name="f" action='j_spring_security_check' method='POST' id="form-login">
-                                <input type="text" name="j_username" id="username" placeholder="Username" required="required"<c:if test="${param.auth eq 'failure'}"> value="${SPRING_SECURITY_LAST_EXCEPTION.authentication.principal}"</c:if> />
-                                <input type="password" name="j_password" id="password" placeholder="Password" required="required" />
-                                <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log  me in</button> 
+                            <form name="f" action='login' method='POST' id="form-login">
+                                <input type="text" name="username" id="username" placeholder="Username" required="required" />
+                                <input type="password" name="password" id="password" placeholder="Password" required="required" />
+                                <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
+                            <fmt:message var="casServerURL" key="casServerURL" />
+                            <fmt:message var="enforcedWebapRootUrl" key="enforcedWebapRootUrl" />
+                            <c:if test='${!fn:startsWith(casServerURL, "??") && !empty casServerURL && !fn:startsWith(enforcedWebapRootUrl, "??") && !empty enforcedWebapRootUrl}'>
+                            	<a id="casAuthenticationEntryPoint" class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do?url=${loginOrigin}" target="_top">Authenticate using my
+                            	<fmt:message var="casOrganisation" key="casOrganisation" />
+                            	<c:choose><c:when test='${!fn:startsWith(casOrganisation, "??") && !empty casOrganisation}'>${casOrganisation}</c:when><c:otherwise>organisation</c:otherwise></c:choose>
+                            	account</a>
+							</c:if>
 							<div class="text-red margin-top-md">
 								&nbsp;
 								<c:if test="${param.auth eq 'failure'}">

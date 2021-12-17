@@ -240,13 +240,9 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-<<<<<<< HEAD
-	            String indHeader = request.getHeader("ind");
-	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
-=======
-	            String indHeader = request.getParameter("ind");
+	        	String indHeader = request.getParameter("ind");
 	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList() : Helper.split(indHeader, ";"));
->>>>>>> master
+
 	            if (variant == null) {
 	                build404Response(response);
 	                return null;
@@ -401,10 +397,6 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-<<<<<<< HEAD
-	        	//SearchCallSetsResponse resp = service.searchCallSets(callSetsRequest);
-=======
->>>>>>> master
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
