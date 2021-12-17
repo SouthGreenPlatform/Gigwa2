@@ -27,9 +27,10 @@
 	
     <secur:http use-expressions="true" request-matcher="ant" realm="GIGwA WebApp Security Administration" access-decision-manager-ref="accessDecisionManager" entry-point-ref="gigwaAuthenticationEntryPoint">
 		<secur:csrf disabled="true" />  <!-- FIXME -->
-		<secur:headers>
-			<secur:frame-options policy="SAMEORIGIN" />
-		</secur:headers>
+        <secur:headers>
+            <secur:frame-options policy="ALLOW-FROM" strategy="whitelist" value="*"/>
+            <secur:content-security-policy policy-directives="frame-ancestors *" />
+        </secur:headers>
 		<secur:intercept-url pattern="/permissionManagement.jsp*" access="isFullyAuthenticated()" />
 		<secur:intercept-url pattern="/login/cas.do*" access="isRememberMe() or isFullyAuthenticated()" />
 		<secur:intercept-url pattern="/login.do*" access="permitAll" />
