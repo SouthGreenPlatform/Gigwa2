@@ -81,3 +81,6 @@ maxExportableBillionGenotypes = 2
 
 # Defines the name of the organisation providing the CAS authentication. Optional.
 #casOrganisation = MyOrganisation
+
+# Defines the limit number of variant ids that are returned in the variant IDs filter
+variantIdLookupMaxSize = 50
