@@ -16,6 +16,7 @@
  *******************************************************************************/
 package fr.cirad.tools.security;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -373,7 +374,7 @@ public class TokenManager extends AbstractTokenManager {
         	LOG.debug("cleanupTokenMap removed " + expiredTokens.size() + " token(s)");
     }
     
-	public void reloadUserPermissions(SecurityContext securityContext) {
+	public void reloadUserPermissions(SecurityContext securityContext) throws IOException {
 		userDao.reloadProperties();
 		if (securityContext.getAuthentication() != null)	// otherwise the importing user has logged off in the meantime
 			securityContext.setAuthentication(authenticationManager.authenticate(securityContext.getAuthentication()));

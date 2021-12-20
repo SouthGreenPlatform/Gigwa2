@@ -69,7 +69,6 @@ maxExportableBillionGenotypes = 2
 # Set your Google Analytics id for the tag to be automatically added into the main page
 #googleAnalyticsId = SOME_GA_ID
 
-
 # In some situations the system needs to provide externally visible file URLs for remote applications to download.
 # In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL.
 # This also provides the base service URL and needs to be set for CAS authentication
@@ -81,3 +80,6 @@ maxExportableBillionGenotypes = 2
 
 # Defines the name of the organisation providing the CAS authentication. Optional.
 #casOrganisation = MyOrganisation
+
+# Defines the limit number of variant ids that are returned in the variant IDs filter
+variantIdLookupMaxSize = 50

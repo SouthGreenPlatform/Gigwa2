@@ -240,8 +240,8 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-	        	String indHeader = request.getParameter("ind");
-	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList() : Helper.split(indHeader, ";"));
+	            String indHeader = request.getHeader("ind");
+	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
 
 	            if (variant == null) {
 	                build404Response(response);
