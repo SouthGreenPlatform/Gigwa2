@@ -46,7 +46,7 @@ import org.ga4gh.models.VariantAnnotation;
 import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -68,7 +68,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.springframework.context.annotation.ComponentScan;
 
 /**
  *
@@ -88,6 +87,7 @@ public class Ga4ghRestController extends ControllerInterface {
     /**
      * logger
      */
+    @SuppressWarnings("unused")
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(Ga4ghRestController.class);
 
     static public final String BASE_URL = "/ga4gh";
@@ -239,8 +239,9 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-	            String indHeader = request.getParameter("ind");
-	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList() : Helper.split(indHeader, ";"));
+	            String indHeader = request.getHeader("ind");
+	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
+
 	            if (variant == null) {
 	                build404Response(response);
 	                return null;
@@ -551,7 +552,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
 	            gsvr.setRequest(request);
 				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)));
+				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)));
 	            return service.searchVariants(gsvr);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
