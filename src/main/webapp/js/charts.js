@@ -19,7 +19,7 @@ var chart = null;
 var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
 let localmin, localmax;
-let chartJsonKeys, chartJsonValues;
+let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 const chartTypes = new Map([
@@ -44,9 +44,9 @@ const chartTypes = new Map([
                     content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
                 });
                 content += "</div>"
+                if (getGenotypeInvestigationMode() != 0)
+                    content += '<div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
             }
-            if (getGenotypeInvestigationMode() != 0)
-                content += '<div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
             return content;
         }
     }],
@@ -298,6 +298,8 @@ function setChartType(typeSelect){
             $("#additionalCharts").hide();
             $("#densityChartArea").html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
             return;
+        } else {
+            $("#densityChartArea").empty();
         }
     }
     $("#additionalCharts").show();
@@ -657,7 +659,8 @@ function dispayOrHideSeries(fieldName, isChecked, colorIndex) {
 }
 
 function displayOrHideThreshold(isChecked) {
-    if (isChecked){
+    const typeInfo = chartTypes.get(currentChartType);
+    if (isChecked) {
         const threshold = parseFloat($("#fstThreshold").val());
         chart.addSeries({
             id: "threshold",
@@ -665,7 +668,8 @@ function displayOrHideThreshold(isChecked) {
             marker: {enabled: false},
             lineWidth: 0.5,
             color: "#CC0000",
-            data: chartJsonValues.map(val => threshold),
+            data: chartJsonKeys.map(val => threshold),
+            yAxis: typeInfo.series[0].name,
         }, true);
     } else {
         const series = chart.get("threshold");
@@ -677,7 +681,7 @@ function setFstThreshold(){
     const threshold = parseFloat($("#fstThreshold").val());
     const series = chart.get("threshold");
     if (series !== undefined){
-        series.setData(chartJsonValues.map(val => threshold), true, true);
+        series.setData(chartJsonKeys.map(val => threshold), true, true);
     }
 }
 
