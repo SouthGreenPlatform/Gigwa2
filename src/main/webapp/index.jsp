@@ -129,7 +129,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
         
-        var stringVariantIdsFromUploadFile = null;
+    var stringVariantIdsFromUploadFile = null;
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -552,17 +552,17 @@
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.references.length;
-                                if (seqCount == 0) {
-                                    $('#sequenceFilter').hide();
-                                    $('#positions').hide();
-                                    $('#filterIDsCheckbox').prop('checked', true);
-                                    onFilterByIds(true);
-                                } else {
-                                    $('#sequenceFilter').show();
-                                    $('#positions').show();
-                                    $('#filterIDsCheckbox').prop('checked', false);
-                                    onFilterByIds(false);
-                                }                                
+                if (seqCount == 0) {
+                    $('#sequenceFilter').hide();
+                    $('#positions').hide();
+                    $('#filterIDsCheckbox').prop('checked', true);
+                    onFilterByIds(true);
+                } else {
+                    $('#sequenceFilter').show();
+                    $('#positions').show();
+                    $('#filterIDsCheckbox').prop('checked', false);
+                    onFilterByIds(false);
+                }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
 				for (var ref in jsonResult.references) {
@@ -885,39 +885,39 @@
 		
 		currentPageToken = pageToken;
 		$('#prev').prop('disabled', pageToken === '0');
-		
+
 		if (searchMode === 0 && $('#browsingAndExportingEnabled').prop('checked'))
 			searchMode = 3;
-                
-                var query = buildSearchQuery(searchMode, currentPageToken);
-                if (stringVariantIdsFromUploadFile !== null) {
-                    query.selectedVariantIds = stringVariantIdsFromUploadFile.replaceAll('\n', ';');
-                }
-                
-                $.ajax({
-                        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
-                        type: "POST",
-                        dataType: "json",
-                        contentType: "application/json;charset=utf-8",
-                        timeout:0,
-                        headers: {
-                                "Authorization": "Bearer " + token
-                        },
-                        data: JSON.stringify(query),
-                        success: function(jsonResult) {
-                                $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
-                                if (searchMode === 0) { // count only 
-                                        count = jsonResult.count;
-                                        handleCountSuccess();
-                                } else {
-                                        handleSearchSuccess(jsonResult, pageToken);
-                                }
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                                handleError(xhr, thrownError);
+
+        var query = buildSearchQuery(searchMode, currentPageToken);
+        if (stringVariantIdsFromUploadFile !== null) {
+            query.selectedVariantIds = stringVariantIdsFromUploadFile.replaceAll('\n', ';');
+        }
+
+        $.ajax({
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                timeout:0,
+                headers: {
+                        "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(query),
+                success: function(jsonResult) {
+                        $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
+                        if (searchMode === 0) { // count only 
+                                count = jsonResult.count;
+                                handleCountSuccess();
+                        } else {
+                                handleSearchSuccess(jsonResult, pageToken);
                         }
-                });
-                
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                }
+        });
+
 		$('#iconSeq').hide();
 		$('#iconPos').hide();
 		$('#rightSidePanel').hide();
@@ -1668,7 +1668,7 @@
 			}).catch(function (reason){
 				displayMessage("Error loading genome config : " + reason);
 			});
-		} else {  // FASTA genome
+		} else {  // FASTA genome
 			let genome;
 			if (indexFile){
 				genome = {

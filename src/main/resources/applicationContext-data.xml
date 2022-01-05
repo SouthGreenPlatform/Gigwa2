@@ -5,11 +5,10 @@
        xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd
 							http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<!-- Definition of a host running remotely without authentication enabled, with a custom max-pool-size -->
-    <mongo:mongo-client host="my.mongo.server1.com" port="59393" id="defaultMongoHost">
-		<mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client>
+ 	<mongo:mongo-client host="rogna.cirad.fr" port="27017" id="rognaLIVE" credential="gigwa:91936@admin" />
+ 	<mongo:mongo-client host="rogna.cirad.fr" port="37017" id="rognaDEV" credential="gigwa:91936@admin" />
+	
+<!--     <mongo:mongo-client host="localhost" port="59393" id="defaultMongoHost" credential="gigwa:91936@admin" /> -->
     
-    <!-- Definition of a local host with authentication enabled -->
- 	<mongo:mongo-client host="127.0.0.1" port="27017" id="localMongoHost" credential="XXXXX:YYYYY@admin" />
+    <mongo:mongo-client host="meuse.cirad.fr" port="27017" id="meuseDevMongoHost" />
 </beans>

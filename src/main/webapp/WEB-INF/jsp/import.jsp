@@ -263,7 +263,7 @@
               		maxFiles: 2,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
@@ -916,7 +916,6 @@
 				       										<br/>.vcf
 				       										<br/>.hapmap or .txt
 														<br/>.ped + .map
-                                                                                                                <br/>.intertek (for intertek files, add .intertek extension)
 				       									</div>
 			       									</div>
 			                                    </div>

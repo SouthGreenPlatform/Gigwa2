@@ -4,38 +4,133 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-						http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+						http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.6.xsd
 						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
     
+
+<!-- Configuration -->
     <context:component-scan base-package="fr.cirad.mgdb.model.mongodao,fr.cirad.tools">
 	    <context:exclude-filter type="regex" expression="^fr.cirad.tools.GlobalExceptionHandler$"/>
     </context:component-scan>
+    
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="location" value="classpath:config.properties" />
+	</bean>
+
 	
+	
+<!-- HTTP authorization settings -->
     <secur:http request-matcher="regex" pattern="^.*/css/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/img/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/js/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*\/.*filt\/tmpOutput\/.*\.zip.*$" security="none" />
 	
-    <secur:http realm="GIGwA WebApp Security Administration" request-matcher="regex" access-decision-manager-ref="accessDecisionManager">
-		<!-- <secur:intercept-url pattern="^.*\.json.*$" access="IS_AUTHENTICATED_FULLY" /> -->
-		<secur:intercept-url pattern="^.*\/permissionManagement\.jsp.*$" access="IS_AUTHENTICATED_FULLY" />
-		<secur:intercept-url pattern="^.*\/login\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY" requires-channel="http" />
-        <secur:intercept-url pattern="^.*\/index\.jsp.*$" access="IS_AUTHENTICATED_ANONYMOUSLY,IS_AUTHENTICATED_FULLY,IS_AUTHENTICATED_REMEMBERED,ROLE_ADMIN" requires-channel="http" />
-        <secur:form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" />
+    <secur:http use-expressions="true" request-matcher="ant" realm="GIGwA WebApp Security Administration" access-decision-manager-ref="accessDecisionManager" entry-point-ref="gigwaAuthenticationEntryPoint">
+		<secur:csrf disabled="true" />  <!-- FIXME -->
+        <secur:headers>
+            <secur:frame-options policy="ALLOW-FROM" strategy="whitelist" value="*"/>
+            <secur:content-security-policy policy-directives="frame-ancestors *" />
+        </secur:headers>
+		<secur:intercept-url pattern="/permissionManagement.jsp*" access="isFullyAuthenticated()" />
+		<secur:intercept-url pattern="/login/cas.do*" access="isRememberMe() or isFullyAuthenticated()" />
+		<secur:intercept-url pattern="/login.do*" access="permitAll" />
+        <secur:intercept-url pattern="/index.jsp*" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
+        <secur:intercept-url pattern="/rest/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
+        <secur:intercept-url pattern="/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
+        <secur:form-login login-page="/login.do" authentication-failure-url="/login.do?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" authentication-success-handler-ref="authenticationSuccessHandler" />
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />		 
-        <secur:logout logout-success-url="/index.jsp" invalidate-session="true"/>  
+        <secur:logout success-handler-ref="logoutDispatchHandler" invalidate-session="true"/>
+        <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
+        <secur:custom-filter before="LOGOUT_FILTER" ref="requestSingleLogoutFilter" />
+        <secur:custom-filter before="CAS_FILTER" ref="singleLogoutFilter" />
     </secur:http>
 
-	<!-- Only one passwordEncoder bean should be enabled at a time -->
+
+
+<!-- Only one passwordEncoder bean should be enabled at a time -->
 	<bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder" />
     <!--<bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" /> -->
 
+
+
+<!-- Authentication providers -->
     <secur:authentication-manager alias="authenticationManager" erase-credentials="false">
         <secur:authentication-provider user-service-ref='userDetailsService'>
 			<secur:password-encoder ref="passwordEncoder"/>
         </secur:authentication-provider>
-    </secur:authentication-manager>    
+        <secur:authentication-provider ref="casAuthenticationProvider" />
+    </secur:authentication-manager>
     
+    <bean id="casAuthenticationProvider" class="org.springframework.security.cas.authentication.CasAuthenticationProvider">
+    	<property name="authenticationUserDetailsService">
+    		<bean class="fr.cirad.security.GigwaUserDetailsWrapper">
+    			<constructor-arg ref="userDetailsService" />
+    		</bean>
+    	</property>
+    	<property name="ticketValidator">
+    		<bean class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
+    			<constructor-arg index="0" value="${casServerURL:}" />
+    		</bean>
+    	</property>
+    	<property name="serviceProperties" ref="casServiceProperties" />
+    	<property name="key" value="CAS_PROVIDER" />
+    </bean>
+
+
+
+<!-- Authentication entry points -->
+    <bean id="gigwaAuthenticationEntryPoint" class="org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint">
+    	<constructor-arg>
+    		<map>
+    			<entry>
+    				<key>
+    					<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+    						<constructor-arg value="/login/cas.do**" />
+    						<constructor-arg><null/></constructor-arg>
+    					</bean>
+    				</key>
+    				<ref bean="casEntryPoint"/>
+    			</entry>
+    		</map>
+    	</constructor-arg>
+    	<property name="defaultEntryPoint" ref="formEntryPoint" />
+    </bean>
+    
+    <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+    	<constructor-arg value="/login.do" />
+    </bean>
+    
+    <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
+    	<property name="loginUrl" value="${casServerURL:}/login" />
+    	<property name="serviceProperties" ref="casServiceProperties" />
+    </bean>
+
+
+
+<!-- Logout handling -->
+    <bean id="logoutDispatchHandler" class="fr.cirad.security.GigwaLogoutDispatchHandler">
+    	<constructor-arg name="defaultRedirect" value="index.jsp" />
+		<constructor-arg name="methodRedirects">
+			<map>
+				<entry key="" value="index.jsp" />
+				<entry key="CAS" value="cas-logout.jsp" />
+			</map>
+		</constructor-arg>
+    </bean>
+    
+    <bean id="singleLogoutFilter" class="org.jasig.cas.client.session.SingleSignOutFilter" />
+    
+    <bean id="requestSingleLogoutFilter" class="org.springframework.security.web.authentication.logout.LogoutFilter">
+    	<constructor-arg value="${casServerURL:}/logout" />
+    	<constructor-arg>
+    		<bean class="org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler" />
+    	</constructor-arg>
+    	<property name="filterProcessesUrl" value="/logout/cas" />
+    </bean>
+
+
+
+<!-- General beans -->
     <bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
 	
     <bean id="userDetailsService" class="fr.cirad.security.ReloadableInMemoryDaoImpl">
@@ -45,12 +140,13 @@
     <bean id="gigwaService" class="fr.cirad.mgdb.service.GigwaGa4ghServiceImpl" />
 	
     <bean id="accessDecisionManager" class="org.springframework.security.access.vote.GigwaAccessDecisionManager">
-        <property name="decisionVoters">
+        <constructor-arg>
             <list>
                 <bean class="org.springframework.security.access.vote.AuthenticatedVoter" />
                 <bean class="org.springframework.security.access.vote.RoleVoter" />
+                <bean class="org.springframework.security.web.access.expression.WebExpressionVoter" />
             </list>
-        </property>
+        </constructor-arg>
     </bean>
     
     <bean class="org.springframework.web.context.support.ServletContextAttributeExporter">
@@ -61,6 +157,22 @@
                 </entry>
             </map>
         </property>
+    </bean>
+
+	<bean id="authenticationSuccessHandler" class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+		<property name="defaultTargetUrl" value="/index.jsp" />
+	</bean>
+
+
+<!-- CAS authentication beans -->
+    <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
+    	<property name="service" value="${enforcedWebapRootUrl:}/login/cas" />
+    	<property name="sendRenew" value="false" />
+    </bean>
+    
+    <bean id="casFilter" class="org.springframework.security.cas.web.CasAuthenticationFilter">
+    	<property name="authenticationManager" ref="authenticationManager" />
+    	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
 	
 </beans>

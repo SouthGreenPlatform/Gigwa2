@@ -74,7 +74,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -101,7 +101,6 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
-import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -268,7 +267,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		result.put(Constants.TOKEN, token);
 		authentication = tokenManager.getAuthenticationFromToken(token);
-		if (authentication != null && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
+		if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
 			result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
 		return result;
 	}
@@ -343,7 +342,7 @@ public class GigwaRestController extends ControllerInterface {
 			Map<String, List<String>> response = new HashMap<>();
 			List<String> hosts = new ArrayList<>();
 			for (String sHost : MongoTemplateManager.getHostNames())
-				if (auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)) || tempDbHost == null || tempDbHost.equals(sHost))
+				if (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || tempDbHost == null || tempDbHost.equals(sHost))
 					hosts.add(sHost);
 			response.put(Constants.HOSTS, hosts);
 			return response;
@@ -373,7 +372,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				List<Integer> result = new ArrayList(service.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
+				List<Integer> result = new ArrayList<Integer>(service.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
@@ -741,7 +740,7 @@ public class GigwaRestController extends ControllerInterface {
         //size>1 only if selectedVariantIds --> in this case, getting all the tempColl, no need to filter on variantQueryDBList
         BasicDBList variantQueryDBList = variantQueryDBListColl.size()==1 ? variantQueryDBListColl.iterator().next() : new BasicDBList();
 
-		MongoCollection collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
+		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
         String header = "variant\talleles\tchrom\tpos";
         resp.getWriter().append(header);
@@ -957,7 +956,7 @@ public class GigwaRestController extends ControllerInterface {
 	public Map<Long, String> getExportedData(HttpServletRequest request, HttpServletResponse resp, @PathVariable String username) throws IOException {
 		String token = tokenManager.readToken(request);
 		Authentication authentication = token != null && !token.isEmpty() ? tokenManager.getAuthenticationFromToken(token) : SecurityContextHolder.getContext().getAuthentication();
-		boolean fAllowed = authentication != null && (authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)) || (!"anonymousUser".equals(authentication.getName()) && username.equals(authentication.getName())));
+		boolean fAllowed = authentication != null && (authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || (!"anonymousUser".equals(authentication.getName()) && username.equals(authentication.getName())));
 		Map<Long, String> result = null;
 		if (fAllowed) {
 			result = new TreeMap<>();
@@ -1029,31 +1028,32 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST, consumes =  "application/json")
-        public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
-            String token = tokenManager.readToken(request);
-            String id = gsver.getVariantSetId();
-            if (id == null) {
-                build400Response(resp, "Parameter variantSetId is required");
-            }
-            if (gsver.getCallSetIds() == null) {
-                build400Response(resp, "Parameter callSetIds is required");
-            }
-            try
-            {
-                if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-                    gsver.setRequest(request);		
-                    Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-                    gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN))));
-                    service.exportVariants(gsver, token, resp);
-                } else {
-                    build401Response(resp);
-                }
-            }
-            catch (ObjectNotFoundException e)
-            {
-                build404Response(resp);
+    public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
+        String token = tokenManager.readToken(request);
+        String id = gsver.getVariantSetId();
+        if (id == null) {
+            build400Response(resp, "Parameter variantSetId is required");
+        }
+        if (gsver.getCallSetIds() == null) {
+            build400Response(resp, "Parameter callSetIds is required");
+        }
+        try
+        {
+            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+                gsver.setRequest(request);		
+                Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+                gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
+                service.exportVariants(gsver, token, resp);
+            } else {
+                build401Response(resp);
             }
         }
+        catch (ObjectNotFoundException e)
+        {
+            build404Response(resp);
+        }
+    }
+
 
 	/**
 	 * Gets the view controllers.
@@ -1083,7 +1083,7 @@ public class GigwaRestController extends ControllerInterface {
 			provider.addIncludeFilter(new AssignableTypeFilter(IGigwaViewController.class));
 			try {
 				for (BeanDefinition component : provider.findCandidateComponents("fr.cirad")) {
-					Class cls = Class.forName(component.getBeanClassName());
+					Class<?> cls = Class.forName(component.getBeanClassName());
 					if (!Modifier.isAbstract(cls.getModifiers())) {
 						IGigwaViewController viewController = (IGigwaViewController) cls.getConstructor().newInstance();
 						viewControllers.put(viewController.getViewDescription(), viewController.getViewURL());
@@ -1407,7 +1407,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
 		Authentication auth = tokenManager.getAuthenticationFromToken(token);
-		boolean fAdminImporter = auth != null && auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		boolean fAdminImporter = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 
 		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
@@ -1655,12 +1655,6 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-                                                                        else if (filesByExtension.containsKey("intertek"))
-									{
-										Serializable s = filesByExtension.get("intertek");                                                                               
-										boolean fIsLocalFile = s instanceof File;
-										newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
@@ -1796,7 +1790,7 @@ public class GigwaRestController extends ControllerInterface {
 		String maxSize = null;
 		
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
-		boolean fIsAdmin = auth != null && auth.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)); // limit only applies when capped for administrators
+		boolean fIsAdmin = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)); // limit only applies when capped for administrators
 		if (!fIsAdmin) {
 			maxSize = appConfig.get("maxImportSize_" + (auth == null ? "anonymousUser" : auth.getName()));
 			if (maxSize == null || !StringUtils.isNumeric(maxSize))

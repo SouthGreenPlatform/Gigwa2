@@ -476,6 +476,7 @@ function checkBrowsingBoxAccordingToLocalVariable()
 
 
 function buildSearchQuery(searchMode, pageToken){
+
     let annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
     $('#vcfFieldFilterGroup1 input').each(function() {
         if (parseFloat($(this).val()) > 0)
@@ -503,24 +504,24 @@ function buildSearchQuery(searchMode, pageToken){
         "gtPattern": $('#Genotypes1').val(),
         "mostSameRatio": $('#mostSameRatio1').val(),
         "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-           "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-         "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
+        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
+        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
         "annotationFieldThresholds": annotationFieldThresholds,
 
         "callSetIds2": getSelectedIndividuals(2, true),
         "gtPattern2": $('#Genotypes2').val(),
         "mostSameRatio2": $('#mostSameRatio2').val(),
         "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-           "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-         "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-            "annotationFieldThresholds2": annotationFieldThresholds2,
+        "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
+        "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
+        "annotationFieldThresholds2": annotationFieldThresholds2,
         
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
         "pageToken": pageToken,
         "sortBy": sortBy,
         "sortDir": sortDesc === true ? 'desc' : 'asc',
-                "selectedVariantIds": getSelectedVariantIds()
+        "selectedVariantIds": getSelectedVariantIds()
     };
     return query;
 }
@@ -1529,9 +1530,9 @@ function onFilterByIds(checked) {
         $('#Sequences').selectmultiple('selectAll');
         $('#Sequences').find('.btn').prop('disabled', true);
         
-        $('#minposition').selectpicker('deselectAll').prop('disabled', true); 
-        $('#maxposition').selectpicker('deselectAll').prop('disabled', true);
-        $('#geneName').selectpicker('deselectAll').prop('disabled', true);
+        $('#minposition').val("").prop('disabled', true); 
+        $('#maxposition').val("").prop('disabled', true);
+        $('#geneName').val("").prop('disabled', true);
         
         $('#variantEffects').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
@@ -1539,21 +1540,21 @@ function onFilterByIds(checked) {
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
-        $('#missingdata1').selectpicker('deselectAll').prop('disabled', true);
-        $('#missingdata1').val(100);
-        $('#mostSameRatio1')/*.selectpicker('deselectAll')*/.prop('disabled', true);
+        $('#missingdata1').val(100).prop('disabled', true);
+        $('#mostSameRatio1').prop('disabled', true);
         $('#Genotypes1').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
         
-        $('#missingdata2').selectpicker('deselectAll').prop('disabled', true);
-        $('#missingdata2').val(100);
-        $('#mostSameRatio2')/*.selectpicker('deselectAll')*/.prop('disabled', true);
+        $('#missingdata2').val(100).prop('disabled', true);
+        $('#mostSameRatio2').prop('disabled', true);
         $('#Genotypes2').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
     } else {
+		selectedVariantIDsWhenTooManyToFitInSelect = null;
+	
         $('#variantTypes').prop('disabled', false).selectpicker('refresh');
         $('#numberOfAlleles').prop('disabled', false).selectpicker('refresh');
         $('#Sequences').find('.btn').prop('disabled', false).selectpicker('refresh');
-        $('#minposition').prop('disabled', false).selectpicker('refresh');
-        $('#maxposition').prop('disabled', false).selectpicker('refresh');     
+        $('#minposition').prop('disabled', false);
+        $('#maxposition').prop('disabled', false);     
         $('#geneName').prop('disabled', false);
         $('#variantEffects').prop('disabled', false).selectpicker('refresh');        
         
