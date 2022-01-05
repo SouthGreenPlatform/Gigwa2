@@ -139,10 +139,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import static java.lang.Integer.parseInt;
-import java.util.regex.Pattern;
-import org.ga4gh.models.Variant;
-import org.springframework.web.bind.annotation.PostMapping;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -736,11 +732,11 @@ public class GigwaRestController extends ControllerInterface {
 		
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
-        Collection<BasicDBList> variantQueryDBListColl = ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]));
-        //size>1 only if selectedVariantIds --> in this case, getting all the tempColl, no need to filter on variantQueryDBList
-        BasicDBList variantQueryDBList = variantQueryDBListColl.size()==1 ? variantQueryDBListColl.iterator().next() : new BasicDBList();
+        boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
+        Collection<BasicDBList> variantQueryDBListColl = ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
+        List<Object> variantQueryDBList = variantQueryDBListColl.iterator().next();
 
-		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
+		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
         String header = "variant\talleles\tchrom\tpos";
         resp.getWriter().append(header);
@@ -851,8 +847,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 		};
 
-		Document varQuery = !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document();
-		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, varQuery, samples, true, 100, writingThread, null, null, progress);
+		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
@@ -1951,7 +1946,7 @@ public class GigwaRestController extends ControllerInterface {
 
         try {
             String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
-            int project = parseInt(info[1]);
+            int project = Integer.parseInt(info[1]);
             if (tokenManager.canUserReadDB(token, info[0])) {            
                 return service.searchVariantsLookup(info[0], project, lookupText);
             }
