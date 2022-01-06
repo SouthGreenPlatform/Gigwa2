@@ -2231,12 +2231,7 @@
               var traitValue = trait.getValue(phenotype);
 
               if (traitValue !== undefined) {
-                var scaleValue = trait.scaleValue(phenotype);
-                var hue = 120 * scaleValue;
-
-                var rgb = _this3.hsv2rgb(hue, 0.53, 1);
-
-                _this3.backContext.fillStyle = "rgb(" + Math.floor(rgb[0] * 255) + "," + Math.floor(rgb[1] * 255) + "," + Math.floor(rgb[2] * 255) + ")";
+                _this3.backContext.fillStyle = trait.getColor(phenotype); //this.backContext.fillStyle = "rgb(" + Math.floor(rgb[0] * 255) + "," + Math.floor(rgb[1] * 255) + "," + Math.floor(rgb[2] * 255) + ")";
 
                 _this3.backContext.fillRect(xPos, yPos, _this3.traitValueColumnWidths[traitIndex], _this3.boxSize);
 
@@ -2791,16 +2786,6 @@
         return tmpCanvas.toDataURL(type, encoderOptions);
       }
     }, {
-      key: "hsv2rgb",
-      value: function hsv2rgb(h, s, v) {
-        var f = function f(n) {
-          var k = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (n + h / 60) % 6;
-          return v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
-        };
-
-        return [f(5), f(3), f(1)];
-      }
-    }, {
       key: "nextColumnBackground",
       value: function nextColumnBackground() {
         var background = this.columnBackgrounds[this.currentColumnBackground];
@@ -3074,6 +3059,140 @@
     }]);
 
     return OverviewCanvas;
+  }();
+
+  var TraitType = {
+    Category: 0,
+    Numerical: 1
+  }; // Colors are in HSV (hue, saturation, value)
+
+  var DEFAULT_HUE_MIN = 0;
+  var DEFAULT_HUE_MAX = 120;
+  var DEFAULT_SATURATION = 0.53;
+  var DEFAULT_VALUE = 1;
+  var DEFAULT_GRADIENT_MIN = [DEFAULT_HUE_MIN, DEFAULT_SATURATION, DEFAULT_VALUE];
+  var DEFAULT_GRADIENT_MAX = [DEFAULT_HUE_MAX, DEFAULT_SATURATION, DEFAULT_VALUE];
+  var Trait = /*#__PURE__*/function () {
+    function Trait(name, type, experiment) {
+      _classCallCheck(this, Trait);
+
+      this.name = name;
+      this.type = type;
+      this.experiment = experiment;
+      this.values = undefined;
+      this.colors = new Map();
+      this.longestValue = undefined;
+      this.minValue = undefined;
+      this.maxValue = undefined;
+    }
+
+    _createClass(Trait, [{
+      key: "setValues",
+      value: function setValues(values) {
+        this.values = values;
+      }
+    }, {
+      key: "setScale",
+      value: function setScale(min, max) {
+        this.minValue = min;
+        this.maxValue = max;
+
+        if (this.type == TraitType.Category) {
+          this.setCategoryColors();
+        } else if (this.type == TraitType.Numerical) {
+          this.color.set(this.minValue, DEFAULT_GRADIENT_MIN);
+          this.color.set(this.maxValue, DEFAULT_GRADIENT_MAX);
+        }
+      }
+    }, {
+      key: "setCategoryColors",
+      value: function setCategoryColors() {
+        var sortedValues = this.values.slice();
+
+        for (var valueIndex = 0; valueIndex < this.values.length; valueIndex++) {
+          var value = this.values[valueIndex];
+          var index = sortedValues.indexOf(value);
+          var hue = (DEFAULT_HUE_MAX - DEFAULT_HUE_MIN) * index / (sortedValues.length - 1) + DEFAULT_HUE_MIN;
+          this.colors.set(valueIndex, [hue, DEFAULT_SATURATION, DEFAULT_VALUE]);
+        }
+      }
+    }, {
+      key: "scaleValue",
+      value: function scaleValue(value) {
+        return (value - this.minValue) / (this.maxValue - this.minValue);
+      }
+    }, {
+      key: "getValue",
+      value: function getValue(value) {
+        if (this.type == TraitType.Category) {
+          return this.values[value];
+        } else {
+          return value;
+        }
+      }
+    }, {
+      key: "getValues",
+      value: function getValues() {
+        if (this.type == TraitType.Category) return this.values.slice();else return [this.minValue, this.maxValue];
+      }
+    }, {
+      key: "getMinColor",
+      value: function getMinColor() {
+        return this.getColor(this.minValue);
+      }
+    }, {
+      key: "getMaxColor",
+      value: function getMaxColor() {
+        return this.getColor(this.maxValue);
+      }
+    }, {
+      key: "getColor",
+      value: function getColor(value) {
+        var hsv = this.colors.get(value);
+        var rgb = this.hsv2rgb(hsv[0], hsv[1], hsv[2]);
+        var hexa = '#' + (1 << 24 | Math.floor(rgb[0] * 255) << 16 | Math.floor(rgb[1] * 255) << 8 | Math.floor(rgb[2] * 255)).toString(16).slice(1);
+        return hexa;
+      }
+    }, {
+      key: "setMinColor",
+      value: function setMinColor(color) {
+        this.setColor(this.minValue, color);
+      }
+    }, {
+      key: "setMaxColor",
+      value: function setMaxColor(color) {
+        this.setColor(this.maxValue, color);
+      }
+    }, {
+      key: "setColor",
+      value: function setColor(value, color) {
+        var rgb = [parseInt(color.slice(1, 3), 16) / 255, parseInt(color.slice(3, 5), 16) / 255, parseInt(color.slice(5, 7), 16) / 255];
+        var hsv = this.rgb2hsv(rgb[0], rgb[1], rgb[2]);
+        this.colors.set(value, hsv);
+      } // From https://stackoverflow.com/a/54024653
+
+    }, {
+      key: "hsv2rgb",
+      value: function hsv2rgb(h, s, v) {
+        var f = function f(n) {
+          var k = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (n + h / 60) % 6;
+          return v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+        };
+
+        return [f(5), f(3), f(1)];
+      } // From https://stackoverflow.com/a/54070620
+
+    }, {
+      key: "rgb2hsv",
+      value: function rgb2hsv(r, g, b) {
+        var v = Math.max(r, g, b);
+        var c = v - Math.min(r, g, b);
+        var h = c && (v == r ? (g - b) / c : v == g ? 2 + (b - r) / c : 4 + (r - g) / c);
+        return [60 * (h < 0 ? h + 6 : h), v && c / v, v];
+      }
+    }]);
+
+    return Trait;
   }();
 
   var AlphabeticLineSort = /*#__PURE__*/function () {
@@ -3910,6 +4029,84 @@
             _this.genotypeCanvas.setDisplayTraits(displayTraits);
 
             _this.saveSetting("displayTraits", displayTraits.join(";"));
+          }); // Trait palettes
+
+          var paletteTraitSelect = document.getElementById('paletteTrait');
+          var paletteValueSelect = document.getElementById('paletteValue');
+          var paletteValueColor = document.getElementById('paletteColor');
+          this.dataSet.traitNames.forEach(function (traitName) {
+            var opt = document.createElement('option');
+            opt.value = traitName;
+            opt.text = traitName;
+            paletteTraitSelect.add(opt);
+          });
+          paletteTraitSelect.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var traitOptions = null;
+
+            if (trait.type == TraitType.Numerical) {
+              traitOptions = ['min : ' + trait.minValue(), 'max : ' + trait.maxValue()];
+            } else {
+              traitOptions = trait.getValues();
+            } // Clear the select list
+
+
+            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) {
+              paletteValueSelect.remove(i);
+            }
+
+            var _iterator2 = _createForOfIteratorHelper(traitOptions),
+                _step2;
+
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var value = _step2.value;
+                var opt = document.createElement('option');
+                opt.value = value;
+                opt.text = value;
+                paletteValueSelect.add(opt);
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+          });
+          paletteTraitSelect.value = this.dataSet.traitNames[0];
+          paletteValueSelect.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var color = null;
+
+            if (trait.type == TraitType.Numerical) {
+              var index = paletteValueSelect.selectedIndex;
+              color = index == 0 ? trait.getMinColor() : trait.getMaxColor();
+            } else {
+              color = trait.getColor(paletteValueSelect.selectedIndex);
+            }
+
+            paletteValueColor.setAttribute('value', color);
+          });
+          paletteValueColor.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var color = paletteValueColor.value;
+
+            if (trait.type == TraitType.Numerical) {
+              var index = paletteValueSelect.selectedIndex;
+              if (index == 0) trait.setMinColor(color);else trait.setMaxColor(color);
+            } else {
+              trait.setColor(paletteValueSelect.selectedIndex, color);
+            }
+
+            _this.genotypeCanvas.prerender(true);
           });
         } // Set the canvas controls only once we have a valid data set and color scheme
         // If they are set in the constructor, moving the mouse above the canvas before
@@ -5545,51 +5742,6 @@
     return GenotypeImporter;
   }();
 
-  var TraitType = {
-    Category: 0,
-    Numerical: 1
-  };
-  var Trait = /*#__PURE__*/function () {
-    function Trait(name, type, experiment) {
-      _classCallCheck(this, Trait);
-
-      this.name = name;
-      this.type = type;
-      this.experiment = experiment;
-      this.values = undefined;
-      this.longestValue = undefined;
-    }
-
-    _createClass(Trait, [{
-      key: "setValues",
-      value: function setValues(values) {
-        this.values = values;
-      }
-    }, {
-      key: "setScale",
-      value: function setScale(min, max) {
-        this.minValue = min;
-        this.maxValue = max;
-      }
-    }, {
-      key: "scaleValue",
-      value: function scaleValue(value) {
-        return (value - this.minValue) / (this.maxValue - this.minValue);
-      }
-    }, {
-      key: "getValue",
-      value: function getValue(value) {
-        if (this.type == TraitType.Category) {
-          return this.values[value];
-        } else {
-          return value;
-        }
-      }
-    }]);
-
-    return Trait;
-  }();
-
   var PhenotypeImporter = /*#__PURE__*/function () {
     function PhenotypeImporter() {
       _classCallCheck(this, PhenotypeImporter);
@@ -6198,15 +6350,39 @@
       if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.slice(1)).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
         var tab = document.createElement('div');
         tab.classList.add('bytes-tab');
-        var traitSelectLegend = document.createElement('div');
+        var traitSelectContainer = document.createElement('div');
+        traitSelectContainer.style["float"] = 'left';
+        var traitSelectLegend = document.createElement('p');
         var traitSelectLegendText = document.createTextNode('Traits to display');
         traitSelectLegend.appendChild(traitSelectLegendText);
         var traitSelect = document.createElement('select');
         traitSelect.id = 'displayTraitSelect';
         traitSelect.multiple = true;
         traitSelect.size = 5;
-        tab.appendChild(traitSelectLegend);
-        tab.appendChild(traitSelect);
+        traitSelectContainer.appendChild(traitSelectLegend);
+        traitSelectContainer.appendChild(traitSelect);
+        var paletteSelectContainer = document.createElement('div');
+        paletteSelectContainer.style["float"] = 'left';
+        paletteSelectContainer.style.marginLeft = '10px';
+        var paletteSelectLegend = document.createElement('p');
+        var paletteSelectLegendText = document.createTextNode('Trait colors');
+        paletteSelectLegend.appendChild(paletteSelectLegendText);
+        var paletteSelectTrait = document.createElement('select');
+        paletteSelectTrait.id = 'paletteTrait';
+        paletteSelectTrait.style.display = 'block';
+        var paletteSelectValue = document.createElement('select');
+        paletteSelectValue.id = 'paletteValue';
+        paletteSelectValue.style.display = 'block';
+        var paletteSelectColor = document.createElement('input');
+        paletteSelectColor.id = 'paletteColor';
+        paletteSelectColor.style.display = 'block';
+        paletteSelectColor.setAttribute('type', 'color');
+        paletteSelectContainer.appendChild(paletteSelectLegend);
+        paletteSelectContainer.appendChild(paletteSelectTrait);
+        paletteSelectContainer.appendChild(paletteSelectValue);
+        paletteSelectContainer.appendChild(paletteSelectColor);
+        tab.appendChild(traitSelectContainer);
+        tab.appendChild(paletteSelectContainer);
         return tab;
       }
     }
