@@ -853,7 +853,7 @@ public class GigwaRestController extends ControllerInterface {
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
-		LOG.debug("getSelectionIgvData processed range " + gir.getStart() + " - " + gir.getEnd() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
+		LOG.debug("getSelectionIgvData processed range " + gir.getDisplayedSequence() + ":" + gir.getDisplayedRangeMin() + "-" + gir.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
 	}
 
 	/**
