@@ -715,8 +715,8 @@ public class GigwaRestController extends ControllerInterface {
 			return;
         }
         
-        if (gir.getReferenceName() == null) {
-        	build400Response(resp, "Missing parameter: ReferenceName");
+        if (gir.getDisplayedSequence() == null) {
+        	build400Response(resp, "Missing parameter: displayedSequence");
         	return;
         }
         
