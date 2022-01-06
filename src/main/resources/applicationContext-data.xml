@@ -12,4 +12,4 @@
     
     <!-- Definition of a local host with authentication enabled -->
  	<mongo:mongo-client host="127.0.0.1" port="27017" id="localMongoHost" credential="XXXXX:YYYYY@admin" />
- </beans>
+</beans>

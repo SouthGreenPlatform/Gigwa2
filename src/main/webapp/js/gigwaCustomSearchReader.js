@@ -382,23 +382,23 @@ class GigwaSearchReader {
 			let query = {
 			    ...buildSearchQuery(2, 0),
 				variantSetId: getProjectId(),
-				referenceName: chr,
+				displayedSequence: chr,
 				callSetIds: self.header.callSetIds,
 			};
 			
 			if (overlap){
 				if (overlap[0] > bpStart){
 					// Shift to the left : only keep the interval left of the overlap
-					query.start = bpStart;
-					query.end = overlap[0];
+					query.displayedRangeMin = bpStart;
+					query.displayedRangeMax = overlap[0];
 				} else {
 					// Shift to the right : only keep the interval right of the overlap
-					query.start = overlap[1];
-					query.end = bpEnd;
+					query.displayedRangeMin = overlap[1];
+					query.displayedRangeMax = bpEnd;
 				}
 			} else {  // Full request
-				query.start = bpStart;
-				query.end = bpEnd;
+				query.displayedRangeMin = bpStart;
+				query.displayedRangeMax = bpEnd;
 			}
 						
 			let data = await $.ajax({
