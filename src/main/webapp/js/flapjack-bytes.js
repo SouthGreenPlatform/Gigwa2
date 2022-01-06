@@ -3064,7 +3064,7 @@
   var TraitType = {
     Category: 0,
     Numerical: 1
-  }; // Colors are in HSV (hue, saturation, value)
+  }; // Colors are stored as HSV (hue, saturation, value)
 
   var DEFAULT_HUE_MIN = 0;
   var DEFAULT_HUE_MAX = 120;
@@ -3081,6 +3081,7 @@
       this.experiment = experiment;
       this.values = undefined;
       this.colors = new Map();
+      this.customColors = new Set();
       this.longestValue = undefined;
       this.minValue = undefined;
       this.maxValue = undefined;
@@ -3100,8 +3101,8 @@
         if (this.type == TraitType.Category) {
           this.setCategoryColors();
         } else if (this.type == TraitType.Numerical) {
-          this.color.set(this.minValue, DEFAULT_GRADIENT_MIN);
-          this.color.set(this.maxValue, DEFAULT_GRADIENT_MAX);
+          this.colors.set(this.minValue, DEFAULT_GRADIENT_MIN);
+          this.colors.set(this.maxValue, DEFAULT_GRADIENT_MAX);
         }
       }
     }, {
@@ -3148,7 +3149,17 @@
     }, {
       key: "getColor",
       value: function getColor(value) {
-        var hsv = this.colors.get(value);
+        var hsv = null;
+
+        if (this.type == TraitType.Category) {
+          hsv = this.colors.get(value);
+        } else {
+          var minColor = this.colors.get(this.minValue);
+          var maxColor = this.colors.get(this.maxValue);
+          var normalized = this.scaleValue(value);
+          hsv = [(maxColor[0] - minColor[0]) * normalized + minColor[0], (maxColor[1] - minColor[1]) * normalized + minColor[1], (maxColor[2] - minColor[2]) * normalized + minColor[2]];
+        }
+
         var rgb = this.hsv2rgb(hsv[0], hsv[1], hsv[2]);
         var hexa = '#' + (1 << 24 | Math.floor(rgb[0] * 255) << 16 | Math.floor(rgb[1] * 255) << 8 | Math.floor(rgb[2] * 255)).toString(16).slice(1);
         return hexa;
@@ -3169,6 +3180,35 @@
         var rgb = [parseInt(color.slice(1, 3), 16) / 255, parseInt(color.slice(3, 5), 16) / 255, parseInt(color.slice(5, 7), 16) / 255];
         var hsv = this.rgb2hsv(rgb[0], rgb[1], rgb[2]);
         this.colors.set(value, hsv);
+        this.customColors.add(value);
+      }
+    }, {
+      key: "setHSVColor",
+      value: function setHSVColor(value, color) {
+        this.colors.set(value, color);
+        this.customColors.add(value);
+      }
+    }, {
+      key: "getCustomColors",
+      value: function getCustomColors() {
+        var customMap = new Map();
+
+        var _iterator = _createForOfIteratorHelper(this.customColors),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var value = _step.value;
+            var color = this.colors.get(value);
+            customMap.set(value, color);
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+
+        return customMap;
       } // From https://stackoverflow.com/a/54024653
 
     }, {
@@ -3864,7 +3904,20 @@
         var _this = this;
 
         this.dataSet = dataSet;
-        var settings = this.loadDefaultSettings(this.dataSet.id); // Initialize the components
+        var settings = this.loadDefaultSettings(this.dataSet.id);
+
+        if (settings.traitColors != null && this.dataSet.hasTraits()) {
+          for (var traitName in settings.traitColors) {
+            var trait = this.dataSet.getTrait(traitName);
+
+            if (trait !== undefined) {
+              for (var value in settings.traitColors[traitName]) {
+                trait.setHSVColor(parseFloat(value), settings.traitColors[traitName][value]);
+              }
+            }
+          }
+        } // Initialize the components
+
 
         this.genotypeCanvas.init(dataSet, settings);
         this.genotypeCanvas.prerender(true);
@@ -4001,11 +4054,11 @@
           });
           sortTraitSelect.addEventListener('change', function (event) {
             if (!sortTraitSelect.disabled) {
-              var traitName = sortTraitSelect.options[sortTraitSelect.selectedIndex].value;
+              var _traitName = sortTraitSelect.options[sortTraitSelect.selectedIndex].value;
 
-              _this.setLineSort(new TraitLineSort(traitName));
+              _this.setLineSort(new TraitLineSort(_traitName));
 
-              _this.saveSetting("sortReference", traitName);
+              _this.saveSetting("sortReference", _traitName);
             }
           });
           var displayTraitSelect = document.getElementById('displayTraitSelect');
@@ -4048,7 +4101,7 @@
             var traitOptions = null;
 
             if (trait.type == TraitType.Numerical) {
-              traitOptions = ['min : ' + trait.minValue(), 'max : ' + trait.maxValue()];
+              traitOptions = ['min : ' + trait.minValue, 'max : ' + trait.maxValue];
             } else {
               traitOptions = trait.getValues();
             } // Clear the select list
@@ -4063,10 +4116,10 @@
 
             try {
               for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                var value = _step2.value;
+                var _value = _step2.value;
                 var opt = document.createElement('option');
-                opt.value = value;
-                opt.text = value;
+                opt.value = _value;
+                opt.text = _value;
                 paletteValueSelect.add(opt);
               }
             } catch (err) {
@@ -4074,8 +4127,12 @@
             } finally {
               _iterator2.f();
             }
+
+            paletteValueSelect.selectedIndex = 0;
+            paletteValueSelect.dispatchEvent(new Event('change'));
           });
           paletteTraitSelect.value = this.dataSet.traitNames[0];
+          paletteTraitSelect.dispatchEvent(new Event('change'));
           paletteValueSelect.addEventListener('change', function (event) {
             var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
 
@@ -4090,8 +4147,9 @@
               color = trait.getColor(paletteValueSelect.selectedIndex);
             }
 
-            paletteValueColor.setAttribute('value', color);
+            paletteValueColor.value = color;
           });
+          paletteValueSelect.dispatchEvent(new Event('change'));
           paletteValueColor.addEventListener('change', function (event) {
             var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
 
@@ -4107,6 +4165,8 @@
             }
 
             _this.genotypeCanvas.prerender(true);
+
+            _this.saveColors();
           });
         } // Set the canvas controls only once we have a valid data set and color scheme
         // If they are set in the constructor, moving the mouse above the canvas before
@@ -4327,6 +4387,30 @@
         return localStorage.getItem(mangledKey);
       }
     }, {
+      key: "saveColors",
+      value: function saveColors() {
+        if (this.saveSettings) {
+          var jsonColors = {};
+
+          var _iterator3 = _createForOfIteratorHelper(this.dataSet.traitNames),
+              _step3;
+
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var traitName = _step3.value;
+              var customColors = this.dataSet.getTrait(traitName).getCustomColors();
+              if (customColors.size > 0) jsonColors[traitName] = Object.fromEntries(customColors);
+            }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
+          }
+
+          this.saveSetting('traitColors', JSON.stringify(jsonColors));
+        }
+      }
+    }, {
       key: "loadDefaultSettings",
       value: function loadDefaultSettings() {
         var sortId = this.loadSetting("sort");
@@ -4334,6 +4418,7 @@
         var colorSchemeId = this.loadSetting("colorScheme");
         var colorReference = this.loadSetting("colorReference");
         var displayTraits = this.loadSetting("displayTraits");
+        var customColors = this.loadSetting("traitColors");
         var settings = {
           colorReference: colorReference,
           sortReference: sortReference,
@@ -4341,7 +4426,8 @@
           lineSort: new ImportingOrderLineSort(),
           lineSortId: "importing",
           colorScheme: new NucleotideColorScheme(this.dataSet),
-          colorSchemeId: "nucleotide"
+          colorSchemeId: "nucleotide",
+          traitColors: customColors == null ? {} : JSON.parse(customColors)
         };
 
         switch (sortId) {
@@ -4356,7 +4442,7 @@
             break;
 
           case "trait":
-            if (this.dataSet.hasTraits() && dataSet.getTrait(sortReference) !== undefined) {
+            if (this.dataSet.hasTraits() && this.dataSet.getTrait(sortReference) !== undefined) {
               settings.lineSort = new TraitLineSort(sortReference);
               settings.lineSortId = "trait";
             }
