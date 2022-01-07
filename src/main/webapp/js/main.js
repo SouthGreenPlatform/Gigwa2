@@ -687,20 +687,21 @@ function markAsMissingData(individual) {
 }
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
-	var selectedIndividuals = new Set();
-	var groups = groupNumber == null ? [1, 2] : [groupNumber];
-	var ga4ghId = getProjectId() + "§";
-	for (var groupKey in groups)
+	const selectedIndividuals = new Set();
+	const groups = groupNumber == null ? [1, 2] : [groupNumber];
+	const ga4ghId = getProjectId() + "§";
+	for (let groupKey in groups)
 	{
-		var groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('value');
+	    const groupIndex = groups[groupKey];
+		let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
 		if (groupIndividuals == null)
-			groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('option');
+			groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
 		// All individuals are selected in a single group, no need to look further
 		if (groupIndividuals.length == indCount)
 		    return [];
-		groupIndividuals.forEach(function (individual) {
-		    selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + individual);
-		});
+		
+		for (let indKey in groupIndividuals)
+			selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
 	}
 	return selectedIndividuals.size == indCount ? [] : Array.from(selectedIndividuals);
 }
