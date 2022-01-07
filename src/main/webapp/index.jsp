@@ -580,7 +580,7 @@
 						gotMetaData = true;
 					if (gotMetaData)
 						for (var key in callSetResponse[ind].info)
-							if (!arrayContains(headers, key))
+							if (!headers.includes(key))
 								headers.push(key);
 					if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
 						indOpt.push(callSetResponse[ind].name);
@@ -941,8 +941,8 @@
 		{
 			var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
 			htmlTableContents.append('<tr>');
-			var inGroup1 = indArray1.length == 0 || arrayContains(indArray1, gtTable[row][0]);
-			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || arrayContains(getSelectedIndividuals(2), gtTable[row][0]));
+			var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
+			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
 			for (var i=0; i<tableHeader.length; i++)
 			{
 				var indivClass = inGroup1 ? (inGroup2 ? "groups1and2" : "group1") : (inGroup2 ? "group2" : "");
@@ -1115,7 +1115,7 @@
 			supportedTypes = supportedTypes.split(";");
 			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
 			for (var i in selectedTypes)
-				if (!arrayContains(supportedTypes, selectedTypes[i])) {
+				if (!supportedTypes.includes(selectedTypes[i])) {
 					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
 					return;
 				}
@@ -1124,7 +1124,7 @@
 		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
 			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
 			console.log(supportedPloidyLevels);
-			if (!arrayContains(supportedPloidyLevels, ploidy)) {
+			if (!supportedPloidyLevels.includes(ploidy)) {
 				alert("Error: selected export format does not support ploidy level " + ploidy);
 				return;
 			}
@@ -1249,7 +1249,7 @@
 				var toolConfig = getOutputToolConfig(toolName);
 				var buttonsForThisTool = "";
 				for (var key in archivedDataFiles)
-					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || arrayContains(toolConfig['formats'].toUpperCase().split(","), $('#exportFormat').val().toUpperCase())))
+					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
 						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
 				
 				if (buttonsForThisTool != "");
