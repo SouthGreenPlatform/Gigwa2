@@ -698,8 +698,9 @@ function getSelectedIndividuals(groupNumber, provideGa4ghId) {
 		// All individuals are selected in a single group, no need to look further
 		if (groupIndividuals.length == indCount)
 		    return [];
-		for (var indKey in groupIndividuals)
-			selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+		groupIndividuals.forEach(function (individual) {
+		    selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + individual);
+		});
 	}
 	return selectedIndividuals.size == indCount ? [] : Array.from(selectedIndividuals);
 }
