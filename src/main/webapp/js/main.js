@@ -27,14 +27,6 @@ function isHex(h) {
 	return (a.toString(16) === h.toLowerCase())
 }
 
-function arrayContains(array, element) 
-{
-	for (var i = 0; i < array.length; i++) 
-		if (array[i] == element) 
-			return true;
-	return false;
-};
-
 function arrayContainsIgnoreCase(array, element)
 {
 	for (var i = 0; i < array.length; i++) 
@@ -672,7 +664,7 @@ function markInconsistentGenotypesAsMissing() {
 				genotypes = new Array();
 
 			var genotype = $(this).find("td:eq(0)").html().trim();
-			if (!arrayContains(genotypes, genotype))
+			if (!genotypes.includes(genotype))
 				genotypes.push(genotype);
 			indivGenotypes[individual] = genotypes;
 
@@ -695,19 +687,23 @@ function markAsMissingData(individual) {
 }
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
-	var selectedIndividuals = [];
-	var groups = groupNumber == null ? [1, 2] : [groupNumber];
-	var ga4ghId = getProjectId() + "§";
-	for (var groupKey in groups)
+	const selectedIndividuals = new Set();
+	const groups = groupNumber == null ? [1, 2] : [groupNumber];
+	const ga4ghId = getProjectId() + "§";
+	for (let groupKey in groups)
 	{
-		var groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('value');
+	    const groupIndex = groups[groupKey];
+		let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
 		if (groupIndividuals == null)
-			groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('option')
-		for (var indKey in groupIndividuals)
-			if (!arrayContains(selectedIndividuals, groupIndividuals[indKey]))
-				selectedIndividuals.push((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+			groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
+		// All individuals are selected in a single group, no need to look further
+		if (groupIndividuals.length == indCount)
+		    return [];
+		
+		for (let indKey in groupIndividuals)
+			selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
 	}
-	return selectedIndividuals.length == indCount ? [] : selectedIndividuals;
+	return selectedIndividuals.size == indCount ? [] : Array.from(selectedIndividuals);
 }
 
 function getAllSelectedIndividuals(provideGa4ghId){
@@ -733,7 +729,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 {
 	var annotationFieldThresholds1 = {}, annotationFieldThresholds2 = {}, result = {};
 
-	var inGroup1 = indArray1.length == 0 || arrayContains(indArray1, individual);
+	var inGroup1 = indArray1.length == 0 || indArray1.includes(individual);
 	if (inGroup1)
 		$('#vcfFieldFilterGroup1 input').each(function() {
 			var value = $(this).val();
@@ -741,7 +737,7 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 				result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseFloat(value);
 		});
 	
-	var inGroup2 = indArray2.length == 0 || arrayContains(indArray2, individual);
+	var inGroup2 = indArray2.length == 0 || indArray2.includes(individual);
 	if (inGroup2)
 		$('#vcfFieldFilterGroup2 input').each(function() {
 			var value = $(this).val();
@@ -937,7 +933,7 @@ function addSelectionDropDownsToHeaders(tableObj)
 			{
 				if (containsHtmlTags(tableObj.rows[r].cells[c].innerHTML))
 					continue mainLoop;	// we don't create filter drop-downs for HTML contents
-				if (!arrayContains(distinctValuesForColumn, tableObj.rows[r].cells[c].innerHTML))
+				if (!distinctValuesForColumn.includes(tableObj.rows[r].cells[c].innerHTML))
 					distinctValuesForColumn[distinctValuesForColumn.length] = tableObj.rows[r].cells[c].innerHTML;
 			}
 
@@ -984,7 +980,7 @@ function applyDropDownFiltersToTable(tableObj)
 			if (filtersToColumns[c] != null)
 			{
 				var selection = $(filtersToColumns[c]).val();
-				if (selection != null && tableObj.rows[r].cells[c] != null && !arrayContains(selection, tableObj.rows[r].cells[c].innerHTML))
+				if (selection != null && tableObj.rows[r].cells[c] != null && !selection.includes(tableObj.rows[r].cells[c].innerHTML))
 				{
 					displayVal = "none";
 					if (r > 1)
