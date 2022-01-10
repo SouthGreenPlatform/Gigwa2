@@ -288,7 +288,7 @@ function manualDisplayButton(manualDisplay){
     return html;
 }
 
-function setChartType(typeSelect){
+function setChartType(typeSelect) {
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
     const typeInfo = chartTypes.get(currentChartType);
     
@@ -331,6 +331,8 @@ function abortOngoingOperation(){
         success: function (jsonResult) {
             if (!jsonResult.processAborted)
                 console.log("Unable to abort!");
+            else
+                dataBeingLoaded = false;
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -392,6 +394,9 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 function loadChart(minPos, maxPos) {    
     const typeInfo = chartTypes.get(currentChartType);
     
+    if (dataBeingLoaded)
+        abortOngoingOperation();
+    
     var zoomApplied = minPos != null && maxPos != null;
     if (!typeInfo.manualDisplay || zoomApplied)
         displayChart(minPos, maxPos);
@@ -420,9 +425,6 @@ function displayChart(minPos, maxPos){
     if (typeInfo.buildRequestPayload !== undefined)
         dataPayLoad = typeInfo.buildRequestPayload(dataPayLoad);
         if (dataPayLoad === null) return;
-    
-    if (dataBeingLoaded)
-        abortOngoingOperation();
 
     $.ajax({
         url: typeInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
@@ -496,7 +498,7 @@ function displayChart(minPos, maxPos){
                 }
             });
             
-            for (let seriesIndex in typeInfo.series){
+            for (let seriesIndex in typeInfo.series) {
                 const series = typeInfo.series[seriesIndex];
                 const seriesData = (typeInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
                 const seriesValues = new Array();
@@ -721,3 +723,10 @@ function setFstGroupingOption() {
         $("#plotMetadata").css("display", "none");
     }
 }
+
+$(document).on("ready", function() {
+    $("#density").on("hidden.bs.modal", function () {
+        if (dataBeingLoaded)
+            abortOngoingOperation();
+    });
+});
