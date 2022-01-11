@@ -3097,6 +3097,12 @@
       value: function setScale(min, max) {
         this.minValue = min;
         this.maxValue = max;
+        this.resetColors();
+      }
+    }, {
+      key: "resetColors",
+      value: function resetColors() {
+        this.customColors.clear();
 
         if (this.type == TraitType.Category) {
           this.setCategoryColors();
@@ -4087,6 +4093,7 @@
           var paletteTraitSelect = document.getElementById('paletteTrait');
           var paletteValueSelect = document.getElementById('paletteValue');
           var paletteValueColor = document.getElementById('paletteColor');
+          var paletteResetButton = document.getElementById('paletteReset');
           this.dataSet.traitNames.forEach(function (traitName) {
             var opt = document.createElement('option');
             opt.value = traitName;
@@ -4165,6 +4172,19 @@
             }
 
             _this.genotypeCanvas.prerender(true);
+
+            _this.saveColors();
+          });
+          paletteResetButton.addEventListener('click', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            trait.resetColors();
+
+            _this.genotypeCanvas.prerender(true);
+
+            paletteValueSelect.dispatchEvent(new Event('change'));
 
             _this.saveColors();
           });
@@ -6463,10 +6483,15 @@
         paletteSelectColor.id = 'paletteColor';
         paletteSelectColor.style.display = 'block';
         paletteSelectColor.setAttribute('type', 'color');
+        var paletteResetButton = document.createElement('button');
+        var paletteResetLegend = document.createTextNode("Reset this trait's colors");
+        paletteResetButton.appendChild(paletteResetLegend);
+        paletteResetButton.id = 'paletteReset';
         paletteSelectContainer.appendChild(paletteSelectLegend);
         paletteSelectContainer.appendChild(paletteSelectTrait);
         paletteSelectContainer.appendChild(paletteSelectValue);
         paletteSelectContainer.appendChild(paletteSelectColor);
+        paletteSelectContainer.appendChild(paletteResetButton);
         tab.appendChild(traitSelectContainer);
         tab.appendChild(paletteSelectContainer);
         return tab;
