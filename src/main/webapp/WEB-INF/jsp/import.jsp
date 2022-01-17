@@ -263,7 +263,7 @@
               		maxFiles: 2,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.genotype",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
@@ -783,7 +783,7 @@
                                 <div class ="row">
                                     <div class="col-md-1" style="text-align:right;"></div>
                                     <div class="col-md-10">
-                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / BrAPI format</h4>
+                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / Flapjack / BrAPI format</h4>
 											<p class="margin-top-md text-red">Properties followed by * are required</p>
                                     </div>
                                 </div>
@@ -915,7 +915,8 @@
 				       										<b>Accepted extensions:</b>
 				       										<br/>.vcf
 				       										<br/>.hapmap or .txt
-														<br/>.ped + .map
+															<br/>.ped + .map
+															<br/>.genotype + .map
 				       									</div>
 			       									</div>
 			                                    </div>

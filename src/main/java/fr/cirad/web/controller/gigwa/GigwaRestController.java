@@ -99,6 +99,7 @@ import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
+import fr.cirad.mgdb.importing.FlapjackImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
 import fr.cirad.mgdb.importing.PlinkImport;
@@ -1592,11 +1593,23 @@ public class GigwaRestController extends ControllerInterface {
 				fileToDelete.delete();
 		else if (fGotDataToImport)
 		{
-			if (filesByExtension.size() == 2 && (!filesByExtension.containsKey("ped") || !filesByExtension.containsKey("map")))
-				progress.setError("Dual-file import must consist in map + ped!");
-			if (filesByExtension.containsKey("ped") != filesByExtension.containsKey("map"))
-				progress.setError("For PLINK format import, both files (map + ped) must be supplied!");
-
+			if (filesByExtension.size() == 2) {
+				if (!filesByExtension.containsKey("map") || (!filesByExtension.containsKey("ped") && !filesByExtension.containsKey("genotype")))
+					progress.setError("Dual-file import must be PLINK (map + ped) or Flapjack (map + genotype)");
+				else if (filesByExtension.containsKey("ped") && !filesByExtension.containsKey("map"))
+					progress.setError("For PLINK format import, the PED file must be associated with a map file");
+				else if (filesByExtension.containsKey("genotype") && !filesByExtension.containsKey("map"))
+					progress.setError("For Flapjack format import, the genotype file must be associated with a map file");
+			} 
+			// Only one file when supposed to be dual-file
+			else if (filesByExtension.containsKey("map")) {
+				progress.setError("A map file must be associated with a data file");
+			} else if (filesByExtension.containsKey("genotype")) {
+				progress.setError("For Flapjack format import, both files (map + genotype) must be supplied");
+			} else if (filesByExtension.containsKey("ped")) {
+				progress.setError("For PLINK format import, both files (map + ped) must be supplied");
+			}
+			
 			String referer = request.getHeader("referer");
 			String remoteAddr = referer != null ? new URI(referer).getHost() // we give priority to the referer 
 				: request.getHeader("X-Forwarded-Server"); // in case the app is running behind a proxy
@@ -1706,6 +1719,12 @@ public class GigwaRestController extends ControllerInterface {
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									}
+									else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
+										Serializable mapFile = filesByExtension.get("map");
+										boolean fIsLocalFile = mapFile instanceof File;
+										newProjId = new FlapjackImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+
 									}
 									else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
