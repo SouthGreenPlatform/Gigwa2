@@ -22,7 +22,7 @@ let localmin, localmax;
 let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
-let progressIntervalId = null;
+let progressTimeoutId = null;
 const chartTypes = new Map([
     ["density", {
         displayName: "Density",
@@ -282,7 +282,7 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     loadChart();
 }
 
-function manualDisplayButton(manualDisplay){
+function manualDisplayButton(manualDisplay) {
     let html = "";
     if (manualDisplay)
         html += '<div class="col-md-1"><button class="btn btn-success" onclick="displayChart()">Show</button></div>';
@@ -334,7 +334,8 @@ function abortOngoingOperation() {
                 console.log("Unable to abort!");
             } else {
                 dataBeingLoaded = false;
-                clearInterval(progressIntervalId);
+                if (progressTimeoutId != null)
+                    clearTimeout(progressTimeoutId);
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -397,9 +398,6 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 function loadChart(minPos, maxPos) {    
     const typeInfo = chartTypes.get(currentChartType);
     
-    if (dataBeingLoaded)
-        abortOngoingOperation();
-    
     var zoomApplied = minPos != null && maxPos != null;
     if (!typeInfo.manualDisplay || zoomApplied)
         displayChart(minPos, maxPos);
@@ -407,7 +405,7 @@ function loadChart(minPos, maxPos) {
         $("div#chartContainer div#additionalCharts").show();
 }
 
-function displayChart(minPos, maxPos){
+function displayChart(minPos, maxPos) {
     localmin = minPos;
     localmax = maxPos;
     const typeInfo = chartTypes.get(currentChartType);
@@ -415,11 +413,16 @@ function displayChart(minPos, maxPos){
     var zoomApplied = minPos != null && maxPos != null;
     $("input#resetZoom").toggle(zoomApplied);
     
+    if (dataBeingLoaded)
+        abortOngoingOperation();
+    
     if (chart != null) {
-        if (zoomApplied)
+        if (zoomApplied) {
             chart.showLoading("Zooming in...");
-        else if (!dataBeingLoaded)
+        } else if (!dataBeingLoaded) {
             chart.destroy();
+            chart = null;
+        }
     }
     
     var displayedSequence = $("select#chartSequenceList").val();
@@ -540,6 +543,7 @@ function displayChart(minPos, maxPos){
             handleError(xhr, thrownError);
         }
     });
+    dataBeingLoaded = true;
     monitorProgress();
 }
 
@@ -602,14 +606,15 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
             $('.showHideSeriesBox').prop('disabled', false);
         }
     });
+    dataBeingLoaded = true;
     monitorProgress();
 }
 
 function monitorProgress() {
     // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
-    if (progressIntervalId != null)
-        clearInterval(progressIntervalId);
-    progressIntervalId = setInterval(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+    if (progressTimeoutId != null)
+        clearTimeout(progressTimeoutId);
+    progressTimeoutId = setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
 }
 
 function checkChartLoadingProgress() {
@@ -625,7 +630,7 @@ function checkChartLoadingProgress() {
             {
                 $("div#densityLoadProgress").html("");
                 dataBeingLoaded = false;	// complete
-                clearInterval(progressIntervalId);
+                progressTimeoutId = null;
             }
             else
             {
@@ -635,11 +640,12 @@ function checkChartLoadingProgress() {
                     parent.totalRecordCount = 0;
                     alert("Error occured:\n\n" + jsonResult['error']);
                     $('#density').modal('hide');
-                    clearInterval(progressIntervalId);
+                    progressTimeoutId = null;
                 }
                 else
                 {
                     $('div#densityLoadProgress').html(jsonResult['progressDescription']);
+                    setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
                 }
             }
         },
