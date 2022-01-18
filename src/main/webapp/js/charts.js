@@ -42,7 +42,7 @@ const chartTypes = new Map([
                 content += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
                 $("#vcfFieldFilterGroup1 input").each(function(index) {
                     let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
+                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> Cumulated ' + fieldName + ' data</div>';
                 });
                 content += "</div>"
                 if (getGenotypeInvestigationMode() != 0)
@@ -149,7 +149,7 @@ const chartTypes = new Map([
                 content += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
                 $("#vcfFieldFilterGroup1 input").each(function(index) {
                     let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + 1) + ')"> Cumulated ' + fieldName + ' data</div>';
+                    content += '<div><input type="checkbox" class="showHideSeriesBox" onchange="dispayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> Cumulated ' + fieldName + ' data</div>';
                 });
                 content += "</div>";
             }
