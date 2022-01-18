@@ -14,7 +14,7 @@
  * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
  * Public License V3.
  *******************************************************************************/
-var minimumProcessQueryIntervalUnit = 750;
+var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
 var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
@@ -35,7 +35,6 @@ const chartTypes = new Map([
             enableMarker: false,
             lineWidth: 2,
         }],
-        manualDisplay: false,
     }],
     ["fst", {
         displayName: "Fst",
@@ -48,7 +47,6 @@ const chartTypes = new Map([
             enableMarker: true,
             lineWidth: 2,
         }],
-        manualDisplay: true,
         enableCondition: function (){
             if (genotypeInvestigationMode != 2 && !gotMetaData){
                 return "Fst is only defined with at least two groups. You need to set investigation groups or metadata.";
@@ -61,7 +59,7 @@ const chartTypes = new Map([
             }
         },
         buildCustomisation: function (){
-            return ('<div id="fstThresholdGroup" class="col-md-2"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> Show threshold<br />' +
+            return ('<div id="fstThresholdGroup" class="col-md-2"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /><label for="showFstThreshold">Show threshold</label><br />' +
                         'Significance threshold : <input id="fstThreshold" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" />' +
                     '</div><div id="plotGroups" class="col-md-3">' +
                         'Group by <select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
@@ -121,7 +119,6 @@ const chartTypes = new Map([
                 lineWidth: 1,
             },
         ],
-        manualDisplay: true,
         enableCondition: function (){
             if (ploidy != 2){
                 return "Ploidy levels other than 2 are not supported";
@@ -258,7 +255,7 @@ function buildCustomisationDiv(chartInfo) {
         customisationDivHTML += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
         $("#vcfFieldFilterGroup1 input").each(function(index) {
             let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-            customisationDivHTML += '<div><input type="checkbox" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> Cumulated ' + fieldName + ' data</div>';
+            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
         });
         customisationDivHTML += "</div>"
         if (getGenotypeInvestigationMode() != 0)
@@ -268,16 +265,17 @@ function buildCustomisationDiv(chartInfo) {
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
     
-    customisationDivHTML += manualDisplayButton(chartInfo.manualDisplay);
+    customisationDivHTML += '<div class="col-md-1"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort()">Show</button></div>';
     
     $("#chartTypeCustomisationOptions").html(customisationDivHTML)
 }
 
-function manualDisplayButton(manualDisplay) {
-    let html = "";
-    if (manualDisplay)
-        html += '<div class="col-md-1"><button class="btn btn-success" onclick="displayChart()">Show</button></div>';
-    return html;
+function displayOrAbort() {
+    if (dataBeingLoaded) {
+        abortOngoingOperation();
+    } else {
+        displayChart();
+    }
 }
 
 function setChartType(typeSelect) {
@@ -307,28 +305,6 @@ function setChartType(typeSelect) {
         typeInfo.onLoad();
     
     loadChart();
-}
-
-function abortOngoingOperation() {
-    $.ajax({
-        url: abortUrl,
-        type: "DELETE",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
-        success: function (jsonResult) {
-            if (!jsonResult.processAborted) {
-                console.log("Unable to abort!");
-            } else {
-                dataBeingLoaded = false;
-                if (progressTimeoutId != null)
-                    clearTimeout(progressTimeoutId);
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            handleError(xhr, thrownError);
-        }
-    });
 }
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
@@ -386,9 +362,9 @@ function loadChart(minPos, maxPos) {
     const typeInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
-    if (!typeInfo.manualDisplay || zoomApplied)
+    if (zoomApplied)
         displayChart(minPos, maxPos);
-    else if (typeInfo.manualDisplay)
+    else
         $("div#chartContainer div#additionalCharts").show();
 }
 
@@ -530,8 +506,7 @@ function displayChart(minPos, maxPos) {
             handleError(xhr, thrownError);
         }
     });
-    dataBeingLoaded = true;
-    monitorProgress();
+    startProcess();
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
@@ -587,21 +562,69 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
+            finishProcess();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
+            finishProcess();
         }
     });
-    dataBeingLoaded = true;
-    monitorProgress();
+    startProcess();
 }
 
-function monitorProgress() {
+function startProcess() {
     // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
     if (progressTimeoutId != null)
         clearTimeout(progressTimeoutId);
+    dataBeingLoaded = true;
+    
+    $("#chartTypeList").prop("disabled", true);
+    $("#chartSequenceList").prop("disabled", true);
+    $("#chartVariantTypeList").prop("disabled", true);
+    
+    $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
+    
     progressTimeoutId = setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+}
+
+function finishProcess() {
+    if (dataBeingLoaded) {
+        dataBeingLoaded = false;
+        
+        $("div#densityLoadProgress").html("");
+        
+        $("#chartTypeList").prop("disabled", false);
+        $("#chartSequenceList").prop("disabled", false);
+        $("#chartVariantTypeList").prop("disabled", false);
+        
+        if (progressTimeoutId != null) {
+            clearTimeout(progressTimeoutId);
+            progressTimeoutId = null;
+        }
+        
+        $("#showChartButton").addClass("btn-success").removeClass("btn-danger").html("Show");
+    }
+}
+
+function abortOngoingOperation() {
+    $.ajax({
+        url: abortUrl,
+        type: "DELETE",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+            if (!jsonResult.processAborted) {
+                console.log("Unable to abort!");
+            } else {
+                finishProcess();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
 }
 
 function checkChartLoadingProgress() {
@@ -613,24 +636,19 @@ function checkChartLoadingProgress() {
             "Authorization": "Bearer " + token
         },
         success: function(jsonResult) {
-            if (jsonResult == null)
-            {
-                $("div#densityLoadProgress").html("");
-                dataBeingLoaded = false;	// complete
-                progressTimeoutId = null;
+            if (jsonResult == null) {
+                finishProcess();
             }
             else
             {
                 dataBeingLoaded = true;	// still running
-                if (jsonResult['error'] != null)
-                {
+                if (jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
                     alert("Error occured:\n\n" + jsonResult['error']);
+                    finishProcess();
                     $('#density').modal('hide');
-                    progressTimeoutId = null;
                 }
-                else
-                {
+                else {
                     $('div#densityLoadProgress').html(jsonResult['progressDescription']);
                     setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
                 }
@@ -668,6 +686,9 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
 }
 
 function displayOrHideThreshold(isChecked) {
+    if (chart === null)
+        return;
+    
     const typeInfo = chartTypes.get(currentChartType);
     if (isChecked) {
         const threshold = parseFloat($("#fstThreshold").val());
@@ -733,6 +754,11 @@ function setFstGroupingOption() {
 
 $(document).on("ready", function() {
     $("#density").on("hidden.bs.modal", function () {
+        if (dataBeingLoaded)
+            abortOngoingOperation();
+    });
+    
+    $(window).on('beforeunload', function() {
         if (dataBeingLoaded)
             abortOngoingOperation();
     });
