@@ -140,40 +140,14 @@ class GigwaVariant {
 			{name: "Chr", value: this.chr},
 			{name: "Pos", value: posString},
 			{name: "Loc", value: locString},
-			//{name: "Names", value: this.names ? this.names : ""},
 			{name: "Ref", value: this.referenceBases},
 			{name: "Alt", value: this.alternateBases.replace("<", "&lt;")},
-			//{name: "Qual", value: this.quality},
-			//{name: "Filter", value: this.filter},
 			{html: ' <a href="#" onclick="variantId=\'' + self.id + '\';loadVariantAnnotationData();">More info</a>'},
 		];
-
-		/*if ("SNP" === this.type) {
-			let ref = this.referenceBases;
-			if (ref.length === 1) {
-				for (let alt of this.alternateBases) {
-					if (alt.length === 1) {
-						let l = TrackBase.getCravatLink(this.chr, this.pos, ref, alt, genomeId)
-						if (l) {
-							fields.push('<hr/>');
-							fields.push({html: l});
-						}
-					}
-				}
-			}
-		}*/
 
 		if (this.hasOwnProperty("heterozygosity")) {
 			fields.push({name: "Heterozygosity", value: this.heterozygosity});
 		}
-
-		// No info in this service
-		/*if (this.info) {
-			fields.push({html: '<hr style="border-top: dotted 1px;border-color: #c9c3ba" />'});
-			for (let key of Object.keys(this.info)) {
-				fields.push({name: key, value: arrayToString(decodeURIComponent(this.info[key]))});
-			}
-		}*/
 
 		return fields;
 
@@ -316,11 +290,11 @@ class GigwaSearchReader {
 	 * Each new promise gets its own parameters, and the results from its predecessor on the chain
 	 * This allows to request only the necessary data from the server, and to limit simultaneous, redundant requests
 	 */
-	async readFeatures(chr, bpStart, bpEnd){
+	async readFeatures(chr, bpStart, bpEnd) {
 		if (!self.header) await this.readHeader();
 		
 		this.lastIndex += 1;
-		if (this.lastRead){
+		if (this.lastRead) {
 			this.lastRead = this.lastRead.then(this.retrieveFeatures(this.lastIndex, chr, bpStart, bpEnd));
 		} else {
 			this.lastRead = this.retrieveFeatures(this.lastIndex, chr, bpStart, bpEnd)({chr: null, start: -1, end: -1, features: [], result: []});
@@ -331,7 +305,7 @@ class GigwaSearchReader {
 	
 	// Return an async function to chain after the last one
 	// A closure is necessary as the chained promise must get the return value from its predecessor and its own parameters
-	retrieveFeatures(chainIndex, igvChr, bpStart, bpEnd){
+	retrieveFeatures(chainIndex, igvChr, bpStart, bpEnd) {
 		let self = this;
 		let searchStart = getSearchMinPosition();
 		let searchEnd = getSearchMaxPosition();
@@ -344,12 +318,12 @@ class GigwaSearchReader {
 		
 		// Function to chain
 		async function requestChain(previousResult){
-		    if (self.lastIndex > chainIndex){  // Not the latest request : pass the cached features to the next promise, do not draw anything for this call
+		    if (self.lastIndex > chainIndex) {  // Not the latest request : pass the cached features to the next promise, do not draw anything for this call
 		        return {chr: previousResult.chr, start: previousResult.start, end: previousResult.end, features: previousResult.features, result: []};
 		    }
 		    
-			if (!chr){  // Chromosome not found, probably because gigwa has no data for it
-				if (self.lastIGVChromosome != igvChr){
+			if (!chr) {  // Chromosome not found, probably because gigwa has no data for it
+				if (self.lastIGVChromosome != igvChr) {
 					displayMessage("No data found for the sequence " + igvChr + " in Gigwa");
 				}
 				return {chr: null, start: -1, end: -1, features: [], result: []};
@@ -386,8 +360,8 @@ class GigwaSearchReader {
 				callSetIds: self.header.callSetIds,
 			};
 			
-			if (overlap){
-				if (overlap[0] > bpStart){
+			if (overlap) {
+				if (overlap[0] > bpStart) {
 					// Shift to the left : only keep the interval left of the overlap
 					query.displayedRangeMin = bpStart;
 					query.displayedRangeMax = overlap[0];
