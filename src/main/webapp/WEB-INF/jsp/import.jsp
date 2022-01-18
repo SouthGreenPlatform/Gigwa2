@@ -283,7 +283,7 @@
                     		maxFiles: 1,
                     		previewsContainer: "#dropZonePreviewsMD",
                     	    dictResponseError: 'Error importing data',
-                    	    acceptedFiles: ".tsv,.csv",
+                    	    acceptedFiles: ".tsv,.csv,.phenotype",
                     	  	headers: {
                     	  		"Authorization": "Bearer " + token
                     	  	},
@@ -945,8 +945,8 @@
                                 <div class="col-md-4">
                                 	<div style="position:absolute; margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
                                 		<p>Providing metadata for individuals will enable users to select them by filtering on that metadata.</p>
-                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension).</p>
-                                		<p>The first row in the file (header) must contain field labels, one of them must be named "individual".</p>
+                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
+                                		<p>The first row in TSV file (header) must contain field labels, one of them must be named "individual".</p>
                                 		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
                                 		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
 										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
@@ -990,6 +990,7 @@
     										<b>Accepted extensions:</b>
     										<br/>.tsv or .csv
     										<br/>(tab-separated only)
+    										<br/>.phenotype
     									</div>
    									</div>
                                 </div>
