@@ -752,23 +752,21 @@ public class GigwaRestController extends ControllerInterface {
 		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
 			public void run() {				
                 HashMap<Object, Integer> genotypeCounts = new HashMap<Object, Integer>();	// will help us to keep track of missing genotypes
-                for (List<VariantRunData> runsToWrite : markerRunsToWrite) {
+                markerRunsToWrite.forEach(runsToWrite -> {
+                    if (progress.isAborted() || progress.getError() != null || runsToWrite == null || runsToWrite.isEmpty())
+                        return;
 
-					if (runsToWrite == null || runsToWrite.isEmpty())
-						continue;
-
-					String idOfVarToWrite = runsToWrite.get(0).getVariantId();
+					VariantRunData vrd = runsToWrite.iterator().next();
+					String idOfVarToWrite = vrd.getVariantId();
 					StringBuffer sb = new StringBuffer();
 					try
 					{
-		                VariantRunData vrd = runsToWrite.get(0);
-
 		                ReferencePosition rp = vrd.getReferencePosition();
 		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
 
-	                	for (VariantRunData run : runsToWrite) {
+		                runsToWrite.forEach( run -> {
 	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
                                 String individualId = sampleIdToIndividualMap.get(sampleId);
                                 Integer individualIndex = individualPositions.get(individualId);
@@ -791,7 +789,7 @@ public class GigwaRestController extends ControllerInterface {
 									individualGenotypes[individualIndex] = new LinkedHashSet<String>();
 								individualGenotypes[individualIndex].add(gtCode);
 	                        }
-	                    }
+	                    });
 
 		                int writtenGenotypeCount = 0;
 		                
@@ -844,7 +842,7 @@ public class GigwaRestController extends ControllerInterface {
 							LOG.error("Unable to export " + idOfVarToWrite, e);
 						progress.setError("Unable to export " + idOfVarToWrite + ": " + e.getMessage());
 					}
-				}
+				});
 			}
 		};
 
