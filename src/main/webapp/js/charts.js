@@ -14,7 +14,7 @@
  * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
  * Public License V3.
  *******************************************************************************/
-var minimumProcessQueryIntervalUnit = 500;
+var minimumProcessQueryIntervalUnit = 750;
 var chart = null;
 var displayedRangeIntervalCount = 150;
 var dataBeingLoaded = false;
@@ -22,6 +22,7 @@ let localmin, localmax;
 let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
+let progressIntervalId = null;
 const chartTypes = new Map([
     ["density", {
         displayName: "Density",
@@ -240,7 +241,7 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
                         '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
-                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="displayChart();"></select>' + 
+                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadChart();"></select>' + 
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                         '</div></form>');
     $(headerHtml).insertBefore('div#densityChartArea');
@@ -321,7 +322,7 @@ function setChartType(typeSelect) {
     loadChart();
 }
 
-function abortOngoingOperation(){
+function abortOngoingOperation() {
     $.ajax({
         url: abortUrl,
         type: "DELETE",
@@ -329,10 +330,12 @@ function abortOngoingOperation(){
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-            if (!jsonResult.processAborted)
+            if (!jsonResult.processAborted) {
                 console.log("Unable to abort!");
-            else
+            } else {
                 dataBeingLoaded = false;
+                clearInterval(progressIntervalId);
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -537,7 +540,7 @@ function displayChart(minPos, maxPos){
             handleError(xhr, thrownError);
         }
     });
-    setTimeout("checkChartLoadingProgress();", minimumProcessQueryIntervalUnit);
+    monitorProgress();
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
@@ -599,10 +602,17 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
             $('.showHideSeriesBox').prop('disabled', false);
         }
     });
-    setTimeout("checkChartLoadingProgress();", minimumProcessQueryIntervalUnit);
+    monitorProgress();
 }
 
-function checkChartLoadingProgress(){
+function monitorProgress() {
+    // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
+    if (progressIntervalId != null)
+        clearInterval(progressIntervalId);
+    progressIntervalId = setInterval(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+}
+
+function checkChartLoadingProgress() {
     $.ajax({
         url: progressUrl,
         type: "GET",
@@ -615,6 +625,7 @@ function checkChartLoadingProgress(){
             {
                 $("div#densityLoadProgress").html("");
                 dataBeingLoaded = false;	// complete
+                clearInterval(progressIntervalId);
             }
             else
             {
@@ -624,11 +635,11 @@ function checkChartLoadingProgress(){
                     parent.totalRecordCount = 0;
                     alert("Error occured:\n\n" + jsonResult['error']);
                     $('#density').modal('hide');
+                    clearInterval(progressIntervalId);
                 }
                 else
                 {
                     $('div#densityLoadProgress').html(jsonResult['progressDescription']);
-                    setTimeout("checkChartLoadingProgress();", minimumProcessQueryIntervalUnit);
                 }
             }
         },
