@@ -27,13 +27,21 @@ function isHex(h) {
 	return (a.toString(16) === h.toLowerCase())
 }
 
+function arrayContains(array, element) 
+{
+	for (var i = 0; i < array.length; i++) 
+        if (array[i] == element) 
+        	return true;
+	return false;
+}
+
 function arrayContainsIgnoreCase(array, element)
 {
 	for (var i = 0; i < array.length; i++) 
 		if ((array[i] == null && element == null) || (array[i] != null && element != null && array[i].toLowerCase() == element.toLowerCase())) 
 			return true;
 	return false;
-};
+}
 
 function hashCode(s)
 {
