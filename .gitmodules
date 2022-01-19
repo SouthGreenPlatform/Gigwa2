@@ -1,0 +1,4 @@
+[submodule "Mgdb2BrapiV2Impl"]
+	path = Mgdb2BrapiV2Impl
+	url = https://github.com/SouthGreenPlatform/Mgdb2BrapiV2Impl
+	branch = submodules
