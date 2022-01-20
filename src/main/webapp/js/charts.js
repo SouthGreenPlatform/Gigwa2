@@ -33,7 +33,7 @@ const chartTypes = new Map([
         series: [{
             name: "Variants in interval",
             enableMarker: false,
-            lineWidth: 2,
+            lineWidth: 2
         }],
     }],
     ["fst", {
@@ -45,7 +45,7 @@ const chartTypes = new Map([
         series: [{
             name: "Fst estimate",
             enableMarker: true,
-            lineWidth: 2,
+            lineWidth: 2
         }],
         enableCondition: function (){
             if (genotypeInvestigationMode != 2 && !gotMetaData){
@@ -109,12 +109,12 @@ const chartTypes = new Map([
             {
                 name: "Tajima's D",
                 enableMarker: true,
-                lineWidth: 2,
+                lineWidth: 2
             },
             {
                 name: "Segregating sites",
                 enableMarker: false,
-                lineWidth: 1,
+                lineWidth: 1
             },
         ],
         enableCondition: function (){
@@ -235,8 +235,8 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
         $("#chartVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
 
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
-    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:50px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-2"><p>Customisation options</p>Number of Intervals <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="col-md-2"><p>Customisation options</p>Number of Intervals<br/><input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
     customisationDivHTML += '<div id="chartTypeCustomisationOptions"></div>';
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 	
@@ -459,7 +459,7 @@ function displayChart(minPos, maxPos) {
                             enabled: false
                         },
                         enableMouseTracking: true
-                    }
+			        }
                 },
                 exporting: {
                     enabled: true,
