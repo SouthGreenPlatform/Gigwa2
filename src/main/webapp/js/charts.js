@@ -28,7 +28,7 @@ const chartTypes = new Map([
         displayName: "Density",
         queryURL: selectionDensityDataURL,
         title: "Distribution of {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-        subtitle: "The value provided for a position is actually the number of variants around it in an interval of size {{intervalSize}}",
+        subtitle: "The value provided for a position is the number of variants around it in an interval of size {{intervalSize}}",
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Variants in interval",
@@ -40,7 +40,7 @@ const chartTypes = new Map([
         displayName: "Fst",
         queryURL: selectionFstDataURL,
         title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-        subtitle: "The value provided for a position is the Weir and Cockerham Fst estimate over an interval of size {{intervalSize}} between the selected groups",
+        subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point",
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
@@ -49,7 +49,7 @@ const chartTypes = new Map([
         }],
         enableCondition: function (){
             if (genotypeInvestigationMode != 2 && !gotMetaData){
-                return "Fst is only defined with at least two groups. You need to set investigation groups or metadata.";
+                return "Fst is only defined with at least two groups. You need to define investigation groups or upload metadata.";
             } else if (areGroupsOverlapping() && !gotMetaData){
                 return "Investigation groups are overlapping";
             } else if (ploidy != 2){
@@ -59,13 +59,11 @@ const chartTypes = new Map([
             }
         },
         buildCustomisation: function (){
-            return ('<div id="fstThresholdGroup" class="col-md-2"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /><label for="showFstThreshold">Show threshold</label><br />' +
-                        'Significance threshold : <input id="fstThreshold" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" />' +
-                    '</div><div id="plotGroups" class="col-md-3">' +
-                        'Group by <select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select>' +
-                    '</div><div id="plotMetadata" style="display: none" class="col-md-3">' +
-                        'Metadata values to select (at least 2) <br/><select id="plotGroupingMetadataValues" multiple></select>' +
-                    '</div>');
+            return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
+                     + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
+                     + '<div id="plotMetadata" style="display: none" class="col-md-3">'
+                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="5" style="min-width:150px;"></select>'
+                     + '</div>');
         },
         buildRequestPayload: function (payload){
             const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
@@ -105,7 +103,7 @@ const chartTypes = new Map([
         displayName: "Tajima's D",
         queryURL: selectionTajimaDDataURL,
         title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-        subtitle: "The value provided is the Tajima's D value (excluding missing and more than biallelic variants)",
+        subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
         xAxisTitle: "Positions on selected sequence",
         series: [
             {
@@ -166,7 +164,7 @@ function initializeAndShowDensityChart(){
         return;
     }
 
-    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:310px; height:370px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
+    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
     var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
     var selectedTypes = getSelectedTypes().split(";");
     $.ajax({
@@ -196,7 +194,7 @@ function clearVcfFieldBasedSeries() {
 function getGroupingOptions() {
     let options = ""
     if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
-        options += '<option value="__">Investigation groups</option>';
+        options += '<option value="__">Investigated groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -236,12 +234,13 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     for (let key in types)
         $("#chartVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
 
-    let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'><div class='col-md-3'><p>Customisation options</p>";
-    customisationDivHTML += 'Number of Intervals <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
+    let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:50px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="col-md-2"><p>Customisation options</p>Number of Intervals <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
     customisationDivHTML += '<div id="chartTypeCustomisationOptions"></div>';
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 	
-	buildCustomisationDiv(chartInfo);
+	buildVcfMetadataDiv(chartInfo);
 
 	if (chartInfo.onLoad !== undefined)
         chartInfo.onLoad();
@@ -249,23 +248,23 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     loadChart();
 }
 
-function buildCustomisationDiv(chartInfo) {
-    customisationDivHTML = "";
+function buildVcfMetadataDiv(chartInfo) {
+    let customisationDivHTML = '';
     if ($("#vcfFieldFilterGroup1 input").length > 0) {
-        customisationDivHTML += '<div class="col-md-3"><p>Additional series based on VCF genotype metadata</p>';
+        customisationDivHTML += '<div class="col-md-4"><p align="center">Additional series based on VCF genotype metadata:</p>';
         $("#vcfFieldFilterGroup1 input").each(function(index) {
             let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
+            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
         });
-        customisationDivHTML += "</div>"
         if (getGenotypeInvestigationMode() != 0)
-            customisationDivHTML += '<div class="col-md-6"><div id="plotIndividuals">Individuals to take into account <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div></div>';
+            customisationDivHTML += '<div id="plotIndividuals">Individuals accounted for <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
+        customisationDivHTML += "</div>"
     }
     
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
     
-    customisationDivHTML += '<div class="col-md-1"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort()">Show</button></div>';
+    
     
     $("#chartTypeCustomisationOptions").html(customisationDivHTML)
 }
@@ -299,7 +298,7 @@ function setChartType(typeSelect) {
         chart = null;
     }
     
-    buildCustomisationDiv(typeInfo);
+    buildVcfMetadataDiv(typeInfo);
     
     if (typeInfo.onLoad !== undefined)
         typeInfo.onLoad();
