@@ -1348,7 +1348,7 @@
 			return;
 
 		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" href="' + downloadURL + '">' + fileName + '</a> ').show();
+		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
 		var exportedFormat = $('#exportFormat').val().toUpperCase();
 		if ("VCF" == exportedFormat)
 			addIgvExportIfRunning();
