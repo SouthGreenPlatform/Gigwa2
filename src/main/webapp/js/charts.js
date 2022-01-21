@@ -463,6 +463,15 @@ function displayChart(minPos, maxPos) {
                 },
                 exporting: {
                     enabled: true,
+					buttons: {
+					      contextButton: {
+					        menuItems: ["viewFullscreen", "printChart",
+					                    "separator",
+					                    "downloadPNG", "downloadPDF", "downloadSVG",
+					                    "separator",
+					                    "downloadCSV", "downloadXLS"]
+					      }
+				    }
                 }
             });
             
