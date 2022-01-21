@@ -414,6 +414,17 @@ function displayChart(minPos, maxPos) {
         }
     }
     
+    // Set the interval count until the next chart reload
+    let tempValue = parseInt($('#intervalCount').val());
+    if (isNaN(tempValue))
+        displayedRangeIntervalCount = 150;
+    else if (tempValue > 300)
+        displayedRangeIntervalCount = 300;
+    else if (tempValue < 50)
+        displayedRangeIntervalCount = 50;
+    else
+        displayedRangeIntervalCount = tempValue;
+    
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
@@ -742,26 +753,22 @@ function displayOrHideThreshold(isChecked) {
     }
 }
 
+function changeIntervalCount() {
+    let tempValue = parseInt($('#intervalCount').val());
+    if (isNaN(tempValue))
+        $("#intervalCount").val(150);
+    else if (tempValue > 300)
+        $("#intervalCount").val(300);
+    else if (tempValue < 50)
+        $("#intervalCount").val(50);
+}
+
 function setFstThreshold(){
     const threshold = parseFloat($("#fstThreshold").val());
     const series = chart.get("threshold");
     if (series !== undefined){
         series.setData(chartJsonKeys.map(val => threshold), true, true);
     }
-}
-
-function changeIntervalCount() {
-    let tempValue = parseInt($('#intervalCount').val());
-    if (isNaN(tempValue))
-    	displayedRangeIntervalCount = 150;
-    else if (tempValue > 300)
-        displayedRangeIntervalCount = 300;
-    else if (tempValue < 50)
-        displayedRangeIntervalCount = 50;
-    else
-    	displayedRangeIntervalCount = tempValue;
-    $('#intervalCount').val(displayedRangeIntervalCount);
-    loadChart(localmin, localmax);
 }
 
 function setFstGroupingOption() {
