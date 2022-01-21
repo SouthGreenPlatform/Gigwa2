@@ -224,7 +224,7 @@ form#importDropzone .form-group {
 }
 
 .dropzone .dz-default.dz-message {
-	height:140px;
+	height:145px;
 }
 
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {

@@ -34,7 +34,7 @@ function arrayContains(array, element)
         if (array[i] == element) 
             return true;
     return false;
-};
+}
 
 function arrayContainsIgnoreCase(array, element)
 {
@@ -42,7 +42,7 @@ function arrayContainsIgnoreCase(array, element)
         if ((array[i] == null && element == null) || (array[i] != null && element != null && array[i].toLowerCase() == element.toLowerCase())) 
             return true;
     return false;
-};
+}
 
 function hashCode(s)
 {

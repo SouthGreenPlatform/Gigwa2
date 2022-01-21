@@ -263,7 +263,7 @@
               		maxFiles: 2,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
@@ -283,7 +283,7 @@
                     		maxFiles: 1,
                     		previewsContainer: "#dropZonePreviewsMD",
                     	    dictResponseError: 'Error importing data',
-                    	    acceptedFiles: ".tsv,.csv",
+                    	    acceptedFiles: ".tsv,.csv,.phenotype",
                     	  	headers: {
                     	  		"Authorization": "Bearer " + token
                     	  	},
@@ -662,26 +662,15 @@
                         for (var set in jsonResult.referenceSets)
                             options += '<option>' + jsonResult.referenceSets[set].name + '</option>';
                             
-//         	        		$('#module').append('<option>' + passedModule + '</option>').selectpicker('refresh');
-//         	        		$('#module').val(passedModule);
-
                         $('#moduleExistingMD').append(options).selectpicker('refresh');
 
     	        		var passedModule = $_GET("module");
     	        		if (passedModule != null)
     	        			passedModule = passedModule.replace(new RegExp('#([^\\s]*)', 'g'), '');
-//     	        		console.log($('#moduleExistingMD option').map((index, option) => option.value));
                         <c:if test="${!(empty param.module)}">
-    	        			if (!arrayContains($('#moduleExistingMD option').map((index, option) => option.value), passedModule)) {
+                        	if (!arrayContains($('#moduleExistingMD option').map((index, option) => option.value), passedModule)) {
     	    	        		$('#moduleExistingMD').append('<option>' + passedModule + '</option>').selectpicker('refresh');
     	    	        		$('#moduleExistingMD').val(passedModule);
-//     	    	        		referenceset = passedModule;
-//     	    	        		if (passedModule.length >= 15 && passedModule.length <= 17)
-//     	    	        		{
-//     	    	        			var splitModule = passedModule.split("O");
-//     	    	        			if (splitModule.length == 2 && isHex(splitModule[0]) && isHex(splitModule[1]))
-//     	    	        				alert("This data will be accessible only via the current URL. It will be erased 24h after its creation.");
-//     	    	        		}
     	        			}
                         </c:if>
 
@@ -783,7 +772,7 @@
                                 <div class ="row">
                                     <div class="col-md-1" style="text-align:right;"></div>
                                     <div class="col-md-10">
-                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / BrAPI format</h4>
+                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / Flapjack / BrAPI format</h4>
 											<p class="margin-top-md text-red">Properties followed by * are required</p>
                                     </div>
                                 </div>
@@ -915,8 +904,9 @@
 				       										<b>Accepted extensions:</b>
 				       										<br/>.vcf
 				       										<br/>.hapmap or .txt
-															<br/>.ped + .map
+															<br/>.ped + .map (PLINK)
                                                             <br/>.intertek
+															<br/>.genotype + .map (Flapjack)
 				       									</div>
 			       									</div>
 			                                    </div>
@@ -945,8 +935,8 @@
                                 <div class="col-md-4">
                                 	<div style="position:absolute; margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
                                 		<p>Providing metadata for individuals will enable users to select them by filtering on that metadata.</p>
-                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension).</p>
-                                		<p>The first row in the file (header) must contain field labels, one of them must be named "individual".</p>
+                                		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
+                                		<p>The first row in TSV file (header) must contain field labels, one of them must be named "individual".</p>
                                 		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
                                 		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
 										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
@@ -990,6 +980,7 @@
     										<b>Accepted extensions:</b>
     										<br/>.tsv or .csv
     										<br/>(tab-separated only)
+    										<br/>.phenotype
     									</div>
    									</div>
                                 </div>
