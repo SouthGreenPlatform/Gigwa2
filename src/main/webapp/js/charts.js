@@ -105,6 +105,7 @@ const chartTypes = new Map([
         title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
         subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
         xAxisTitle: "Positions on selected sequence",
+        selectIndividuals: true,
         series: [
             {
                 name: "Tajima's D",
@@ -250,21 +251,24 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 
 function buildVcfMetadataDiv(chartInfo) {
     let customisationDivHTML = '';
-    if ($("#vcfFieldFilterGroup1 input").length > 0) {
+    const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0
+    if (hasVcfMetadata) {
         customisationDivHTML += '<div class="col-md-4"><p align="center">Additional series based on VCF genotype metadata:</p>';
         $("#vcfFieldFilterGroup1 input").each(function(index) {
             let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
             customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
         });
-        if (getGenotypeInvestigationMode() != 0)
-            customisationDivHTML += '<div id="plotIndividuals">Individuals accounted for <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
-        customisationDivHTML += "</div>"
     }
+    
+    if (getGenotypeInvestigationMode() != 0 && (hasVcfMetadata || chartInfo.selectIndividuals))
+        customisationDivHTML += '<div id="plotIndividuals">Individuals accounted for <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
+    
+    if (hasVcfMetadata)
+        customisationDivHTML += "</div>"
+
     
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
-    
-    
     
     $("#chartTypeCustomisationOptions").html(customisationDivHTML)
 }
@@ -307,6 +311,8 @@ function setChartType(typeSelect) {
 }
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
+    const chartInfo = chartTypes.get(currentChartType);
+
 	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
 	$('#vcfFieldFilterGroup1 input').each(function() {
 		if (parseInt($(this).val()) > 0)
@@ -316,6 +322,27 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 		if (parseInt($(this).val()) > 0)
 			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
 	});
+	
+	let plotIndividuals = null;
+	if (chartInfo.selectIndividuals) {
+	    switch ($('#plotIndividualSelectionMode').val()) {
+	        case "choose":
+	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
+	            break;
+	        case "12":
+	            plotIndividuals = getSelectedIndividuals();
+	            break;
+	        case "1":
+	            plotIndividuals = getSelectedIndividuals(1);
+	            break;
+	        case "2":
+	            plotIndividuals = getSelectedIndividuals(2);
+	            break;
+	        default:
+	            plotIndividuals = [];
+	            break;
+	    }
+	}
 	
 	return {         	
         "variantSetId": $('#project :selected').data("id"),
@@ -353,7 +380,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
         "displayedRangeMin": localmin,
         "displayedRangeMax": localmax,
-        "displayedRangeIntervalCount": displayedRangeIntervalCount
+        "displayedRangeIntervalCount": displayedRangeIntervalCount,
+        "plotIndividuals": plotIndividuals,
     };
 }
 
