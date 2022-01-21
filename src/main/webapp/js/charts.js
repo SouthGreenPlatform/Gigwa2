@@ -105,6 +105,7 @@ const chartTypes = new Map([
         title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
         subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
         xAxisTitle: "Positions on selected sequence",
+        selectIndividuals: true,
         series: [
             {
                 name: "Tajima's D",
@@ -236,7 +237,10 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-2"><p>Customisation options</p>Number of Intervals<br/><input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)</div>';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
+    if (getGenotypeInvestigationMode() != 0 && ($("#vcfFieldFilterGroup1 input").length > 0 || chartInfo.selectIndividuals))
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
+    customisationDivHTML += '</div>';
     customisationDivHTML += '<div id="chartTypeCustomisationOptions"></div>';
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 	
@@ -250,21 +254,20 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 
 function buildVcfMetadataDiv(chartInfo) {
     let customisationDivHTML = '';
-    if ($("#vcfFieldFilterGroup1 input").length > 0) {
-        customisationDivHTML += '<div class="col-md-4"><p align="center">Additional series based on VCF genotype metadata:</p>';
+    const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
+    if (hasVcfMetadata) {
+        customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
         $("#vcfFieldFilterGroup1 input").each(function(index) {
             let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
             customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
         });
-        if (getGenotypeInvestigationMode() != 0)
-            customisationDivHTML += '<div id="plotIndividuals">Individuals accounted for <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
-        customisationDivHTML += "</div>"
     }
-    
+
+    if (hasVcfMetadata)
+        customisationDivHTML += "</div>"
+
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
-    
-    
     
     $("#chartTypeCustomisationOptions").html(customisationDivHTML)
 }
@@ -307,6 +310,8 @@ function setChartType(typeSelect) {
 }
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
+    const chartInfo = chartTypes.get(currentChartType);
+
 	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
 	$('#vcfFieldFilterGroup1 input').each(function() {
 		if (parseInt($(this).val()) > 0)
@@ -316,6 +321,27 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 		if (parseInt($(this).val()) > 0)
 			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
 	});
+	
+	let plotIndividuals = null;
+	if (chartInfo.selectIndividuals) {
+	    switch ($('#plotIndividualSelectionMode').val()) {
+	        case "choose":
+	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
+	            break;
+	        case "12":
+	            plotIndividuals = getSelectedIndividuals();
+	            break;
+	        case "1":
+	            plotIndividuals = getSelectedIndividuals(1);
+	            break;
+	        case "2":
+	            plotIndividuals = getSelectedIndividuals(2);
+	            break;
+	        default:
+	            plotIndividuals = [];
+	            break;
+	    }
+	}
 	
 	return {         	
         "variantSetId": $('#project :selected').data("id"),
@@ -353,7 +379,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
         "displayedRangeMin": localmin,
         "displayedRangeMax": localmax,
-        "displayedRangeIntervalCount": displayedRangeIntervalCount
+        "displayedRangeIntervalCount": displayedRangeIntervalCount,
+        "plotIndividuals": plotIndividuals,
     };
 }
 
