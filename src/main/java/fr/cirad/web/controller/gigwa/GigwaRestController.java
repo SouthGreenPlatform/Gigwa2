@@ -140,8 +140,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import static java.lang.Integer.parseInt;
-import java.util.regex.Pattern;
-import org.ga4gh.models.Variant;
+import org.snpeff.snpEffect.commandLine.SnpEffService;
+
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -168,7 +168,7 @@ public class GigwaRestController extends ControllerInterface {
 	
 	@Autowired 
 	private GigwaGa4ghServiceImpl ga4ghService;
-
+	
 	/**
 	 * The Constant LOG.
 	 */
@@ -218,8 +218,9 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
-        static public final String VARIANTS_BY_IDS = "/variants/byIds";
-        static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String VARIANTS_BY_IDS = "/variants/byIds";
+    static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String SNPEFF_ANNOTATION_PATH = "/snpEff/annotate";
 	
 	/**
 	 * instance of Service to manage all interaction with database
@@ -2013,4 +2014,22 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
     
+    @ApiOperation(authorizations = {@Authorization(value = "AuthorizationToken")}, value = SNPEFF_ANNOTATION_PATH, notes = "Annotates variants with snpEff")
+	@ApiResponses(value = {@ApiResponse(code = 200, message = "Success")})
+    @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST, produces = "application/json")
+    public String snpEffAnnotation(HttpServletRequest request, HttpServletResponse response, @RequestParam("projectId") String projectId, @RequestParam("snpEffDatabase") String snpEffDatabase) {
+    	String token = tokenManager.readToken(request);
+    	
+    	try {
+    		String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
+    		int project = parseInt(info[1]);
+    		if (tokenManager.canUserWriteToProject(token, info[0], project)) {
+    			return SnpEffService.annotateProject(info[0], project, snpEffDatabase);
+    		}
+    	} catch (UnsupportedEncodingException ex) {
+    		LOG.debug("Error decoding projectId : " + projectId, ex);
+    	}
+    	
+    	return null;
+    }
 }

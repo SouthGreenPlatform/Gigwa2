@@ -36,6 +36,7 @@
 		   				<ul class="dropdown-menu">
 						<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
 		                    <c:if test="${userDao.doesLoggedUserOwnEntities()}">
+		                    	<li><a href="<c:url value='/annotate.jsp' />" data-toggle="tooltip" data-placement="bottom">Annotate data</a></li>
 								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and user permissions</a></li>
 							</c:if>
 							<c:if test="${principal != null && !isAnonymous}">
@@ -84,7 +85,7 @@
 				<div class="modal-header" id="termsOfUseContainer">
 					<center><h3>Gigwa - Terms of use</h3></center>
 					<h4>1) Limitation of warranty</h4>
-					<p>a) You acknowledge that the actual state of scientific and technical knowledge do not permit to test and check all uses of Gigwa, nor to detect the being of  possible defaults. You acknowledge that the changes, the Use, the modification, the development, the reproduction of Gigwa are deemed to be executed by experimented users and contain risks. You are responsible for the checking by any means of fitness of Gigwa for your own purposes, of checking of its working, of its Use in conditions that do not cause damages to persons or goods.</p>
+					<p>a) You acknowledge that the actual state of scientific and technical knowledge do not permit to test and check all uses of Gigwa, nor to detect the being of possible defaults. You acknowledge that the changes, the Use, the modification, the development, the reproduction of Gigwa are deemed to be executed by experimented users and contain risks. You are responsible for the checking by any means of fitness of Gigwa for your own purposes, of checking of its working, of its Use in conditions that do not cause damages to persons or goods.</p>
 					<p>b) Gigwa is provided on a « as is » basis, without warranties express or implied other than its existence, including all disclaimer of warranty relating to a title or deed (of property or exploitation), the lack of infringement, the merchantability, the secured, innovative or accurate features of Gigwa, the lack of mistakes, the suitability with Your equipment and/or software configuration.</p>
 					
 					<h4>2) Disclaimer of liability</h4>

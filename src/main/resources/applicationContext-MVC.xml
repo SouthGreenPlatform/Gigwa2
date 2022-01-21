@@ -16,7 +16,7 @@
     </mvc:annotation-driven>
     
      <!-- Controllers, MongoTemplateManager,timer and api documentation-->
-    <context:component-scan base-package="fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api" />
+    <context:component-scan base-package="fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api,org.snpeff.snpEffect.commandLine" />
 
     <bean class="fr.cirad.tools.GlobalExceptionHandler" />
 	
