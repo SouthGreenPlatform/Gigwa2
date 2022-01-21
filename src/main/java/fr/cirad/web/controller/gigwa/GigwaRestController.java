@@ -101,6 +101,7 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
+import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -139,9 +140,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import static java.lang.Integer.parseInt;
-import java.util.regex.Pattern;
-import org.ga4gh.models.Variant;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -807,9 +805,11 @@ public class GigwaRestController extends ControllerInterface {
 		
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
-        BasicDBList variantQueryDBList = (BasicDBList) ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]));
+        boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
+        Collection<BasicDBList> variantQueryDBListColl = ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
+        BasicDBList variantQueryDBList = variantQueryDBListColl.iterator().next();
 
-		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(tempVarColl.countDocuments() > 0 ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
+		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
         String header = "variant\talleles\tchrom\tpos";
         resp.getWriter().append(header);
@@ -918,8 +918,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 		};
 
-		Document varQuery = !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document();
-		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, varQuery, samples, true, 100, writingThread, null, null, progress);
+		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
@@ -1094,88 +1093,33 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 400, message = "wrong parameters"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST)
-	public void exportData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestParam("variantSetId") String variantSetId, @RequestParam("token") String token,
-			@RequestParam("keepExportOnServer") boolean keepExportOnServer,
-			@RequestParam("variantEffects") String variantEffects, @RequestParam("exportFormat") String exportFormat,
-			@RequestParam("selectedVariantTypes") String selectedVariantTypes,
-			@RequestParam("alleleCount") String alleleCount, @RequestParam("geneName") String geneName,
-			@RequestParam("minposition") Long minposition, @RequestParam("maxposition") Long maxposition,
-			@RequestParam("referenceName") String selectedSequences,
-			@RequestParam(value = "callSetIds", required = false) String callSetIds,
-			@RequestParam("gtPattern") String gtPattern, @RequestParam("mostSameRatio") int mostSameRatio,
-			@RequestParam("annotationFieldThresholds") String annotationThresholdsCsv,
-			@RequestParam("missingData") float missingData,
-			@RequestParam(value = "minmaf", required = false) Float minmaf,
-			@RequestParam(value = "maxmaf", required = false) Float maxmaf,
-			@RequestParam(value = "callSetIds2", required = false) String callSetIds2,
-			@RequestParam("gtPattern2") String gtPattern2, @RequestParam("mostSameRatio2") int mostSameRatio2,
-			@RequestParam("annotationFieldThresholds2") String annotationThresholdsCsv2,
-			@RequestParam("missingData2") float missingData2,
-			@RequestParam(value = "minmaf2", required = false) Float minmaf2,
-			@RequestParam(value = "maxmaf2", required = false) Float maxmaf2,
-			@RequestParam(value = "exportedIndividuals", required = false) String exportedIndividuals,
-			@RequestParam(value = "metadataFields", required = false) String metadataFields,
-			@RequestParam("discriminate") boolean discriminate) throws Exception {
+	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST, consumes =  "application/json")
+    public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
+        String token = tokenManager.readToken(request);
+        String id = gsver.getVariantSetId();
+        if (id == null) {
+            build400Response(resp, "Parameter variantSetId is required");
+        }
+        if (gsver.getCallSetIds() == null) {
+            build400Response(resp, "Parameter callSetIds is required");
+        }
+        try
+        {
+            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+                gsver.setRequest(request);		
+                Authentication authentication = tokenManager.getAuthenticationFromToken(token);
+                gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
+                service.exportVariants(gsver, token, resp);
+            } else {
+                build401Response(resp);
+            }
+        }
+        catch (ObjectNotFoundException e)
+        {
+            build404Response(resp);
+        }
+    }
 
-		String[] info = new String[1];
-		try {
-			info = URLDecoder.decode(variantSetId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
-		} catch (UnsupportedEncodingException ex) {
-			LOG.debug("Error decoding variantSetId: " + variantSetId, ex);
-		}
-		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
-				GigwaSearchVariantsExportRequest gsver = new GigwaSearchVariantsExportRequest();
-				gsver.setAlleleCount(alleleCount);
-				gsver.setStart(minposition);
-				gsver.setEnd(maxposition);
-				gsver.setGeneName(geneName);
-				gsver.setReferenceName(selectedSequences);
-				gsver.setSelectedVariantTypes(selectedVariantTypes);
-				gsver.setVariantEffect(variantEffects);
-				gsver.setVariantSetId(variantSetId);
-				gsver.setMissingData(missingData);
-				gsver.setMinmaf(minmaf);
-				gsver.setMaxmaf(maxmaf);
-				gsver.setGtPattern(gtPattern);
-				gsver.setMostSameRatio(mostSameRatio);
-				for (String aFilter : annotationThresholdsCsv.split(";"))
-					if (aFilter.length() > 0) {
-						String[] splittedFilter = aFilter.split(":");
-						gsver.getAnnotationFieldThresholds().put(splittedFilter[0], Float.parseFloat(splittedFilter[1]));
-					}
-				gsver.setCallSetIds(callSetIds == null || callSetIds.length() == 0 ? new ArrayList<String>() : Arrays.asList(callSetIds.split(",")));
-
-				gsver.setMissingData2(missingData2);
-				gsver.setMinmaf2(minmaf2);
-				gsver.setMaxmaf2(maxmaf2);
-				gsver.setGtPattern2(gtPattern2);
-				gsver.setMostSameRatio2(mostSameRatio2);
-				for (String aFilter : annotationThresholdsCsv2.split(";"))
-					if (aFilter.length() > 0) {
-						String[] splittedFilter = aFilter.split(":");
-						gsver.getAnnotationFieldThresholds2().put(splittedFilter[0], Float.parseFloat(splittedFilter[1]));
-					}
-				gsver.setCallSetIds2(callSetIds2 == null || callSetIds2.length() == 0 ? new ArrayList<String>() : Arrays.asList(callSetIds2.split(",")));
-
-				gsver.setExportFormat(exportFormat);
-				gsver.setKeepExportOnServer(keepExportOnServer);
-				gsver.setExportedIndividuals(exportedIndividuals == null || exportedIndividuals.length() == 0 ? new ArrayList<String>() : Arrays.asList(exportedIndividuals.split(",")));
-				gsver.setMetadataFields(metadataFields == null || metadataFields.length() == 0 ? new ArrayList<String>() : Arrays.asList(metadataFields.split(",")));
-				gsver.setDiscriminate(discriminate);
-				gsver.setRequest(request);
-
-				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-				gsver.setApplyMatrixSizeLimit(!"BED".equals(exportFormat) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
-				service.exportVariants(gsver, token, resp);
-			} else
-				build401Response(resp);
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-		}
-	}
 
 	/**
 	 * Gets the view controllers.
@@ -1762,22 +1706,24 @@ public class GigwaRestController extends ControllerInterface {
 							Integer newProjId = null;
 							if (fBrapiImport)
 								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-							else
-							{
+							else {
 								if (!filesByExtension.containsKey("gz")) {
-									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map"))
-									{
+									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
 										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf"))
-									{
+									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-									else {
+                                    else if (filesByExtension.containsKey("intertek")) {
+                                        Serializable s = filesByExtension.get("intertek");                                                                               
+                                        boolean fIsLocalFile = s instanceof File;
+                                        newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+                                    }
+                                    else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
@@ -1787,8 +1733,7 @@ public class GigwaRestController extends ControllerInterface {
 											throw new Exception("Unsupported file format or extension: " + s);
 									}
 								}
-								else
-								{ // looks like a compressed file
+								else { // looks like a compressed file
 									Serializable s = filesByExtension.get("gz");
 									boolean fIsLocalFile = s instanceof File;
 									if (fIsLocalFile)
@@ -2073,7 +2018,7 @@ public class GigwaRestController extends ControllerInterface {
 
         try {
             String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
-            int project = parseInt(info[1]);
+            int project = Integer.parseInt(info[1]);
             if (tokenManager.canUserReadDB(token, info[0])) {            
                 return service.searchVariantsLookup(info[0], project, lookupText);
             }

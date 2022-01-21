@@ -61,6 +61,7 @@
 <script type="text/javascript" src="js/highcharts/export-data.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
+<script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
@@ -132,6 +133,8 @@
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
+        
+    var stringVariantIdsFromUploadFile = null;
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -248,7 +251,7 @@
 		});
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
-			enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+			enableMafOnlyIfApplicable();
 		});
 		$('#exportFormat').on('change', function() {
 			var opt = $(this).children().filter(':selected');
@@ -271,10 +274,17 @@
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
-		});
+		});            
 
 		$("#variantTable").on('click', 'th', function() { // Sort function on variant table. Enabled for sequence and position only
-			if ($(this).text().trim() === "sequence") {
+			if ($(this).text().trim() === "id") {
+				if (sortBy == "_id")
+					sortDesc = !sortDesc;
+				else
+					sortBy = "_id";
+				searchVariants(2, '0');
+			}
+			else if ($(this).text().trim() === "sequence") {
 				if (sortBy == seqPath)
 					sortDesc = !sortDesc;
 				else
@@ -307,14 +317,37 @@
 		});
 		getToken();
 		loadModules();
-		
+                
 		$(window).resize(function() {
 			resizeDialogs();
 		}).on('shown.bs.modal', function(e) {
 			if ("progress" != e.target.id)
 				resizeDialogs();
 		});
+                
+                $("#uploadVariantIdsFile").click(function(){
+                    $(this).val("");
+                });
+
+                $("#uploadVariantIdsFile").change(function(){
+                    if ($(this).val() !== "") {
+                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                        fileReader = new FileReader();
+                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                        fileReader.onload = function(progressEvent) {
+                                onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                        };
+                        fileReader.readAsText(selectedFile, "UTF-8");                       
+                    }
+                });
 	});
+        
+    function removeUploadedFile() {
+        $('#uploadVariantIdsFile').val('');
+        $('#varIdsFileName').remove();
+        stringVariantIdsFromUploadFile = null;
+        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
+    }       
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
@@ -328,11 +361,10 @@
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection 
+	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event 
 	function dropTempCol() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
-			async: false,
 			type: "DELETE",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
@@ -350,6 +382,7 @@
 		});
 	}
 
+	// clear user token, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
 	function clearToken() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
@@ -491,27 +524,27 @@
 		return success;
 	}
 
-	function loadVariantTypes() {
-		$.ajax({
-			url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
-			type: "GET",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			success: function(jsonResult) {
-				variantTypesCount = jsonResult.length;
-				var option = "";
-				for (var key in jsonResult) {
-					option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-				}
-				$('#variantTypes').html(option).selectpicker('refresh');
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+	function loadVariantTypes() {                
+                    $.ajax({
+                            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+                            type: "GET",
+                            dataType: "json",
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                    "Authorization": "Bearer " + token
+                            },
+                            success: function(jsonResult) {
+                                    variantTypesCount = jsonResult.length;
+                                    var option = "";
+                                    for (var key in jsonResult) {
+                                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
+                                    }
+                                    $('#variantTypes').html(option).selectpicker('refresh');
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                    handleError(xhr, thrownError);
+                            }
+                    });
 	}
 
 	function loadSequences() {
@@ -533,6 +566,17 @@
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.references.length;
+                if (seqCount == 0) {
+                    $('#sequenceFilter').hide();
+                    $('#positions').hide();
+                    $('#filterIDsCheckbox').prop('checked', true);
+                    onFilterByIds(true);
+                } else {
+                    $('#sequenceFilter').show();
+                    $('#positions').show();
+                    $('#filterIDsCheckbox').prop('checked', false);
+                    onFilterByIds(false);
+                }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
 				for (var ref in jsonResult.references) {
@@ -787,13 +831,13 @@
 					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 				$('#Genotypes2').on('change', function() {
 					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -856,33 +900,39 @@
 		
 		currentPageToken = pageToken;
 		$('#prev').prop('disabled', pageToken === '0');
-		
+
 		if (searchMode === 0 && $('#browsingAndExportingEnabled').prop('checked'))
 			searchMode = 3;
-		
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
-			type: "POST",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			timeout:0,
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			data: JSON.stringify(buildSearchQuery(searchMode, currentPageToken)),
-			success: function(jsonResult) {
-				$('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
-				if (searchMode === 0) { // count only 
-					count = jsonResult.count;
-					handleCountSuccess();
-				} else {
-					handleSearchSuccess(jsonResult, pageToken);
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+
+        var query = buildSearchQuery(searchMode, currentPageToken);
+        if (stringVariantIdsFromUploadFile !== null) {
+            query.selectedVariantIds = stringVariantIdsFromUploadFile.replaceAll('\n', ';');
+        }
+
+        $.ajax({
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                timeout:0,
+                headers: {
+                        "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(query),
+                success: function(jsonResult) {
+                        $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
+                        if (searchMode === 0) { // count only 
+                                count = jsonResult.count;
+                                handleCountSuccess();
+                        } else {
+                                handleSearchSuccess(jsonResult, pageToken);
+                        }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                }
+        });
+
 		$('#iconSeq').hide();
 		$('#iconPos').hide();
 		$('#rightSidePanel').hide();
@@ -892,7 +942,70 @@
  		$('#serverExportBox').hide();
 		displayProcessProgress(2, token);
 	}
-	
+        
+    function loadVariantIds() {
+        var options = {
+                ajax:{
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
+                    type: "GET",
+                    headers: {
+                            "Authorization": "Bearer " + token
+                    },
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    data: {
+                        projectId: getProjectId(),
+                        q: '{{{q}}}'
+                    },
+                    success: function(jsonResult) {
+                        return jsonResult;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                },
+                cache : false,
+                preserveSelectedPosition : "before",
+                preserveSelected: true,
+                log: 2 /*warn*/,
+                locale: {
+                    statusInitialized: "Start typing a query",
+                    emptyTitle: "Input IDs here",
+                    statusTooShort: "Please type more"
+                },
+                minLength: 2,
+                clearOnEmpty: true,
+                preprocessData: function (data) {
+                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                    var asp = this;
+                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                        return;
+                    }
+                    
+                    var array = [];
+                    for (i=0; i<data.length; i++) {
+                        array.push($.extend(true, data[i], {
+                            value: data[i]
+                        }));
+                    }
+                    return array;
+                }
+            };
+        
+        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
+        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
+        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+        
+        if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
+            let inputObj = $('#VariantIds').find('div.bs-searchbox input');
+            inputObj.css('width', "calc(100% - 24px)");               
+            //when clicking on the button, selected IDs and search results are cleared
+            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+        }
+    }
+        	
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -1173,64 +1286,67 @@
    		});
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
-		var data = {
-			"variantSetId": getProjectId(),
 
-			"referenceName": getSelectedSequences(),
-			"selectedVariantTypes": getSelectedTypes(),
-			"alleleCount": getSelectedNumberOfAlleles(),
-			"minposition": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-			"maxposition": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-			"variantEffects": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-			"geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+                var query = buildSearchQuery(3, currentPageToken);
+                query["keepExportOnServer"] =  keepExportOnServer;
+                query["exportFormat"] =  $('#exportFormat').val();
+                query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
+                query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
-			"callSetIds": getSelectedIndividuals(1, true),
-			"gtPattern": $('#Genotypes1').val(),
-			"mostSameRatio": $('#mostSameRatio1').val() === "" ? "100" : $('#mostSameRatio1').val(),
-			"minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-			"maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-			"missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
-			"annotationFieldThresholds": annotationFieldThresholds,
-
-			"callSetIds2": getSelectedIndividuals(2, true),
-			"gtPattern2": $('#Genotypes2').val(),
-			"mostSameRatio2": $('#mostSameRatio2').val() === "" ? "100" : $('#mostSameRatio2').val(),
-			"minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-			"maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-			"missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-			"annotationFieldThresholds2": annotationFieldThresholds2,
-			
-			"keepExportOnServer": keepExportOnServer,
-			"discriminate": $('#discriminate').prop('checked'),
-			"exportFormat": $('#exportFormat').val(),
-			"token": token,
-			"exportedIndividuals" : indToExport,
-			"metadataFields" : $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
-		};
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
 		if (keepExportOnServer) {
-			$.ajax({
-				url: url,
-				type: "POST",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
-				traditional: true,
-				data: data,
-				success: function(response) {
-					downloadURL = response;
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					downloadURL = null;
-					$("div#exportPanel").hide();
-					$("a#exportBoxToggleButton").removeClass("active");
-					handleError(xhr, thrownError);
-				}
-			});
+                    $.ajax({
+                            url: url,
+                            type: "POST",       
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                    "Authorization": "Bearer " + token
+                            },
+                            data: JSON.stringify(query),
+                            success: function(response) {
+                                    downloadURL = response;
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                    downloadURL = null;
+                                    $("div#exportPanel").hide();
+                                    $("a#exportBoxToggleButton").removeClass("active");
+                                    handleError(xhr, thrownError);
+                            }
+                    });
 		} else {
+                    var headers = {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json;charset=utf-8" 
+                    };
+
+                    var request = {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(query)
+                    };
+                    
+                    var filename = '';
+                    
+                    fetch(url, request).then((response) => {
+                            var header = response.headers.get('Content-Disposition');
+                            var parts = header.split(';');
+                            filename = parts[1].split('=')[1];
+                            return response.blob();
+                    })
+                    .then((result) => {
+                        if (result !== undefined) {
+                            var objectURL = URL.createObjectURL(result);
+                            var link = document.createElement("a");
+                            link.setAttribute("href", objectURL);
+                            link.setAttribute("download", filename);
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
 			downloadURL = null;
-			postDataToIFrame("outputFrame", url, data);
+			//postDataToIFrame("outputFrame", url, query);
 			$("div#exportPanel").hide();
 			$("a#exportBoxToggleButton").removeClass("active");
 		}
@@ -1245,7 +1361,7 @@
 			return;
 
 		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" href="' + downloadURL + '">' + fileName + '</a> ').show();
+		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
 		var exportedFormat = $('#exportFormat').val().toUpperCase();
 		if ("VCF" == exportedFormat)
 			addIgvExportIfRunning();
@@ -1411,16 +1527,20 @@
 	}
 	
 	// Open the IGV modal, initialise the browser if a default genome is set
-	function igvOpenDialog(){
-		$('#igvPanel').modal('show');
-		
-		if (!igvGenomeListLoaded && igvGenomeConfigURL){
-			igvLoadGenomeList().then(function (genomeList){
-				igvCheckModuleChange();
-			});
-		} else {
-			igvCheckModuleChange();
-		}
+	function igvOpenDialog(){            
+            if (seqCount === 0) {
+                alert("No sequence to display");
+            } else {                
+                $('#igvPanel').modal('show');
+
+                if (!igvGenomeListLoaded && igvGenomeConfigURL){
+                        igvLoadGenomeList().then(function (genomeList){
+                                igvCheckModuleChange();
+                        });
+                } else {
+                        igvCheckModuleChange();
+                }
+            }
 	}
 	
 	/* Load the default genomes list
@@ -1567,7 +1687,7 @@
 			}).catch(function (reason){
 				displayMessage("Error loading genome config : " + reason);
 			});
-		} else {  // FASTA genome
+		} else {  // FASTA genome
 			let genome;
 			if (indexFile){
 				genome = {
@@ -2000,6 +2120,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
+                                                            <p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);"> Filter by IDs</label></p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2014,7 +2135,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  <div class="row">
 											<div class="col-xl-6 half-width" style="float:left;">
 												<label for="variantTypes" class="custom-label" id="variantTypesLabel">Variant types</label>
-												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"												
+												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"											
 													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="variantTypes"></select>												
 										  	</div>
 										  	<div class="col-xl-6 half-width" style="float:left; margin-left:10px;" id="nbAlleleGrp">
@@ -2025,9 +2146,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										 </div>
 									  </div>
 									</div>
-									<div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
-									<div id="Sequences"></div>
-									<div class="margin-top-md">
+                                    <div id="sequenceFilter">
+                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+                                        <div id="Sequences"></div>
+                                    </div>
+                                    <div id="positions" class="margin-top-md">
 										<label id="positionLabel" for="minposition" class="custom-label">Position (bp)</label>
 										<div class="container-fluid">
 										  <div class="row">
@@ -2062,6 +2185,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
+                                                                        <div id="VariantIds" class="margin-top-md">
+                                        <div class="container-fluid">
+                                            <div class="row">
+                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-input">
+                                            <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
+                                        </div>
+                                        <div style="margin-top:-25px; text-align:right;">
+											<a id="clearVariantIdSelection" href="#" onclick="clearVariantIdSelection();" style="display:none; font-size:18px; margin-left:-20px; position:absolute; font-weight:bold; text-decoration:none;" title="Clear selection">&nbsp;X&nbsp;</a>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox();"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with up to 1M variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
+                                            <input name="file" type="file" id="uploadVariantIdsFile" style="display:none" />
+                                        </div>
+                                    </div>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">
@@ -2264,7 +2405,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
+								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeAndShowDensityChart(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								

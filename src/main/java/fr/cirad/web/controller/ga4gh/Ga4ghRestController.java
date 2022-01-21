@@ -534,7 +534,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
     @CrossOrigin
-	@RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
 
         String token = tokenManager.readToken(request);
@@ -563,7 +563,7 @@ public class Ga4ghRestController extends ControllerInterface {
         {
             build404Response(response);
             return null;
-		}
+        }
     }
 
     /**

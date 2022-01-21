@@ -3,13 +3,13 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:mongo="http://www.springframework.org/schema/data/mongo"
        xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd
-                                                 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+							http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-       <!-- Definition of a host running remotely without authentication enabled, with a custom max-pool-size
+	<!-- Definition of a host running remotely without authentication enabled, with a custom max-pool-size -->
     <mongo:mongo-client host="my.mongo.server1.com" port="59393" id="defaultMongoHost">
-              <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client> -->
+		<mongo:client-settings connection-pool-max-size="500" />
+    </mongo:mongo-client>
     
     <!-- Definition of a local host with authentication enabled -->
-       <mongo:mongo-client host="127.0.0.1" port="27017" id="defaultMongoHost" credential="gigwa2:CorrectHorseBatteryStaple@admin" />
+ 	<mongo:mongo-client host="127.0.0.1" port="27017" id="localMongoHost" credential="XXXXX:YYYYY@admin" />
 </beans>
