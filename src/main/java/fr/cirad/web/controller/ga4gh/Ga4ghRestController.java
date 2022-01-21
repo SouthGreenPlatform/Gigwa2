@@ -235,7 +235,6 @@ public class Ga4ghRestController extends ControllerInterface {
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
-
         String token = tokenManager.readToken(request);
         try
         {

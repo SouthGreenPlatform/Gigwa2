@@ -32,7 +32,7 @@
     
 	<!-- Multi-part resolver (to handle file uploads) -->
 	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-        <property name="maxUploadSize" value="1073741824"/> <!-- 1 Gb -->
+        <property name="maxUploadSize" value="4294967296"/> <!-- 4 Gb -->
 	</bean>
 	
     <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">

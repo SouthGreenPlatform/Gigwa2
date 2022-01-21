@@ -687,10 +687,10 @@ function markInconsistentGenotypesAsMissing() {
             if (genotypes == null)
                 genotypes = new Array();
 
-            var genotype = $(this).find("td:eq(0)").html().trim();
-            if (!arrayContains(genotypes, genotype))
-                genotypes.push(genotype);
-            indivGenotypes[individual] = genotypes;
+			var genotype = $(this).find("td:eq(0)").html().trim();
+			if (!genotypes.includes(genotype))
+				genotypes.push(genotype);
+			indivGenotypes[individual] = genotypes;
 
             if (tableCounter == nRunCount - 1 && Object.keys(genotypes).length > 1)
                 markAsMissingData(individual);
@@ -711,19 +711,23 @@ function markAsMissingData(individual) {
 }
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
-    var selectedIndividuals = [];
-    var groups = groupNumber == null ? [1, 2] : [groupNumber];
-    var ga4ghId = getProjectId() + "§";
-    for (var groupKey in groups)
-    {
-        var groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('value');
-        if (groupIndividuals == null)
-            groupIndividuals = $('#Individuals' + groups[groupKey]).selectmultiple('option')
-        for (var indKey in groupIndividuals)
-            if (!arrayContains(selectedIndividuals, groupIndividuals[indKey]))
-                selectedIndividuals.push((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
-    }
-    return selectedIndividuals.length == indCount ? [] : selectedIndividuals;
+	const selectedIndividuals = new Set();
+	const groups = groupNumber == null ? [1, 2] : [groupNumber];
+	const ga4ghId = getProjectId() + "§";
+	for (let groupKey in groups)
+	{
+	    const groupIndex = groups[groupKey];
+		let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
+		if (groupIndividuals == null)
+			groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
+		// All individuals are selected in a single group, no need to look further
+		if (groupIndividuals.length == indCount)
+		    return [];
+		
+		for (let indKey in groupIndividuals)
+			selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+	}
+	return selectedIndividuals.size == indCount ? [] : Array.from(selectedIndividuals);
 }
 
 function getAllSelectedIndividuals(provideGa4ghId){
@@ -749,24 +753,24 @@ function getAnnotationThresholds(individual, indArray1, indArray2)
 {
     var annotationFieldThresholds1 = {}, annotationFieldThresholds2 = {}, result = {};
 
-    var inGroup1 = indArray1.length == 0 || arrayContains(indArray1, individual);
-    if (inGroup1)
-        $('#vcfFieldFilterGroup1 input').each(function() {
-            var value = $(this).val();
-            if (value != "0")
-                result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseFloat(value);
-        });
-    
-    var inGroup2 = indArray2.length == 0 || arrayContains(indArray2, individual);
-    if (inGroup2)
-        $('#vcfFieldFilterGroup2 input').each(function() {
-            var value = $(this).val();
-            if (value != "0")
-            {
-                var annotation = this.id.substring(0, this.id.lastIndexOf("_"));
-                result[annotation] = inGroup1 ? Math.max(result[annotation], parseFloat(value)) : parseFloat(value);
-            }
-        });
+	var inGroup1 = indArray1.length == 0 || indArray1.includes(individual);
+	if (inGroup1)
+		$('#vcfFieldFilterGroup1 input').each(function() {
+			var value = $(this).val();
+			if (value != "0")
+				result[this.id.substring(0, this.id.lastIndexOf("_"))] = parseFloat(value);
+		});
+	
+	var inGroup2 = indArray2.length == 0 || indArray2.includes(individual);
+	if (inGroup2)
+		$('#vcfFieldFilterGroup2 input').each(function() {
+			var value = $(this).val();
+			if (value != "0")
+			{
+				var annotation = this.id.substring(0, this.id.lastIndexOf("_"));
+				result[annotation] = inGroup1 ? Math.max(result[annotation], parseFloat(value)) : parseFloat(value);
+			}
+		});
 
     return result;
 }
@@ -795,27 +799,28 @@ function isNumberKey(evt) {
 }
 
 function setGenotypeInvestigationMode(mode) {
-    if (mode <= 1)
-    {
-        $('#discriminationDiv').hide(300);
-        $('#discriminate').prop('checked', false);
-        $('#Individuals2').selectmultiple('deselectAll');
-        $('#Genotypes2').selectpicker('deselectAll');
-        $('#missingdata2').val("100");
-        $('#vcfFieldFilterGroup2 input').val("0");
-        $('#minmaf2').val("0");
-        $('#maxmaf2').val("50");
-        $('div#genotypeInvestigationDiv2').hide(300);
-        
-        if (mode == 0)
-        {
-            $('#Individuals1').selectmultiple('deselectAll');
-            $('#Genotypes1').selectpicker('deselectAll');
-            $('#missingdata1').val("100");
-            $('#vcfFieldFilterGroup1 input').val("0");
-            $('#minmaf1').val("0");
-            $('#maxmaf1').val("50");
-            $('div#genotypeInvestigationDiv1').hide(300);
+    genotypeInvestigationMode = mode;
+	if (mode <= 1)
+	{
+		$('#discriminationDiv').hide(300);
+		$('#discriminate').prop('checked', false);
+		$('#Individuals2').selectmultiple('deselectAll');
+		$('#Genotypes2').selectpicker('deselectAll');
+		$('#missingdata2').val("100");
+		$('#vcfFieldFilterGroup2 input').val("0");
+		$('#minmaf2').val("0");
+		$('#maxmaf2').val("50");
+		$('div#genotypeInvestigationDiv2').hide(300);
+		
+		if (mode == 0)
+		{
+			$('#Individuals1').selectmultiple('deselectAll');
+			$('#Genotypes1').selectpicker('deselectAll');
+			$('#missingdata1').val("100");
+			$('#vcfFieldFilterGroup1 input').val("0");
+			$('#minmaf1').val("0");
+			$('#maxmaf1').val("50");
+			$('div#genotypeInvestigationDiv1').hide(300);
 
             $("#igvGroupsAll input").prop("checked", true);
             $("#igvGroupsMenu").hide();
@@ -944,18 +949,18 @@ function addSelectionDropDownsToHeaders(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-    columnCount = tableObj.rows[0].cells.length;
-    mainLoop : for (c=0; c<columnCount; c++)
-    {
-        distinctValuesForColumn = new Array();
-        for (r=1; r<tableObj.rows.length; r++)
-            if (tableObj.rows[r].cells[c] != null)
-            {
-                if (containsHtmlTags(tableObj.rows[r].cells[c].innerHTML))
-                    continue mainLoop;    // we don't create filter drop-downs for HTML contents
-                if (!arrayContains(distinctValuesForColumn, tableObj.rows[r].cells[c].innerHTML))
-                    distinctValuesForColumn[distinctValuesForColumn.length] = tableObj.rows[r].cells[c].innerHTML;
-            }
+	columnCount = tableObj.rows[0].cells.length;
+	mainLoop : for (c=0; c<columnCount; c++)
+	{
+		distinctValuesForColumn = new Array();
+		for (r=1; r<tableObj.rows.length; r++)
+			if (tableObj.rows[r].cells[c] != null)
+			{
+				if (containsHtmlTags(tableObj.rows[r].cells[c].innerHTML))
+					continue mainLoop;	// we don't create filter drop-downs for HTML contents
+				if (!distinctValuesForColumn.includes(tableObj.rows[r].cells[c].innerHTML))
+					distinctValuesForColumn[distinctValuesForColumn.length] = tableObj.rows[r].cells[c].innerHTML;
+			}
 
         distinctValuesForColumn.sort();
 
@@ -991,25 +996,25 @@ function applyDropDownFiltersToTable(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-    columnCount = tableObj.rows[0].cells.length;
-    for (r=1; r<tableObj.rows.length; r++)
-    {
-        displayVal = "";
-        for (c=0; c<columnCount; c++)
-        {
-            if (filtersToColumns[c] != null)
-            {
-                var selection = $(filtersToColumns[c]).val();
-                if (selection != null && tableObj.rows[r].cells[c] != null && !arrayContains(selection, tableObj.rows[r].cells[c].innerHTML))
-                {
-                    displayVal = "none";
-                    if (r > 1)
-                        break;
-                }
-            }
-        }
-        tableObj.rows[r].style.display = displayVal;
-    }
+	columnCount = tableObj.rows[0].cells.length;
+	for (r=1; r<tableObj.rows.length; r++)
+	{
+		displayVal = "";
+		for (c=0; c<columnCount; c++)
+		{
+			if (filtersToColumns[c] != null)
+			{
+				var selection = $(filtersToColumns[c]).val();
+				if (selection != null && tableObj.rows[r].cells[c] != null && !selection.includes(tableObj.rows[r].cells[c].innerHTML))
+				{
+					displayVal = "none";
+					if (r > 1)
+						break;
+				}
+			}
+		}
+		tableObj.rows[r].style.display = displayVal;
+	}
 }
 
 function resetDropDownFilterTable(tableObj)
@@ -1155,8 +1160,16 @@ function displayProjectInfo(projName)
     });
 }
 
+// Check whether some individuals are in both groups at the same time
+function areGroupsOverlapping(){
+    const group1 = getSelectedIndividuals(1);
+    const group2 = getSelectedIndividuals(2);
+    //     Overlapping individuals                         // empty = all selected = overlap
+    return arrayIntersection(group1, group2).length > 0 || group1.length == 0 || group2.length == 0;
+}
+
 function checkGroupOverlap() {
-    $('#overlapWarning').toggle($("#discriminate").prop('checked') && arrayIntersection(getSelectedIndividuals(1), getSelectedIndividuals(2)).length > 0);
+	$('#overlapWarning').toggle($("#discriminate").prop('checked') && areGroupsOverlapping());
 }
 
 function getOutputToolConfig(toolName)
