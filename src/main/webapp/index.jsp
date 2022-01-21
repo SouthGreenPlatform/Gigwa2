@@ -270,7 +270,14 @@
 		});            
 
 		$("#variantTable").on('click', 'th', function() { // Sort function on variant table. Enabled for sequence and position only
-			if ($(this).text().trim() === "sequence") {
+			if ($(this).text().trim() === "id") {
+				if (sortBy == "_id")
+					sortDesc = !sortDesc;
+				else
+					sortBy = "_id";
+				searchVariants(2, '0');
+			}
+			else if ($(this).text().trim() === "sequence") {
 				if (sortBy == seqPath)
 					sortDesc = !sortDesc;
 				else
@@ -347,11 +354,10 @@
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection 
+	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event 
 	function dropTempCol() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
-			async: false,
 			type: "DELETE",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
@@ -369,6 +375,7 @@
 		});
 	}
 
+	// clear user token, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
 	function clearToken() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
@@ -2179,7 +2186,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<a id="clearVariantIdSelection" href="#" onclick="clearVariantIdSelection();" style="display:none; font-size:18px; margin-left:-20px; position:absolute; font-weight:bold; text-decoration:none;" title="Clear selection">&nbsp;X&nbsp;</a>
                                             <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
                                             <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox();"></button>
-                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with up to 1M variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
                                             <input name="file" type="file" id="uploadVariantIdsFile" style="display:none" />
                                         </div>
                                     </div>

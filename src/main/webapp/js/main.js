@@ -254,9 +254,12 @@ function sendToFjBytes() {
         }
     });
 
-    let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') + "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') + "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype');
-    $('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" target="_blank">Open in separate window</a></center>');
-    $("#fjBytesFrame").attr('src', url);
+	let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') +
+	            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
+	            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
+	            "&id=" + getModuleName();
+	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" target="_blank">Open in separate window</a></center>');
+	$("#fjBytesFrame").attr('src', url);
 }
 
 function getNcbiTaxonDetails(ncbiTaxonId)
@@ -541,7 +544,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
     var gotGenomeBrowserURL = genomeBrowserURL != null && genomeBrowserURL.trim() != "";
     var content = '';
     var row;
-    var headerContent = '<thead><tr style="background-color:darkgrey;"><th>id</th>' +
+    var headerContent = '<thead><tr style="background-color:darkgrey;"><th class="hand-cursor" id="thId">id<span id="iconId" class="glyphicon' + (sortBy == "_id" ? (" glyphicon-chevron-" + (sortDesc ? "down" : "up")) : '') + '"></span></th>' +
     ' <th class="hand-cursor" id="thSeq">sequence<span id="iconSeq" class="glyphicon' + (sortBy == seqPath ? (" glyphicon-chevron-" + (sortDesc ? "down" : "up")) : '') + '"></span></th>' +
     ' <th class="hand-cursor" id="thPos">start<span id="iconPos" class="glyphicon' + (sortBy == posPath ? (" glyphicon-chevron-" + (sortDesc ? "down" : "up")) : '') + '"></span></th>' +
     '<th>stop</th><th>alleles</th>';

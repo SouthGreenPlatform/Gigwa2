@@ -101,6 +101,7 @@ import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
+import fr.cirad.mgdb.importing.IntertekImport;
 import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
@@ -734,7 +735,7 @@ public class GigwaRestController extends ControllerInterface {
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
         Collection<BasicDBList> variantQueryDBListColl = ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
-        List<Object> variantQueryDBList = variantQueryDBListColl.iterator().next();
+        BasicDBList variantQueryDBList = variantQueryDBListColl.iterator().next();
 
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
@@ -1635,22 +1636,24 @@ public class GigwaRestController extends ControllerInterface {
 							Integer newProjId = null;
 							if (fBrapiImport)
 								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-							else
-							{
+							else {
 								if (!filesByExtension.containsKey("gz")) {
-									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map"))
-									{
+									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
 										newProjId = new PlinkImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf"))
-									{
+									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsLocalFile = s instanceof File;
 										newProjId = new VcfImport(token).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
-									else {
+                                    else if (filesByExtension.containsKey("intertek")) {
+                                        Serializable s = filesByExtension.get("intertek");                                                                               
+                                        boolean fIsLocalFile = s instanceof File;
+                                        newProjId = new IntertekImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+                                    }
+                                    else {
 										Serializable s = filesByExtension.values().iterator().next();                                                                                
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
@@ -1660,8 +1663,7 @@ public class GigwaRestController extends ControllerInterface {
 											throw new Exception("Unsupported file format or extension: " + s);
 									}
 								}
-								else
-								{ // looks like a compressed file
+								else { // looks like a compressed file
 									Serializable s = filesByExtension.get("gz");
 									boolean fIsLocalFile = s instanceof File;
 									if (fIsLocalFile)
