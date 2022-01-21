@@ -198,6 +198,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DROP_TEMP_COL_PATH = "/dropTempCol";
 	static public final String CLEAR_TOKEN_PATH = "/clearToken";
 	static public final String DENSITY_DATA_PATH = "/densityData";
+	static public final String FST_DATA_PATH = "/fstData";
+	static public final String TAJIMAD_DATA_PATH = "/tajimaDData";
 	static public final String IGV_DATA_PATH = "/igvData";
 	static public final String IGV_GENOME_CONFIG_PATH = "/igvGenomeConfig";
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
@@ -666,7 +668,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param resp
 	 * @param gdr
 	 * @param variantSetId
-	 * @return Map<String, Map<Long, Long>> containing density data in JSON
+	 * @return Map<Long, Long> containing density data in JSON
 	 *         format
 	 * @throws Exception
 	 */
@@ -684,6 +686,76 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
 				return service.selectionDensity(gdr);
+			} else {
+				build401Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get Fst data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @param variantSetId
+	 * @return Map<Long, Long> containing density data in JSON
+	 *         format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = FST_DATA_PATH, notes = "get Fst data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String token = tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return service.selectionFst(gdr);
+			} else {
+				build401Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get Tajima's D data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @param variantSetId
+	 * @return Map<Long, Long> containing density data in JSON
+	 *         format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = TAJIMAD_DATA_PATH, notes = "get Tajima's D data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String token = tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return service.selectionTajimaD(gdr);
 			} else {
 				build401Response(resp);
 				return null;

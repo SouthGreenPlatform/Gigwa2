@@ -57,8 +57,8 @@
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
-<script type="text/javascript" src="js/exporting.js"></script>
-<script type="text/javascript" src="js/density.js"></script>
+<script type="text/javascript" src="js/highcharts/exporting.js"></script>
+<script type="text/javascript" src="js/highcharts/export-data.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
 <script type="text/javascript">
@@ -118,10 +118,15 @@
 	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
 	var variantTypesListURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANT_TYPES_PATH%>" />';
 	var selectionDensityDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DENSITY_DATA_PATH %>" />';
+	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
+	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
-	
+	var genotypeInvestigationMode = 0;
+	var callSetResponse = [];
+	var callSetMetadataFields = [];
+	var gotMetaData = false;
 	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
@@ -203,7 +208,7 @@
 			checkBrowsingBoxAccordingToLocalVariable();
 			$('input#browsingAndExportingEnabled').change();
 			igvRemoveExistingBrowser();
-			igvChangeModule(referenceset)
+			igvChangeModule(referenceset);
 		});
 		
 		$('#project').on('change', function() {
@@ -220,6 +225,8 @@
 			else
 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
+			
+			currentChartType = null;
 			
 			$.ajax({	// load runs
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
@@ -566,11 +573,10 @@
 				"pageToken": null
 			}),
 			success: function(jsonResult) {
-				var callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
-				igvCallSets = callSetResponse;
+				callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 				var indOpt = [];
 
-				var gotMetaData = false;
+				gotMetaData = false;
 				
 				// first pass to compile an exhaustive field list
 				var headers = new Array();
@@ -585,6 +591,7 @@
 					if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
 						indOpt.push(callSetResponse[ind].name);
 				}
+				callSetMetadataFields = headers;
 				
 				var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
 				$.ajax({
@@ -616,8 +623,9 @@
 					});
 					setTimeout(function() {
 						var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
+						headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
 						for (var i in headers) {
-							headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
+							headerRow.append("<th>" + headers[i] + "<br/></th>");
 							exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
 						}
 						$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
@@ -994,8 +1002,10 @@
 			$("#displayAllGtOption").toggle(ind.length > 0);
 		$("#runButtons").html("");
 		var addedRunCount = 0;
+		
+		let requests = [];
 		for (var runIndex in runList) {
-			$.ajax({	// result of a run for a variant has an id as module§project§variant§run
+			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
 				type: "POST",
 				data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
@@ -1033,14 +1043,17 @@
 					handleError(xhr, thrownError);
 					errorEncountered = true;
 				}
-			});
+			}));
 		}
-		$('#gtTable').html(modalContent);
-		if (runList.length > 1)
-			markInconsistentGenotypesAsMissing();
+		
+		Promise.allSettled(requests).then(function(){
+		    $('#gtTable').html(modalContent);
+			if (runList.length > 1)
+				markInconsistentGenotypesAsMissing();
 
-		if (!errorEncountered)
-			$('#variantDetailPanel').modal('show').css({"z-index": 1100});
+			if (!errorEncountered)
+				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
+		});
 	}
 
 	// create the annotation detail panel 
@@ -1076,9 +1089,9 @@
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
 				
-				var gotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
-				$('#toggleVariantMetadata').css('display', gotMetaData ? 'inline' : 'none');
-				if (gotMetaData)
+				var varGotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
+				$('#toggleVariantMetadata').css('display', varGotMetaData ? 'inline' : 'none');
+				if (varGotMetaData)
 				{
 					var additionalInfo = new StringBuffer();
 					additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
@@ -1304,7 +1317,6 @@
 	var igvGenomeListLoaded = false;
 	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
-	var igvCallSets;  // List of callsets
 	var igvCurrentModule;  // Currently loaded module
 	var igvDefaultGenome;
 	
@@ -1938,6 +1950,7 @@
 		return trackIndividuals;
 	}
 </script>
+<script type="text/javascript" src="js/charts.js"></script>
 </head>
 <body>
 	<%@include file="navbar.jsp"%>
@@ -2251,8 +2264,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
-									<img title="Variant density chart" src="images/density.webp" height="25" width="25" />
+								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
+									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
 								<!-- IGV.js browser button -->
