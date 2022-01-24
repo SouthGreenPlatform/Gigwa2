@@ -234,17 +234,8 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
         $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
     for (let key in types)
         $("#chartVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
-
-    let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
-    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
-    if (getGenotypeInvestigationMode() != 0 && ($("#vcfFieldFilterGroup1 input").length > 0 || chartInfo.selectIndividuals))
-        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
-    customisationDivHTML += '</div>';
-    customisationDivHTML += '<div id="chartTypeCustomisationOptions"></div>';
-	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 	
-	buildVcfMetadataDiv(chartInfo);
+	buildCustomisationDiv(chartInfo);
 
 	if (chartInfo.onLoad !== undefined)
         chartInfo.onLoad();
@@ -252,24 +243,31 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     loadChart();
 }
 
-function buildVcfMetadataDiv(chartInfo) {
-    let customisationDivHTML = '';
+function buildCustomisationDiv(chartInfo) {
     const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
+    
+    let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
+    if (getGenotypeInvestigationMode() != 0 && (hasVcfMetadata || chartInfo.selectIndividuals))
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
+    customisationDivHTML += '</div>';
+    
+    customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
     if (hasVcfMetadata) {
         customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
         $("#vcfFieldFilterGroup1 input").each(function(index) {
             let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
             customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
         });
-    }
-
-    if (hasVcfMetadata)
         customisationDivHTML += "</div>"
+    }
 
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
+    customisationDivHTML += '</div>'
     
-    $("#chartTypeCustomisationOptions").html(customisationDivHTML)
+    $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 }
 
 function displayOrAbort() {
@@ -282,10 +280,10 @@ function displayOrAbort() {
 
 function setChartType(typeSelect) {
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
-    const typeInfo = chartTypes.get(currentChartType);
+    const chartInfo = chartTypes.get(currentChartType);
     
-    if (typeInfo.enableCondition !== undefined){
-        const failMessage = typeInfo.enableCondition();
+    if (chartInfo.enableCondition !== undefined){
+        const failMessage = chartInfo.enableCondition();
         if (failMessage !== null){
             $("#additionalCharts").hide();
             $("#densityChartArea").html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
@@ -301,10 +299,10 @@ function setChartType(typeSelect) {
         chart = null;
     }
     
-    buildVcfMetadataDiv(typeInfo);
+    buildCustomisationDiv(chartInfo);
     
-    if (typeInfo.onLoad !== undefined)
-        typeInfo.onLoad();
+    if (chartInfo.onLoad !== undefined)
+        chartInfo.onLoad();
     
     loadChart();
 }
@@ -385,7 +383,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 }
 
 function loadChart(minPos, maxPos) {    
-    const typeInfo = chartTypes.get(currentChartType);
+    const chartInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
@@ -397,7 +395,7 @@ function loadChart(minPos, maxPos) {
 function displayChart(minPos, maxPos) {
     localmin = minPos;
     localmax = maxPos;
-    const typeInfo = chartTypes.get(currentChartType);
+    const chartInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
     $("input#resetZoom").toggle(zoomApplied);
@@ -428,12 +426,12 @@ function displayChart(minPos, maxPos) {
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
-    if (typeInfo.buildRequestPayload !== undefined)
-        dataPayLoad = typeInfo.buildRequestPayload(dataPayLoad);
+    if (chartInfo.buildRequestPayload !== undefined)
+        dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
         if (dataPayLoad === null) return;
 
     $.ajax({
-        url: typeInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+        url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: {
@@ -445,7 +443,7 @@ function displayChart(minPos, maxPos) {
                 return; // probably aborted
             
             // TODO : Key to the middle of the interval ?
-            chartJsonKeys = typeInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+            chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
             
             let totalVariantCount = 0;
@@ -460,15 +458,15 @@ function displayChart(minPos, maxPos) {
                     zoomType: 'x'
                 },
                 title: {
-                    text: typeInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
+                    text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
                 },
                 subtitle: {
-                    text: isNaN(intervalSize) ? '' : typeInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+                    text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
                 },
                 xAxis: {
                     categories: chartJsonKeys,
                     title: {
-                        text: typeInfo.xAxisTitle,
+                        text: chartInfo.xAxisTitle,
                     },
                     events: {
                         afterSetExtremes: function(e) {
@@ -513,9 +511,9 @@ function displayChart(minPos, maxPos) {
                 }
             });
             
-            for (let seriesIndex in typeInfo.series) {
-                const series = typeInfo.series[seriesIndex];
-                const seriesData = (typeInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
+            for (let seriesIndex in chartInfo.series) {
+                const series = chartInfo.series[seriesIndex];
+                const seriesData = (chartInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
                 const seriesValues = new Array();
                 for (let key of chartJsonKeys)
                     seriesValues.push(seriesData[key]);
@@ -545,8 +543,8 @@ function displayChart(minPos, maxPos) {
             if (!isNaN(intervalSize))
                 $('.showHideSeriesBox').change();
             
-            if (typeInfo.onDisplay !== undefined)
-                typeInfo.onDisplay();
+            if (chartInfo.onDisplay !== undefined)
+                chartInfo.onDisplay();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -735,7 +733,7 @@ function displayOrHideThreshold(isChecked) {
     if (chart === null)
         return;
     
-    const typeInfo = chartTypes.get(currentChartType);
+    const chartInfo = chartTypes.get(currentChartType);
     if (isChecked) {
         const threshold = parseFloat($("#fstThreshold").val());
         chart.addSeries({
@@ -745,7 +743,7 @@ function displayOrHideThreshold(isChecked) {
             lineWidth: 0.5,
             color: "#CC0000",
             data: chartJsonKeys.map(val => threshold),
-            yAxis: typeInfo.series[0].name,
+            yAxis: chartInfo.series[0].name,
         }, true);
     } else {
         const series = chart.get("threshold");
