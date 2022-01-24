@@ -157,6 +157,10 @@ div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, 
     width: 99%;
 }
 
+div.graphCustomization {
+	min-height:90px;
+}
+
 div#density div.graphCustomization p {
 	font-size:12px;
 	font-weight:bold;
@@ -220,7 +224,7 @@ form#importDropzone .form-group {
 }
 
 .dropzone .dz-default.dz-message {
-	height:140px;
+	height:145px;
 }
 
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {
@@ -424,8 +428,20 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
 }
 
 .bootstrap-select > .dropdown-toggle {
-    padding-left:10px;
-    padding-right:20px;
+    padding-left:6px;
+    padding-right:17px;
+}
+
+.bootstrap-select.btn-group .dropdown-toggle .caret {
+    right:8px;
+}
+
+div#VariantIds .bootstrap-select.btn-group .dropdown-menu {
+	min-width:150px;
+}
+
+.bootstrap-select div.status {
+	margin:0 5px;
 }
 
 div#exportPanel select[multiple] option {
