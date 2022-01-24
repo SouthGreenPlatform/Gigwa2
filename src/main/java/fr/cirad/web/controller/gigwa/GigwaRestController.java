@@ -2072,6 +2072,8 @@ public class GigwaRestController extends ControllerInterface {
     		int project = parseInt(info[1]);
     		if (tokenManager.canUserWriteToProject(token, info[0], project)) {
     			return SnpEffService.annotateProject(info[0], project, snpEffDatabase);
+    		} else {
+    			LOG.error("NOT AUTHENTICATED");
     		}
     	} catch (UnsupportedEncodingException ex) {
     		LOG.debug("Error decoding projectId : " + projectId, ex);

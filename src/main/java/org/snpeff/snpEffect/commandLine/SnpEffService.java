@@ -22,6 +22,9 @@ public class SnpEffService {
 	public static String annotateProject(String module, int project, String snpEffDatabase) {
 		MongoTemplate template = MongoTemplateManager.get(module);
 		
+		Config config = new Config(snpEffDatabase, "/home/u017-h433/Documents/deps/snpEff/snpEff.config", "/home/u017-h433/Documents/deps/snpEff/data", null);
+		SnpEffectPredictor predictor = SnpEffectPredictor.load(config);
+		
 		BasicDBObject queryVarAnn = new BasicDBObject();
         queryVarAnn.put("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT, project);
         DBVCFHeader headerData = DBVCFHeader.fromDocument(MongoTemplateManager.get(module).getCollection(MongoTemplateManager.getMongoCollectionName(DBVCFHeader.class)).find(queryVarAnn).first());
@@ -30,9 +33,8 @@ public class SnpEffService {
 		vrdQuery.addCriteria(Criteria.where("_id." + VariantRunData.VariantRunDataId.FIELDNAME_PROJECT_ID).is(project));
 		List<VariantRunData> variantRunData = template.find(vrdQuery, VariantRunData.class);
 		
-		SnpEffectPredictor predictor = SnpEffectPredictor.load(Config.get());
-		
 		for (VariantRunData vrd : variantRunData) {
+			System.out.println(vrd.getVariantId());
 			MgdbVariantWrapper variant = new MgdbVariantWrapper(vrd, headerData);
 			annotateVariant(variant, predictor);
 		}
