@@ -74,11 +74,16 @@ const chartTypes = new Map([
                 }
                 
                 let groups = new Map();
-                callSetResponse.forEach(function (callset){
+                callSetResponse.forEach(function (callset) {
+                    if (callset.info === undefined) return;
+                    
+                    const field = callset.info[groupOption];
+                    if (field === undefined || field.length <= 0) return;
+                    
                     const fieldValue = callset.info[groupOption][0];
-                    if (fieldValue !== undefined){
+                    if (fieldValue !== undefined) {
                         let valueGroup = groups.get(fieldValue);
-                        if (valueGroup !== undefined){
+                        if (valueGroup !== undefined) {
                             valueGroup.push(callset.name);
                         } else if (selectedValues.includes(fieldValue)) {
                             groups.set(fieldValue, [callset.name]);
