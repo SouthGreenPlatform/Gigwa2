@@ -1248,8 +1248,7 @@
 		}
 		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
 		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
-			supportedPloidyLevels = supportedPloidyLevels.toString().split(";");
-			console.log(supportedPloidyLevels);
+			supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
 			if (!supportedPloidyLevels.includes(ploidy)) {
 				alert("Error: selected export format does not support ploidy level " + ploidy);
 				return;
