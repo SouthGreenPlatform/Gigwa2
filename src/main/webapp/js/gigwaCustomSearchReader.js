@@ -18,11 +18,11 @@ class GigwaVariant {
 		self.id = id;
 		self.chr = reference;
 		self.pos = position;
-		
+
 		self.referenceBases = refAllele;
 		self.alternateBases = altAlleles;
 		self.names = [];
-		
+
 		self.info = {};
 		self.calls = calls;
 		self.init();
@@ -208,22 +208,22 @@ function arrayToString(value, delim) {
 function parseFeatures(data, dataHeader){
 	let variants = [];
 	let projectId = getProjectId() + "§";
-	
+
 	// Split the tabular data in rows and columns, filtering out the empty lines
 	let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
 	let header = rows.shift();
-	
+
 	// Associate column titles to indices
 	let cols = new Map();
 	header.forEach(function (title, index){
 		cols.set(title, index);
 	});
-	
+
 	let individualCols = new Map();
 	dataHeader.callSets.forEach(function (callset){
 		individualCols.set(callset.id, cols.get(callset.name));
 	})
-	
+
 	// Parse the actual data
 	rows.forEach(function (row){
 		// Build the calls object (parse the genotypes)
@@ -238,7 +238,7 @@ function parseFeatures(data, dataHeader){
 				};
 			}
 		});
-		
+
 		let alleles = row[cols.get("alleles")].split("/");
 		let refAllele = alleles.shift();
 		let variant = new GigwaVariant(projectId + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
@@ -246,7 +246,7 @@ function parseFeatures(data, dataHeader){
 			variants.push(variant);
 		}
 	});
-	
+
 	return variants;
 }
 
@@ -262,7 +262,7 @@ class GigwaSearchReader {
 		this.lastIGVChromosome = null;
 		this.lastIndex = 0;
 	}
-	
+
 	readHeader() {
 		if (!this.header){
 			return this.updateHeader();
@@ -270,13 +270,13 @@ class GigwaSearchReader {
 			return Promise.resolve(this.header);
 		}
 	}
-	
+
 	// Retrieve the "header" data (the callsets)
 	async updateHeader(){
 		this.header = {};
 		this.header.callSets = callSetResponse.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
 		this.header.callSetIds = this.header.callSets.map(callset => callset.id);
-		
+
 		this.header.callSets.sort(function (a, b){
 			if (a.id < b.id) return -1;
 			if (a.id > b.id) return 1;
@@ -284,7 +284,7 @@ class GigwaSearchReader {
 		});
 		return this.header;
 	}
-	
+
 	/* Read features on chr from bpStart to bpEnd
 	 * This works with a chain of promises. Every new demand by IGV is materialised by a promise added on the chain
 	 * Each new promise gets its own parameters, and the results from its predecessor on the chain
@@ -292,7 +292,7 @@ class GigwaSearchReader {
 	 */
 	async readFeatures(chr, bpStart, bpEnd) {
 		if (!self.header) await this.readHeader();
-		
+
 		this.lastIndex += 1;
 		if (this.lastRead) {
 			this.lastRead = this.lastRead.then(this.retrieveFeatures(this.lastIndex, chr, bpStart, bpEnd));
@@ -302,7 +302,7 @@ class GigwaSearchReader {
 		let result = await this.lastRead;
 		return result.result;
 	}
-	
+
 	// Return an async function to chain after the last one
 	// A closure is necessary as the chained promise must get the return value from its predecessor and its own parameters
 	retrieveFeatures(chainIndex, igvChr, bpStart, bpEnd) {
@@ -311,17 +311,17 @@ class GigwaSearchReader {
 		let searchEnd = getSearchMaxPosition();
 
 		let chr = igvGenomeRefTable[igvChr];  // Resolve chromosome aliases
-		
+
 		// Limit the request to the searched range
 		bpStart = Math.max(parseInt(bpStart), searchStart);
 		bpEnd = searchEnd < 0 ? parseInt(bpEnd) : Math.min(parseInt(bpEnd), searchEnd);  // searchEnd = -1 -> all
-		
+
 		// Function to chain
 		async function requestChain(previousResult){
 		    if (self.lastIndex > chainIndex) {  // Not the latest request : pass the cached features to the next promise, do not draw anything for this call
 		        return {chr: previousResult.chr, start: previousResult.start, end: previousResult.end, features: previousResult.features, result: []};
 		    }
-		    
+
 			if (!chr) {  // Chromosome not found, probably because gigwa has no data for it
 				if (self.lastIGVChromosome != igvChr) {
 					displayMessage("No data found for the sequence " + igvChr + " in Gigwa");
@@ -329,7 +329,7 @@ class GigwaSearchReader {
 				return {chr: null, start: -1, end: -1, features: [], result: []};
 			}
 			self.lastIGVChromosome = igvChr;
-			
+
 			let overlap;
 			// FIXME : Open / closed intervals ?
 			// FIXME : For dezoom, use the cache and make 2 requests or make a whole new request ?
@@ -351,15 +351,15 @@ class GigwaSearchReader {
 			} else {  // Overlapping range
 				overlap = [Math.max(previousResult.start, bpStart), Math.min(previousResult.end, bpEnd)];
 			}
-			
-			
+
+
 			let query = {
 			    ...buildSearchQuery(2, 0),
 				variantSetId: getProjectId(),
 				displayedSequence: chr,
 				callSetIds: self.header.callSetIds,
 			};
-			
+
 			if (overlap) {
 				if (overlap[0] > bpStart) {
 					// Shift to the left : only keep the interval left of the overlap
@@ -374,7 +374,7 @@ class GigwaSearchReader {
 				query.displayedRangeMin = bpStart;
 				query.displayedRangeMax = bpEnd;
 			}
-						
+
 			let data = await $.ajax({
 				url: self.variantSearch,
 				type: "POST",
@@ -388,17 +388,17 @@ class GigwaSearchReader {
 					handleError(xhr, thrownError);
 				}
 			});
-			
+
 			let features;
 			let newFeatures = parseFeatures(data, self.header);
-			
+
 			if (overlap){  // Get the features in the overlapping interval from the previous results
 				let cachedFeatures = previousResult.features.filter(feature => (feature.pos >= bpStart && feature.pos <= bpEnd));
 				features = newFeatures.concat(cachedFeatures);
 			} else {
 				features = newFeatures;
 			}
-			
+
 			// Exploit the retrieved features but do not draw them if there are other promises pending after this one
 			return {
 				chr: chr,
@@ -408,7 +408,7 @@ class GigwaSearchReader {
 				result: (self.lastIndex == chainIndex) ? features : [],
 			};
 		}
-		
+
 		return requestChain;
 	}
 };
