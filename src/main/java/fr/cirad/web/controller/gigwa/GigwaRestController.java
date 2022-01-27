@@ -2071,7 +2071,7 @@ public class GigwaRestController extends ControllerInterface {
     		String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
     		int project = parseInt(info[1]);
     		if (tokenManager.canUserWriteToProject(token, info[0], project)) {
-    			return SnpEffAnnotationService.annotateProject(info[0], project, snpEffDatabase);
+    			return SnpEffAnnotationService.annotateRun(info[0], project, info[2], snpEffDatabase);
     		} else {
     			LOG.error("NOT AUTHENTICATED");
     		}
