@@ -61,7 +61,7 @@
 <root>
    <priority value="ERROR" />
 <!--    <appender-ref ref="FILE" /> -->
-   <appender-ref ref="console" />  
+   <appender-ref ref="console" />
 </root>
 
 </log4j:configuration>

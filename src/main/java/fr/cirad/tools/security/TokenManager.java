@@ -16,6 +16,7 @@
  *******************************************************************************/
 package fr.cirad.tools.security;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -129,7 +130,7 @@ public class TokenManager extends AbstractTokenManager {
         else
         {	// database is not public
     		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-    		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+    		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
             if (fAdminUser || (fAuthentifiedUser && (userDao.getCustomRolesByModuleAndEntityType(authentication.getAuthorities()).get(module) != null || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
                 hasAccess = true;
         }
@@ -157,7 +158,7 @@ public class TokenManager extends AbstractTokenManager {
 
         boolean hasAccess = false;
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
         if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
             hasAccess = true;
@@ -187,7 +188,7 @@ public class TokenManager extends AbstractTokenManager {
     		return false;
 
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
         if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)))))
             return true;
@@ -209,7 +210,7 @@ public class TokenManager extends AbstractTokenManager {
 			boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
 			boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
 			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 			boolean fAuthorizedUser = fAuthentifiedUser && (customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
 			if (fAdminUser || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
 				authorizedModules.add(module);
@@ -260,7 +261,7 @@ public class TokenManager extends AbstractTokenManager {
 		{
 //			boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
 			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN));
+			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 			Collection<String> writableEntityTypes = writableEntityTypesByModule.get(module);
 			boolean fAuthorizedUser = fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || managedEntitiesByModuleAndType.get(module) != null);
 			if (fAdminUser || (/*!fHiddenModule && */fAuthorizedUser))
@@ -283,7 +284,7 @@ public class TokenManager extends AbstractTokenManager {
 	public boolean canUserWriteToProject(Authentication authentication, String sModule, int projectId)
 	{
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-		if (fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
+		if (fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)))
 			return true;
 		
 		if ("anonymousUser".equals(authentication.getPrincipal()))
@@ -316,7 +317,7 @@ public class TokenManager extends AbstractTokenManager {
 	public boolean canUserReadProject(Authentication authentication, String sModule, int projectId)
 	{
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-		if (fAuthentifiedUser && authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
+		if (fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)))
 			return true;
 
 		if (MongoTemplateManager.isModulePublic(sModule))
@@ -373,7 +374,7 @@ public class TokenManager extends AbstractTokenManager {
         	LOG.debug("cleanupTokenMap removed " + expiredTokens.size() + " token(s)");
     }
     
-	public void reloadUserPermissions(SecurityContext securityContext) {
+	public void reloadUserPermissions(SecurityContext securityContext) throws IOException {
 		userDao.reloadProperties();
 		if (securityContext.getAuthentication() != null)	// otherwise the importing user has logged off in the meantime
 			securityContext.setAuthentication(authenticationManager.authenticate(securityContext.getAuthentication()));

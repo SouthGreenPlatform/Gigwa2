@@ -42,6 +42,10 @@
     return Constructor;
   }
 
+  function _slicedToArray(arr, i) {
+    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
+  }
+
   function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
@@ -50,8 +54,42 @@
     if (Array.isArray(arr)) return _arrayLikeToArray(arr);
   }
 
+  function _arrayWithHoles(arr) {
+    if (Array.isArray(arr)) return arr;
+  }
+
   function _iterableToArray(iter) {
     if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+  }
+
+  function _iterableToArrayLimit(arr, i) {
+    var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
+
+    if (_i == null) return;
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+
+    var _s, _e;
+
+    try {
+      for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"] != null) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
   }
 
   function _unsupportedIterableToArray(o, minLen) {
@@ -73,6 +111,10 @@
 
   function _nonIterableSpread() {
     throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+
+  function _nonIterableRest() {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   function _createForOfIteratorHelper(o, allowArrayLike) {
@@ -1674,7 +1716,7 @@
   }();
 
   var GenotypeCanvas = /*#__PURE__*/function () {
-    function GenotypeCanvas(width, height, boxSize, lineSort) {
+    function GenotypeCanvas(width, height, boxSize) {
       _classCallCheck(this, GenotypeCanvas);
 
       this.width = width;
@@ -1689,7 +1731,8 @@
       this.backBuffer.height = height;
       this.backContext = this.backBuffer.getContext('2d');
       this.mapCanvasHeight = 60;
-      this.nameCanvasWidth = 100;
+      this.nameCanvasWidth = 100; //this.traitBoxWidth = 8;
+
       this.scrollbarWidth = 10;
       this.scrollbarHeight = 10;
       this.backContext.lineWidth = 1;
@@ -1707,16 +1750,18 @@
       this.lineUnderMouse = undefined;
       this.markerNameFont = '10px sans-serif';
       this.dataSet = undefined;
-      this.lineSort = lineSort;
+      this.lineSort = undefined;
       this.selectedChromosome = 0;
       this.colorComparisonLineIndex = 0;
       this.sortComparisonLineIndex = 0;
       this.scorePadding = 2;
+      this.columnBackgrounds = ["#FFFFFF", "#D8D8D8"];
+      this.resetColumnBackground();
+      this.displayTraits = [];
+      this.mouseOverText = undefined;
+      this.mouseOverPosition = undefined;
+      this.enabled = true;
     }
-    /*totalChromosomeGap() {
-      return (this.dataSet.genomeMap.chromosomes.length - 1) * this.chromosomeGapSize;
-    }*/
-
 
     _createClass(GenotypeCanvas, [{
       key: "maxCanvasWidth",
@@ -1726,7 +1771,7 @@
     }, {
       key: "maxCanvasHeight",
       value: function maxCanvasHeight() {
-        return Math.max(this.dataSet.lineCount() * this.boxSize, this.alleleCanvasHeight());
+        return Math.max(this.alleleUsedHeight(), this.alleleCanvasHeight());
       }
     }, {
       key: "alleleCanvasWidth",
@@ -1737,6 +1782,11 @@
       key: "alleleCanvasHeight",
       value: function alleleCanvasHeight() {
         return this.canvas.height - this.mapCanvasHeight - this.scrollbarHeight;
+      }
+    }, {
+      key: "alleleUsedHeight",
+      value: function alleleUsedHeight() {
+        return this.dataSet.lineCount() * this.boxSize;
       }
     }, {
       key: "maxDataHeight",
@@ -1750,11 +1800,17 @@
       }
     }, {
       key: "init",
-      value: function init(dataSet, colorScheme) {
+      value: function init(dataSet, settings) {
         this.dataSet = dataSet;
+        this.colorScheme = settings.colorScheme;
+        this.colorComparisonLineIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
+          return germplasm.name == settings.colorReference;
+        });
+        this.colorScheme.setComparisonLineIndex(this.colorComparisonLineIndex);
+        this.lineSort = settings.lineSort;
         this.lineSort.sort(this.dataSet);
-        this.colorScheme = colorScheme;
-        this.font = this.updateFontSize(); // this.updateVisualPositions();
+        this.font = this.updateFontSize();
+        this.displayTraits = settings.displayTraits; // this.updateVisualPositions();
 
         this.colorScheme.setupColorStamps(this.boxSize, this.font, this.fontSize);
         this.zoom(this.boxSize);
@@ -1763,22 +1819,31 @@
     }, {
       key: "prerender",
       value: function prerender(redraw) {
+        this.drawingContext.save();
         this.drawingContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        var dataWidth = Math.ceil(this.alleleCanvasWidth() / this.boxSize);
+        var markerStart = Math.floor(this.translatedX / this.boxSize);
+        var markerEnd = Math.min(markerStart + dataWidth, this.dataSet.markerCountOn(this.selectedChromosome));
+        var germplasmStart = Math.floor(this.translatedY / this.boxSize);
+        var germplasmEnd = Math.min(germplasmStart + Math.floor(this.canvas.height / this.boxSize), this.dataSet.lineCount());
+        var yWiggle = this.translatedY - germplasmStart * this.boxSize;
+        if (redraw) this.render(germplasmStart, germplasmEnd, markerStart, markerEnd, yWiggle);
+        this.drawingContext.drawImage(this.backBuffer, 0, 0);
+        var xPos = this.markerIndexUnderMouse * this.boxSize - this.translatedX;
+        var yPos = this.lineUnderMouse * this.boxSize - yWiggle;
+        this.renderCrosshair(markerStart, xPos, germplasmStart, yPos);
+        this.highlightMarker(dataWidth, markerStart, markerEnd, xPos);
+        this.highlightLineName(germplasmStart, yPos);
+        this.highlightLineTraitValues(germplasmStart, yPos);
+        this.highlightLineScore(germplasmStart, yPos);
+        this.renderMouseOverText();
 
-        if (redraw) {
-          var dataWidth = Math.ceil(this.alleleCanvasWidth() / this.boxSize);
-          var markerStart = Math.floor(this.translatedX / this.boxSize);
-          var markerEnd = Math.min(markerStart + dataWidth, this.dataSet.markerCountOn(this.selectedChromosome));
-          var germplasmStart = Math.floor(this.translatedY / this.boxSize);
-          var germplasmEnd = Math.min(germplasmStart + Math.floor(this.canvas.height / this.boxSize), this.dataSet.lineCount());
-          var yWiggle = this.translatedY - germplasmStart * this.boxSize;
-          this.render(germplasmStart, germplasmEnd, markerStart, markerEnd, yWiggle);
+        if (!this.enabled) {
+          this.drawingContext.fillStyle = 'rgba(150, 150, 150, 0.4)';
+          this.drawingContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
-        this.drawingContext.drawImage(this.backBuffer, 0, 0);
-        this.renderCrosshair();
-        this.highlightMarker();
-        this.highlightLineName();
+        this.drawingContext.restore();
       }
     }, {
       key: "calcMapMarkerPos",
@@ -1789,15 +1854,11 @@
       }
     }, {
       key: "highlightMarker",
-      value: function highlightMarker() {
+      value: function highlightMarker(dataWidth, markerStart, markerEnd, xPos) {
         if (this.markerUnderMouse) {
-          var dataWidth = Math.ceil(this.alleleCanvasWidth() / this.boxSize);
-          var markerStart = Math.floor(this.translatedX / this.boxSize);
-          var markerEnd = Math.min(markerStart + dataWidth, this.dataSet.markerCountOn(this.selectedChromosome));
           var renderData = this.dataSet.markersToRenderOn(this.selectedChromosome, markerStart, markerEnd);
           var chromosome = this.dataSet.genomeMap.chromosomes[this.selectedChromosome];
-          var chrStart = 0; // this.chromosomeStarts[this.chromosomeUnderMouse];
-
+          var chrStart = 0;
           var chrEnd = chromosome.markerCount() * this.boxSize;
           var drawStart = -this.translatedX;
           var potentialWidth = drawStart > 0 ? this.alleleCanvasWidth() - drawStart : this.alleleCanvasWidth();
@@ -1814,7 +1875,6 @@
           this.drawingContext.save(); // Translate to the correct position to draw the map
 
           this.drawingContext.translate(this.alleleCanvasXOffset, 10);
-          var xPos = drawStart + this.markerIndexUnderMouse * this.boxSize;
           xPos += this.boxSize / 2;
           this.drawingContext.strokeStyle = '#F00';
           this.renderMarker(this.drawingContext, this.markerUnderMouse, xPos, firstMarkerPos, scaleFactor, drawStart);
@@ -1849,20 +1909,17 @@
       }
     }, {
       key: "highlightLineName",
-      value: function highlightLineName() {
-        if (this.lineUnderMouse) {
+      value: function highlightLineName(germplasmStart, yPos) {
+        if (this.lineUnderMouse !== undefined) {
           this.drawingContext.save();
-          this.drawingContext.translate(0, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
+          this.drawingContext.translate(this.traitValuesCanvasWidth, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
 
           var region = new Path2D();
-          var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.canvas.height;
-          region.rect(0, 0, this.alleleCanvasXOffset, clipHeight);
+          var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+          region.rect(0, 0, this.nameCanvasWidth, clipHeight);
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
-          var germplasmStart = Math.floor(this.translatedY / this.boxSize);
-          var yWiggle = this.translatedY - germplasmStart * this.boxSize;
-          var yPos = this.lineUnderMouse * this.boxSize - yWiggle;
           var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
           var y = yPos + (this.boxSize - this.fontSize / 2);
           this.drawingContext.fillText(name, 0, y);
@@ -1870,8 +1927,73 @@
         }
       }
     }, {
+      key: "highlightLineTraitValues",
+      value: function highlightLineTraitValues(germplasmStart, yPos) {
+        var _this = this;
+
+        if (this.dataSet.hasTraits() && this.lineUnderMouse !== undefined) {
+          this.drawingContext.save();
+          this.drawingContext.translate(0, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
+
+          var region = new Path2D();
+          var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+          region.rect(0, 0, this.traitValuesCanvasWidth, clipHeight);
+          this.drawingContext.clip(region);
+          this.drawingContext.fillStyle = '#F00';
+          this.drawingContext.font = this.font;
+          var germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+
+          if (germplasm.phenotype !== undefined) {
+            var xPos = 0;
+            this.displayTraits.forEach(function (traitName, traitIndex) {
+              var trait = _this.dataSet.getTrait(traitName);
+
+              var traitValue = trait.getValue(germplasm.getPhenotype(traitName));
+
+              if (traitValue !== undefined) {
+                _this.drawingContext.save();
+
+                var column = new Path2D();
+                column.rect(xPos, 0, _this.traitValueColumnWidths[traitIndex], clipHeight);
+
+                _this.drawingContext.clip(column);
+
+                var y = yPos + (_this.boxSize - _this.fontSize / 2);
+
+                _this.drawingContext.fillText(traitValue.toString(), xPos + _this.scorePadding, y);
+
+                _this.drawingContext.restore();
+              }
+              xPos += _this.traitValueColumnWidths[traitIndex];
+            });
+          }
+
+          this.drawingContext.restore();
+        }
+      }
+    }, {
+      key: "highlightLineScore",
+      value: function highlightLineScore(germplasmStart, yPos) {
+        if (this.lineSort.hasScore && this.lineUnderMouse !== undefined) {
+          this.drawingContext.save();
+          this.drawingContext.translate(this.traitValuesCanvasWidth + this.nameCanvasWidth, this.mapCanvasHeight); // Prevent line name under scrollbar being highlighted
+
+          var region = new Path2D();
+          var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+          region.rect(0, 0, this.scoreCanvasWidth, clipHeight);
+          this.drawingContext.clip(region);
+          this.drawingContext.fillStyle = '#F00';
+          this.drawingContext.font = this.font;
+          var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
+          var y = yPos + (this.boxSize - this.fontSize / 2);
+          var score = this.lineSort.getScore(name);
+          this.drawingContext.fillText(score.toFixed(2), this.scorePadding, y);
+          this.drawingContext.restore();
+        }
+      }
+    }, {
       key: "renderCrosshair",
-      value: function renderCrosshair() {
+      value: function renderCrosshair(markerStart, xPos, germplasmStart, yPos) {
         // Setup crosshair drawing parameters
         this.drawingContext.save();
         this.drawingContext.translate(this.alleleCanvasXOffset, this.mapCanvasHeight);
@@ -1882,8 +2004,8 @@
         region.rect(0, 0, this.alleleCanvasWidth(), this.alleleCanvasHeight());
         this.drawingContext.clip(region); // Render each element of the crosshair
 
-        this.renderVerticalCrosshairLine();
-        this.renderHorizontalCrosshairLine(); // Reset the drawing parameters for the rest of the render code
+        this.renderVerticalCrosshairLine(xPos);
+        this.renderHorizontalCrosshairLine(yPos); // Reset the drawing parameters for the rest of the render code
 
         this.drawingContext.translate(-this.alleleCanvasXOffset, -this.mapCanvasHeight);
         this.drawingContext.globalAlpha = 1;
@@ -1891,31 +2013,54 @@
       }
     }, {
       key: "renderVerticalCrosshairLine",
-      value: function renderVerticalCrosshairLine() {
-        // const chrStart = this.chromosomeStarts[this.chromosomeUnderMouse];
-        var drawStart = -this.translatedX;
-        var xPos = drawStart + this.markerIndexUnderMouse * this.boxSize;
+      value: function renderVerticalCrosshairLine(xPos) {
         this.drawingContext.fillRect(xPos, 0, this.boxSize, this.alleleCanvasHeight());
       }
     }, {
       key: "renderHorizontalCrosshairLine",
-      value: function renderHorizontalCrosshairLine() {
-        var germplasmStart = Math.floor(this.translatedY / this.boxSize);
-        var yWiggle = this.translatedY - germplasmStart * this.boxSize;
-        var yPos = this.lineUnderMouse * this.boxSize - yWiggle;
+      value: function renderHorizontalCrosshairLine(yPos) {
         this.drawingContext.fillRect(0, yPos, this.alleleCanvasWidth(), this.boxSize);
+      }
+    }, {
+      key: "renderMouseOverText",
+      value: function renderMouseOverText() {
+        if (this.mouseOverText !== undefined) {
+          this.drawingContext.save();
+          this.drawingContext.font = this.font;
+          var textWidth = this.drawingContext.measureText(this.mouseOverText).width;
+          var textHeight = this.fontSize;
+          var padding = 4;
+          var boxWidth = textWidth + 2 * padding;
+          var boxHeight = textHeight + 2 * padding;
+
+          var _this$mouseOverPositi = _slicedToArray(this.mouseOverPosition, 2),
+              xBase = _this$mouseOverPositi[0],
+              yBase = _this$mouseOverPositi[1];
+
+          var drawDirection = [0, -1];
+          if (yBase - boxHeight < 0) drawDirection[1] = 0;
+          if (xBase + boxWidth > this.canvas.width) drawDirection[0] = -1;
+          var boxX = xBase + drawDirection[0] * boxWidth;
+          var boxY = yBase + drawDirection[1] * boxHeight;
+          this.drawingContext.fillStyle = "rgba(50,50,50,0.8)";
+          this.drawingContext.fillRect(boxX, boxY, boxWidth, boxHeight);
+          this.drawingContext.fillStyle = "#FFFFFF";
+          this.drawingContext.fillText(this.mouseOverText, boxX + padding, boxY + boxHeight - padding);
+          this.drawingContext.restore();
+        }
       }
     }, {
       key: "render",
       value: function render(germplasmStart, germplasmEnd, markerStart, markerEnd, yWiggle) {
+        this.resetColumnBackground();
         this.backContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.renderMap(markerStart, markerEnd);
+        /*if (this.dataSet.hasTraits())
+          this.renderGermplasmTraits(germplasmStart, germplasmEnd, yWiggle);*/
+
+        if (this.dataSet.hasTraits()) this.renderGermplasmTraitValues(germplasmStart, germplasmEnd, yWiggle);
         this.renderGermplasmNames(germplasmStart, germplasmEnd, yWiggle);
-
-        if (this.lineSort.hasScore) {
-          this.renderGermplasmScore(germplasmStart, germplasmEnd, yWiggle);
-        }
-
+        if (this.lineSort.hasScore) this.renderGermplasmScore(germplasmStart, germplasmEnd, yWiggle);
         this.renderGermplasm(germplasmStart, germplasmEnd, markerStart, markerEnd, yWiggle);
         this.renderScrollbars();
       }
@@ -1983,10 +2128,43 @@
         this.renderMarkers(renderData);
         this.backContext.restore();
       }
+      /*renderGermplasmTraits(germplasmStart, germplasmEnd, yWiggle){
+        this.backContext.save();
+         // Create a clipping region so that lineNames can't creep up above the line
+        // name canvas
+        const region = new Path2D();
+        // We need to take account of the scrollbar potentially disappearing when
+        // zoomed out
+        const clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+        region.rect(0, this.mapCanvasHeight, this.traitCanvasWidth, clipHeight);
+        this.backContext.clip(region);
+         const germplasms = this.dataSet.germplasmFor(germplasmStart, germplasmEnd);
+         this.backContext.font = this.font;
+        this.backContext.translate(0, this.mapCanvasHeight);
+         germplasms.forEach((germplasm, idx) => {
+          const yPos = (idx * this.boxSize) - yWiggle;
+          if (germplasm.phenotype !== undefined){
+            this.displayTraits.forEach((traitName, traitIndex) => {
+              const xPos = traitIndex * this.traitBoxWidth;
+              const trait = this.dataSet.getTrait(traitName);
+              const traitValue = germplasm.getPhenotype(traitName);
+              if (traitValue !== undefined) {
+                const scaleValue = trait.scaleValue(traitValue);
+                const hue = 120 * scaleValue;
+                const rgb = this.hsv2rgb(hue, 0.53, 1);
+                this.backContext.fillStyle = "rgb(" + Math.floor(rgb[0] * 255) + "," + Math.floor(rgb[1] * 255) + "," + Math.floor(rgb[2] * 255) + ")";
+                this.backContext.fillRect(xPos, yPos, this.traitBoxWidth, this.boxSize);
+              }
+            });
+          }
+        });
+         this.backContext.restore();
+      }*/
+
     }, {
       key: "renderGermplasmNames",
       value: function renderGermplasmNames(germplasmStart, germplasmEnd, yWiggle) {
-        var _this = this;
+        var _this2 = this;
 
         this.backContext.save(); // Create a clipping region so that lineNames can't creep up above the line
         // name canvas
@@ -1994,19 +2172,80 @@
         var region = new Path2D(); // We need to take account of the scrollbar potentially disappearing when
         // zoomed out
 
-        var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.canvas.height;
-        region.rect(0, this.mapCanvasHeight, this.nameCanvasWidth, clipHeight);
+        var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+        region.rect(this.traitValuesCanvasWidth, this.mapCanvasHeight, this.nameCanvasWidth, clipHeight);
         this.backContext.clip(region);
         var lineNames = this.dataSet.germplasmFor(germplasmStart, germplasmEnd).map(function (germplasm) {
           return germplasm.name;
         });
+        this.backContext.translate(this.traitValuesCanvasWidth, this.mapCanvasHeight);
+        this.backContext.fillStyle = this.nextColumnBackground();
+        this.backContext.fillRect(0, 0, this.nameCanvasWidth, clipHeight);
         this.backContext.fillStyle = '#333';
         this.backContext.font = this.font;
-        this.backContext.translate(0, this.mapCanvasHeight);
         lineNames.forEach(function (name, idx) {
-          var y = idx * _this.boxSize - yWiggle + (_this.boxSize - _this.fontSize / 2);
+          var y = idx * _this2.boxSize - yWiggle + (_this2.boxSize - _this2.fontSize / 2);
 
-          _this.backContext.fillText(name, 0, y);
+          _this2.backContext.fillText(name, 0, y);
+        });
+        this.backContext.restore();
+      }
+    }, {
+      key: "renderGermplasmTraitValues",
+      value: function renderGermplasmTraitValues(germplasmStart, germplasmEnd, yWiggle) {
+        var _this3 = this;
+
+        this.backContext.save(); // Create a clipping region so that lineNames can't creep up above the line
+        // name canvas
+
+        var region = new Path2D(); // We need to take account of the scrollbar potentially disappearing when
+        // zoomed out
+
+        var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+        region.rect(0, this.mapCanvasHeight, this.traitValuesCanvasWidth, clipHeight);
+        this.backContext.clip(region);
+        var germplasms = this.dataSet.germplasmFor(germplasmStart, germplasmEnd);
+        this.backContext.font = this.font;
+        this.backContext.translate(0, this.mapCanvasHeight);
+        var xPos = 0;
+        this.displayTraits.forEach(function (traitName, traitIndex) {
+          _this3.backContext.fillStyle = "#FFF";
+
+          _this3.backContext.fillRect(xPos, 0, _this3.traitValueColumnWidths[traitIndex], clipHeight);
+
+          _this3.backContext.fillStyle = "#333";
+
+          var trait = _this3.dataSet.getTrait(traitName);
+
+          _this3.backContext.save();
+
+          var column = new Path2D();
+          column.rect(xPos, 0, _this3.traitValueColumnWidths[traitIndex] + 1, clipHeight);
+
+          _this3.backContext.clip(column);
+
+          germplasms.forEach(function (germplasm, idx) {
+            if (germplasm.phenotype !== undefined) {
+              var yPos = idx * _this3.boxSize - yWiggle;
+              var phenotype = germplasm.getPhenotype(traitName);
+              var traitValue = trait.getValue(phenotype);
+
+              if (traitValue !== undefined) {
+                _this3.backContext.fillStyle = trait.getColor(phenotype); //this.backContext.fillStyle = "rgb(" + Math.floor(rgb[0] * 255) + "," + Math.floor(rgb[1] * 255) + "," + Math.floor(rgb[2] * 255) + ")";
+
+                _this3.backContext.fillRect(xPos, yPos, _this3.traitValueColumnWidths[traitIndex], _this3.boxSize);
+
+                _this3.backContext.fillStyle = "#333";
+                var y = yPos + (_this3.boxSize - _this3.fontSize / 2);
+
+                _this3.backContext.fillText(traitValue.toString(), xPos + _this3.scorePadding, y);
+              }
+            }
+          });
+
+          _this3.backContext.restore();
+
+          xPos += _this3.traitValueColumnWidths[traitIndex];
         });
         this.backContext.restore();
       } // Render the sorting scores column
@@ -2014,7 +2253,7 @@
     }, {
       key: "renderGermplasmScore",
       value: function renderGermplasmScore(germplasmStart, germplasmEnd, yWiggle) {
-        var _this2 = this;
+        var _this4 = this;
 
         this.backContext.save(); // Create a clipping region so that lineNames can't creep up above the line
         // name canvas
@@ -2022,21 +2261,23 @@
         var region = new Path2D(); // We need to take account of the scrollbar potentially disappearing when
         //zoomed out
 
-        var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.canvas.height;
-        region.rect(this.nameCanvasWidth, this.mapCanvasHeight, this.scoreCanvasWidth, clipHeight);
+        var clipHeight = this.canScrollX() ? this.alleleCanvasHeight() : this.alleleUsedHeight();
+        region.rect(this.traitValuesCanvasWidth + this.nameCanvasWidth, this.mapCanvasHeight, this.scoreCanvasWidth, clipHeight);
         this.backContext.clip(region);
         var lineNames = this.dataSet.germplasmFor(germplasmStart, germplasmEnd).map(function (germplasm) {
           return germplasm.name;
         });
+        this.backContext.translate(this.traitValuesCanvasWidth + this.nameCanvasWidth, this.mapCanvasHeight);
+        this.backContext.fillStyle = this.nextColumnBackground();
+        this.backContext.fillRect(0, 0, this.scoreCanvasWidth, clipHeight);
         this.backContext.fillStyle = '#333';
         this.backContext.font = this.font;
-        this.backContext.translate(this.nameCanvasWidth, this.mapCanvasHeight);
         lineNames.forEach(function (name, idx) {
-          var y = idx * _this2.boxSize - yWiggle + (_this2.boxSize - _this2.fontSize / 2);
+          var y = idx * _this4.boxSize - yWiggle + (_this4.boxSize - _this4.fontSize / 2);
 
-          var score = _this2.lineSort.getScore(name);
+          var score = _this4.lineSort.getScore(name);
 
-          _this2.backContext.fillText(score.toFixed(2), 2, y);
+          _this4.backContext.fillText(score.toFixed(2), _this4.scorePadding, y);
         });
         this.backContext.restore();
       }
@@ -2115,6 +2356,7 @@
     }, {
       key: "moveX",
       value: function moveX(diffX) {
+        if (!this.enabled) return;
         var xScrollMax = this.maxCanvasWidth() - this.alleleCanvasWidth();
 
         if (this.canScrollX()) {
@@ -2136,6 +2378,7 @@
     }, {
       key: "moveY",
       value: function moveY(diffY) {
+        if (!this.enabled) return;
         var yScrollMax = this.maxCanvasHeight() - this.alleleCanvasHeight();
 
         if (this.canScrollY()) {
@@ -2157,6 +2400,8 @@
     }, {
       key: "dragVerticalScrollbar",
       value: function dragVerticalScrollbar(y) {
+        if (!this.enabled) return;
+
         if (this.canScrollY()) {
           var yScrollMax = this.maxCanvasHeight() - this.alleleCanvasHeight();
           this.translatedY = y / this.verticalScrollbar.height * yScrollMax; // Prevent scrolling beyond start or end of data
@@ -2178,6 +2423,8 @@
     }, {
       key: "dragHorizontalScrollbar",
       value: function dragHorizontalScrollbar(x) {
+        if (!this.enabled) return;
+
         if (this.canScrollX()) {
           var xScrollMax = this.maxCanvasWidth() - this.alleleCanvasWidth();
           this.translatedX = x / this.horizontalScrollbar.width * xScrollMax; // Prevent scrolling beyond start or end of data
@@ -2214,10 +2461,8 @@
     }, {
       key: "mouseOver",
       value: function mouseOver(x, y) {
-        // We need to calculate an offset because the gaps between chromosomes
-        // aren't part of the data model
+        if (!this.enabled) return;
         var mouseXPos = x - this.alleleCanvasXOffset;
-        var mouseXPosCanvas = this.translatedX + mouseXPos;
         var mouseYPos = y - this.mapCanvasHeight;
 
         if (mouseXPos > 0 && mouseXPos < this.alleleCanvasWidth() && mouseXPos < this.maxDataWidth()) {
@@ -2230,15 +2475,63 @@
           this.markerUnderMouse = undefined;
           this.markerIndexUnderMouse = undefined;
           this.lineUnderMouse = undefined;
+          this.lineIndexUnderMouse = undefined;
         }
 
         if (mouseYPos > 0 && mouseYPos < this.alleleCanvasHeight() && mouseYPos < this.maxDataHeight()) {
-          this.lineUnderMouse = Math.max(0, Math.floor(mouseYPos / this.boxSize));
-          this.lineIndexUnderMouse = this.lineUnderMouse + Math.floor(this.translatedY / this.boxSize);
+          var germplasmStart = Math.floor(this.translatedY / this.boxSize);
+          var yWiggle = this.translatedY - germplasmStart * this.boxSize;
+          this.lineUnderMouse = Math.floor((mouseYPos + yWiggle) / this.boxSize);
+          this.lineIndexUnderMouse = Math.floor((this.translatedY + mouseYPos) / this.boxSize); // this.lineIndexUnderMouse = this.lineUnderMouse + Math.floor(this.translatedY / this.boxSize);  // Accumulates rounding errors
         } else {
           this.markerUnderMouse = undefined;
           this.markerIndexUnderMouse = undefined;
           this.lineUnderMouse = undefined;
+          this.lineIndexUnderMouse = undefined;
+        } // Mouse over text boxes
+
+
+        this.mouseOverText = undefined;
+        this.mouseOverPosition = undefined;
+
+        if (this.lineIndexUnderMouse !== undefined) {
+          /*if (this.dataSet.hasTraits() && x > 0 && x < this.traitCanvasWidth){
+            const germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+            const traitIndex = Math.floor(x / this.traitBoxWidth);
+            const trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
+            const traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
+            if (traitValue !== undefined){
+              this.mouseOverText = trait.name + " : " + traitValue.toString();
+              this.mouseOverPosition = [x, y];
+            }
+          } else */
+          if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth) {
+            var xPos = 0,
+                traitIndex = undefined; // Get the trait under the mouse (columns are not of equal size)
+
+            for (var _columnIndex = 0; _columnIndex < this.traitValueColumnWidths.length; _columnIndex += 1) {
+              xPos += this.traitValueColumnWidths[_columnIndex];
+
+              if (x < xPos) {
+                traitIndex = _columnIndex;
+                break;
+              }
+            }
+
+            var germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+            var trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
+            var traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
+
+            if (traitValue !== undefined) {
+              this.mouseOverText = trait.name + " : " + traitValue.toString();
+              this.mouseOverPosition = [x, y];
+            }
+          } else if (this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth && x < this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth) {
+            var _germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+            var score = this.lineSort.getScore(_germplasm.name);
+            this.mouseOverText = "Sort score : " + score.toString();
+            this.mouseOverPosition = [x, y];
+          }
         }
 
         this.prerender(false);
@@ -2269,13 +2562,13 @@
     }, {
       key: "updateCanvasWidths",
       value: function updateCanvasWidths() {
-        var _this3 = this;
+        var _this5 = this;
 
         // Find the longest germplasm name and adjust the width of the germplasm name
         // rendering area accordingly
         var germplasm = this.dataSet.germplasmList;
         var longestName = Math.max.apply(Math, _toConsumableArray(germplasm.map(function (g) {
-          return _this3.backContext.measureText(g.name).width;
+          return _this5.backContext.measureText(g.name).width;
         })));
         this.nameCanvasWidth = longestName;
 
@@ -2285,7 +2578,22 @@
           this.scoreCanvasWidth = 0;
         }
 
-        this.alleleCanvasXOffset = this.nameCanvasWidth + this.scoreCanvasWidth;
+        if (this.dataSet.hasTraits()) {
+          //this.traitCanvasWidth = this.displayTraits.length * this.traitBoxWidth;
+          this.traitValueColumnWidths = this.displayTraits.map(function (name) {
+            return _this5.backContext.measureText(_this5.dataSet.getTrait(name).longestValue).width + 2 * _this5.scorePadding;
+          });
+          if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = 0;else if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = this.traitValueColumnWidths[0];else this.traitValuesCanvasWidth = this.traitValueColumnWidths.reduce(function (a, b) {
+            return a + b;
+          }); // Add 10% blank space to separate it from the genotypes, otherwise readability is really bad
+
+          if (!this.lineSort.hasScore) this.traitValuesCanvasWidth = Math.floor(this.traitValuesCanvasWidth * 1.1);
+        } else {
+          //this.traitCanvasWidth = 0;
+          this.traitValuesCanvasWidth = 0;
+        }
+
+        this.alleleCanvasXOffset = this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth;
         this.horizontalScrollbar.updateWidth(this.alleleCanvasWidth());
       }
     }, {
@@ -2418,8 +2726,25 @@
     }, {
       key: "setSortComparisonLine",
       value: function setSortComparisonLine(comparedName) {
-        this.lineSort.setComparisonLine(comparedName);
-        this.sortLines();
+        if (this.lineSort.setComparisonLine !== undefined) {
+          this.lineSort.setComparisonLine(comparedName);
+          this.sortLines();
+        }
+      }
+    }, {
+      key: "setSortTrait",
+      value: function setSortTrait(comparedTrait) {
+        if (this.lineSort.setTrait !== undefined) {
+          this.lineSort.setTrait(comparedTrait);
+          this.sortLines();
+        }
+      }
+    }, {
+      key: "setDisplayTraits",
+      value: function setDisplayTraits(displayTraits) {
+        this.displayTraits = displayTraits;
+        this.updateCanvasWidths();
+        this.prerender(true);
       }
     }, {
       key: "setChromosome",
@@ -2427,7 +2752,11 @@
         this.selectedChromosome = chromosomeIndex; // Reset the position
 
         this.moveToPosition(0, 0);
-        this.lineSort.setChromosomes([chromosomeIndex]);
+
+        if (this.lineSort.setChromosomes !== undefined) {
+          this.lineSort.setChromosomes([chromosomeIndex]);
+        }
+
         this.sortLines(); // This redraws too
       }
     }, {
@@ -2455,6 +2784,30 @@
         tmpContext.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
         tmpContext.drawImage(this.canvas, 0, 0);
         return tmpCanvas.toDataURL(type, encoderOptions);
+      }
+    }, {
+      key: "nextColumnBackground",
+      value: function nextColumnBackground() {
+        var background = this.columnBackgrounds[this.currentColumnBackground];
+        this.currentColumnBackground = (this.currentColumnBackground + 1) % this.columnBackgrounds.length;
+        return background;
+      }
+    }, {
+      key: "resetColumnBackground",
+      value: function resetColumnBackground() {
+        this.currentColumnBackground = 1;
+      }
+    }, {
+      key: "disable",
+      value: function disable() {
+        this.enabled = false;
+        this.prerender(false);
+      }
+    }, {
+      key: "enable",
+      value: function enable() {
+        this.enabled = true;
+        this.prerender(false);
       } //   rainbowColor(numOfSteps, step) {
       //     // This function generates vibrant, "evenly spaced" colours (i.e. no clustering). This is ideal for creating easily distinguishable vibrant markers in Google Maps and other apps.
       //     // Adam Cole, 2011-Sept-14
@@ -2506,25 +2859,35 @@
       this.dataSet = undefined;
       this.colorScheme = undefined;
       this.selectedChromosome = 0;
+      this.enabled = true;
     }
 
     _createClass(OverviewCanvas, [{
       key: "init",
-      value: function init(dataSet, colorScheme, visibilityWindow) {
+      value: function init(dataSet, settings, visibilityWindow) {
         this.dataSet = dataSet;
-        this.colorScheme = colorScheme;
+        this.colorScheme = settings.colorScheme;
         this.moveToPosition(0, 0, visibilityWindow);
         this.prerender(true);
       }
     }, {
       key: "prerender",
       value: function prerender(redraw) {
+        this.drawingContext.save();
+
         if (redraw) {
-          this.renderImage(this.backContext, this.width, this.height);
+          this.renderImage(this.backContext, this.width, this.height, false);
         }
 
         this.drawingContext.drawImage(this.backBuffer, 0, 0);
         this.renderWindow();
+
+        if (!this.enabled) {
+          this.drawingContext.fillStyle = 'rgba(150, 150, 150, 0.4)';
+          this.drawingContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        this.drawingContext.restore();
       } // Draw the genotype canvas' visibility window
 
     }, {
@@ -2540,8 +2903,8 @@
       }
     }, {
       key: "renderImage",
-      value: function renderImage(context, width, height) {
-        var imageData = this.createImage(context.createImageData(width, height));
+      value: function renderImage(context, width, height, highlightReference) {
+        var imageData = this.createImage(context.createImageData(width, height), highlightReference);
         context.putImageData(imageData, 0, 0);
       } // Calculate the number of markers and germplasms per pixel in the overview
 
@@ -2557,7 +2920,7 @@
 
     }, {
       key: "createImage",
-      value: function createImage(imageData) {
+      value: function createImage(imageData, highlightReference) {
         var scale = this.renderingScale(imageData.width, imageData.height);
         var germplasmsPerPixel = this.dataSet.germplasmList.length / imageData.height;
         var markersPerPixel = this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
@@ -2566,7 +2929,7 @@
           for (var y = 0; y < imageData.height; y += 1) {
             var marker = Math.floor(x * scale.markersPerPixel);
             var germplasm = Math.floor(y * scale.germplasmsPerPixel);
-            var color = this.colorScheme.getColor(germplasm, this.selectedChromosome, marker);
+            var color = this.colorScheme.getColor(germplasm, this.selectedChromosome, marker, highlightReference);
             var pixelIndex = (y * imageData.width + x) * 4;
             imageData.data[pixelIndex] = color[0];
             imageData.data[pixelIndex + 1] = color[1];
@@ -2597,6 +2960,7 @@
     }, {
       key: "mouseDrag",
       value: function mouseDrag(mouseX, mouseY, visibilityWindow) {
+        if (!this.enabled) return;
         var scale = this.renderingScale(this.width, this.height);
         var centerMarker = mouseX * scale.markersPerPixel;
         var centerGermplasm = mouseY * scale.germplasmsPerPixel; // Clamp within the canvas (no position < 0 or > number of markers or germplasms)
@@ -2614,6 +2978,7 @@
     }, {
       key: "moveToPosition",
       value: function moveToPosition(marker, germplasm, visibilityWindow) {
+        if (!this.enabled) return;
         this.windowRect = this.windowFromPosition(marker, germplasm, visibilityWindow);
         this.prerender(false);
         return {
@@ -2645,6 +3010,18 @@
       key: "exportName",
       value: function exportName() {
         return "overview-".concat(this.dataSet.genomeMap.chromosomes[this.selectedChromosome].name);
+      }
+    }, {
+      key: "disable",
+      value: function disable() {
+        this.enabled = false;
+        this.prerender(false);
+      }
+    }, {
+      key: "enable",
+      value: function enable() {
+        this.enabled = true;
+        this.prerender(false);
       } // Export the overview to an image
       // FIXME : There's a limit on the size and area of canvas.
       //         Beyond these limits, the browser either throws an error or simply makes the canvas unresponsive
@@ -2671,7 +3048,7 @@
         }
 
         try {
-          this.renderImage(tmpContext, tmpCanvas.width, tmpCanvas.height);
+          this.renderImage(tmpContext, tmpCanvas.width, tmpCanvas.height, true);
           return tmpCanvas.toDataURL(type, encoderOptions);
         } catch (error) {
           window.alert("Overview export failed : the image is probably too large");
@@ -2682,6 +3059,186 @@
     }]);
 
     return OverviewCanvas;
+  }();
+
+  var TraitType = {
+    Category: 0,
+    Numerical: 1
+  }; // Colors are stored as HSV (hue, saturation, value)
+
+  var DEFAULT_HUE_MIN = 0;
+  var DEFAULT_HUE_MAX = 120;
+  var DEFAULT_SATURATION = 0.53;
+  var DEFAULT_VALUE = 1;
+  var DEFAULT_GRADIENT_MIN = [DEFAULT_HUE_MIN, DEFAULT_SATURATION, DEFAULT_VALUE];
+  var DEFAULT_GRADIENT_MAX = [DEFAULT_HUE_MAX, DEFAULT_SATURATION, DEFAULT_VALUE];
+  var Trait = /*#__PURE__*/function () {
+    function Trait(name, type, experiment) {
+      _classCallCheck(this, Trait);
+
+      this.name = name;
+      this.type = type;
+      this.experiment = experiment;
+      this.values = undefined;
+      this.colors = new Map();
+      this.customColors = new Set();
+      this.longestValue = undefined;
+      this.minValue = undefined;
+      this.maxValue = undefined;
+    }
+
+    _createClass(Trait, [{
+      key: "setValues",
+      value: function setValues(values) {
+        this.values = values;
+      }
+    }, {
+      key: "setScale",
+      value: function setScale(min, max) {
+        this.minValue = min;
+        this.maxValue = max;
+        this.resetColors();
+      }
+    }, {
+      key: "resetColors",
+      value: function resetColors() {
+        this.customColors.clear();
+
+        if (this.type == TraitType.Category) {
+          this.setCategoryColors();
+        } else if (this.type == TraitType.Numerical) {
+          this.colors.set(this.minValue, DEFAULT_GRADIENT_MIN);
+          this.colors.set(this.maxValue, DEFAULT_GRADIENT_MAX);
+        }
+      }
+    }, {
+      key: "setCategoryColors",
+      value: function setCategoryColors() {
+        var sortedValues = this.values.slice();
+
+        for (var valueIndex = 0; valueIndex < this.values.length; valueIndex++) {
+          var value = this.values[valueIndex];
+          var index = sortedValues.indexOf(value);
+          var hue = (DEFAULT_HUE_MAX - DEFAULT_HUE_MIN) * index / (sortedValues.length - 1) + DEFAULT_HUE_MIN;
+          this.colors.set(valueIndex, [hue, DEFAULT_SATURATION, DEFAULT_VALUE]);
+        }
+      }
+    }, {
+      key: "scaleValue",
+      value: function scaleValue(value) {
+        return (value - this.minValue) / (this.maxValue - this.minValue);
+      }
+    }, {
+      key: "getValue",
+      value: function getValue(value) {
+        if (this.type == TraitType.Category) {
+          return this.values[value];
+        } else {
+          return value;
+        }
+      }
+    }, {
+      key: "getValues",
+      value: function getValues() {
+        if (this.type == TraitType.Category) return this.values.slice();else return [this.minValue, this.maxValue];
+      }
+    }, {
+      key: "getMinColor",
+      value: function getMinColor() {
+        return this.getColor(this.minValue);
+      }
+    }, {
+      key: "getMaxColor",
+      value: function getMaxColor() {
+        return this.getColor(this.maxValue);
+      }
+    }, {
+      key: "getColor",
+      value: function getColor(value) {
+        var hsv = null;
+
+        if (this.type == TraitType.Category) {
+          hsv = this.colors.get(value);
+        } else {
+          var minColor = this.colors.get(this.minValue);
+          var maxColor = this.colors.get(this.maxValue);
+          var normalized = this.scaleValue(value);
+          hsv = [(maxColor[0] - minColor[0]) * normalized + minColor[0], (maxColor[1] - minColor[1]) * normalized + minColor[1], (maxColor[2] - minColor[2]) * normalized + minColor[2]];
+        }
+
+        var rgb = this.hsv2rgb(hsv[0], hsv[1], hsv[2]);
+        var hexa = '#' + (1 << 24 | Math.floor(rgb[0] * 255) << 16 | Math.floor(rgb[1] * 255) << 8 | Math.floor(rgb[2] * 255)).toString(16).slice(1);
+        return hexa;
+      }
+    }, {
+      key: "setMinColor",
+      value: function setMinColor(color) {
+        this.setColor(this.minValue, color);
+      }
+    }, {
+      key: "setMaxColor",
+      value: function setMaxColor(color) {
+        this.setColor(this.maxValue, color);
+      }
+    }, {
+      key: "setColor",
+      value: function setColor(value, color) {
+        var rgb = [parseInt(color.slice(1, 3), 16) / 255, parseInt(color.slice(3, 5), 16) / 255, parseInt(color.slice(5, 7), 16) / 255];
+        var hsv = this.rgb2hsv(rgb[0], rgb[1], rgb[2]);
+        this.colors.set(value, hsv);
+        this.customColors.add(value);
+      }
+    }, {
+      key: "setHSVColor",
+      value: function setHSVColor(value, color) {
+        this.colors.set(value, color);
+        this.customColors.add(value);
+      }
+    }, {
+      key: "getCustomColors",
+      value: function getCustomColors() {
+        var customMap = new Map();
+
+        var _iterator = _createForOfIteratorHelper(this.customColors),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var value = _step.value;
+            var color = this.colors.get(value);
+            customMap.set(value, color);
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+
+        return customMap;
+      } // From https://stackoverflow.com/a/54024653
+
+    }, {
+      key: "hsv2rgb",
+      value: function hsv2rgb(h, s, v) {
+        var f = function f(n) {
+          var k = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (n + h / 60) % 6;
+          return v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+        };
+
+        return [f(5), f(3), f(1)];
+      } // From https://stackoverflow.com/a/54070620
+
+    }, {
+      key: "rgb2hsv",
+      value: function rgb2hsv(r, g, b) {
+        var v = Math.max(r, g, b);
+        var c = v - Math.min(r, g, b);
+        var h = c && (v == r ? (g - b) / c : v == g ? 2 + (b - r) / c : 4 + (r - g) / c);
+        return [60 * (h < 0 ? h + 6 : h), v && c / v, v];
+      }
+    }]);
+
+    return Trait;
   }();
 
   var AlphabeticLineSort = /*#__PURE__*/function () {
@@ -2698,9 +3255,6 @@
           return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
         });
       }
-    }, {
-      key: "setChromosomes",
-      value: function setChromosomes(chromosomeIndices) {}
     }]);
 
     return AlphabeticLineSort;
@@ -2872,12 +3426,45 @@
           return dataSet.importingOrder.indexOf(a.name) - dataSet.importingOrder.indexOf(b.name);
         });
       }
-    }, {
-      key: "setChromosomes",
-      value: function setChromosomes(chromosomeIndices) {}
     }]);
 
     return ImportingOrderLineSort;
+  }();
+
+  var TraitLineSort = /*#__PURE__*/function () {
+    function TraitLineSort(traitName) {
+      _classCallCheck(this, TraitLineSort);
+
+      this.hasScore = false;
+      this.traitName = traitName;
+    }
+
+    _createClass(TraitLineSort, [{
+      key: "sort",
+      value: function sort(dataSet) {
+        var self = this;
+        var trait = dataSet.getTrait(self.traitName);
+        dataSet.germplasmList.sort(function (a, b) {
+          if (a.phenotype === undefined) return 1;
+          if (b.phenotype === undefined) return -1;
+          var valueA = a.getPhenotype(self.traitName); // No need to getValue, the valueIndex are already sorted for category traits
+
+          if (valueA === undefined) return 1;
+          var valueB = b.getPhenotype(self.traitName);
+          if (valueB === undefined) return -1;
+          if (valueA < valueB) return -1;
+          if (valueB < valueA) return 1;
+          if (valueA == valueB) return 0;
+        });
+      }
+    }, {
+      key: "setTrait",
+      value: function setTrait(traitName) {
+        this.traitName = traitName;
+      }
+    }]);
+
+    return TraitLineSort;
   }();
 
   function buildCSSColors(colors) {
@@ -3111,13 +3698,15 @@
 
     _createClass(SimilarityColorScheme, [{
       key: "getColor",
-      value: function getColor(germplasm, chromosome, marker) {
+      value: function getColor(germplasm, chromosome, marker, highlightReference) {
         var compState = this.dataSet.genotypeFor(this.compIndex, chromosome, marker);
         var genoState = this.dataSet.genotypeFor(germplasm, chromosome, marker);
         var lookupValue = this.lookupTable[genoState][compState];
 
         if (genoState === 0) {
           return this.colors.white;
+        } else if (this.compIndex === germplasm && highlightReference) {
+          return this.colors.compGreenLight;
         } else {
           switch (lookupValue) {
             case similarityCases.misMatch:
@@ -3294,9 +3883,7 @@
   }();
 
   var CanvasController = /*#__PURE__*/function () {
-    function CanvasController(container, genotypeCanvas, overviewCanvas, genotypeAutoWidth, overviewAutoWidth, minGenotypeAutoWidth, minOverviewAutoWidth) {
-      var _this = this;
-
+    function CanvasController(container, genotypeCanvas, overviewCanvas, saveSettings, genotypeAutoWidth, overviewAutoWidth, minGenotypeAutoWidth, minOverviewAutoWidth) {
       _classCallCheck(this, CanvasController);
 
       this.canvasContainer = container;
@@ -3306,6 +3893,7 @@
       this.overviewAutoWidth = overviewAutoWidth === undefined ? false : overviewAutoWidth;
       this.minGenotypeAutoWidth = minGenotypeAutoWidth === undefined ? 0 : minGenotypeAutoWidth;
       this.minOverviewAutoWidth = minOverviewAutoWidth === undefined ? 0 : minOverviewAutoWidth;
+      this.saveSettings = saveSettings;
       this.chromosomeIndex = 0;
       this.dragStartX = null;
       this.dragStartY = null;
@@ -3313,159 +3901,374 @@
       this.draggingVerticalScrollbar = false;
       this.draggingHorizontalScrollbar = false;
       this.draggingOverviewCanvas = false;
-      this.contextMenuY = null; // Color schemes
-
-      var nucleotideRadio = document.getElementById('nucleotideScheme');
-      nucleotideRadio.addEventListener('change', function () {
-        var lineSelect = document.getElementById('colorLineSelect');
-        lineSelect.disabled = true;
-        var colorScheme = new NucleotideColorScheme(_this.genotypeCanvas.dataSet);
-        colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
-
-        _this.genotypeCanvas.setColorScheme(colorScheme);
-
-        _this.overviewCanvas.setColorScheme(colorScheme);
-      });
-      var similarityRadio = document.getElementById('similarityScheme');
-      similarityRadio.addEventListener('change', function () {
-        var lineSelect = document.getElementById('colorLineSelect');
-        lineSelect.disabled = false;
-        var referenceName = lineSelect.options[lineSelect.selectedIndex].value;
-
-        var referenceIndex = _this.genotypeCanvas.dataSet.germplasmList.findIndex(function (germplasm) {
-          return germplasm.name == referenceName;
-        });
-
-        var colorScheme = new SimilarityColorScheme(_this.genotypeCanvas.dataSet, referenceIndex);
-        colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
-
-        _this.genotypeCanvas.setColorScheme(colorScheme);
-
-        _this.genotypeCanvas.setColorComparisonLine(referenceName);
-
-        _this.overviewCanvas.setColorScheme(colorScheme);
-      });
-      var lineSelect = document.getElementById('colorLineSelect');
-      lineSelect.addEventListener('change', function (event) {
-        _this.genotypeCanvas.setColorComparisonLine(event.target.options[event.target.selectedIndex].value);
-
-        _this.overviewCanvas.prerender(true);
-      }); // Sort
-
-      var importingOrderRadio = document.getElementById('importingOrderSort');
-      importingOrderRadio.addEventListener('change', function () {
-        var sortLineSelect = document.getElementById('sortLineSelect');
-        sortLineSelect.disabled = true;
-
-        _this.genotypeCanvas.setLineSort(new ImportingOrderLineSort());
-
-        _this.overviewCanvas.prerender(true);
-      });
-      var alphabetOrderRadio = document.getElementById('alphabeticSort');
-      alphabetOrderRadio.addEventListener('change', function () {
-        var sortLineSelect = document.getElementById('sortLineSelect');
-        sortLineSelect.disabled = true;
-
-        _this.genotypeCanvas.setLineSort(new AlphabeticLineSort());
-
-        _this.overviewCanvas.prerender(true);
-      });
-      var similarityOrderRadio = document.getElementById('similaritySort');
-      similarityOrderRadio.addEventListener('change', function () {
-        var sortLineSelect = document.getElementById('sortLineSelect');
-        sortLineSelect.disabled = false;
-        var referenceName = sortLineSelect.options[sortLineSelect.selectedIndex].value;
-
-        _this.genotypeCanvas.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
-
-        _this.overviewCanvas.prerender(true);
-      });
-      var sortLineSelect = document.getElementById('sortLineSelect');
-      sortLineSelect.addEventListener('change', function (event) {
-        _this.genotypeCanvas.setSortComparisonLine(event.target.options[event.target.selectedIndex].value);
-
-        _this.overviewCanvas.prerender(true);
-      });
+      this.contextMenuY = null;
     }
 
     _createClass(CanvasController, [{
       key: "init",
-      value: function init(dataSet, colorScheme) {
-        var _this2 = this;
+      value: function init(dataSet) {
+        var _this = this;
 
-        // Initialize the components
-        this.genotypeCanvas.init(dataSet, colorScheme);
+        this.dataSet = dataSet;
+        var settings = this.loadDefaultSettings(this.dataSet.id);
+
+        if (settings.traitColors != null && this.dataSet.hasTraits()) {
+          for (var traitName in settings.traitColors) {
+            var trait = this.dataSet.getTrait(traitName);
+
+            if (trait !== undefined) {
+              for (var value in settings.traitColors[traitName]) {
+                trait.setHSVColor(parseFloat(value), settings.traitColors[traitName][value]);
+              }
+            }
+          }
+        } // Initialize the components
+
+
+        this.genotypeCanvas.init(dataSet, settings);
         this.genotypeCanvas.prerender(true);
-        this.overviewCanvas.init(dataSet, colorScheme, this.genotypeCanvas.visibilityWindow());
+        this.overviewCanvas.init(dataSet, settings, this.genotypeCanvas.visibilityWindow());
         this.overviewCanvas.prerender(true);
         this.updateAutoWidth();
         window.addEventListener("resize", function (event) {
-          _this2.updateAutoWidth();
-        }); // Set the canvas controls only once we have a valid data set and color scheme
+          _this.updateAutoWidth();
+        }); // Color schemes
+
+        var nucleotideRadio = document.getElementById('nucleotideScheme');
+        if (settings.colorSchemeId == "nucleotide") nucleotideRadio.checked = true;
+        nucleotideRadio.addEventListener('change', function () {
+          var lineSelect = document.getElementById('colorLineSelect');
+          lineSelect.disabled = true;
+          var colorScheme = new NucleotideColorScheme(_this.genotypeCanvas.dataSet);
+          colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
+
+          _this.genotypeCanvas.setColorScheme(colorScheme);
+
+          _this.overviewCanvas.setColorScheme(colorScheme);
+
+          _this.saveSetting("colorScheme", "nucleotide");
+        });
+        var similarityRadio = document.getElementById('similarityScheme');
+        var lineSelect = document.getElementById('colorLineSelect');
+
+        if (settings.colorSchemeId == "similarity") {
+          similarityRadio.checked = true;
+          lineSelect.disabled = false;
+          lineSelect.value = settings.colorReference;
+        }
+
+        similarityRadio.addEventListener('change', function () {
+          var lineSelect = document.getElementById('colorLineSelect');
+          lineSelect.disabled = false;
+          var referenceName = lineSelect.options[lineSelect.selectedIndex].value;
+
+          var referenceIndex = _this.genotypeCanvas.dataSet.germplasmList.findIndex(function (germplasm) {
+            return germplasm.name == referenceName;
+          });
+
+          var colorScheme = new SimilarityColorScheme(_this.genotypeCanvas.dataSet, referenceIndex);
+          colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
+
+          _this.genotypeCanvas.setColorScheme(colorScheme);
+
+          _this.genotypeCanvas.setColorComparisonLine(referenceName);
+
+          _this.overviewCanvas.setColorScheme(colorScheme);
+
+          _this.saveSetting("colorScheme", "similarity");
+        });
+        lineSelect.addEventListener('change', function (event) {
+          var reference = event.target.options[event.target.selectedIndex].value;
+
+          _this.genotypeCanvas.setColorComparisonLine(reference);
+
+          _this.overviewCanvas.prerender(true);
+
+          _this.saveSetting("colorReference", reference);
+        }); // Sort
+
+        var sortLineSelect = document.getElementById('sortLineSelect');
+        var sortTraitSelect = document.getElementById('sortTraitSelect');
+        var importingOrderRadio = document.getElementById('importingOrderSort');
+        if (settings.lineSortId == "importing") importingOrderRadio.checked = true;
+        importingOrderRadio.addEventListener('change', function () {
+          sortLineSelect.disabled = true;
+          if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
+
+          _this.setLineSort(new ImportingOrderLineSort());
+
+          _this.saveSetting("sort", "importing");
+        });
+        var alphabetOrderRadio = document.getElementById('alphabeticSort');
+        if (settings.lineSortId == "alphabetic") alphabetOrderRadio.checked = true;
+        alphabetOrderRadio.addEventListener('change', function () {
+          sortLineSelect.disabled = true;
+          if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
+
+          _this.setLineSort(new AlphabeticLineSort());
+
+          _this.saveSetting("sort", "alphabetic");
+        });
+        var similarityOrderRadio = document.getElementById('similaritySort');
+
+        if (settings.lineSortId == "similarity") {
+          similarityOrderRadio.checked = true;
+          sortLineSelect.disabled = false;
+          sortLineSelect.value = settings.sortReference;
+        }
+
+        similarityOrderRadio.addEventListener('change', function () {
+          sortLineSelect.disabled = false;
+          if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
+          var referenceName = sortLineSelect.options[sortLineSelect.selectedIndex].value;
+
+          _this.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
+
+          _this.saveSetting("sort", "similarity");
+
+          _this.saveSetting("sortReference", referenceName);
+        });
+        sortLineSelect.addEventListener('change', function (event) {
+          if (!sortLineSelect.disabled) {
+            var referenceName = sortLineSelect.options[sortLineSelect.selectedIndex].value;
+
+            _this.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
+
+            _this.saveSetting("sortReference", referenceName);
+          }
+        });
+
+        if (dataSet.hasTraits()) {
+          var traitOrderRadio = document.getElementById('traitSort');
+
+          if (settings.lineSortId == "trait") {
+            traitOrderRadio.checked = true;
+            sortTraitSelect.disabled = false;
+            sortTraitSelect.value = settings.sortReference;
+          }
+
+          traitOrderRadio.addEventListener('change', function () {
+            sortLineSelect.disabled = true;
+            sortTraitSelect.disabled = false;
+            var traitName = sortTraitSelect.options[sortTraitSelect.selectedIndex].value;
+
+            _this.setLineSort(new TraitLineSort(traitName));
+
+            _this.saveSetting("sort", "trait");
+
+            _this.saveSetting("sortReference", traitName);
+          });
+          sortTraitSelect.addEventListener('change', function (event) {
+            if (!sortTraitSelect.disabled) {
+              var _traitName = sortTraitSelect.options[sortTraitSelect.selectedIndex].value;
+
+              _this.setLineSort(new TraitLineSort(_traitName));
+
+              _this.saveSetting("sortReference", _traitName);
+            }
+          });
+          var displayTraitSelect = document.getElementById('displayTraitSelect');
+          displayTraitSelect.addEventListener('change', function (event) {
+            var displayTraits = [];
+
+            var _iterator = _createForOfIteratorHelper(displayTraitSelect),
+                _step;
+
+            try {
+              for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                var option = _step.value;
+                if (option.selected) displayTraits.push(option.value);
+              }
+            } catch (err) {
+              _iterator.e(err);
+            } finally {
+              _iterator.f();
+            }
+
+            _this.genotypeCanvas.setDisplayTraits(displayTraits);
+
+            _this.saveSetting("displayTraits", displayTraits.join(";"));
+          }); // Trait palettes
+
+          var paletteTraitSelect = document.getElementById('paletteTrait');
+          var paletteValueSelect = document.getElementById('paletteValue');
+          var paletteValueColor = document.getElementById('paletteColor');
+          var paletteResetButton = document.getElementById('paletteReset');
+          this.dataSet.traitNames.forEach(function (traitName) {
+            var opt = document.createElement('option');
+            opt.value = traitName;
+            opt.text = traitName;
+            paletteTraitSelect.add(opt);
+          });
+          paletteTraitSelect.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var traitOptions = null;
+
+            if (trait.type == TraitType.Numerical) {
+              traitOptions = ['min : ' + trait.minValue, 'max : ' + trait.maxValue];
+            } else {
+              traitOptions = trait.getValues();
+            } // Clear the select list
+
+
+            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) {
+              paletteValueSelect.remove(i);
+            }
+
+            var _iterator2 = _createForOfIteratorHelper(traitOptions),
+                _step2;
+
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var _value = _step2.value;
+                var opt = document.createElement('option');
+                opt.value = _value;
+                opt.text = _value;
+                paletteValueSelect.add(opt);
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+
+            paletteValueSelect.selectedIndex = 0;
+            paletteValueSelect.dispatchEvent(new Event('change'));
+          });
+          paletteTraitSelect.value = this.dataSet.traitNames[0];
+          paletteTraitSelect.dispatchEvent(new Event('change'));
+          paletteValueSelect.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var color = null;
+
+            if (trait.type == TraitType.Numerical) {
+              var index = paletteValueSelect.selectedIndex;
+              color = index == 0 ? trait.getMinColor() : trait.getMaxColor();
+            } else {
+              color = trait.getColor(paletteValueSelect.selectedIndex);
+            }
+
+            paletteValueColor.value = color;
+          });
+          paletteValueSelect.dispatchEvent(new Event('change'));
+          paletteValueColor.addEventListener('change', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            var color = paletteValueColor.value;
+
+            if (trait.type == TraitType.Numerical) {
+              var index = paletteValueSelect.selectedIndex;
+              if (index == 0) trait.setMinColor(color);else trait.setMaxColor(color);
+            } else {
+              trait.setColor(paletteValueSelect.selectedIndex, color);
+            }
+
+            _this.genotypeCanvas.prerender(true);
+
+            _this.saveColors();
+          });
+          paletteResetButton.addEventListener('click', function (event) {
+            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+
+            var trait = _this.dataSet.getTrait(traitName);
+
+            trait.resetColors();
+
+            _this.genotypeCanvas.prerender(true);
+
+            paletteValueSelect.dispatchEvent(new Event('change'));
+
+            _this.saveColors();
+          });
+        } // Set the canvas controls only once we have a valid data set and color scheme
         // If they are set in the constructor, moving the mouse above the canvas before
         // the loading is complete throws errors
         // Genotype canvas control
 
+
         this.genotypeCanvas.canvas.addEventListener('mousedown', function (e) {
           // The following block of code is used to determine if we are scrolling
           // using the scrollbar widget, rather than grabbing the canvas
-          var _this2$getGenotypeMou = _this2.getGenotypeMouseLocation(e.clientX, e.clientY),
-              x = _this2$getGenotypeMou.x,
-              y = _this2$getGenotypeMou.y;
+          var _this$getGenotypeMous = _this.getGenotypeMouseLocation(e.clientX, e.clientY),
+              x = _this$getGenotypeMous.x,
+              y = _this$getGenotypeMous.y;
 
-          var _this2$genotypeCanvas = _this2.genotypeCanvas,
-              verticalScrollbar = _this2$genotypeCanvas.verticalScrollbar,
-              horizontalScrollbar = _this2$genotypeCanvas.horizontalScrollbar;
+          var _this$genotypeCanvas = _this.genotypeCanvas,
+              verticalScrollbar = _this$genotypeCanvas.verticalScrollbar,
+              horizontalScrollbar = _this$genotypeCanvas.horizontalScrollbar;
 
-          if (_this2.isOverVerticalScrollbar(x, verticalScrollbar)) {
+          if (_this.isOverVerticalScrollbar(x, verticalScrollbar)) {
             // Flag to remember that the scrollbar widget was initially clicked on
             // which prevents mouse drift prematurely stopping scrolling from happening
-            _this2.draggingVerticalScrollbar = true;
+            _this.draggingVerticalScrollbar = true;
 
-            _this2.dragVerticalScrollbar(e.clientY);
-          } else if (_this2.isOverHorizontalScrollbar(y, horizontalScrollbar)) {
+            _this.dragVerticalScrollbar(e.clientY);
+          } else if (_this.isOverHorizontalScrollbar(y, horizontalScrollbar)) {
             // Flag to remember that the scrollbar widget was initially clicked on
             // which prevents mouse drift prematurely stopping scrolling from happening
-            _this2.draggingHorizontalScrollbar = true;
+            _this.draggingHorizontalScrollbar = true;
 
-            _this2.dragHorizontalScrollbar(e.clientX);
+            _this.dragHorizontalScrollbar(e.clientX);
           } else {
             // We are scrolling by grabbing the canvas directly
-            _this2.dragStartX = e.pageX;
-            _this2.dragStartY = e.pageY;
-            _this2.draggingGenotypeCanvas = true;
+            _this.dragStartX = e.pageX;
+            _this.dragStartY = e.pageY;
+            _this.draggingGenotypeCanvas = true;
           }
         });
         this.genotypeCanvas.canvas.addEventListener('mousemove', function (e) {
-          var mousePos = _this2.getGenotypeMouseLocation(e.clientX, e.clientY);
+          var mousePos = _this.getGenotypeMouseLocation(e.clientX, e.clientY);
 
-          _this2.genotypeCanvas.mouseOver(mousePos.x, mousePos.y);
+          _this.genotypeCanvas.mouseOver(mousePos.x, mousePos.y);
         });
         this.genotypeCanvas.canvas.addEventListener('mouseleave', function () {
-          _this2.genotypeCanvas.mouseOver(undefined, undefined);
+          _this.genotypeCanvas.mouseOver(undefined, undefined);
         }); // Overview canvas control
 
         this.overviewCanvas.canvas.addEventListener('mousedown', function (event) {
-          _this2.setOverviewPosition(event.clientX, event.clientY);
+          _this.setOverviewPosition(event.clientX, event.clientY);
         }); // Other events
 
         window.addEventListener('mouseup', function () {
-          _this2.draggingGenotypeCanvas = false;
-          _this2.draggingVerticalScrollbar = false;
-          _this2.draggingHorizontalScrollbar = false;
-          _this2.draggingOverviewCanvas = false;
+          _this.draggingGenotypeCanvas = false;
+          _this.draggingVerticalScrollbar = false;
+          _this.draggingHorizontalScrollbar = false;
+          _this.draggingOverviewCanvas = false;
         });
         window.addEventListener('mousemove', function (e) {
-          if (_this2.draggingVerticalScrollbar) {
-            _this2.dragVerticalScrollbar(e.clientY);
-          } else if (_this2.draggingHorizontalScrollbar) {
-            _this2.dragHorizontalScrollbar(e.clientX);
-          } else if (_this2.draggingGenotypeCanvas) {
-            _this2.dragCanvas(e.pageX, e.pageY);
-          } else if (_this2.draggingOverviewCanvas) {
-            _this2.setOverviewPosition(e.clientX, e.clientY);
+          if (_this.draggingVerticalScrollbar) {
+            _this.dragVerticalScrollbar(e.clientY);
+          } else if (_this.draggingHorizontalScrollbar) {
+            _this.dragHorizontalScrollbar(e.clientX);
+          } else if (_this.draggingGenotypeCanvas) {
+            _this.dragCanvas(e.pageX, e.pageY);
+          } else if (_this.draggingOverviewCanvas) {
+            _this.setOverviewPosition(e.clientX, e.clientY);
           }
         });
+      }
+    }, {
+      key: "setLineSort",
+      value: function setLineSort(lineSort) {
+        var _this2 = this;
+
+        this.disableCanvas(); // Yield control to the browser to make a render (to show the grey overlay)
+
+        setTimeout(function () {
+          _this2.genotypeCanvas.setLineSort(lineSort);
+
+          _this2.overviewCanvas.prerender(true);
+
+          _this2.enableCanvas();
+        }, 4);
       }
     }, {
       key: "updateAutoWidth",
@@ -3494,6 +4297,18 @@
         this.genotypeCanvas.setChromosome(chromosomeIndex);
         this.overviewCanvas.setChromosome(chromosomeIndex);
         this.overviewCanvas.moveToPosition(0, 0, this.genotypeCanvas.visibilityWindow());
+      }
+    }, {
+      key: "disableCanvas",
+      value: function disableCanvas() {
+        this.genotypeCanvas.disable();
+        this.overviewCanvas.disable();
+      }
+    }, {
+      key: "enableCanvas",
+      value: function enableCanvas(self) {
+        this.genotypeCanvas.enable();
+        this.overviewCanvas.enable();
       }
     }, {
       key: "getGenotypeMouseLocation",
@@ -3577,66 +4392,119 @@
         this.genotypeCanvas.moveToPosition(genotypePosition.marker, genotypePosition.germplasm);
         this.draggingOverviewCanvas = true;
       }
+    }, {
+      key: "saveSetting",
+      value: function saveSetting(key, value) {
+        if (this.saveSettings) {
+          var mangledKey = "_fj-bytes::" + this.dataSet.id + "::" + key;
+          localStorage.setItem(mangledKey, value);
+        }
+      }
+    }, {
+      key: "loadSetting",
+      value: function loadSetting(key) {
+        var mangledKey = "_fj-bytes::" + this.dataSet.id + "::" + key;
+        return localStorage.getItem(mangledKey);
+      }
+    }, {
+      key: "saveColors",
+      value: function saveColors() {
+        if (this.saveSettings) {
+          var jsonColors = {};
+
+          var _iterator3 = _createForOfIteratorHelper(this.dataSet.traitNames),
+              _step3;
+
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var traitName = _step3.value;
+              var customColors = this.dataSet.getTrait(traitName).getCustomColors();
+              if (customColors.size > 0) jsonColors[traitName] = Object.fromEntries(customColors);
+            }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
+          }
+
+          this.saveSetting('traitColors', JSON.stringify(jsonColors));
+        }
+      }
+    }, {
+      key: "loadDefaultSettings",
+      value: function loadDefaultSettings() {
+        var sortId = this.loadSetting("sort");
+        var sortReference = this.loadSetting("sortReference");
+        var colorSchemeId = this.loadSetting("colorScheme");
+        var colorReference = this.loadSetting("colorReference");
+        var displayTraits = this.loadSetting("displayTraits");
+        var customColors = this.loadSetting("traitColors");
+        var settings = {
+          colorReference: colorReference,
+          sortReference: sortReference,
+          displayTraits: displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";"),
+          lineSort: new ImportingOrderLineSort(),
+          lineSortId: "importing",
+          colorScheme: new NucleotideColorScheme(this.dataSet),
+          colorSchemeId: "nucleotide",
+          traitColors: customColors == null ? {} : JSON.parse(customColors)
+        };
+
+        switch (sortId) {
+          case "importing":
+            settings.lineSort = new ImportingOrderLineSort();
+            settings.lineSortId = "importing";
+            break;
+
+          case "alphabetic":
+            settings.lineSort = new AlphabeticLineSort();
+            settings.lineSortId = "alphabetic";
+            break;
+
+          case "trait":
+            if (this.dataSet.hasTraits() && this.dataSet.getTrait(sortReference) !== undefined) {
+              settings.lineSort = new TraitLineSort(sortReference);
+              settings.lineSortId = "trait";
+            }
+
+            break;
+
+          case "similarity":
+            if (this.dataSet.germplasmList.find(function (germplasm) {
+              return germplasm.name == sortReference;
+            }) !== undefined) {
+              settings.lineSort = new SimilarityLineSort(sortReference, [this.chromosomeIndex]);
+              settings.lineSortId = "similarity";
+            }
+
+            break;
+        }
+
+        switch (colorSchemeId) {
+          case "nucleotide":
+            settings.colorScheme = new NucleotideColorScheme(this.dataSet);
+            settings.colorSchemeId = "nucleotide";
+            break;
+
+          case "similarity":
+            var referenceIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
+              return germplasm.name == colorReference;
+            });
+
+            if (referenceIndex !== undefined) {
+              settings.colorScheme = new SimilarityColorScheme(this.dataSet, referenceIndex);
+              settings.colorSchemeId = "similarity";
+            }
+
+            break;
+        }
+
+        return settings;
+      }
     }]);
 
     return CanvasController;
   }();
-
-  var Genotype = /*#__PURE__*/function () {
-    function Genotype(allele1, allele2, isHomozygous) {
-      _classCallCheck(this, Genotype);
-
-      this.allele1 = allele1;
-      this.allele2 = allele2;
-      this.isHomozygous = isHomozygous;
-    }
-
-    _createClass(Genotype, [{
-      key: "getText",
-      value: function getText() {
-        return this.isHomozygous ? this.allele1 : this.getHetText();
-      }
-    }, {
-      key: "getHetText",
-      value: function getHetText() {
-        return "".concat(this.allele1, "/").concat(this.allele2);
-      } // Factory method for creating Genotypes from string input, has a default
-      // heterozygous genotype separator of /
-
-    }], [{
-      key: "fromString",
-      value: function fromString(genotypeString) {
-        var hetSeparator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '/';
-        var upperCased = genotypeString.toUpperCase();
-        var geno; //    if (upperCased.length === 3 && !upperCased.includes(hetSeparator)) {
-        //      throw Error('Encountered a string which could not be converted into a Genotype');
-        //    }
-
-        if (upperCased === '-' || upperCased === 'NN' || upperCased === 'N/N' || !upperCased || upperCased.length === 0) {
-          geno = new Genotype('', '', true);
-        } else if (upperCased.length === 1) {
-          geno = new Genotype(upperCased, upperCased, true);
-        } else if (upperCased.length === 2 && (hetSeparator == null || hetSeparator == "")) {
-          geno = new Genotype(upperCased[0], upperCased[1], upperCased[0] === upperCased[1]);
-        } else if (upperCased.includes(hetSeparator)) {
-          var alleles = upperCased.split(hetSeparator);
-          geno = new Genotype(alleles[0], alleles[1], alleles[0] === alleles[1]);
-        } else // homozygous with multi-nucleic allele (INDEL?) 
-          geno = new Genotype(upperCased, upperCased, true);
-
-        return geno;
-      }
-    }]);
-
-    return Genotype;
-  }();
-
-  var Germplasm = function Germplasm(name, genotypeData) {
-    _classCallCheck(this, Germplasm);
-
-    this.name = name;
-    this.genotypeData = genotypeData;
-  };
 
   var Marker = function Marker(name, chromosome, position) {
     _classCallCheck(this, Marker);
@@ -3645,6 +4513,29 @@
     this.chromosome = chromosome;
     this.position = position;
   };
+
+  var Chromosome = /*#__PURE__*/function () {
+    function Chromosome(name, end, markers) {
+      _classCallCheck(this, Chromosome);
+
+      this.start = 0;
+      this.name = name;
+      this.end = end;
+      this.markers = markers;
+      this.markers.sort(function (a, b) {
+        return a.position > b.position ? 1 : -1;
+      });
+    }
+
+    _createClass(Chromosome, [{
+      key: "markerCount",
+      value: function markerCount() {
+        return this.markers.length;
+      }
+    }]);
+
+    return Chromosome;
+  }();
 
   function unwrapExports (x) {
   	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
@@ -4560,27 +5451,170 @@
     return GenomeMap;
   }();
 
-  var Chromosome = /*#__PURE__*/function () {
-    function Chromosome(name, end, markers) {
-      _classCallCheck(this, Chromosome);
+  var MapImporter = /*#__PURE__*/function () {
+    function MapImporter() {
+      _classCallCheck(this, MapImporter);
 
-      this.start = 0;
-      this.name = name;
-      this.end = end;
-      this.markers = markers;
-      this.markers.sort(function (a, b) {
-        return a.position > b.position ? 1 : -1;
-      });
+      this.markerNames = [];
+      this.markerData = [];
+      this.chromosomeNames = new Set();
     }
 
-    _createClass(Chromosome, [{
-      key: "markerCount",
-      value: function markerCount() {
-        return this.markers.length;
+    _createClass(MapImporter, [{
+      key: "processMapFileLine",
+      value: function processMapFileLine(line) {
+        if (line.startsWith('#') || !line || line.length === 0 || line.startsWith('\t')) {
+          return;
+        } // Only parse our default map file lines (i.e. not the special fixes for
+        // exactly specifying the chromosome length)
+        // http://flapjack.hutton.ac.uk/en/latest/projects_&_data_formats.html#data-sets-maps-and-genotypes
+
+
+        var tokens = line.split('\t');
+
+        if (tokens.length === 3) {
+          var markerName = tokens[0];
+          var chromosome = tokens[1];
+          var pos = tokens[2]; // Keep track of the chromosomes that we've found
+
+          this.chromosomeNames.add(chromosome); // Create a marker object and add it to our array of markers
+
+          var marker = new Marker(markerName, chromosome, parseFloat(pos.replace(/,/g, ''), 10));
+          this.markerData.push(marker);
+        }
+      }
+    }, {
+      key: "createMap",
+      value: function createMap() {
+        var _this = this;
+
+        var chromosomes = [];
+        this.chromosomeNames.forEach(function (name) {
+          var chromosomeMarkers = _this.markerData.filter(function (m) {
+            return m.chromosome === name;
+          });
+
+          var markerPositions = chromosomeMarkers.map(function (marker) {
+            return marker.position;
+          }); //const chromosomeEnd = Math.max(...markerPositions);
+          // Use reduce instead of apply to avoid exceeding call stack size by passing too many arguments
+
+          var chromosomeEnd = markerPositions.reduce(function (a, b) {
+            return Math.max(a, b);
+          });
+          var chromosome = new Chromosome(name, chromosomeEnd, chromosomeMarkers);
+          chromosomes.push(chromosome);
+        });
+        return new GenomeMap(chromosomes);
+      }
+    }, {
+      key: "parseFile",
+      value: function parseFile(fileContents) {
+        var markers = fileContents.split(/\r?\n/);
+
+        for (var marker = 0; marker < markers.length; marker += 1) {
+          this.processMapFileLine(markers[marker]);
+        }
+
+        var map = this.createMap();
+        return map;
+      } // A method which converts BrAPI markerpositions into Flapjack markers for
+      // rendering
+
+    }, {
+      key: "parseMarkerpositions",
+      value: function parseMarkerpositions(markerpositions) {
+        var _this2 = this;
+
+        markerpositions.forEach(function (marker) {
+          _this2.processBrapiMarkerposition(marker);
+        });
+        var map = this.createMap();
+        return map;
+      }
+    }, {
+      key: "processBrapiMarkerposition",
+      value: function processBrapiMarkerposition(markerposition) {
+        var name = markerposition.name,
+            chromosome = markerposition.chromosome,
+            position = markerposition.position; // Keep track of the chromosomes that we've found
+
+        this.chromosomeNames.add(chromosome); // Create a marker object and add it to our array of markers
+
+        var marker = new Marker(name, chromosome, position);
+        this.markerData.push(marker);
       }
     }]);
 
-    return Chromosome;
+    return MapImporter;
+  }();
+
+  var Genotype = /*#__PURE__*/function () {
+    function Genotype(allele1, allele2, isHomozygous) {
+      _classCallCheck(this, Genotype);
+
+      this.allele1 = allele1;
+      this.allele2 = allele2;
+      this.isHomozygous = isHomozygous;
+    }
+
+    _createClass(Genotype, [{
+      key: "getText",
+      value: function getText() {
+        return this.isHomozygous ? this.allele1 : this.getHetText();
+      }
+    }, {
+      key: "getHetText",
+      value: function getHetText() {
+        return "".concat(this.allele1, "/").concat(this.allele2);
+      } // Factory method for creating Genotypes from string input, has a default
+      // heterozygous genotype separator of /
+
+    }], [{
+      key: "fromString",
+      value: function fromString(genotypeString) {
+        var hetSeparator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '/';
+        var upperCased = genotypeString.toUpperCase();
+        var geno; //    if (upperCased.length === 3 && !upperCased.includes(hetSeparator)) {
+        //      throw Error('Encountered a string which could not be converted into a Genotype');
+        //    }
+
+        if (upperCased === '-' || upperCased === 'NN' || upperCased === 'N/N' || !upperCased || upperCased.length === 0) {
+          geno = new Genotype('', '', true);
+        } else if (upperCased.length === 1) {
+          geno = new Genotype(upperCased, upperCased, true);
+        } else if (upperCased.length === 2 && (hetSeparator == null || hetSeparator == "")) {
+          geno = new Genotype(upperCased[0], upperCased[1], upperCased[0] === upperCased[1]);
+        } else if (upperCased.includes(hetSeparator)) {
+          var alleles = upperCased.split(hetSeparator);
+          geno = new Genotype(alleles[0], alleles[1], alleles[0] === alleles[1]);
+        } else // homozygous with multi-nucleic allele (INDEL?) 
+          geno = new Genotype(upperCased, upperCased, true);
+
+        return geno;
+      }
+    }]);
+
+    return Genotype;
+  }();
+
+  var Germplasm = /*#__PURE__*/function () {
+    function Germplasm(name, genotypeData, phenotype) {
+      _classCallCheck(this, Germplasm);
+
+      this.name = name;
+      this.genotypeData = genotypeData;
+      this.phenotype = phenotype;
+    }
+
+    _createClass(Germplasm, [{
+      key: "getPhenotype",
+      value: function getPhenotype(traitName) {
+        if (this.phenotype !== undefined) return this.phenotype.get(traitName);
+      }
+    }]);
+
+    return Germplasm;
   }();
 
   var GenotypeImporter = /*#__PURE__*/function () {
@@ -4678,7 +5712,7 @@
         this.totalLineCount = lines.length;
         var self = this; // Give the browser some time to keep the page alive between the parsing of each line
         // Avoid a complete freeze during a large file load
-        // This leaves a few milliseconds between the parsing of each line for the browser to refresh itself
+        // This yields control between the parsing of each line for the browser to refresh itself
         // This calls recursively and asynchronously the parsing of the following line
         // In order to get a single promise that returns only once all the lines have been parsed
 
@@ -4689,11 +5723,11 @@
             if (advancementCallback) advancementCallback(self.processedLines / self.totalLineCount);
 
             if (line + 1 < self.totalLineCount) {
-              // Let the browser do its things for a few milliseconds, run the next lines (recursively),
+              // Yield to the browser to let it do its things, run the next lines (recursively),
               // and return once they are done
               setTimeout(function () {
                 doLine(line + 1).then(resolve);
-              }, 2);
+              }, 0);
             } else {
               // Finish
               resolve();
@@ -4814,117 +5848,198 @@
     return GenotypeImporter;
   }();
 
-  var MapImporter = /*#__PURE__*/function () {
-    function MapImporter() {
-      _classCallCheck(this, MapImporter);
+  var PhenotypeImporter = /*#__PURE__*/function () {
+    function PhenotypeImporter() {
+      _classCallCheck(this, PhenotypeImporter);
 
-      this.markerNames = [];
-      this.markerData = [];
-      this.chromosomeNames = new Set();
+      this.traitNames = [];
+      this.experiments = [];
+      this.values = [];
+      this.traits = new Map();
+      this.valueToIndex = new Map();
+      this.phenotypes = new Map();
     }
 
-    _createClass(MapImporter, [{
-      key: "processMapFileLine",
-      value: function processMapFileLine(line) {
-        if (line.startsWith('#') || !line || line.length === 0 || line.startsWith('\t')) {
-          return;
-        } // Only parse our default map file lines (i.e. not the special fixes for
-        // exactly specifying the chromosome length)
-        // http://flapjack.hutton.ac.uk/en/latest/projects_&_data_formats.html#data-sets-maps-and-genotypes
+    _createClass(PhenotypeImporter, [{
+      key: "loadData",
+      value: function loadData(lines) {
 
+        for (var index = 0; index < lines.length; index += 1) {
+          var line = lines[index];
+          if (line.startsWith('#') || !line || line.length === 0) continue;
 
-        var tokens = line.split('\t');
-
-        if (tokens.length === 3) {
-          var markerName = tokens[0];
-          var chromosome = tokens[1];
-          var pos = tokens[2]; // Keep track of the chromosomes that we've found
-
-          this.chromosomeNames.add(chromosome); // Create a marker object and add it to our array of markers
-
-          var marker = new Marker(markerName, chromosome, parseFloat(pos.replace(/,/g, ''), 10));
-          this.markerData.push(marker);
+          if (line.startsWith("\t")) {
+            {
+              // Traits
+              this.traitNames = line.split("\t").slice(1);
+            }
+          } else {
+            this.values.push(line.split("\t"));
+          }
         }
       }
     }, {
-      key: "createMap",
-      value: function createMap() {
+      key: "buildTraits",
+      value: function buildTraits() {
         var _this = this;
 
-        var chromosomes = [];
-        this.chromosomeNames.forEach(function (name) {
-          var chromosomeMarkers = _this.markerData.filter(function (m) {
-            return m.chromosome === name;
+        var _loop = function _loop(traitIndex) {
+          var traitName = _this.traitNames[traitIndex];
+          var experiment = _this.experiments[traitIndex]; // May be undefined
+
+          var values = _this.values.map(function (germplasmValues) {
+            return germplasmValues[traitIndex + 1];
           });
 
-          var markerPositions = chromosomeMarkers.map(function (marker) {
-            return marker.position;
-          }); //const chromosomeEnd = Math.max(...markerPositions);
-          // Use reduce instead of apply to avoid exceeding call stack size by passing too many arguments
+          var traitType = void 0;
 
-          var chromosomeEnd = markerPositions.reduce(function (a, b) {
-            return Math.max(a, b);
-          });
-          var chromosome = new Chromosome(name, chromosomeEnd, chromosomeMarkers);
-          chromosomes.push(chromosome);
-        });
-        return new GenomeMap(chromosomes);
+          if (traitName.includes("_#CAT")) {
+            traitType = TraitType.Category;
+            traitName = traitName.replace("_#CAT", "");
+          } else if (traitName.includes("_#NUM")) {
+            traitType = TraitType.Numerical;
+            traitName = traitName.replace("_#NUM", "");
+          } else {
+            var numValues = values.map(function (value) {
+              return parseFloat(value);
+            });
+
+            if (numValues.some(function (value) {
+              return isNaN(value);
+            })) {
+              // At least one value is not numerical
+              traitType = TraitType.Category;
+            } else {
+              traitType = TraitType.Numerical;
+            }
+          }
+
+          traitName = traitName.trim();
+          var trait = new Trait(traitName, traitType, experiment);
+
+          if (traitType == TraitType.Category) {
+            var valueToIndex = new Map();
+            var valueIndex = 0;
+            var maxLength = 0;
+            values.sort();
+
+            var _iterator = _createForOfIteratorHelper(values),
+                _step;
+
+            try {
+              for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                var value = _step.value;
+
+                if (!valueToIndex.has(value)) {
+                  valueToIndex.set(value, valueIndex);
+                  valueIndex += 1;
+                  if (value.length > maxLength) trait.longestValue = value;
+                }
+              }
+            } catch (err) {
+              _iterator.e(err);
+            } finally {
+              _iterator.f();
+            }
+
+            _this.valueToIndex.set(traitName, valueToIndex);
+
+            trait.setValues(Array.from(valueToIndex.keys()));
+            trait.setScale(0, valueIndex - 1);
+          } else {
+            var _numValues = values.map(function (value) {
+              return parseFloat(value);
+            });
+
+            var minValue = _numValues[0],
+                maxValue = _numValues[0];
+            var _maxLength = 0;
+
+            _numValues.slice(1).forEach(function (value) {
+              if (value < minValue) minValue = value;
+              if (value > maxValue) maxValue = value;
+              if (value.toString().length > _maxLength) trait.longestValue = value.toString();
+            });
+
+            trait.setScale(minValue, maxValue);
+          }
+
+          _this.traits.set(traitName, trait);
+
+          _this.traitNames[traitIndex] = traitName;
+        };
+
+        for (var traitIndex = 0; traitIndex < this.traitNames.length; traitIndex += 1) {
+          _loop(traitIndex);
+        }
+      }
+    }, {
+      key: "buildPhenotypes",
+      value: function buildPhenotypes() {
+        for (var index = 0; index < this.values.length; index += 1) {
+          var values = this.values[index];
+          var germplasmName = values[0];
+          var traitValues = values.slice(1);
+          var phenotype = new Map();
+
+          for (var traitIndex = 0; traitIndex < traitValues.length; traitIndex += 1) {
+            var trait = this.traits.get(this.traitNames[traitIndex]);
+            var value = void 0;
+
+            if (trait.type == TraitType.Category) {
+              value = this.valueToIndex.get(trait.name).get(traitValues[traitIndex]);
+            } else if (trait.type == TraitType.Numerical) {
+              value = parseFloat(traitValues[traitIndex].trim());
+            }
+
+            phenotype.set(trait.name, value);
+          }
+
+          this.phenotypes.set(germplasmName.trim(), phenotype);
+        }
+
+        return this.phenotypes;
       }
     }, {
       key: "parseFile",
       value: function parseFile(fileContents) {
-        var markers = fileContents.split(/\r?\n/);
-
-        for (var marker = 0; marker < markers.length; marker += 1) {
-          this.processMapFileLine(markers[marker]);
-        }
-
-        var map = this.createMap();
-        return map;
-      } // A method which converts BrAPI markerpositions into Flapjack markers for
-      // rendering
-
-    }, {
-      key: "parseMarkerpositions",
-      value: function parseMarkerpositions(markerpositions) {
-        var _this2 = this;
-
-        markerpositions.forEach(function (marker) {
-          _this2.processBrapiMarkerposition(marker);
-        });
-        var map = this.createMap();
-        return map;
-      }
-    }, {
-      key: "processBrapiMarkerposition",
-      value: function processBrapiMarkerposition(markerposition) {
-        var name = markerposition.name,
-            chromosome = markerposition.chromosome,
-            position = markerposition.position; // Keep track of the chromosomes that we've found
-
-        this.chromosomeNames.add(chromosome); // Create a marker object and add it to our array of markers
-
-        var marker = new Marker(name, chromosome, position);
-        this.markerData.push(marker);
+        var lines = fileContents.split(/\r?\n/);
+        this.loadData(lines);
+        this.buildTraits();
+        return this.buildPhenotypes();
       }
     }]);
 
-    return MapImporter;
+    return PhenotypeImporter;
   }();
 
   var DataSet = /*#__PURE__*/function () {
-    function DataSet(genomeMap, germplasmList, stateTable) {
+    function DataSet(dataSetId, genomeMap, germplasmList, stateTable, traits, phenotypes) {
       _classCallCheck(this, DataSet);
 
+      this.id = dataSetId;
       this.genomeMap = genomeMap;
-      this.germplasmList = germplasmList; // Keep the importing order to allow getting back to it later on
+      this.germplasmList = germplasmList;
+      this.stateTable = stateTable;
+      this.traits = traits; // Keep the importing order to allow getting back to it later on
 
       this.importingOrder = germplasmList.map(function (germplasm) {
         return germplasm.name;
-      });
-      this.stateTable = stateTable; // Pre-compute the similarity matrix
+      }); // Pre-compute the similarity matrix
 
       this.similarityLookupTable = buildSimilarityLookupTable(this.stateTable);
+
+      if (this.traits !== undefined) {
+        // Pre-order the traits
+        this.traitNames = Array.from(this.traits.keys());
+        this.traitNames.sort(); // Set the germplasms' traits
+
+        this.germplasmList.forEach(function (germplasm) {
+          germplasm.phenotype = phenotypes.get(germplasm.name);
+        });
+      } else {
+        this.traitNames = undefined;
+      }
     }
 
     _createClass(DataSet, [{
@@ -4977,28 +6092,41 @@
       value: function lineCount() {
         return this.germplasmList.length;
       }
+    }, {
+      key: "hasTraits",
+      value: function hasTraits() {
+        return this.traits !== undefined;
+      }
+    }, {
+      key: "getTrait",
+      value: function getTrait(traitName) {
+        if (!this.hasTraits()) return undefined;
+        return this.traits.get(traitName);
+      }
     }]);
 
     return DataSet;
   }();
 
-  var defaultLineSort = new ImportingOrderLineSort();
   function GenotypeRenderer() {
     var genotypeRenderer = {};
     var genotypeImporter; // Variables for referring to the genotype canvas
 
     var genotypeCanvas;
-    var overviewCanvas; // TODO: need to investigate a proper clean way to implement this controller
+    var overviewCanvas;
+    var settingsTabs = new Map(); // TODO: need to investigate a proper clean way to implement this controller
     // functionality
     // eslint-disable-next-line no-unused-vars
 
     var canvasController; // Genotype import progress bar
 
     var progressBar;
+    var progressBarLabel;
     var progressBarBackground;
     var boxSize = 16;
-    var colorScheme;
     var genomeMap;
+    var phenotypes;
+    var traits;
     var dataSet;
 
     function sendEvent(eventName, domParent) {
@@ -5010,7 +6138,7 @@
     }
 
     function zoom(size) {
-      var newPosition = genotypeCanvas.zoom(size, colorScheme);
+      var newPosition = genotypeCanvas.zoom(size);
       overviewCanvas.moveToPosition(newPosition.marker, newPosition.germplasm, genotypeCanvas.visibilityWindow());
     }
 
@@ -5026,27 +6154,189 @@
       }
     }
 
-    function createRendererComponents(domParent, widthValue, height, overviewWidthValue, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth, showProgress) {
+    function createRendererComponents(config, showProgress) {
       // Canvas
-      if (minGenotypeAutoWidth === undefined) minGenotypeAutoWidth = 0;
-      if (minOverviewAutoWidth === undefined) minOverviewAutoWidth = 0;
-      var canvasHolder = document.getElementById(domParent.slice(1));
+      if (config.minGenotypeAutoWidth === undefined) config.minGenotypeAutoWidth = 0;
+      if (config.minOverviewAutoWidth === undefined) config.minOverviewAutoWidth = 0;
+      var canvasHolder = document.getElementById(config.domParent.slice(1));
+      canvasHolder.style.fontFamily = 'system-ui';
+      canvasHolder.style.fontSize = '14px';
       var computedStyles = window.getComputedStyle(canvasHolder);
       var autoWidth = canvasHolder.clientWidth - parseInt(computedStyles.paddingLeft) - parseInt(computedStyles.paddingRight);
-      var width = widthValue === null ? Math.max(autoWidth, minGenotypeAutoWidth) : widthValue;
-      var overviewWidth = overviewWidthValue === null ? Math.max(autoWidth, minOverviewAutoWidth) : overviewWidthValue; // Controls
+      var width = config.width === null ? Math.max(autoWidth, config.minGenotypeAutoWidth) : config.width;
+      var overviewWidth = config.overviewWidth === null ? Math.max(autoWidth, config.minOverviewAutoWidth) : config.overviewWidth;
+      var settings = createSettings(config);
+      canvasHolder.appendChild(settings);
 
-      var controlDiv = document.createElement('div');
-      controlDiv.id = 'zoom-holder';
-      var controlCol = document.createElement('div');
-      controlCol.classList.add('col');
-      var formControlDiv = document.createElement('div');
-      formControlDiv.classList.add('form-group');
-      var controlFieldSet = document.createElement('fieldset');
-      controlFieldSet.classList.add('bytes-fieldset');
-      var controlLegend = document.createElement('legend');
-      var controlLegendText = document.createTextNode('Controls');
-      controlLegend.appendChild(controlLegendText); // Chromosome
+      if (showProgress) {
+        // Progress bar
+        progressBarBackground = document.createElement("div");
+        progressBarBackground.style.width = width + "px";
+        progressBarBackground.style.backgroundColor = "grey";
+        progressBarBackground.style.position = "relative";
+        progressBar = document.createElement("div");
+        progressBar.style.width = "1%";
+        progressBar.style.height = "30px";
+        progressBar.style.backgroundColor = "cyan";
+        var labelContainer = document.createElement("div");
+        labelContainer.style.position = "absolute";
+        labelContainer.style.display = "inline";
+        labelContainer.style.top = "0px";
+        labelContainer.style.left = "15px";
+        labelContainer.style.height = "30px";
+        labelContainer.style.lineHeight = "30px";
+        progressBarLabel = document.createTextNode("");
+        labelContainer.appendChild(progressBarLabel);
+        progressBarBackground.appendChild(progressBar);
+        progressBarBackground.appendChild(labelContainer);
+        canvasHolder.append(progressBarBackground);
+      }
+
+      genotypeCanvas = new GenotypeCanvas(width, config.height, boxSize);
+      canvasHolder.append(genotypeCanvas.canvas);
+      if (!overviewWidth) overviewWidth = width;
+      if (!config.overviewHeight) config.overviewHeight = 200;
+      overviewCanvas = new OverviewCanvas(overviewWidth, config.overviewHeight);
+      canvasHolder.append(overviewCanvas.canvas);
+      addStyleSheet();
+      canvasController = new CanvasController(canvasHolder, genotypeCanvas, overviewCanvas, config.saveSettings != false, config.width === null, config.overviewWidth === null, config.minGenotypeAutoWidth, config.minOverviewAutoWidth);
+    }
+
+    function createTabToggle(name, title) {
+      var button = document.createElement('button');
+      button.classList.add('bytes-tabtoggle');
+      button.style.fontSize = '15px';
+      button.appendChild(document.createTextNode(title));
+      button.addEventListener('click', openSettingsTab(name));
+      return button;
+    }
+
+    function openSettingsTab(name) {
+      return function (event) {
+        var _iterator = _createForOfIteratorHelper(settingsTabs.keys()),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var key = _step.value;
+
+            var _settingsTabs$get = settingsTabs.get(key),
+                _settingsTabs$get2 = _slicedToArray(_settingsTabs$get, 2),
+                button = _settingsTabs$get2[0],
+                tab = _settingsTabs$get2[1];
+
+            if (key == name) {
+              button.classList.add('bytes-tabtoggle-active');
+              tab.style.display = 'block';
+            } else {
+              button.classList.remove('bytes-tabtoggle-active');
+              tab.style.display = 'none';
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+      };
+    }
+
+    function addRadioButton(name, id, text, checked, parent, subcontrol) {
+      var formCheck = document.createElement('div');
+      formCheck.classList.add('form-check');
+      var radio = document.createElement('input');
+      radio.setAttribute('type', 'radio');
+      radio.name = name;
+      radio.id = id;
+      radio.checked = checked;
+      radio.classList.add('form-check-input');
+      var radioLabel = document.createElement('label');
+      radioLabel.htmlFor = id;
+      radioLabel.classList.add('form-check-label');
+      var labelText = document.createTextNode(text + " ");
+      radioLabel.appendChild(labelText);
+      formCheck.appendChild(radio);
+      formCheck.appendChild(radioLabel);
+      if (subcontrol) formCheck.appendChild(subcontrol);
+      parent.appendChild(formCheck);
+    }
+
+    function addCSSRule(sheet, selector, rules, index) {
+      if ('insertRule' in sheet) {
+        sheet.insertRule(selector + '{' + rules + '}', index);
+      } else if ('addRule' in sheet) {
+        sheet.addRule(selector, rules, index);
+      }
+    }
+
+    function addStyleSheet() {
+      var sheet = function () {
+        // Create the <style> tag
+        var style = document.createElement("style"); // WebKit hack :(
+
+        style.appendChild(document.createTextNode("")); // Add the <style> element to the page
+
+        document.head.appendChild(style);
+        return style.sheet;
+      }(); //addCSSRule(sheet, '.bytes-fieldset > legend', 'border-style: none; border-width: 0; font-size: 14px; line-height: 20px; margin-bottom: 0; width: auto; padding: 0 10px; border: 1px solid #e0e0e0;');
+      //addCSSRule(sheet, '.bytes-fieldset', 'border: 1px solid #e0e0e0; padding: 10px;');
+
+
+      addCSSRule(sheet, '.bytes-tabtoggle', "display: inline-block; border: none; outline: none; padding: 8px;");
+      addCSSRule(sheet, '.bytes-tabtoggle:hover', 'background-color: #DDDDDD');
+      addCSSRule(sheet, '.bytes-tabtoggle.bytes-tabtoggle-active', 'background-color: #CCCCCC');
+      addCSSRule(sheet, '.bytes-tab', 'display: none;'); // addCSSRule(sheet, 'input', 'margin: .4rem;');
+    }
+
+    function createSettings(config) {
+      //// Settings
+      var settings = document.createElement('div');
+      settings.classList.add('row');
+      settings.style.marginTop = '8px'; // Create the tabs
+
+      var controlTab = createControlTab();
+      var colorTab = createColorSchemeTab();
+      var sortTab = createSortTab(config);
+      var exportTab = createExportTab();
+      var displayTab = createDisplayTab(config); // Create the tab toggles
+
+      var menuRow = document.createElement('div');
+      var controlButton = createTabToggle('control', 'Controls');
+      var colorButton = createTabToggle('color', 'Color schemes');
+      var sortButton = createTabToggle('sort', 'Sorting');
+      var displayButton = createTabToggle('display', 'Display');
+      var exportButton = createTabToggle('export', 'Export');
+      menuRow.appendChild(controlButton);
+      menuRow.appendChild(colorButton);
+      menuRow.appendChild(sortButton);
+      if (displayTab !== undefined) menuRow.appendChild(displayButton);
+      menuRow.appendChild(exportButton);
+      settingsTabs.set('control', [controlButton, controlTab]);
+      settingsTabs.set('color', [colorButton, colorTab]);
+      settingsTabs.set('sort', [sortButton, sortTab]);
+      if (displayTab !== undefined) settingsTabs.set('display', [displayButton, displayTab]);
+      settingsTabs.set('export', [exportButton, exportTab]);
+      settings.appendChild(menuRow); // Add the actual tabs
+
+      var tabContainer = document.createElement('div');
+      tabContainer.appendChild(controlTab);
+      tabContainer.appendChild(colorTab);
+      tabContainer.appendChild(sortTab);
+      if (displayTab !== undefined) tabContainer.appendChild(displayTab);
+      tabContainer.appendChild(exportTab);
+      tabContainer.style.minHeight = '140px'; // Can't really use getClientBoundingRect as the tabs are not displayed yet, so...
+
+      tabContainer.style.border = '1px solid #e0e0e0';
+      tabContainer.style.padding = '10px';
+      settings.appendChild(tabContainer);
+      controlTab.style.display = 'block';
+      return settings;
+    }
+
+    function createControlTab(config) {
+      // Controls
+      var tab = document.createElement('div');
+      tab.classList.add('bytes-tab'); // Chromosome
 
       var chromosomeLabel = document.createElement('label');
       chromosomeLabel.setAttribute('for', 'chromosomeSelect');
@@ -5078,168 +6368,51 @@
       range.addEventListener('input', function () {
         zoom(range.value);
       });
-      controlFieldSet.appendChild(controlLegend);
-      controlFieldSet.appendChild(chromosomeContainer);
-      controlFieldSet.appendChild(zoomContainer);
-      canvasHolder.appendChild(controlFieldSet);
-
-      if (showProgress) {
-        // Progress bar
-        progressBarBackground = document.createElement("div");
-        progressBarBackground.style.width = width + "px";
-        progressBarBackground.style.backgroundColor = "grey";
-        progressBar = document.createElement("div");
-        progressBar.style.width = "1%";
-        progressBar.style.height = "30px";
-        progressBar.style.backgroundColor = "cyan";
-        progressBarBackground.append(progressBar);
-        canvasHolder.append(progressBarBackground);
-      }
-
-      genotypeCanvas = new GenotypeCanvas(width, height, boxSize, defaultLineSort);
-      canvasHolder.append(genotypeCanvas.canvas); // FIXME ?
-
-      if (!overviewWidth) overviewWidth = width;
-      if (!overviewHeight) overviewHeight = 200;
-      overviewCanvas = new OverviewCanvas(overviewWidth, overviewHeight);
-      canvasHolder.append(overviewCanvas.canvas); // Form
-
-      var form = document.createElement('div');
-      var formRow = document.createElement('div');
-      formRow.classList.add('row');
-      /*const colorButton = document.createElement('button');
-      colorButton.id = 'colorButton';
-      const textnode = document.createTextNode('Color schemes...');
-      colorButton.appendChild(textnode);*/
-
-      var colorFieldSet = createColorSchemeFieldset();
-      var sortFieldSet = createSortFieldSet();
-      var exportFieldSet = createExportFieldSet();
-      formRow.appendChild(colorFieldSet);
-      formRow.appendChild(sortFieldSet);
-      formRow.appendChild(exportFieldSet);
-      form.appendChild(formRow);
-      controlDiv.appendChild(form);
-      canvasHolder.appendChild(controlDiv);
-      addStyleSheet();
-      canvasController = new CanvasController(canvasHolder, genotypeCanvas, overviewCanvas, widthValue === null, overviewWidthValue === null, minGenotypeAutoWidth, minOverviewAutoWidth);
+      tab.appendChild(chromosomeContainer);
+      tab.appendChild(zoomContainer);
+      return tab;
     }
 
-    function addRadioButton(name, id, text, checked, parent) {
-      var formCheck = document.createElement('div');
-      formCheck.classList.add('form-check');
-      var radio = document.createElement('input');
-      radio.setAttribute('type', 'radio');
-      radio.name = name;
-      radio.id = id;
-      radio.checked = checked;
-      radio.classList.add('form-check-input');
-      var radioLabel = document.createElement('label');
-      radioLabel.htmlFor = id;
-      radioLabel.classList.add('form-check-label');
-      var labelText = document.createTextNode(text);
-      radioLabel.appendChild(labelText);
-      formCheck.appendChild(radio);
-      formCheck.appendChild(radioLabel);
-      parent.appendChild(formCheck);
-    }
-
-    function addCSSRule(sheet, selector, rules, index) {
-      if ('insertRule' in sheet) {
-        sheet.insertRule(selector + '{' + rules + '}', index);
-      } else if ('addRule' in sheet) {
-        sheet.addRule(selector, rules, index);
-      }
-    }
-
-    function addStyleSheet() {
-      var sheet = function () {
-        // Create the <style> tag
-        var style = document.createElement("style"); // WebKit hack :(
-
-        style.appendChild(document.createTextNode("")); // Add the <style> element to the page
-
-        document.head.appendChild(style);
-        return style.sheet;
-      }();
-
-      addCSSRule(sheet, '.bytes-fieldset > legend', 'border-style: none; border-width: 0; font-size: 14px; line-height: 20px; margin-bottom: 0; width: auto; padding: 0 10px; border: 1px solid #e0e0e0;');
-      addCSSRule(sheet, '.bytes-fieldset', 'border: 1px solid #e0e0e0; padding: 10px;'); // addCSSRule(sheet, 'input', 'margin: .4rem;');
-    }
-
-    function createColorSchemeFieldset() {
-      var formCol = document.createElement('div');
-      formCol.classList.add('col');
-      var formGroup = document.createElement('div');
-      formGroup.classList.add('form-group');
-      var fieldset = document.createElement('fieldset');
-      fieldset.classList.add('bytes-fieldset');
-      var legend = document.createElement('legend');
-      var legendText = document.createTextNode('Color Schemes');
-      legend.appendChild(legendText);
-      var radioCol = document.createElement('div');
-      radioCol.classList.add('col');
-      addRadioButton('selectedScheme', 'nucleotideScheme', 'Nucleotide', true, radioCol);
-      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line', false, radioCol);
-      var selectLabel = document.createElement('label');
-      selectLabel.htmlFor = 'colorLineSelect';
-      selectLabel.classList.add('col-form-label');
-      var labelText = document.createTextNode('Comparison line:');
-      selectLabel.appendChild(labelText);
+    function createColorSchemeTab(config) {
+      var tab = document.createElement('div');
+      tab.classList.add('bytes-tab');
       var lineSelect = document.createElement('select');
       lineSelect.id = 'colorLineSelect';
       lineSelect.disabled = true;
-      fieldset.appendChild(legend);
-      fieldset.appendChild(radioCol);
-      fieldset.appendChild(selectLabel);
-      fieldset.appendChild(lineSelect);
-      formGroup.appendChild(fieldset);
-      formCol.appendChild(formGroup);
-      return formCol;
+      var radioCol = document.createElement('div');
+      radioCol.classList.add('col');
+      addRadioButton('selectedScheme', 'nucleotideScheme', 'Nucleotide', true, radioCol);
+      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line (allele match)', false, radioCol, lineSelect);
+      tab.appendChild(radioCol);
+      return tab;
     }
 
-    function createSortFieldSet() {
-      var formCol = document.createElement('div');
-      formCol.classList.add('col');
-      var formGroup = document.createElement('div');
-      formGroup.classList.add('form-group');
-      var fieldset = document.createElement('fieldset');
-      fieldset.classList.add('bytes-fieldset');
-      var legend = document.createElement('legend');
-      var legendText = document.createTextNode('Sort lines');
-      legend.appendChild(legendText);
+    function createSortTab(config) {
+      var tab = document.createElement('div');
+      tab.classList.add('bytes-tab');
+      var lineSelect = document.createElement('select');
+      lineSelect.id = 'sortLineSelect';
+      lineSelect.disabled = true;
       var radioCol = document.createElement('div');
       radioCol.classList.add('col');
       addRadioButton('selectedSort', 'importingOrderSort', 'By importing order', true, radioCol);
       addRadioButton('selectedSort', 'alphabeticSort', 'Alphabetically', false, radioCol);
-      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol);
-      var lineSelectLabel = document.createElement('label');
-      lineSelectLabel.htmlFor = 'sortLineSelect';
-      lineSelectLabel.classList.add('col-form-label');
-      var lineSelectLabelText = document.createTextNode('Comparison line:');
-      lineSelectLabel.appendChild(lineSelectLabelText);
-      var lineSelect = document.createElement('select');
-      lineSelect.id = 'sortLineSelect';
-      lineSelect.disabled = true;
-      fieldset.appendChild(legend);
-      fieldset.appendChild(radioCol);
-      fieldset.appendChild(lineSelectLabel);
-      fieldset.appendChild(lineSelect);
-      formGroup.appendChild(fieldset);
-      formCol.appendChild(formGroup);
-      return formCol;
+      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol, lineSelect);
+
+      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.slice(1)).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
+        var traitSelect = document.createElement('select');
+        traitSelect.id = 'sortTraitSelect';
+        traitSelect.disabled = true;
+        addRadioButton('selectedSort', 'traitSort', 'By trait', false, radioCol, traitSelect);
+      }
+
+      tab.appendChild(radioCol);
+      return tab;
     }
 
-    function createExportFieldSet() {
-      var formCol = document.createElement('div');
-      formCol.classList.add('col');
-      var formGroup = document.createElement('div');
-      formGroup.classList.add('form-group');
-      var fieldset = document.createElement('fieldset');
-      fieldset.classList.add('bytes-fieldset');
-      var legend = document.createElement('legend');
-      var legendText = document.createTextNode('Export');
-      legend.appendChild(legendText);
+    function createExportTab(config) {
+      var tab = document.createElement('div');
+      tab.classList.add('bytes-tab');
       var exportViewButton = document.createElement('button');
       var exportViewText = document.createTextNode('Export view');
       exportViewButton.appendChild(exportViewText);
@@ -5274,12 +6447,59 @@
           document.body.removeChild(element);
         }
       });
-      fieldset.appendChild(legend);
-      fieldset.appendChild(exportViewButton);
-      fieldset.appendChild(exportOverviewButton);
-      formGroup.appendChild(fieldset);
-      formCol.appendChild(formGroup);
-      return formCol;
+      tab.appendChild(exportViewButton);
+      tab.appendChild(exportOverviewButton);
+      return tab;
+    }
+
+    function createDisplayTab(config) {
+      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.slice(1)).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
+        var tab = document.createElement('div');
+        tab.classList.add('bytes-tab');
+        var traitSelectContainer = document.createElement('div');
+        traitSelectContainer.style["float"] = 'left';
+        var traitSelectLegend = document.createElement('p');
+        var traitSelectLegendText = document.createTextNode('Traits to display');
+        traitSelectLegend.appendChild(traitSelectLegendText);
+        var traitSelect = document.createElement('select');
+        traitSelect.id = 'displayTraitSelect';
+        traitSelect.multiple = true;
+        traitSelect.size = 5;
+        traitSelectContainer.appendChild(traitSelectLegend);
+        traitSelectContainer.appendChild(traitSelect);
+        var paletteSelectContainer = document.createElement('div');
+        paletteSelectContainer.style["float"] = 'left';
+        paletteSelectContainer.style.marginLeft = '10px';
+        var paletteSelectLegend = document.createElement('p');
+        var paletteSelectLegendText = document.createTextNode('Trait colors');
+        paletteSelectLegend.appendChild(paletteSelectLegendText);
+        var paletteSelectTrait = document.createElement('select');
+        paletteSelectTrait.id = 'paletteTrait';
+        paletteSelectTrait.style.display = 'block';
+        var paletteSelectValue = document.createElement('select');
+        paletteSelectValue.id = 'paletteValue';
+        paletteSelectValue.style.display = 'block';
+        var paletteSelectColor = document.createElement('input');
+        paletteSelectColor.id = 'paletteColor';
+        paletteSelectColor.style.display = 'block';
+        paletteSelectColor.setAttribute('type', 'color');
+        var paletteResetButton = document.createElement('button');
+        var paletteResetLegend = document.createTextNode("Reset this trait's colors");
+        paletteResetButton.appendChild(paletteResetLegend);
+        paletteResetButton.id = 'paletteReset';
+        paletteSelectContainer.appendChild(paletteSelectLegend);
+        paletteSelectContainer.appendChild(paletteSelectTrait);
+        paletteSelectContainer.appendChild(paletteSelectValue);
+        paletteSelectContainer.appendChild(paletteSelectColor);
+        paletteSelectContainer.appendChild(paletteResetButton);
+        tab.appendChild(traitSelectContainer);
+        tab.appendChild(paletteSelectContainer);
+        return tab;
+      }
+    }
+
+    function setProgressBarLabel(newLabel) {
+      progressBarLabel.data = newLabel;
     }
 
     function setAdvancement(ratio) {
@@ -5287,7 +6507,6 @@
     }
 
     function removeAdvancement() {
-      progressBar.remove();
       progressBarBackground.remove();
     }
 
@@ -5353,22 +6572,41 @@
       });
     }
 
-    genotypeRenderer.renderGenotypesBrapi = function renderGenotypesBrapi(domParent, width, height, server, matrixId, mapId, authToken, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
-      clearParent(domParent);
-      createRendererComponents(domParent, width, height, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth, false);
+    genotypeRenderer.renderGenotypesBrapi = function renderGenotypesBrapi(config, // Compatibility positional domParent
+    // Positional arguments kept for compatibility
+    width, height, baseURL, matrixId, mapId, authToken, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
+      if (!(config instanceof Object)) {
+        config = {
+          domParent: config,
+          // Position for domParent
+          baseURL: baseURL,
+          matrixId: matrixId,
+          mapId: mapId,
+          authToken: authToken,
+          minGenotypeAutoWidth: minGenotypeAutoWidth,
+          minOverviewAutoWidth: minOverviewAutoWidth
+        };
+        config.width = width !== undefined ? width : null;
+        config.height = height !== undefined ? height : 600;
+        config.overviewWidth = overviewWidth !== undefined ? overviewWidth : config.width;
+        config.overviewHeight = overviewHeight !== undefined ? overviewHeight : 200;
+      }
+
+      clearParent(config.domParent);
+      createRendererComponents(config, false);
       var germplasmData;
       var client = axios$1.create({
-        baseURL: server
+        baseURL: config.baseURL
       });
-      client.defaults.headers.common.Authorization = "Bearer ".concat(authToken);
+      client.defaults.headers.common.Authorization = "Bearer ".concat(config.authToken);
 
-      if (mapId !== null) {
+      if (config.mapId !== null) {
         // TODO: GOBii don't have the markerpositions call implemented yet so I
         // can't load map data
-        processMarkerPositionsCall(client, "/markerpositions?mapDbId=".concat(mapId)).then(function (markerpositions) {
+        processMarkerPositionsCall(client, "/markerpositions?mapDbId=".concat(config.mapId)).then(function (markerpositions) {
           var mapImporter = new MapImporter();
           genomeMap = mapImporter.parseMarkerpositions(markerpositions);
-          processVariantSetCall(client, "/variantsets/".concat(matrixId, "/calls")).then(function (variantSetCalls) {
+          processVariantSetCall(client, "/variantsets/".concat(config.matrixId, "/calls")).then(function (variantSetCalls) {
             genotypeImporter = new GenotypeImporter(genomeMap);
 
             if (genomeMap === undefined) {
@@ -5378,26 +6616,26 @@
             germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
             var _genotypeImporter = genotypeImporter,
                 stateTable = _genotypeImporter.stateTable;
-            dataSet = new DataSet(genomeMap, germplasmData, stateTable);
-            colorScheme = new NucleotideColorScheme(dataSet);
+            var dataSetId = config.dataSetId === undefined ? config.matrixId : config.dataSetId;
+            dataSet = new DataSet(dataSetId, genomeMap, germplasmData, stateTable);
             populateLineSelect();
             populateChromosomeSelect();
-            canvasController.init(dataSet, colorScheme); // Tells the dom parent that Flapjack has finished loading. Allows spinners
+            canvasController.init(dataSet); // Tells the dom parent that Flapjack has finished loading. Allows spinners
             // or similar to be disabled
 
-            sendEvent('FlapjackFinished', domParent);
+            sendEvent('FlapjackFinished', config.domParent);
           })["catch"](function (error) {
-            sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+            sendEvent('FlapjackError', config.domParent); // eslint-disable-next-line no-console
 
             console.log(error);
           });
         })["catch"](function (error) {
-          sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+          sendEvent('FlapjackError', config.domParent); // eslint-disable-next-line no-console
 
           console.log(error);
         });
       } else {
-        processVariantSetCall(client, "/variantsets/".concat(matrixId, "/calls")).then(function (variantSetCalls) {
+        processVariantSetCall(client, "/variantsets/".concat(config.matrixId, "/calls")).then(function (variantSetCalls) {
           genotypeImporter = new GenotypeImporter(genomeMap);
 
           if (genomeMap === undefined) {
@@ -5407,16 +6645,16 @@
           germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
           var _genotypeImporter2 = genotypeImporter,
               stateTable = _genotypeImporter2.stateTable;
-          dataSet = new DataSet(genomeMap, germplasmData, stateTable);
-          colorScheme = new NucleotideColorScheme(dataSet);
+          var dataSetId = config.dataSetId === undefined ? config.matrixId : config.dataSetId;
+          dataSet = new DataSet(config.matrixId, genomeMap, germplasmData, stateTable);
           populateLineSelect();
           populateChromosomeSelect();
-          canvasController.init(dataSet, colorScheme); // Tells the dom parent that Flapjack has finished loading. Allows spinners
+          canvasController.init(dataSet); // Tells the dom parent that Flapjack has finished loading. Allows spinners
           // or similar to be disabled
 
-          sendEvent('FlapjackFinished', domParent);
+          sendEvent('FlapjackFinished', config.domParent);
         })["catch"](function (error) {
-          sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+          sendEvent('FlapjackError', config.domParent); // eslint-disable-next-line no-console
 
           console.log(error);
         });
@@ -5425,36 +6663,115 @@
       return genotypeRenderer;
     };
 
-    genotypeRenderer.renderGenotypesUrl = function renderGenotypesUrl(domParent, width, height, mapFileURL, genotypeFileURL, authToken, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
-      clearParent(domParent);
-      createRendererComponents(domParent, width, height, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth, true);
-      var mapFile;
-      var genotypeFile;
+    genotypeRenderer.renderGenotypesUrl = function renderGenotypesUrl(config, // Positional : domParent
+    // Old positional arguments, kept for backwards compatibility
+    width, height, mapFileURL, genotypeFileURL, authToken, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
+      if (!(config instanceof Object)) {
+        config = {
+          domParent: config,
+          // Position for domParent
+          mapFileURL: mapFileURL,
+          genotypeFileURL: genotypeFileURL,
+          authToken: authToken,
+          minGenotypeAutoWidth: minGenotypeAutoWidth,
+          minOverviewAutoWidth: minOverviewAutoWidth
+        };
+        config.width = width !== undefined ? width : null;
+        config.height = height !== undefined ? height : 600;
+        config.overviewWidth = overviewWidth !== undefined ? overviewWidth : config.width;
+        config.overviewHeight = overviewHeight !== undefined ? overviewHeight : 200;
+      }
+
+      clearParent(config.domParent);
+      createRendererComponents(config, true);
+      var mapFile, genotypeFile, phenotypeFile;
       var germplasmData;
-      var mapPromise = axios$1.get(mapFileURL, {}, {
+      var loadingPromises = [];
+      var mapLoaded = 0,
+          genotypeLoaded = 0,
+          phenotypeLoaded = 0;
+      var mapSize = 0,
+          genotypeSize = 0,
+          phenotypeSize = 0;
+      setProgressBarLabel("Downloading data...");
+      setAdvancement(0);
+
+      if (config.mapFileURL) {
+        var mapPromise = axios$1.get(config.mapFileURL, {
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          onDownloadProgress: function onDownloadProgress(progressEvent) {
+            if (progressEvent.lengthComputable) {
+              mapLoaded = progressEvent.loaded;
+              mapSize = progressEvent.total;
+              setAdvancement((mapLoaded + genotypeLoaded + phenotypeLoaded) / (mapSize + genotypeSize + phenotypeSize));
+            }
+          }
+        }).then(function (response) {
+          mapFile = response.data;
+        })["catch"](function (error) {
+          console.error(error);
+        });
+        loadingPromises.push(mapPromise);
+      }
+
+      if (config.phenotypeFileURL) {
+        var phenotypePromise = axios$1.get(config.phenotypeFileURL, {
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          onDownloadProgress: function onDownloadProgress(progressEvent) {
+            if (progressEvent.lengthComputable) {
+              phenotypeLoaded = progressEvent.loaded;
+              phenotypeSize = progressEvent.total;
+              setAdvancement((mapLoaded + genotypeLoaded + phenotypeLoaded) / (mapSize + genotypeSize + phenotypeSize));
+            }
+          }
+        }).then(function (response) {
+          phenotypeFile = response.data;
+        })["catch"](function (error) {
+          console.error(error);
+        });
+        loadingPromises.push(phenotypePromise);
+      }
+
+      var genotypePromise = axios$1.get(config.genotypeFileURL, {
         headers: {
           'Content-Type': 'text/plain'
-        }
-      }).then(function (response) {
-        mapFile = response.data;
-      })["catch"](function (error) {
-        console.error(error);
-      });
-      var genotypePromise = axios$1.get(genotypeFileURL, {}, {
-        headers: {
-          'Content-Type': 'text/plain'
+        },
+        onDownloadProgress: function onDownloadProgress(progressEvent) {
+          if (progressEvent.lengthComputable) {
+            genotypeLoaded = progressEvent.loaded;
+            genotypeSize = progressEvent.total;
+            setAdvancement((mapLoaded + genotypeLoaded + phenotypeLoaded) / (mapSize + genotypeSize + phenotypeSize));
+          }
         }
       }).then(function (response) {
         genotypeFile = response.data;
       })["catch"](function (error) {
         console.error(error);
       });
-      Promise.all([mapPromise, genotypePromise]).then(function () {
+      loadingPromises.push(genotypePromise);
+      Promise.all(loadingPromises).then(function () {
+        setAdvancement(0);
+        setProgressBarLabel("Processing the genome map...");
+
         if (mapFile !== undefined) {
           var mapImporter = new MapImporter();
           genomeMap = mapImporter.parseFile(mapFile);
         }
 
+        setAdvancement(0);
+        setProgressBarLabel("Processing the phenotypes...");
+
+        if (phenotypeFile !== undefined) {
+          var phenotypeImporter = new PhenotypeImporter();
+          phenotypes = phenotypeImporter.parseFile(phenotypeFile);
+          traits = phenotypeImporter.traits;
+        }
+
+        setProgressBarLabel("Processing the genotypes...");
         genotypeImporter = new GenotypeImporter(genomeMap);
 
         if (genomeMap === undefined) {
@@ -5465,17 +6782,18 @@
           germplasmData = germplasmList;
           var _genotypeImporter3 = genotypeImporter,
               stateTable = _genotypeImporter3.stateTable;
-          dataSet = new DataSet(genomeMap, germplasmData, stateTable);
-          colorScheme = new NucleotideColorScheme(dataSet);
+          var dataSetId = config.dataSetId === undefined ? config.genotypeFileURL : config.dataSetId;
+          dataSet = new DataSet(dataSetId, genomeMap, germplasmData, stateTable, traits, phenotypes);
           populateLineSelect();
+          if (phenotypes !== undefined) populateTraitSelect();
           populateChromosomeSelect();
-          canvasController.init(dataSet, colorScheme); // Tells the dom parent that Flapjack has finished loading. Allows spinners
+          canvasController.init(dataSet); // Tells the dom parent that Flapjack has finished loading. Allows spinners
           // or similar to be disabled
 
-          sendEvent('FlapjackFinished', domParent);
+          sendEvent('FlapjackFinished', config.domParent);
         });
       })["catch"](function (error) {
-        sendEvent('FlapjackError', domParent); // eslint-disable-next-line no-console
+        sendEvent('FlapjackError', config.domParent); // eslint-disable-next-line no-console
 
         console.log(error);
       });
@@ -5517,6 +6835,20 @@
       });
     }
 
+    function populateTraitSelect() {
+      var sortTraitSelect = document.getElementById('sortTraitSelect');
+      var displayTraitSelect = document.getElementById('displayTraitSelect');
+      dataSet.traitNames.forEach(function (name) {
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.text = name;
+        sortTraitSelect.add(opt);
+        var clone = opt.cloneNode(true);
+        clone.selected = true;
+        displayTraitSelect.add(clone);
+      });
+    }
+
     function populateChromosomeSelect() {
       var chromosomeSelect = document.getElementById('chromosomeSelect');
       dataSet.genomeMap.chromosomes.forEach(function (chromosome, index) {
@@ -5529,24 +6861,65 @@
       chromosomeSelect.selectedIndex = 0;
     }
 
-    genotypeRenderer.renderGenotypesFile = function renderGenotypesFile(domParent, width, height, mapFileDom, genotypeFileDom, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
-      clearParent(domParent);
-      createRendererComponents(domParent, width, height, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth, true); // let qtls = [];
+    genotypeRenderer.renderGenotypesFile = function renderGenotypesFile(config, // domParent in positional
+    // Old positional arguments, kept for backwards compatibility
+    width, height, mapFileDom, genotypeFileDom, overviewWidth, overviewHeight, minGenotypeAutoWidth, minOverviewAutoWidth) {
+      if (!(config instanceof Object)) {
+        config = {
+          domParent: config,
+          // Position for domParent
+          mapFileDom: mapFileDom,
+          genotypeFileDom: genotypeFileDom,
+          minGenotypeAutoWidth: minGenotypeAutoWidth,
+          minOverviewAutoWidth: minOverviewAutoWidth
+        };
+        config.width = width !== undefined ? width : null;
+        config.height = height !== undefined ? height : 600;
+        config.overviewWidth = overviewWidth !== undefined ? overviewWidth : config.width;
+        config.overviewHeight = overviewHeight !== undefined ? overviewHeight : 200;
+      }
+
+      clearParent(config.domParent);
+      createRendererComponents(config, true); // let qtls = [];
 
       var germplasmData;
-      var mapFile = document.getElementById(mapFileDom.slice(1)).files[0];
-      var mapPromise = loadFromFile(mapFile); // const qtlPromise = loadFromFile(qtlFileDom);
+      setProgressBarLabel("Loading file contents...");
+      var loadingPromises = [];
 
-      var genotypeFile = document.getElementById(genotypeFileDom.slice(1)).files[0];
-      var genotypePromise = loadFromFile(genotypeFile); // Load map data
+      if (config.mapFileDom !== undefined) {
+        var mapFile = document.getElementById(config.mapFileDom.slice(1)).files[0];
+        var mapPromise = loadFromFile(mapFile); // Load map data
 
-      mapPromise = mapPromise.then(function (result) {
-        var mapImporter = new MapImporter();
-        genomeMap = mapImporter.parseFile(result);
-      })["catch"](function (reason) {
-        console.error(reason);
-        genomeMap = undefined;
-      }); // // Then QTL data
+        mapPromise = mapPromise.then(function (result) {
+          var mapImporter = new MapImporter();
+          genomeMap = mapImporter.parseFile(result);
+        })["catch"](function (reason) {
+          console.error(reason);
+          genomeMap = undefined;
+        });
+        loadingPromises.push(mapPromise);
+      }
+
+      if (config.phenotypeFileDom !== undefined) {
+        var phenotypeFile = document.getElementById(config.phenotypeFileDom.slice(1)).files[0];
+        var phenotypePromise = loadFromFile(phenotypeFile); // Load phenotype data
+
+        phenotypePromise = phenotypePromise.then(function (result) {
+          var phenotypeImporter = new PhenotypeImporter();
+          phenotypes = phenotypeImporter.parseFile(result);
+          traits = phenotypeImporter.traits;
+        })["catch"](function (reason) {
+          console.error(reason, reason.name);
+          phenotypes = undefined;
+          traits = undefined;
+        });
+        loadingPromises.push(phenotypePromise);
+      } // const qtlPromise = loadFromFile(qtlFileDom);
+
+
+      var genotypeFile = document.getElementById(config.genotypeFileDom.slice(1)).files[0];
+      var genotypePromise = loadFromFile(genotypeFile);
+      loadingPromises.push(genotypePromise); // // Then QTL data
       // qtlPromise.then((result) => {
       //   const qtlImporter = new QtlImporter();
       //   qtlImporter.parseFile(result);
@@ -5555,23 +6928,30 @@
       // Then genotype data
       // Must be executed after the map file has been parsed *and* the genotype file has been read
 
-      Promise.all([mapPromise, genotypePromise]).then(function (results) {
-        var result = results[1];
+      Promise.all(loadingPromises).then(function (results) {
+        var result = results[results.length - 1]; // The genotype promise is last
+
         genotypeImporter = new GenotypeImporter(genomeMap);
 
         if (genomeMap === undefined) {
           genomeMap = genotypeImporter.createFakeMap(result);
         }
 
+        setProgressBarLabel("Processing genotypes...");
+        setAdvancement(0);
         genotypeImporter.parseFile(result, setAdvancement, removeAdvancement).then(function (germplasmList) {
           germplasmData = germplasmList;
           var _genotypeImporter4 = genotypeImporter,
               stateTable = _genotypeImporter4.stateTable;
-          dataSet = new DataSet(genomeMap, germplasmData, stateTable);
-          colorScheme = new NucleotideColorScheme(dataSet);
+          var dataSetId = config.dataSetId === undefined ? genotypeFile.name : config.dataSetId;
+          dataSet = new DataSet(dataSetId, genomeMap, germplasmData, stateTable, traits, phenotypes);
           populateLineSelect();
+          if (phenotypes !== undefined) populateTraitSelect();
           populateChromosomeSelect();
-          canvasController.init(dataSet, colorScheme);
+          canvasController.init(dataSet); // Tells the dom parent that Flapjack has finished loading. Allows spinners
+          // or similar to be disabled
+
+          sendEvent('FlapjackFinished', config.domParent);
         });
       });
       return genotypeRenderer;

@@ -21,7 +21,7 @@
         this.$element = $(element);
         this.init();
         this.$element.data('value', null);
-        this.$element.data('count', this.length);
+        this.$element.data('count', 0);
         this.$element.data('options', this.options.data);
         this.$element.data('searchDone', false);
     }
@@ -39,7 +39,7 @@
     // draw the html widget and load the first options.size items
     Selectmultiple.prototype = {
         init: function () {
-
+			this.nLoadedItems = 0;
             this.$element.empty(); // clear element content
             this.optionPage = 1;
             this.page = 1;
@@ -100,17 +100,18 @@
                 this.$buttonloadall.off('click').on('click', $.proxy(function () {
                     this.load(this.length);
                     this.$input.val("");
+					$(this.$buttonloadall).hide();
                 }, this));
             }
             // LOAD ITEMS 
             this.load(this.options.size);
 
-            // on text input, search for options mathcing the text entered 
+            // on text input, search for options matching the text entered 
             // use str.indexOf() for the moment, should use a regex? 
             this.$input.off('change paste keyup').on('change paste keyup', $.proxy(function () {
                 if (this.$input.val() === "") {
                     this.page = 1;
-                    this.load(this.options.size);
+                    this.load(this.nLoadedItems);
                 } else {
                     this.page = 1;
                     this.optionPage = 1;
@@ -122,8 +123,6 @@
             // when values are selected, refill the this.select array to store new selected options 
             this.$select.off('change').on('change', $.proxy(function () {
                 var id = [];
-                var val = [];
-                var count = 0;
                 this.$select.children().filter(":selected").each(function (i, selected) {
                     id[i] = parseInt($(selected).prop('id'));
                 });
@@ -131,22 +130,17 @@
             	var displayedItems = this.$select.children();	// we only apply changes to the displayed portion
                 for (var j=0; j<=displayedItems.length-1; j++) {
                 	var jId = parseInt(displayedItems[j].id);
-                    if (id.indexOf(jId) !== -1) {
-                        this.select[jId] = true;
-                        val.push(this.options.data[jId]);
-                    } else {
-                        this.select[jId] = false;
-                    }
+                    this.select[jId] = id.indexOf(jId) !== -1;
                 }
 
+                var val = [];
                 for (var k = 0; k < this.length; k++) {
                     if (this.select[k]) {
-                        count++;
+                        val.push(this.options.data[k]);
                     }
                 }
-                val = val.length === 0 ? null : val;
-                this.$element.data('value', val);
-                this.$element.data('count', count);
+                this.$element.data('count', val.length);
+                this.$element.data('value', val.length === 0 ? null : val);
                 this.$buttonsearch.trigger('multiple_select_change'); // custom event to detect when selected values changed
             }, this));
 
@@ -188,6 +182,7 @@
             for (var i = 0; i < ln; i++) {
                 html += '<option id="' + i + '"' + (this.select[i] ? ' selected' : '') + '>' + this.options.data[i] + '</option>';
             }
+			this.nLoadedItems = ln;
             this.$select.html(html);
         },
         // append options.size items to the select 
@@ -198,6 +193,7 @@
             for (var i = start; i < end; i++) {
                 html += '<option id="' + i + '"' + (this.select[i] ? ' selected' : '') + '>' + this.options.data[i] + '</option>';
             }
+			this.nLoadedItems = end;
             this.page++;
             this.$select.append(html);
             this.$select.scrollTop(this.scrollAmount);
@@ -217,6 +213,10 @@
             	this.$element.data('searchDone', true);
             this.$select.html(html);
             this.$select.scrollTop(this.scrollAmount);
+
+			// these two avoid having the first visible item to be selected instead of the one under the mouse pointer
+			$(this.$select).focus();
+			$(this.$input).focus();
         },
         // select or deselect all according to bool value (select all if true) 
         selectAll: function (bool) {
@@ -224,16 +224,16 @@
                 bool = true;
             for (var i = 0; i < this.length; i++)
                 this.select[i] = bool;
-            this.load(this.options.size);
-            var hasChanged = this.$element.data('count') != this.length;
-            this.$element.data('count', this.length);
+			if (bool)
+				$(this.$buttonloadall).hide();
+	        this.load(bool ? this.options.data.length : this.nLoadedItems);
+            var hasChanged = this.$element.data('count') != (bool ? this.options.data.length : 0);
+            this.$element.data('count', bool ? this.$select[0].length : 0);
             this.$element.data('value', bool ? this.options.data : null);
             this.$input.val("");
             this.$buttonsearch.trigger('multiple_select_change');
             if (hasChanged)
-            {
 	            this.$input.trigger('change');
-            }
         },
         deselectAll: function () {
             this.selectAll(false);

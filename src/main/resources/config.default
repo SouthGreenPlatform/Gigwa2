@@ -50,7 +50,8 @@ onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.f
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 define a genome list to be retrieved as a default genome list section for the integrated IGV.js genome browser
 # Each property is in the form igvGenomeConfig_N = Name;URL
-igvGenomeConfig_1 = IGV default genomes;https://igv.org/genomes/genomes.json
+igvGenomeConfig_1 = South Green provided genomes;res/genomes.json
+igvGenomeConfig_2 = IGV default genomes;https://igv.org/genomes/genomes.json
 
 
 # Defines the maximum estimated size (in billions) of the genotype matrix (#individuals * #markers) within which genotype-level filters may be applied. This property may be tuned according to server performance. #markers is estimated by calculating an average marker count per sequence. Whatever value is set here, Gigwa will at least allow searching on one sequence for all individuals. Default: 1 billion
@@ -69,11 +70,14 @@ maxExportableBillionGenotypes = 2
 #googleAnalyticsId = SOME_GA_ID
 
 
-# In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395  
+# In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
 # Enable or disable the backup feature
 enableDumps = true
 
 # Defines the directory where the database backups will be exported
-dumpFolder = /tmp 
+dumpFolder = /tmp
+
+# Defines the limit number of variant ids that are returned in the variant IDs filter
+variantIdLookupMaxSize = 50

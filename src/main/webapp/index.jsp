@@ -57,11 +57,11 @@
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
-<script type="text/javascript" src="js/exporting.js"></script>
-<script type="text/javascript" src="js/density.js"></script>
-<!-- <script type="text/javascript" src="https://igv.org/web/release/2.10.1/dist/igv.js"></script> -->
-<script type="text/javascript" src="js/igv.js"></script>
+<script type="text/javascript" src="js/highcharts/exporting.js"></script>
+<script type="text/javascript" src="js/highcharts/export-data.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
 <script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
+<script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
 <script type="text/javascript">
 	// global variables
 	var token; // identifies the current interface instance
@@ -119,15 +119,22 @@
 	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
 	var variantTypesListURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANT_TYPES_PATH%>" />';
 	var selectionDensityDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DENSITY_DATA_PATH %>" />';
+	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
+	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var downloadURL;
-	
+	var genotypeInvestigationMode = 0;
+	var callSetResponse = [];
+	var callSetMetadataFields = [];
+	var gotMetaData = false;
 	var referenceNames;
 	
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
+        
+    var stringVariantIdsFromUploadFile = null;
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -204,7 +211,7 @@
 			checkBrowsingBoxAccordingToLocalVariable();
 			$('input#browsingAndExportingEnabled').change();
 			igvRemoveExistingBrowser();
-			igvChangeModule(referenceset)
+			igvChangeModule(referenceset);
 		});
 		
 		$('#project').on('change', function() {
@@ -221,6 +228,8 @@
 			else
 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
+			
+			currentChartType = null;
 			
 			$.ajax({	// load runs
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
@@ -242,7 +251,7 @@
 		});
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
-			enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+			enableMafOnlyIfApplicable();
 		});
 		$('#exportFormat').on('change', function() {
 			var opt = $(this).children().filter(':selected');
@@ -250,22 +259,32 @@
 			$('#exportPanel div.individualRelated').css("display", $(this).val() == "BED" ? "none" : "block");
 		});
 		$('#Sequences').on('multiple_select_change', function() {
-			$('#sequencesLabel').html("Sequences (" + $('#Sequences').selectmultiple('count') + "/" + seqCount + ")");
+			var nCount = $('#Sequences').selectmultiple('count');
+			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
 		});
-		$('#Individuals1').on('multiple_select_change', function() {// 			async: false,
-			$('#individualsLabel1').html("Individuals (" + $('#Individuals1').selectmultiple('count') + "/" + indCount + ")");
+		$('#Individuals1').on('multiple_select_change', function() {
+			var nCount = $('#Individuals1').selectmultiple('count');
+			$('#individualsLabel1').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#Individuals2').on('multiple_select_change', function() {
-			$('#individualsLabel2').html("Individuals (" + $('#Individuals2').selectmultiple('count') + "/" + indCount + ")");
+			var nCount = $('#Individuals2').selectmultiple('count');
+			$('#individualsLabel2').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
 			updateGtPatterns();
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
-		});
+		});            
 
 		$("#variantTable").on('click', 'th', function() { // Sort function on variant table. Enabled for sequence and position only
-			if ($(this).text().trim() === "sequence") {
+			if ($(this).text().trim() === "id") {
+				if (sortBy == "_id")
+					sortDesc = !sortDesc;
+				else
+					sortBy = "_id";
+				searchVariants(2, '0');
+			}
+			else if ($(this).text().trim() === "sequence") {
 				if (sortBy == seqPath)
 					sortDesc = !sortDesc;
 				else
@@ -278,11 +297,6 @@
 					sortBy = posPath;
 				searchVariants(2, '0');
 			}
-		});
-
-		$(".auto-overflow").on('scroll', function() {
-			var translate = "translate(0," + (this.scrollTop - 1) + "px)";
-			this.querySelector("thead").style.transform = translate;
 		});
 
 		$(window).on('beforeunload', function() {
@@ -303,14 +317,37 @@
 		});
 		getToken();
 		loadModules();
-		
+                
 		$(window).resize(function() {
 			resizeDialogs();
 		}).on('shown.bs.modal', function(e) {
 			if ("progress" != e.target.id)
 				resizeDialogs();
 		});
+                
+                $("#uploadVariantIdsFile").click(function(){
+                    $(this).val("");
+                });
+
+                $("#uploadVariantIdsFile").change(function(){
+                    if ($(this).val() !== "") {
+                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                        fileReader = new FileReader();
+                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                        fileReader.onload = function(progressEvent) {
+                                onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                        };
+                        fileReader.readAsText(selectedFile, "UTF-8");                       
+                    }
+                });
 	});
+        
+    function removeUploadedFile() {
+        $('#uploadVariantIdsFile').val('');
+        $('#varIdsFileName').remove();
+        stringVariantIdsFromUploadFile = null;
+        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
+    }       
 	
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
@@ -324,11 +361,10 @@
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection 
+	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event 
 	function dropTempCol() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
-			async: false,
 			type: "DELETE",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
@@ -346,6 +382,7 @@
 		});
 	}
 
+	// clear user token, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
 	function clearToken() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
@@ -487,27 +524,27 @@
 		return success;
 	}
 
-	function loadVariantTypes() {
-		$.ajax({
-			url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
-			type: "GET",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			success: function(jsonResult) {
-				variantTypesCount = jsonResult.length;
-				var option = "";
-				for (var key in jsonResult) {
-					option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-				}
-				$('#variantTypes').html(option).selectpicker('refresh');
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+	function loadVariantTypes() {                
+                    $.ajax({
+                            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+                            type: "GET",
+                            dataType: "json",
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                    "Authorization": "Bearer " + token
+                            },
+                            success: function(jsonResult) {
+                                    variantTypesCount = jsonResult.length;
+                                    var option = "";
+                                    for (var key in jsonResult) {
+                                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
+                                    }
+                                    $('#variantTypes').html(option).selectpicker('refresh');
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                    handleError(xhr, thrownError);
+                            }
+                    });
 	}
 
 	function loadSequences() {
@@ -529,6 +566,17 @@
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.references.length;
+                if (seqCount == 0) {
+                    $('#sequenceFilter').hide();
+                    $('#positions').hide();
+                    $('#filterIDsCheckbox').prop('checked', true);
+                    onFilterByIds(true);
+                } else {
+                    $('#sequenceFilter').show();
+                    $('#positions').show();
+                    $('#filterIDsCheckbox').prop('checked', false);
+                    onFilterByIds(false);
+                }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
 				for (var ref in jsonResult.references) {
@@ -569,11 +617,10 @@
 				"pageToken": null
 			}),
 			success: function(jsonResult) {
-				var callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
-				igvCallSets = callSetResponse;
+				callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 				var indOpt = [];
 
-				var gotMetaData = false;
+				gotMetaData = false;
 				
 				// first pass to compile an exhaustive field list
 				var headers = new Array();
@@ -583,11 +630,12 @@
 						gotMetaData = true;
 					if (gotMetaData)
 						for (var key in callSetResponse[ind].info)
-							if (!arrayContains(headers, key))
+							if (!headers.includes(key))
 								headers.push(key);
 					if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
 						indOpt.push(callSetResponse[ind].name);
 				}
+				callSetMetadataFields = headers;
 				
 				var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
 				$.ajax({
@@ -619,8 +667,9 @@
 					});
 					setTimeout(function() {
 						var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
+						headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
 						for (var i in headers) {
-							headerRow.append((headerRow.toString() == "" ? "<tr valign='top'><td></td><th>Individual</th>" : "") + "<th>" + headers[i] + "<br/></th>");
+							headerRow.append("<th>" + headers[i] + "<br/></th>");
 							exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
 						}
 						$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
@@ -782,13 +831,13 @@
 					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 				$('#Genotypes2').on('change', function() {
 					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					enableMafOnlyIfGtPatternAndAlleleNumberAllowTo();
+					enableMafOnlyIfApplicable();
 				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -813,7 +862,10 @@
 				for (var format in jsonResult) {
 					if (format == "VCF")
 						gotVCF = true;
-					option += '<option data-ext="' + jsonResult[format].dataFileExtentions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					option += '<option '
+					if (jsonResult[format].supportedPloidyLevels !== undefined)
+					    option += 'data-pdy="' + jsonResult[format].supportedPloidyLevels + '" ';
+					option += 'data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
 				}
 				if (!gotVCF)
 					$("img#igvTooltip").hide();
@@ -848,33 +900,39 @@
 		
 		currentPageToken = pageToken;
 		$('#prev').prop('disabled', pageToken === '0');
-		
+
 		if (searchMode === 0 && $('#browsingAndExportingEnabled').prop('checked'))
 			searchMode = 3;
-		
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
-			type: "POST",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			timeout:0,
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			data: JSON.stringify(buildSearchQuery(searchMode, currentPageToken)),
-			success: function(jsonResult) {
-				$('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
-				if (searchMode === 0) { // count only 
-					count = jsonResult.count;
-					handleCountSuccess();
-				} else {
-					handleSearchSuccess(jsonResult, pageToken);
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+
+        var query = buildSearchQuery(searchMode, currentPageToken);
+        if (stringVariantIdsFromUploadFile !== null) {
+            query.selectedVariantIds = stringVariantIdsFromUploadFile.replaceAll('\n', ';');
+        }
+
+        $.ajax({
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                timeout:0,
+                headers: {
+                        "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(query),
+                success: function(jsonResult) {
+                        $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
+                        if (searchMode === 0) { // count only 
+                                count = jsonResult.count;
+                                handleCountSuccess();
+                        } else {
+                                handleSearchSuccess(jsonResult, pageToken);
+                        }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                }
+        });
+
 		$('#iconSeq').hide();
 		$('#iconPos').hide();
 		$('#rightSidePanel').hide();
@@ -884,7 +942,70 @@
  		$('#serverExportBox').hide();
 		displayProcessProgress(2, token);
 	}
-	
+        
+    function loadVariantIds() {
+        var options = {
+                ajax:{
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
+                    type: "GET",
+                    headers: {
+                            "Authorization": "Bearer " + token
+                    },
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    data: {
+                        projectId: getProjectId(),
+                        q: '{{{q}}}'
+                    },
+                    success: function(jsonResult) {
+                        return jsonResult;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                },
+                cache : false,
+                preserveSelectedPosition : "before",
+                preserveSelected: true,
+                log: 2 /*warn*/,
+                locale: {
+                    statusInitialized: "Start typing a query",
+                    emptyTitle: "Input IDs here",
+                    statusTooShort: "Please type more"
+                },
+                minLength: 2,
+                clearOnEmpty: true,
+                preprocessData: function (data) {
+                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                    var asp = this;
+                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                        return;
+                    }
+                    
+                    var array = [];
+                    for (i=0; i<data.length; i++) {
+                        array.push($.extend(true, data[i], {
+                            value: data[i]
+                        }));
+                    }
+                    return array;
+                }
+            };
+        
+        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
+        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
+        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+        
+        if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
+            let inputObj = $('#VariantIds').find('div.bs-searchbox input');
+            inputObj.css('width', "calc(100% - 24px)");               
+            //when clicking on the button, selected IDs and search results are cleared
+            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+        }
+    }
+        	
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -941,8 +1062,8 @@
 		{
 			var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
 			htmlTableContents.append('<tr>');
-			var inGroup1 = indArray1.length == 0 || arrayContains(indArray1, gtTable[row][0]);
-			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || arrayContains(getSelectedIndividuals(2), gtTable[row][0]));
+			var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
+			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
 			for (var i=0; i<tableHeader.length; i++)
 			{
 				var indivClass = inGroup1 ? (inGroup2 ? "groups1and2" : "group1") : (inGroup2 ? "group2" : "");
@@ -992,19 +1113,20 @@
 		}
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
-		ind = ind.join(";");
 		$("#runButtons").html("");
 		var addedRunCount = 0;
+		
+		let requests = [];
 		for (var runIndex in runList) {
-			$.ajax({	// result of a run for a variant has an id as module§project§variant§run
+			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
-				type: "GET",
+				type: "POST",
+				data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
 				async: false,
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
 				headers: {
-					"Authorization": "Bearer " + token,
-					"ind": ind
+					"Authorization": "Bearer " + token
 				},
 				success: function(jsonResult) {
 					if (jsonResult.calls.length > 0)
@@ -1034,14 +1156,17 @@
 					handleError(xhr, thrownError);
 					errorEncountered = true;
 				}
-			});
+			}));
 		}
-		$('#gtTable').html(modalContent);
-		if (runList.length > 1)
-			markInconsistentGenotypesAsMissing();
+		
+		Promise.allSettled(requests).then(function(){
+		    $('#gtTable').html(modalContent);
+			if (runList.length > 1)
+				markInconsistentGenotypesAsMissing();
 
-		if (!errorEncountered)
-			$('#variantDetailPanel').modal('show').css({"z-index": 1100});
+			if (!errorEncountered)
+				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
+		});
 	}
 
 	// create the annotation detail panel 
@@ -1077,9 +1202,9 @@
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
 				
-				var gotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
-				$('#toggleVariantMetadata').css('display', gotMetaData ? 'inline' : 'none');
-				if (gotMetaData)
+				var varGotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
+				$('#toggleVariantMetadata').css('display', varGotMetaData ? 'inline' : 'none');
+				if (varGotMetaData)
 				{
 					var additionalInfo = new StringBuffer();
 					additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
@@ -1111,15 +1236,26 @@
 			}
 		}
 
-		exporting = true;
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
-			var selectedTypes = $('#variantTypes').val() === null ? $('#variantTypes option') : $('#variantTypes').val();
-			if (selectedTypes.length !== 1 || (selectedTypes[0] !== supportedTypes && selectedTypes[0].innerHTML !== supportedTypes)) {
-				alert("Error: non supported variant type for this format");
+			supportedTypes = supportedTypes.split(";");
+			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
+			for (var i in selectedTypes)
+				if (!supportedTypes.includes(selectedTypes[i])) {
+					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+					return;
+				}
+		}
+		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
+			supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
+			if (!supportedPloidyLevels.includes(ploidy)) {
+				alert("Error: selected export format does not support ploidy level " + ploidy);
 				return;
 			}
 		}
+		
+		exporting = true;
 		if (keepExportOnServer)
 		{
 			$('#ddlWarning').hide();
@@ -1149,64 +1285,67 @@
    		});
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
-		var data = {
-			"variantSetId": getProjectId(),
 
-			"referenceName": getSelectedSequences(),
-			"selectedVariantTypes": getSelectedTypes(),
-			"alleleCount": getSelectedNumberOfAlleles(),
-			"minposition": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-			"maxposition": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-			"variantEffects": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-			"geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+                var query = buildSearchQuery(3, currentPageToken);
+                query["keepExportOnServer"] =  keepExportOnServer;
+                query["exportFormat"] =  $('#exportFormat').val();
+                query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
+                query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
-			"callSetIds": getSelectedIndividuals(1, true),
-			"gtPattern": $('#Genotypes1').val(),
-			"mostSameRatio": $('#mostSameRatio1').val(),
-			"minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-			"maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-			"missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
-			"annotationFieldThresholds": annotationFieldThresholds,
-
-			"callSetIds2": getSelectedIndividuals(2, true),
-			"gtPattern2": $('#Genotypes2').val(),
-			"mostSameRatio2": $('#mostSameRatio2').val(),
-			"minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-			"maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-			"missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-			"annotationFieldThresholds2": annotationFieldThresholds2,
-			
-			"keepExportOnServer": keepExportOnServer,
-			"discriminate": $('#discriminate').prop('checked'),
-			"exportFormat": $('#exportFormat').val(),
-			"token": token,
-			"exportedIndividuals" : indToExport,
-			"metadataFields" : $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val()
-		};
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
 		if (keepExportOnServer) {
-			$.ajax({
-				url: url,
-				type: "POST",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
-				traditional: true,
-				data: data,
-				success: function(response) {
-					downloadURL = response;
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					downloadURL = null;
-					$("div#exportPanel").hide();
-					$("a#exportBoxToggleButton").removeClass("active");
-					handleError(xhr, thrownError);
-				}
-			});
+                    $.ajax({
+                            url: url,
+                            type: "POST",       
+                            contentType: "application/json;charset=utf-8",
+                            headers: {
+                                    "Authorization": "Bearer " + token
+                            },
+                            data: JSON.stringify(query),
+                            success: function(response) {
+                                    downloadURL = response;
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                    downloadURL = null;
+                                    $("div#exportPanel").hide();
+                                    $("a#exportBoxToggleButton").removeClass("active");
+                                    handleError(xhr, thrownError);
+                            }
+                    });
 		} else {
+                    var headers = {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json;charset=utf-8" 
+                    };
+
+                    var request = {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(query)
+                    };
+                    
+                    var filename = '';
+                    
+                    fetch(url, request).then((response) => {
+                            var header = response.headers.get('Content-Disposition');
+                            var parts = header.split(';');
+                            filename = parts[1].split('=')[1];
+                            return response.blob();
+                    })
+                    .then((result) => {
+                        if (result !== undefined) {
+                            var objectURL = URL.createObjectURL(result);
+                            var link = document.createElement("a");
+                            link.setAttribute("href", objectURL);
+                            link.setAttribute("download", filename);
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
 			downloadURL = null;
-			postDataToIFrame("outputFrame", url, data);
+			//postDataToIFrame("outputFrame", url, query);
 			$("div#exportPanel").hide();
 			$("a#exportBoxToggleButton").removeClass("active");
 		}
@@ -1221,7 +1360,7 @@
 			return;
 
 		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" href="' + downloadURL + '">' + fileName + '</a> ').show();
+		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
 		var exportedFormat = $('#exportFormat').val().toUpperCase();
 		if ("VCF" == exportedFormat)
 			addIgvExportIfRunning();
@@ -1238,7 +1377,7 @@
 				var toolConfig = getOutputToolConfig(toolName);
 				var buttonsForThisTool = "";
 				for (var key in archivedDataFiles)
-					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || arrayContains(toolConfig['formats'].toUpperCase().split(","), $('#exportFormat').val().toUpperCase())))
+					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
 						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
 				
 				if (buttonsForThisTool != "");
@@ -1293,7 +1432,6 @@
 	var igvGenomeListLoaded = false;
 	var igvVariantTracks;  // Array containing the variant tracks
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
-	var igvCallSets;  // List of callsets
 	var igvCurrentModule;  // Currently loaded module
 	var igvDefaultGenome;
 	
@@ -1388,16 +1526,20 @@
 	}
 	
 	// Open the IGV modal, initialise the browser if a default genome is set
-	function igvOpenDialog(){
-		$('#igvPanel').modal('show');
-		
-		if (!igvGenomeListLoaded && igvGenomeConfigURL){
-			igvLoadGenomeList().then(function (genomeList){
-				igvCheckModuleChange();
-			});
-		} else {
-			igvCheckModuleChange();
-		}
+	function igvOpenDialog(){            
+            if (seqCount === 0) {
+                alert("No sequence to display");
+            } else {                
+                $('#igvPanel').modal('show');
+
+                if (!igvGenomeListLoaded && igvGenomeConfigURL){
+                        igvLoadGenomeList().then(function (genomeList){
+                                igvCheckModuleChange();
+                        });
+                } else {
+                        igvCheckModuleChange();
+                }
+            }
 	}
 	
 	/* Load the default genomes list
@@ -1436,7 +1578,7 @@
 						}
 					}, function (xhr, ajaxOption, thrownError){
 						// Error handler for each genome list download : show an error but do not abort
-						handleError(xhr, thrownError);
+						displayMessage("Loading of genome list from " + config.url + " failed");
 					})
 				)
 			).then(function (results){
@@ -1544,7 +1686,7 @@
 			}).catch(function (reason){
 				displayMessage("Error loading genome config : " + reason);
 			});
-		} else {  // FASTA genome
+		} else {  // FASTA genome
 			let genome;
 			if (indexFile){
 				genome = {
@@ -1709,7 +1851,7 @@
 		if (igvCheckReferenceCountDifference && (
 					referenceNames.length > igvBrowser.genome.chromosomeNames.length * (1 + igvReferenceCountDifferenceThreshold) ||
 					igvBrowser.genome.chromosomeNames.length > referenceNames.length * (1 + igvReferenceCountDifferenceThreshold))){
-			displayMessage("The amount of sequences in the selected genome (" + igvBrowser.genome.chromosomeNames.length + " sequences) is substancially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It it possible that you selected a wrong genome", null);
+			displayMessage("The amount of sequences (" + igvBrowser.genome.chromosomeNames.length + ") in the selected genome is substantially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It is likely that you selected a wrong genome", 10000);
 		}
 	}
 	
@@ -1836,8 +1978,7 @@
 					visibilityWindow: 100000,
 					reader: new GigwaSearchReader(
 							individuals, token,
-							//"<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS_SEARCH%>" />"),
-							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />"),
+							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
 				});
 			})
 			
@@ -1928,6 +2069,7 @@
 		return trackIndividuals;
 	}
 </script>
+<script type="text/javascript" src="js/charts.js"></script>
 </head>
 <body>
 	<%@include file="navbar.jsp"%>
@@ -1977,6 +2119,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
+                                                            <p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);"> Filter by IDs</label></p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -1991,7 +2134,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  <div class="row">
 											<div class="col-xl-6 half-width" style="float:left;">
 												<label for="variantTypes" class="custom-label" id="variantTypesLabel">Variant types</label>
-												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"												
+												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"											
 													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="variantTypes"></select>												
 										  	</div>
 										  	<div class="col-xl-6 half-width" style="float:left; margin-left:10px;" id="nbAlleleGrp">
@@ -2002,9 +2145,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										 </div>
 									  </div>
 									</div>
-									<div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
-									<div id="Sequences"></div>
-									<div class="margin-top-md">
+                                    <div id="sequenceFilter">
+                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+                                        <div id="Sequences"></div>
+                                    </div>
+                                    <div id="positions" class="margin-top-md">
 										<label id="positionLabel" for="minposition" class="custom-label">Position (bp)</label>
 										<div class="container-fluid">
 										  <div class="row">
@@ -2039,6 +2184,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
+                                                                        <div id="VariantIds" class="margin-top-md">
+                                        <div class="container-fluid">
+                                            <div class="row">
+                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-input">
+                                            <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
+                                        </div>
+                                        <div style="margin-top:-25px; text-align:right;">
+											<a id="clearVariantIdSelection" href="#" onclick="clearVariantIdSelection();" style="display:none; font-size:18px; margin-left:-20px; position:absolute; font-weight:bold; text-decoration:none;" title="Clear selection">&nbsp;X&nbsp;</a>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox();"></button>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with up to 1M variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
+                                            <input name="file" type="file" id="uploadVariantIdsFile" style="display:none" />
+                                        </div>
+                                    </div>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">
@@ -2241,8 +2404,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Variant density chart" id="showdensity" class="btn btn-default" type="button" onclick="$('#density').modal('show'); initializeAndShowDensityChart();">
-									<img title="Variant density chart" src="images/density.webp" height="25" width="25" />
+								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeAndShowDensityChart(); }">
+									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
 								<!-- IGV.js browser button -->
