@@ -2063,21 +2063,27 @@ public class GigwaRestController extends ControllerInterface {
 
     @ApiOperation(authorizations = {@Authorization(value = "AuthorizationToken")}, value = SNPEFF_ANNOTATION_PATH, notes = "Annotates variants with snpEff")
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Success")})
-    @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST, produces = "application/json")
-    public String snpEffAnnotation(HttpServletRequest request, HttpServletResponse response, @RequestParam("projectId") String projectId, @RequestParam("snpEffDatabase") String snpEffDatabase) {
+    @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST)
+    public String snpEffAnnotation(HttpServletRequest request, HttpServletResponse response,
+    		@RequestParam("moduleExistingG") final String sModule,
+			@RequestParam("projectExisting") final String sProject,
+			@RequestParam("runExisting") final String sRun,
+			@RequestParam("snpEffDatabase") final String snpEffDatabase) throws Exception {
     	String token = tokenManager.readToken(request);
+    	if (token.length() == 0)
+    		return null;
+		ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
+		ProgressIndicator.registerProgressIndicator(progress);
+		progress.setPercentageEnabled(false);
 
-    	try {
-    		String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
-    		int project = parseInt(info[1]);
-    		if (tokenManager.canUserWriteToProject(token, info[0], project)) {
-    			return SnpEffAnnotationService.annotateRun(info[0], project, info[2], snpEffDatabase);
-    		} else {
-    			LOG.error("NOT AUTHENTICATED");
-    		}
-    	} catch (UnsupportedEncodingException ex) {
-    		LOG.debug("Error decoding projectId : " + projectId, ex);
-    	}
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
+		if (tokenManager.canUserWriteToProject(token, sModule, project.getId())) {
+			SnpEffAnnotationService.annotateRun(sModule, project.getId(), sRun, snpEffDatabase, progress);
+			progress.markAsComplete();
+		} else {
+			LOG.error("NOT AUTHENTICATED");
+		}
 
     	return null;
     }
