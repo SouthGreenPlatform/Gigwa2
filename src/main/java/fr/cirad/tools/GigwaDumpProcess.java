@@ -23,9 +23,9 @@ import fr.cirad.security.dump.ProcessStatus;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaDumpProcess implements IBackgroundProcess {	
-	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
-	private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
+    static final String dumpManagementPath = "WEB-INF/dump_management";
+    private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
+    private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
 	
 	private String module;
 	private String dbName;
@@ -42,7 +42,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	private ProcessStatus status;
 	private String statusMessage;
 	private boolean aborted = false;
-	
+
 	public GigwaDumpProcess(String module, String dbName, List<String> hosts, String basePath, String outPath) {
 		this.module = module;
 		this.hosts = hosts;

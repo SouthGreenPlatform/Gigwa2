@@ -71,6 +71,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.mongodb.BasicDBObject;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -80,8 +82,9 @@ public class GigwaModuleManager implements IModuleManager {
 
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 	
-	private static final String dumpManagementPath = "WEB-INF/dump_management";
-	private static final String defaultDumpFolder = dumpManagementPath + "/dumps";
+	private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
+	
+	private String actionRequiredToEnableDumps = null;
 	
 	@Autowired AppConfig appConfig;
 	@Autowired ApplicationContext appContext;
@@ -232,14 +235,25 @@ public class GigwaModuleManager implements IModuleManager {
 	
 	
 	@Override
-	public boolean hasDumps() {
-		String dumpFolder = appConfig.get("dumpFolder");
-		if (dumpFolder == null)
-			return false;
-		else if (Files.isDirectory(Paths.get(dumpFolder)))
-			return true;
-		else
-			return new File(dumpFolder).mkdirs();
+	public String getActionRequiredToEnableDumps() {
+	    if (actionRequiredToEnableDumps == null) {
+    		String dumpFolder = appConfig.get("dumpFolder");
+    		if (dumpFolder == null)
+    		    actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
+    		else if (Files.isDirectory(Paths.get(dumpFolder))) {
+    		    try {
+    		        Runtime.getRuntime().exec("mongodump --help");
+    		        Runtime.getRuntime().exec("mongorestore --help");
+                    actionRequiredToEnableDumps = "";
+    		    }
+    		    catch (IOException ioe) {
+                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then reload webapp)";
+    		    }
+    		}
+    		else
+    		    actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
+	    }
+        return actionRequiredToEnableDumps;
 	}
 	
 	@Override
@@ -264,8 +278,11 @@ public class GigwaModuleManager implements IModuleManager {
 					String name = splitName[1];
 					
 					Date creationDate;
+					int fileSizeMb;
 					try {
-						creationDate = Date.from(Files.readAttributes(file.toPath(), BasicFileAttributes.class).creationTime().toInstant());
+					    BasicFileAttributes fileAttr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+						creationDate = Date.from(fileAttr.creationTime().toInstant());
+						fileSizeMb = (int) (fileAttr.size() / 1048576);
 					} catch (IOException e) {
 						LOG.error("Creation date unreadable for dump file " + filename);
 						e.printStackTrace();
@@ -292,12 +309,12 @@ public class GigwaModuleManager implements IModuleManager {
 						validity = DumpValidity.OUTDATED;
 					// The last modification was a dump restore, and this dump is more recent than the restored dump
 					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.getRestoreDate() != null && creationDate.compareTo(dbInfo.getRestoreDate()) < 0) {
-						validity = DumpValidity.UNWANTED;
+						validity = DumpValidity.DIVERGED;
 					} else {
 						validity = DumpValidity.VALID;
 					}
 					
-					result.add(new DumpMetadata(prefix, module, name, creationDate, description, validity));
+					result.add(new DumpMetadata(prefix, module, name, creationDate, fileSizeMb, description, validity));
 				}
 			}
 			return result;
@@ -429,4 +446,9 @@ public class GigwaModuleManager implements IModuleManager {
 			return f1.getName().compareTo(f2.getName());  // Default to file name ...?
 		}
 	}
+
+    @Override
+    public int getModuleSizeMb(String module) {
+        return (int) ((double) MongoTemplateManager.get(module).getDb().runCommand(new BasicDBObject("dbStats", 1)).get("storageSize") / 1048576);
+    }
 }
