@@ -2072,6 +2072,12 @@ public class GigwaRestController extends ControllerInterface {
     	String token = tokenManager.readToken(request);
     	if (token.length() == 0)
     		return null;
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+    	if (configFile == null || dataPath == null)
+    		throw new Exception("Online annotation is not available");
+
 		ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
 		ProgressIndicator.registerProgressIndicator(progress);
 		progress.setPercentageEnabled(false);
@@ -2079,7 +2085,7 @@ public class GigwaRestController extends ControllerInterface {
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		if (tokenManager.canUserWriteToProject(token, sModule, project.getId())) {
-			SnpEffAnnotationService.annotateRun(sModule, project.getId(), sRun, snpEffDatabase, progress);
+			SnpEffAnnotationService.annotateRun(configFile, dataPath, sModule, project.getId(), sRun, snpEffDatabase, progress);
 			progress.markAsComplete();
 		} else {
 			LOG.error("NOT AUTHENTICATED");

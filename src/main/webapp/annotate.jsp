@@ -86,15 +86,10 @@
                         $('.importFormDiv input').prop('disabled', true);
                         $('.importFormDiv button').prop('disabled', true);
                         $('.importFormDiv textarea').prop('disabled', true);
-						var link1 = "<c:url value='/' />?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val(), link2 = "<c:url value='<%=GigwaRestController.IMPORT_PAGE_URL%>' />?module=" + $("#moduleToImport").val() + "&type=metadata";
-						$('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata to individuals <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
+						var link1 = "<c:url value='/' />?module=" + $("#moduleExistingG").val() + "&project=" + $("#projectExisting").val();
+						$('#progressContents').html('<p class="bold panel" style="padding:10px;">Annotation complete.<br/>The annotated data is <a style="cursor:pointer;" href="' + link1 + '">available here</a></p>');
 						$('#progress').modal('show');
-						new Dropzone("#importDropzoneG").destroy();
                     }
-                    else	// re-add files to the queue if an error occured
-                        $.each(new Dropzone("#importDropzoneG").files, function(i, file) {
-                            file.status = Dropzone.QUEUED
-                        });
                 });
             });
 
@@ -271,79 +266,71 @@
     <body>
         <%@include file="../../../navbar.jsp" %>
         <div class="container margin-top-md">
-            <ul class="nav nav-tabs" style="border-bottom:0;">
-                <li id="vcfTab" class="<c:if test='${param.type ne "metadata"}'> active</c:if>"><a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink">Genotype import</a></li>
-                <li id="metadataTab" class="<c:if test='${param.type eq "metadata"}'> active</c:if>"><a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink">Metadata import</a></li>
-            </ul>
-            <div class="tab-content">
-                <div class="tab-pane<c:if test='${param.type ne "metadata"}'> active</c:if>" id="tab1">
-            	<form autocomplete="off" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />" method="post">
-                    <div class="panel panel-default importFormDiv">
-                        <div class="panel-body panel-grey">
-                            <div class="form text-center">
-                                <div class ="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <h4>Annotate data</h4>
-											<p class="margin-top-md text-red">Properties followed by * are required</p>
-                                    </div>
+            <form autocomplete="off" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />" method="post">
+                <div class="panel panel-default importFormDiv">
+                    <div class="panel-body panel-grey">
+                        <div class="form text-center">
+                            <div class ="row">
+                                <div class="col-md-1" style="text-align:right;"></div>
+                                <div class="col-md-10">
+                                    <h4>Annotate data</h4>
+							<p class="margin-top-md text-red">Properties followed by * are required</p>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
-                                            <div class="row" id="rowModuleExisting">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-1" style="text-align:right;"></div>
+                                <div class="col-md-10">
+                                    <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
+                                        <div class="row" id="rowModuleExisting">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="moduleExistingG">Database <span class="text-red">*</span></label>
+                                         </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
                                         </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-	                                            	<label for="projectExisting">Project <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="runExisting">Run <span class="text-red">*</span></label>
-		                                        </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="snpEffDatabase">SnpEff database<span class="text-red">*</span></label>
-		                                        </div>
-                                                <div class="col-md-3">
-                                                	<input type="text" name="snpEffDatabase" id="snpEffDatabase" />
-                                                </div>
-                                            </div>
-                                        </div>
-		                                <div class ="row">
-		                                    <div class="col-md-1">
-			                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start</button>
-		                                    </div>
-		                                </div>
                                     </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                         	<label for="projectExisting">Project <span class="text-red">*</span></label>
+                                         </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="runExisting">Run <span class="text-red">*</span></label>
+                                      </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="snpEffDatabase">SnpEff database<span class="text-red">*</span></label>
+                                      </div>
+                                            <div class="col-md-3">
+                                            	<input type="text" name="snpEffDatabase" id="snpEffDatabase" />
+                                            </div>
+                                        </div>
+                                    </div>
+                              <div class ="row">
+                                  <div class="col-md-1">
+                                   <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start</button>
+                                  </div>
+                              </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-	                </form>
                 </div>
-            </div>
+             </form>
         </div>
 
 		<!-- progress modal -->
