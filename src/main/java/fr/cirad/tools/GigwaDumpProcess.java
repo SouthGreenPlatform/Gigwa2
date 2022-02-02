@@ -17,9 +17,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.manager.dump.ProcessStatus;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.security.dump.IBackgroundProcess;
-import fr.cirad.security.dump.ProcessStatus;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaDumpProcess implements IBackgroundProcess {	
