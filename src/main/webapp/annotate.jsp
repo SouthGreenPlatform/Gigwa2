@@ -52,6 +52,10 @@
             var maxUploadSizeInMb, maxImportSizeInMb;
         	var projectDescriptions = [];
 
+        	var availableGenomes = [];
+        	var downloadableGenomes = [];
+
+
             $(function () {
                 $('#moduleExistingG').on('change', function () {
                     clearFields();
@@ -98,6 +102,7 @@
                 $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
            		getToken();
                 loadModules();
+                loadGenomes();
 
                 $('button#startButton').on("click", function() {annotateVariants()});
             });
@@ -238,6 +243,32 @@
                 });
             }
 
+            function loadGenomes() {
+                $.ajax({
+                    url: "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_GENOME_LIST%>' />",
+					method: "GET",
+					headers: {
+					    "Authorization": "Bearer " + token,
+					},
+					dataType: "json",
+					contentType: "application/json;charset=utf-8",
+					success: function (jsonResult) {
+					    availableGenomes = jsonResult.availableGenomes.sort();
+					    downloadableGenomes = jsonResult.downloadableGenomes.sort();
+
+					    let options = '<optgroup label="Available genomes">';
+					    for (let genome of availableGenomes)
+					        options += '<option value="' + genome + '">' + genome + '</option>';
+					    options += '</optgroup><optgroup label="Downloadable genomes">';
+					    for (let genome of downloadableGenomes)
+					        options += '<option value="' + genome + '">' + genome + '</option>';
+					    options += '</optgroup>';
+
+					    $("#genomeSelect").html(options).selectpicker('refresh');
+					}
+                });
+            }
+
             function clearFields() {
                 $('#module').val("");
                 $('#project').val("");
@@ -246,6 +277,22 @@
             }
 
             function annotateVariants() {
+                const data = new FormData();
+                data.set("module", $("#moduleExistingG").val());
+                data.set("project", $("#projectExisting").val());
+                data.set("run", $("#runExisting").val());
+				switch ($("genomeInputType").val()) {
+					case "select":
+					    const genomeName = $("#genomeSelect").val();
+					    if (!genomeName) {
+						    alert("You must select a genome");
+		                    $('#progress').modal('hide');
+		                    return;
+					    }
+					    data.set("genomeName", $("#genomeSelect").val());
+					    break;
+				}
+
 				$.ajax({
 				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />",
 				    method: "POST",
@@ -254,7 +301,7 @@
 				    },
 				    processData: false,
 				    contentType: false,
-				    data: new FormData(document.getElementById("importDropzoneG")),
+				    data: data,
 				});
 
                 $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
@@ -312,11 +359,28 @@
                                     </div>
                                     <div class="form-group text-left">
                                         <div class="row">
-                                     	<div class="col-md-2" style="text-align:right;">
-                                          <label for="snpEffDatabase">SnpEff database<span class="text-red">*</span></label>
-                                      </div>
+	                                     	<div class="col-md-2" style="text-align:right;">
+	                                            <label for="genomeInputType">Genome input</label>
+	                                      	</div>
                                             <div class="col-md-3">
-                                            	<input type="text" name="snpEffDatabase" id="snpEffDatabase" />
+                                            	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
+                                            		<option value="select">Default genomes</option>
+                                            		<option value="url">Download from URL</option>
+                                            		<option value="files">Upload files</option>
+                                            		<option value="database">Upload SnpEff database</option>
+                                            	</select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Default genomes selector -->
+                                    <div class="form-group text-left">
+                                        <div class="row">
+	                                     	<div class="col-md-2" style="text-align:right;">
+	                                            <label for="genomeSelect">Select a genome<span class="text-red">*</span></label>
+	                                      	</div>
+                                            <div class="col-md-3">
+                                            	<select id="genomeSelect" name="genomeSelect" class="selectpicker" data-actions-box="true" data-width="100%" data-live-search="true" title="Select a genome"></select>
                                             </div>
                                         </div>
                                     </div>

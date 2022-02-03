@@ -225,6 +225,7 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
     static public final String SNPEFF_ANNOTATION_PATH = "/snpEff/annotate";
+    static public final String SNPEFF_GENOME_LIST = "/snpEff/genomes";
 
 	/**
 	 * instance of Service to manage all interaction with database
@@ -2061,6 +2062,7 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
 
+    @ApiIgnore
     @ApiOperation(authorizations = {@Authorization(value = "AuthorizationToken")}, value = SNPEFF_ANNOTATION_PATH, notes = "Annotates variants with snpEff")
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Success")})
     @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST)
@@ -2092,5 +2094,19 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
     	return null;
+    }
+
+    @ApiIgnore
+    @RequestMapping(value = BASE_URL + SNPEFF_GENOME_LIST, method = RequestMethod.GET)
+    public Map<String, Object> snpEffGenomeList(HttpServletRequest request, HttpServletResponse response) {
+    	HashMap<String, Object> result = new HashMap<>();
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+
+    	result.put("availableGenomes", SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath));
+    	result.put("downloadableGenomes", SnpEffAnnotationService.getDownloadableGenomes(configFile, dataPath));
+
+    	return result;
     }
 }
