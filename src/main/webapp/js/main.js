@@ -1083,6 +1083,7 @@ function onPasteIndividuals(groupNumber, textarea) {
     });
     $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
     applyGroupMemorizing(groupNumber);
+    checkGroupOverlap();
     $("button#pasteIndividuals" + groupNumber).click();
 }
 
