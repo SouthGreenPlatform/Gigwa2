@@ -772,7 +772,7 @@
                                 <div class ="row">
                                     <div class="col-md-1" style="text-align:right;"></div>
                                     <div class="col-md-10">
-                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / Flapjack / BrAPI format</h4>
+                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / Intertek / Flapjack / BrAPI format</h4>
 											<p class="margin-top-md text-red">Properties followed by * are required</p>
                                     </div>
                                 </div>
