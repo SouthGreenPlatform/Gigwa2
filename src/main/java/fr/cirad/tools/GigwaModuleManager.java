@@ -278,11 +278,11 @@ public class GigwaModuleManager implements IModuleManager {
 					String name = splitName[1];
 					
 					Date creationDate;
-					int fileSizeMb;
+					long fileSizeMb;
 					try {
 					    BasicFileAttributes fileAttr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 						creationDate = Date.from(fileAttr.creationTime().toInstant());
-						fileSizeMb = (int) (fileAttr.size() / 1048576);
+						fileSizeMb = fileAttr.size();
 					} catch (IOException e) {
 						LOG.error("Creation date unreadable for dump file " + filename);
 						e.printStackTrace();
@@ -436,19 +436,19 @@ public class GigwaModuleManager implements IModuleManager {
 		}
 	}
 	
-	private int compareFileCreationDates(File f1, File f2) {
-		try {
-			BasicFileAttributes attr1 = Files.readAttributes(f1.toPath(), BasicFileAttributes.class);
-			BasicFileAttributes attr2 = Files.readAttributes(f2.toPath(), BasicFileAttributes.class);
-			return attr1.creationTime().compareTo(attr2.creationTime());
-		} catch (IOException e) {
-			e.printStackTrace();
-			return f1.getName().compareTo(f2.getName());  // Default to file name ...?
-		}
-	}
+//	private int compareFileCreationDates(File f1, File f2) {
+//		try {
+//			BasicFileAttributes attr1 = Files.readAttributes(f1.toPath(), BasicFileAttributes.class);
+//			BasicFileAttributes attr2 = Files.readAttributes(f2.toPath(), BasicFileAttributes.class);
+//			return attr1.creationTime().compareTo(attr2.creationTime());
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			return f1.getName().compareTo(f2.getName());  // Default to file name ...?
+//		}
+//	}
 
     @Override
-    public int getModuleSizeMb(String module) {
-        return (int) ((double) MongoTemplateManager.get(module).getDb().runCommand(new BasicDBObject("dbStats", 1)).get("storageSize") / 1048576);
+    public long getModuleSize(String module) {
+        return ((Number) MongoTemplateManager.get(module).getDb().runCommand(new BasicDBObject("dbStats", 1)).get("storageSize")).longValue();
     }
 }
