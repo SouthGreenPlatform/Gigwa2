@@ -69,10 +69,6 @@ if [ ! -d $OUTPUT ]; then
 	mkdir "$OUTPUT"
 fi
 
-if [ ! -d "$OUTPUT/$DATABASE" ]; then
-	mkdir "$OUTPUT/$DATABASE"
-fi
-
 if [ ! -z $DBUSERNAME ]; then
 	if [ ! -z PASSWORD_PROMPT ]; then
 		CREDENTIAL_OPTIONS="--username=$DBUSERNAME --authenticationDatabase=$AUTHDB"
@@ -82,8 +78,7 @@ if [ ! -z $DBUSERNAME ]; then
 fi
 
 #FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`".gz"
-FILEPREFIX="$OUTPUT/$DATABASE/$DUMPNAME"
-FILENAME="$FILEPREFIX.gz"
+FILENAME="$OUTPUT/$DUMPNAME.gz"
 
 logged_part(){
 	echo "Name : $DUMPNAME"

@@ -22,11 +22,11 @@ import fr.cirad.manager.dump.ProcessStatus;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
-public class GigwaDumpProcess implements IBackgroundProcess {	
+public class GigwaDumpProcess implements IBackgroundProcess {
     static final String dumpManagementPath = "WEB-INF/dump_management";
     private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
     private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
-	
+
 	private String module;
 	private String dbName;
 	private List<String> hosts;
@@ -36,7 +36,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 	private boolean abortable = false;
 	private boolean deleteOnError;
 	private String abortWarning;
-	
+
 	private StringBuilder log;
 	private String logFile;
 	private ProcessStatus status;
@@ -49,25 +49,25 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		this.dbName = dbName;
 		this.basePath = basePath;
 		this.outPath = outPath;
-		
+
 		File outPathCheck = new File(this.outPath);
 		outPathCheck.mkdirs();
-		
+
 		this.log = new StringBuilder();
 		this.status = ProcessStatus.IDLE;
 	}
-	
+
 	public void startDump(String fileName, String credentials) {
 		abortable = true;
 		deleteOnError = true;
 		abortWarning = null;
-		logFile = outPath + File.separator + dbName + File.separator + fileName + "dump.log";
+		logFile = outPath + File.separator + fileName + "dump.log";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
 				scriptFile.setReadable(true);
 				scriptFile.setExecutable(true);
-				
+
 				String hostString = String.join(",", hosts);
 				List<String> args = new ArrayList<String>(Arrays.asList(
 					basePath + dumpCommand,
@@ -77,7 +77,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					"--name", fileName,
 					"--log", logFile
 				));
-				
+
 				String password = null;
 				if (credentials != null) {
 					String[] loginAndAuthDb = credentials.split("@");
@@ -87,15 +87,15 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
 					args.add("-pp");
 				}
-				
+
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
-				
+
 				runProcess(builder, password, null);
 			}
 		}).start();
 	}
-	
+
 	public void startRestore(String dumpFile, boolean drop, String credentials) {
 		abortable = true;
 		deleteOnError = false;
@@ -106,7 +106,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				File scriptFile = new File(basePath + restoreCommand);
 				scriptFile.setReadable(true);
 				scriptFile.setExecutable(true);
-				
+
 				String hostString = String.join(",", hosts);
 				List<String> args = new ArrayList<String>(Arrays.asList(
 					basePath + restoreCommand,
@@ -114,7 +114,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					"--input", dumpFile,
 					"--log", logFile
 				));
-				
+
 				String password = null;
 				if (drop) args.add("--drop");
 				if (credentials != null) {
@@ -122,19 +122,19 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					String[] userAndPass = loginAndAuthDb[0].split(":");
 					args.add("--username"); args.add(userAndPass[0]);
 					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
-					args.add("--passwordPrompt"); 
+					args.add("--passwordPrompt");
 					password = userAndPass[1];
 				}
-				
+
 				ProcessBuilder builder = new ProcessBuilder(args);
 				builder.redirectErrorStream(true);
-				
+
 				runProcess(builder, password, dumpFile);
 			}
 		}).start();
 	}
-	
-	
+
+
 	public String getLog(){
 		if (this.log != null) {
 			this.updateLog();
@@ -151,14 +151,14 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				} else {
 					throw new FileNotFoundException();
 				}
-				
+
 				int readLength;
 				ByteArrayOutputStream logBuilder = new ByteArrayOutputStream();
 				byte[] buffer = new byte[65536];  // FIXME ?
 				while ((readLength = logInput.read(buffer)) != -1) {
 					logBuilder.write(buffer, 0, readLength);
 				}
-				
+
 				return logBuilder.toString("UTF-8");
 			} catch (FileNotFoundException e) {
 				return "Log file not found";
@@ -174,7 +174,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			}
 		}
 	}
-	
+
 	private void updateLog() {
 		if (this.log != null) {
 			try {
@@ -188,35 +188,35 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			}
 		}
 	}
-	
+
 	public String getModule() {
 		return module;
 	}
-	
+
 	public ProcessStatus getStatus() {
 		return this.status;
 	}
-	
+
 	public String getStatusMessage() {
 		return this.statusMessage;
 	}
-	
+
 	public boolean isAbortable() {
 		return this.abortable;
 	}
-	
+
 	public String getAbortWarning() {
 		return this.abortWarning;
 	}
-	
+
 	public void abort() {
 		if (this.abortable) {
 			this.aborted = true;
 			this.subprocess.destroy();
 		}
 	}
-	
-	
+
+
 	private void runProcess(ProcessBuilder builder, String password, String dumpFile) {
 		AbstractGenotypeImport.lockModuleForWriting(module);
 		try {
@@ -228,7 +228,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				stdin.write((password + "\n").getBytes("utf-8"));
 				stdin.flush();
 			}
-			
+
 			int exitcode = subprocess.waitFor();
 			if (exitcode == 0) {
 				status = ProcessStatus.SUCCESS;
@@ -261,14 +261,14 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			AbstractGenotypeImport.unlockModuleForWriting(module);
 		}
 	}
-	
+
 	private void onError() {
 		if (deleteOnError) {
 			updateLog();
 			for (String line : this.log.toString().split("\n")) {
 				if (line.startsWith("Name : ")) {
 					String dumpName = line.split(":")[1].trim();
-					
+
 					for (File file : new File(this.outPath).listFiles()) {
 						String filename = file.getName();
 						if (filename.startsWith(dumpName) && (filename.endsWith(".log") || filename.endsWith(".gz") || filename.endsWith(".txt")))

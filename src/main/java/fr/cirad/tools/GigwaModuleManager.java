@@ -342,18 +342,18 @@ public class GigwaModuleManager implements IModuleManager {
 		String sHost = this.getModuleHost(sModule);
 		String credentials = this.getHostCredentials(sHost);
 		String databaseName = MongoTemplateManager.getDatabaseName(sModule);
+		String outPath = this.getDumpPath(sModule);
 		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
 				databaseName,
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
-				appConfig.get("dumpFolder"));
+				outPath);
 
 		String fileName = sModule + "__" + sName + "__";
 		process.startDump(fileName, credentials);
 
-		String outPath = appConfig.get("dumpFolder") + File.separator + databaseName + File.separator;
 		new File(outPath).mkdirs();
-		String descriptionPath = outPath + fileName + "description.txt";
+		String descriptionPath = outPath + File.separator + fileName + "description.txt";
 		try {
 			FileWriter descriptionWriter = new FileWriter(descriptionPath);
 			descriptionWriter.write(sDescription);
@@ -407,7 +407,7 @@ public class GigwaModuleManager implements IModuleManager {
 			dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
 		}
 
-		String dumpPath = dumpBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
+		String dumpPath = dumpBase + File.separator + sModule;
 		return dumpPath;
 	}
 
