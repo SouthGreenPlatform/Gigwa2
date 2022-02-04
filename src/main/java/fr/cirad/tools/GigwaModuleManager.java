@@ -201,6 +201,7 @@ public class GigwaModuleManager implements IModuleManager {
 			LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
+            MongoTemplateManager.updateDatabaseLastModification(sModule);
 			return true;
 		}
 		else
