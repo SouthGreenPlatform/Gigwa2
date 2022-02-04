@@ -81,11 +81,11 @@ import javax.xml.parsers.ParserConfigurationException;
 public class GigwaModuleManager implements IModuleManager {
 
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
-	
+
 	private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
-	
+
 	private String actionRequiredToEnableDumps = null;
-	
+
 	@Autowired AppConfig appConfig;
 	@Autowired ApplicationContext appContext;
     @Autowired TokenManager tokenManager;
@@ -95,7 +95,7 @@ public class GigwaModuleManager implements IModuleManager {
     public String getModuleHost(String sModule) {
         return MongoTemplateManager.getModuleHost(sModule);
     }
-    
+
 	@Override
 	public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
 		if (fTrueForPublicFalseForPrivateNullForBoth == null)
@@ -119,13 +119,13 @@ public class GigwaModuleManager implements IModuleManager {
 						moduleEntities = new LinkedHashMap<Comparable, String>();
 						entitiesByModule.put(sModule, moduleEntities);
 					}
-					
+
 					Query q = new Query();
 					q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
 					q.fields().include(GenotypingProject.FIELDNAME_NAME);
 					for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
 						moduleEntities.put(project.getId(), project.getName());
-				}		
+				}
 		return entitiesByModule;
 	}
 
@@ -148,7 +148,7 @@ public class GigwaModuleManager implements IModuleManager {
 	public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
 		return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
 	}
-	
+
 	@Override
 	public Collection<String> getHosts() {
 		return MongoTemplateManager.getHostNames();
@@ -191,7 +191,7 @@ public class GigwaModuleManager implements IModuleManager {
 
 			if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
 				LOG.debug("Removed project " + nProjectIdToRemove + " from module " + sModule);
-			
+
 			new Thread() {
 				public void run() {
 					long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
@@ -199,7 +199,7 @@ public class GigwaModuleManager implements IModuleManager {
 				}
 			}.start();
 			LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
-			
+
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
 			return true;
 		}
@@ -232,8 +232,8 @@ public class GigwaModuleManager implements IModuleManager {
 	public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic) throws Exception {
 		return false;
 	}
-	
-	
+
+
 	@Override
 	public String getActionRequiredToEnableDumps() {
 	    if (actionRequiredToEnableDumps == null) {
@@ -255,16 +255,16 @@ public class GigwaModuleManager implements IModuleManager {
 	    }
         return actionRequiredToEnableDumps;
 	}
-	
+
 	@Override
 	public List<DumpMetadata> getDumps(String sModule) {
 		return getDumps(sModule, true);
 	}
-	
+
 	public List<DumpMetadata> getDumps(String sModule, boolean withDescription) {
 		DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
 		String dumpPath = this.getDumpPath(sModule);
-		
+
 		// List files in the database's dump directory, filter out subdirectories and logs
 		File[] fileList = new File(dumpPath).listFiles();
 		if (fileList != null) {
@@ -276,7 +276,7 @@ public class GigwaModuleManager implements IModuleManager {
 					String[] splitName = prefix.split("__");
 					String module = splitName[0];
 					String name = splitName[1];
-					
+
 					Date creationDate;
 					long fileSizeMb;
 					try {
@@ -288,7 +288,7 @@ public class GigwaModuleManager implements IModuleManager {
 						e.printStackTrace();
 						continue;
 					}
-					
+
 					String description = null;
 					if (withDescription) {
 						File descriptionFile = new File(dumpPath + "/" + prefix + "description.txt");
@@ -298,9 +298,9 @@ public class GigwaModuleManager implements IModuleManager {
 							e.printStackTrace();
 						}
 					}
-					
+
 					DumpValidity validity;
-					
+
 					// No last modification date set : default to valid ?
 					if (dbInfo == null) {
 						validity = DumpValidity.VALID;
@@ -313,7 +313,7 @@ public class GigwaModuleManager implements IModuleManager {
 					} else {
 						validity = DumpValidity.VALID;
 					}
-					
+
 					result.add(new DumpMetadata(prefix, module, name, creationDate, fileSizeMb, description, validity));
 				}
 			}
@@ -322,18 +322,21 @@ public class GigwaModuleManager implements IModuleManager {
 			return new ArrayList<DumpMetadata>();
 		}
 	}
-	
-	@Override 
+
+	@Override
 	public DumpValidity getDumpStatus(String sModule) {
+		if (!isModuleAvailableForDump(sModule))
+			return DumpValidity.BUSY;
+
 		DumpValidity result = DumpValidity.NONE;
 		for (DumpMetadata metadata : getDumps(sModule, false)) {
 			if (metadata.getValidity().validity > result.validity)
 				result = metadata.getValidity();
 		}
-		
+
 		return result;
 	}
-	
+
 	@Override
 	public IBackgroundProcess startDump(String sModule, String sName, String sDescription) {
 		String sHost = this.getModuleHost(sModule);
@@ -344,10 +347,10 @@ public class GigwaModuleManager implements IModuleManager {
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
 				appConfig.get("dumpFolder"));
-		
+
 		String fileName = sModule + "__" + sName + "__";
 		process.startDump(fileName, credentials);
-		
+
 		String outPath = appConfig.get("dumpFolder") + File.separator + databaseName + File.separator;
 		new File(outPath).mkdirs();
 		String descriptionPath = outPath + fileName + "description.txt";
@@ -360,7 +363,7 @@ public class GigwaModuleManager implements IModuleManager {
 		}
 		return process;
 	}
-	
+
 	@Override
 	public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
 		String sHost = this.getModuleHost(sModule);
@@ -371,50 +374,50 @@ public class GigwaModuleManager implements IModuleManager {
 				MongoTemplateManager.getServerHosts(sHost),
 				servletContext.getRealPath(""),
 				appConfig.get("dumpFolder"));
-		
+
 		process.startRestore(dumpFile, drop, credentials);
 		return process;
 	}
-	
+
 	@Override
 	public boolean isModuleAvailableForDump(String sModule) {
 		return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
 	}
-	
+
 	@Override
 	public boolean deleteDump(String sModule, String sDump) {
 		String dumpPath = getDumpPath(sModule);
 		String basename = dumpPath + File.separator + sDump;
-		
+
 		File archiveFile = new File(basename + ".gz");
 		boolean result = archiveFile.delete();
-		
+
 		for (File file : new File(dumpPath).listFiles()) {
 			String filename = file.getName();
 			if (filename.startsWith(sDump) && (filename.endsWith(".log") || filename.endsWith(".log.gz") || filename.endsWith(".txt")))
 				file.delete();
 		}
-		
+
 		return result;
 	}
-	
+
 	private String getDumpPath(String sModule) {
 		String dumpBase = appConfig.get("dumpFolder");
 		if (dumpBase == null) {
 			dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
 		}
-		
+
 		String dumpPath = dumpBase + File.separator + MongoTemplateManager.getDatabaseName(sModule);
 		return dumpPath;
 	}
-	
+
 	// FIXME
 	private String getHostCredentials(String sHost) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document document = builder.parse(appContext.getResource("classpath:/applicationContext-data.xml").getFile());
-			
+
 			NodeList clients = document.getElementsByTagName("mongo:mongo-client");
 			for (int i = 0; i < clients.getLength(); i++) {
 				Node node = clients.item(i);
@@ -435,7 +438,7 @@ public class GigwaModuleManager implements IModuleManager {
 			return null;
 		}
 	}
-	
+
 //	private int compareFileCreationDates(File f1, File f2) {
 //		try {
 //			BasicFileAttributes attr1 = Files.readAttributes(f1.toPath(), BasicFileAttributes.class);
