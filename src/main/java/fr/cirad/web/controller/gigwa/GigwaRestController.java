@@ -2088,6 +2088,9 @@ public class GigwaRestController extends ControllerInterface {
 			SnpEffAnnotationService.downloadGenome(configFile, dataPath, snpEffDatabase, progress);
 		}
 
+		if (progress.getError() != null)
+			return null;
+
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		if (tokenManager.canUserWriteToProject(token, sModule, project.getId())) {
