@@ -43,6 +43,7 @@
         <script type="text/javascript" src="js/main.js"></script>
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
+		<script type="text/javascript" src="js/multiple-select-big.js"></script>
         <script type="text/javascript">
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
@@ -264,7 +265,7 @@
 					        options += '<option value="' + genome + '">' + genome + '</option>';
 					    options += '</optgroup>';
 
-					    $("#genomeSelect").html(options).selectpicker('refresh');
+						$("#genomeList").html(options);
 					}
                 });
             }
@@ -281,6 +282,7 @@
                 data.set("module", $("#moduleExistingG").val());
                 data.set("project", $("#projectExisting").val());
                 data.set("run", $("#runExisting").val());
+                data.set("genome", $("#genomeSelect").val());
 				switch ($("genomeInputType").val()) {
 					case "select":
 					    const genomeName = $("#genomeSelect").val();
@@ -379,9 +381,8 @@
 	                                     	<div class="col-md-2" style="text-align:right;">
 	                                            <label for="genomeSelect">Select a genome<span class="text-red">*</span></label>
 	                                      	</div>
-                                            <div class="col-md-3">
-                                            	<select id="genomeSelect" name="genomeSelect" class="selectpicker" data-actions-box="true" data-width="100%" data-live-search="true" title="Select a genome"></select>
-                                            </div>
+                                            <input class="col-md-6" list="genomeList" name="genomeSelect" id="genomeSelect"/>
+                                            <datalist id="genomeList"></datalist>
                                         </div>
                                     </div>
                               <div class ="row">

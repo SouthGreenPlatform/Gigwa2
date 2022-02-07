@@ -2067,10 +2067,10 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Success")})
     @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST)
     public String snpEffAnnotation(HttpServletRequest request, HttpServletResponse response,
-    		@RequestParam("moduleExistingG") final String sModule,
-			@RequestParam("projectExisting") final String sProject,
-			@RequestParam("runExisting") final String sRun,
-			@RequestParam("snpEffDatabase") final String snpEffDatabase) throws Exception {
+    		@RequestParam("module") final String sModule,
+			@RequestParam("project") final String sProject,
+			@RequestParam("run") final String sRun,
+			@RequestParam("genome") final String snpEffDatabase) throws Exception {
     	String token = tokenManager.readToken(request);
     	if (token.length() == 0)
     		return null;
@@ -2083,6 +2083,10 @@ public class GigwaRestController extends ControllerInterface {
 		ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
 		ProgressIndicator.registerProgressIndicator(progress);
 		progress.setPercentageEnabled(false);
+
+		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(snpEffDatabase)) {
+			SnpEffAnnotationService.downloadGenome(configFile, dataPath, snpEffDatabase, progress);
+		}
 
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);

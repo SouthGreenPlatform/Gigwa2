@@ -77,8 +77,8 @@
 	var posPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
-	
-	// plot graph option 
+
+	// plot graph option
 	var options = {
 		legend: {
 			show: true
@@ -129,11 +129,11 @@
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
-	
+
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-        
+
     var stringVariantIdsFromUploadFile = null;
 
 	// when HTML/CSS is fully loaded
@@ -146,7 +146,7 @@
 			referenceset = $(this).val();
 			if (!loadProjects(referenceset))
 				return;
-						
+
 			$("div#welcome").hide();
 
 			for (var groupNumber=1; groupNumber<=2; groupNumber++)
@@ -176,7 +176,7 @@
 				contentType: "application/json;charset=utf-8",
 				success: function(url) {
 					defaultGenomeBrowserURL = url;
-					
+
 					$("input#genomeBrowserURL").val(localStorage.getItem("genomeBrowserURL-" + referenceset));
 					if ($("input#genomeBrowserURL").val() == "")
 						$("input#genomeBrowserURL").val(defaultGenomeBrowserURL);
@@ -207,13 +207,13 @@
 
 			if (localStorage.getItem("genomeBrowserURL-" + referenceset) == null && defaultGenomeBrowserURL != null && defaultGenomeBrowserURL != "")
 				localStorage.setItem("genomeBrowserURL-" + referenceset, defaultGenomeBrowserURL);
-						
+
 			checkBrowsingBoxAccordingToLocalVariable();
 			$('input#browsingAndExportingEnabled').change();
 			igvRemoveExistingBrowser();
 			igvChangeModule(referenceset);
 		});
-		
+
 		$('#project').on('change', function() {
 			count = 0;
 			$("table#individualFilteringTable").html("");
@@ -228,9 +228,9 @@
 			else
 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
-			
+
 			currentChartType = null;
-			
+
 			$.ajax({	// load runs
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
 				type: "GET",
@@ -274,7 +274,7 @@
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
-		});            
+		});
 
 		$("#variantTable").on('click', 'th', function() { // Sort function on variant table. Enabled for sequence and position only
 			if ($(this).text().trim() === "id") {
@@ -307,7 +307,7 @@
 			}
 			exporting = false;
 		});
-		
+
 		$('#grpProj').hide();
 		$('[data-toggle="tooltip"]').tooltip({
 			delay: {
@@ -317,14 +317,14 @@
 		});
 		getToken();
 		loadModules();
-                
+
 		$(window).resize(function() {
 			resizeDialogs();
 		}).on('shown.bs.modal', function(e) {
 			if ("progress" != e.target.id)
 				resizeDialogs();
 		});
-                
+
                 $("#uploadVariantIdsFile").click(function(){
                     $(this).val("");
                 });
@@ -337,31 +337,31 @@
                         fileReader.onload = function(progressEvent) {
                                 onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
                         };
-                        fileReader.readAsText(selectedFile, "UTF-8");                       
+                        fileReader.readAsText(selectedFile, "UTF-8");
                     }
                 });
 	});
-        
+
     function removeUploadedFile() {
         $('#uploadVariantIdsFile').val('');
         $('#varIdsFileName').remove();
         stringVariantIdsFromUploadFile = null;
-        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');            
-    }       
-	
+        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+    }
+
 	function resizeDialogs() {
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
 		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.9 - 20) + "px");
  		$("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
  	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
 	}
-	
+
 	function markCurrentProcessAsAborted() {
 		processAborted = true;
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event 
+	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
 	function dropTempCol() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
@@ -422,9 +422,9 @@
 				}
 				$('#module').html(option).selectpicker('refresh');
 				var module = $_GET("module"); // get module from url
-				if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp			   
+				if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp
 					module = module.replace(new RegExp('#([^\\s]*)', 'g'), '');
-				
+
 				if (module !== null) {
 					$('#module').selectpicker('val', module);
 					$('#module').trigger('change');
@@ -483,14 +483,14 @@
 						option += '<option data-id="' + jsonResult.variantSets[set].id + '">' + jsonResult.variantSets[set].name + '</option>';
 						projNames.push(jsonResult.variantSets[set].name);
 					}
-					// project id is stored in each <option> tag, project name is displayed. 
+					// project id is stored in each <option> tag, project name is displayed.
 					// project id is formatted as follows: moduleId§projId
 					// we can retrieve it with encodeURIComponent(getProjectId())
 					$('#project').html(option).selectpicker('refresh');
 					if (passedProject !== null) {
 						// sometimes a # appears at the end of the url so we remove it with regexp
 						passedProject = passedProject.replace(new RegExp('#([^\\s]*)', 'g'), '');
-						// make sure that project in url is available in this module 
+						// make sure that project in url is available in this module
 						if (projNames.indexOf(passedProject) !== -1) {
 							$('#project').selectpicker('val', passedProject);
 						} else {
@@ -524,7 +524,7 @@
 		return success;
 	}
 
-	function loadVariantTypes() {                
+	function loadVariantTypes() {
                     $.ajax({
                             url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
                             type: "GET",
@@ -576,7 +576,7 @@
                     $('#positions').show();
                     $('#filterIDsCheckbox').prop('checked', false);
                     onFilterByIds(false);
-                }                                
+                }
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				var seqOpt = [];
 				for (var ref in jsonResult.references) {
@@ -600,7 +600,7 @@
 		individualSubSet = "${param.individualSubSet}".trim().split(";");
 		if (individualSubSet.length == 1 && individualSubSet[0] == "")
 			individualSubSet = null;
-						
+
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
 			type: "POST",
@@ -621,7 +621,7 @@
 				var indOpt = [];
 
 				gotMetaData = false;
-				
+
 				// first pass to compile an exhaustive field list
 				var headers = new Array();
 				for (var ind in callSetResponse)
@@ -636,7 +636,7 @@
 						indOpt.push(callSetResponse[ind].name);
 				}
 				callSetMetadataFields = headers;
-				
+
 				var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
 				$.ajax({
 					url: brapiBaseUrl,
@@ -707,7 +707,7 @@
 						$("button#groupSelector" + groupNumber).addClass("hidden");
 						$("table#individualFilteringTable").html("");
 					}
-				
+
 				var multipleSelectOpts = {
 					text: 'Individuals',
 					data: indOpt,
@@ -715,17 +715,17 @@
 				}
 				if (individualSubSet != null)
 					multipleSelectOpts['size'] = individualSubSet.length;
-					
+
 				$('#Individuals1').selectmultiple(multipleSelectOpts);
 				$('#Individuals2').selectmultiple(multipleSelectOpts);
-				
+
 				$('#Individuals1').on('change', function(e) { applyGroupMemorizing(1); checkGroupOverlap(); });
 				$('#Individuals2').on('change', function(e) { applyGroupMemorizing(2); checkGroupOverlap(); });
-				
+
 				indCount = indOpt.length;
 				$('#individualsLabel').html("Individuals (" + indCount + "/" + indCount + ")");
 				$('#individualsLabel2').html("Individuals (" + indCount + "/" + indCount + ")");
-				
+
 				updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
 				if (indCount === 0) {
 					setGenotypeInvestigationMode(0);
@@ -795,14 +795,14 @@
 				$('#nbAlleleGrp').show();
 
 				if (jsonResult.numberOfAllele.length <= 1)
-					$('#nbAlleleGrp').hide();				
+					$('#nbAlleleGrp').hide();
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
 			}
 		});
 	}
-	
+
 	function readPloidyLevel() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
@@ -817,7 +817,7 @@
 			}
 		});
 	}
-	
+
 	function loadGenotypePatterns() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENOTYPE_PATTERNS_PATH%>" />',
@@ -878,7 +878,7 @@
 			}
 		});
 	}
-	
+
 	// main search method
 	function searchVariants(searchMode, pageToken) {
 		$(".alert").remove();
@@ -897,7 +897,7 @@
 		$('#exportBoxToggleButton').show();
 		processAborted = false;
 		$('button#abort').attr('rel', token);
-		
+
 		currentPageToken = pageToken;
 		$('#prev').prop('disabled', pageToken === '0');
 
@@ -921,7 +921,7 @@
                 data: JSON.stringify(query),
                 success: function(jsonResult) {
                         $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
-                        if (searchMode === 0) { // count only 
+                        if (searchMode === 0) { // count only
                                 count = jsonResult.count;
                                 handleCountSuccess();
                         } else {
@@ -942,7 +942,7 @@
  		$('#serverExportBox').hide();
 		displayProcessProgress(2, token);
 	}
-        
+
     function loadVariantIds() {
         var options = {
                 ajax:{
@@ -982,7 +982,7 @@
                         setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
                         return;
                     }
-                    
+
                     var array = [];
                     for (i=0; i<data.length; i++) {
                         array.push($.extend(true, data[i], {
@@ -992,20 +992,20 @@
                     return array;
                 }
             };
-        
+
         $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
         $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
         $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
-        
-        if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
+
+        if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
-            inputObj.css('width', "calc(100% - 24px)");               
+            inputObj.css('width', "calc(100% - 24px)");
             //when clicking on the button, selected IDs and search results are cleared
             inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
         }
     }
-        	
+
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -1038,7 +1038,7 @@
 		var tableHeader = new Array(2);
 		for (var header in headerPositions)
 			tableHeader[headerPositions[header] + 2] = header;
-		
+
 		var htmlTableContents = new StringBuffer();
 		htmlTableContents.append('<thead><tr><th>Individual</th><th>Genotype</th>');
 		for (var headerPos in tableHeader)
@@ -1086,7 +1086,7 @@
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
 		var errorEncountered = false;
-		// get genotypes for a variant 
+		// get genotypes for a variant
 		var modalContent = '';
 		var ind;
 		if (individualSubSet == null)
@@ -1115,7 +1115,7 @@
 			$("#displayAllGtOption").toggle(ind.length > 0);
 		$("#runButtons").html("");
 		var addedRunCount = 0;
-		
+
 		let requests = [];
 		for (var runIndex in runList) {
 			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
@@ -1158,22 +1158,22 @@
 				}
 			}));
 		}
-		
+
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
 			if (runList.length > 1)
 				markInconsistentGenotypesAsMissing();
 
 			if (!errorEncountered)
-				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
+				$('#variantDetailPanel').modal('show').css({"z-index": 1100});
 		});
 	}
 
-	// create the annotation detail panel 
+	// create the annotation detail panel
 	function loadVariantAnnotationData() {
 		$('#displayAllGt').attr('checked', false);
 		loadGenotypes(false);
-		// get annotations 
+		// get annotations
 	   	$('#scrollingAnnotationDiv').html("");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId),
@@ -1201,7 +1201,7 @@
 					additionalInfo.append("</tr></table></div>");
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
-				
+
 				var varGotMetaData = jsonResult.info.meta_header != null && jsonResult.info.meta_header.length > 0
 				$('#toggleVariantMetadata').css('display', varGotMetaData ? 'inline' : 'none');
 				if (varGotMetaData)
@@ -1216,7 +1216,7 @@
 					additionalInfo.append("</tr></table></div>");
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
-				
+
 
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -1254,7 +1254,7 @@
 				return;
 			}
 		}
-		
+
 		exporting = true;
 		if (keepExportOnServer)
 		{
@@ -1283,7 +1283,7 @@
    			if (parseFloat($(this).val()) > 0)
 	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
    		});
-   		
+
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 
                 var query = buildSearchQuery(3, currentPageToken);
@@ -1297,7 +1297,7 @@
 		if (keepExportOnServer) {
                     $.ajax({
                             url: url,
-                            type: "POST",       
+                            type: "POST",
                             contentType: "application/json;charset=utf-8",
                             headers: {
                                     "Authorization": "Bearer " + token
@@ -1316,7 +1316,7 @@
 		} else {
                     var headers = {
                         "Authorization": "Bearer " + token,
-                        "Content-Type": "application/json;charset=utf-8" 
+                        "Content-Type": "application/json;charset=utf-8"
                     };
 
                     var request = {
@@ -1324,9 +1324,9 @@
                         headers: headers,
                         body: JSON.stringify(query)
                     };
-                    
+
                     var filename = '';
-                    
+
                     fetch(url, request).then((response) => {
                             var header = response.headers.get('Content-Disposition');
                             var parts = header.split(';');
@@ -1351,7 +1351,7 @@
 		}
 		displayProcessProgress(2, "export_" + token, showServerExportBox);
 	}
-	
+
 	function showServerExportBox()
 	{
 		$("div#exportPanel").hide();
@@ -1366,11 +1366,11 @@
 			addIgvExportIfRunning();
 		else if ("FLAPJACK" == exportedFormat)
 			addFjBytesExport();
-		
+
 		var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
 		for (var key in exportFormatExtensions)
 			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-		
+
 		if (onlineOutputTools != null)
 			for (var toolName in onlineOutputTools)
 			{
@@ -1379,12 +1379,12 @@
 				for (var key in archivedDataFiles)
 					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
 						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
-				
+
 				if (buttonsForThisTool != "");
 					$('#serverExportBox').append('<br/><br/>' + buttonsForThisTool)
 			}
 	}
-	
+
 	function postDataToIFrame(frameName, url, params)
 	{
 		 var form = document.createElement("form");
@@ -1418,13 +1418,13 @@
 	igvDataLoadPort = ${igvDataLoadPort};
 	igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
 	</c:if>
-	
-	
-	
+
+
+
 	/**
 	 * IGV.js genome browser integration
 	 */
-	
+
 	// Global variables
 	var igvBrowser;
 	var igvGenomeList = [];  // Default genomes list, with sections
@@ -1434,21 +1434,21 @@
 	var igvGenomeRefTable;  // Table of translation from genome references names to variant refs names
 	var igvCurrentModule;  // Currently loaded module
 	var igvDefaultGenome;
-	
+
 	// Configuration
 	const igvCheckGenomeExistence = true;  // True to send a request to check whether the genome file exists beforehand
 	const igvGenomeConfigURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_CONFIG_PATH %>" />';  // URL to the default genomes list
 	const igvDefaultMatchingGenome = true;  // True to load a genome with the same name as the module if it exists by default
 	const igvCheckReferenceCountDifference = true;  // True to alert the user if the amounts of sequences in the genome and in gigwa do not match by at least a given difference
 	const igvReferenceCountDifferenceThreshold = 0.3;  // Difference from which to alert the user. Ex : 0.3 -> 30% difference to alert
-	
+
 	// ----- Utilities
-	
+
 	// Extract the file name from an URL object
 	function filenameFromURL(url){
 		return url.pathname.split("/").pop();
 	}
-	
+
 	// Promise to read a local text file
 	async function readTextFile(file) {
 		let result = await new Promise((resolve) => {
@@ -1458,7 +1458,7 @@
 		});
 		return result;
 	}
-	
+
 	// Get the constant prefix in each element of a list of strings
 	function getPrefix(names){
 		if (names.length <= 1) return "";  // Prevent returning the whole name as a prefix if there's only one
@@ -1503,15 +1503,15 @@
 		}
 		return suffix;
 	}
-	
+
 	// Check whether a string represents a valid number
 	function isNumeric(str){
 		return !isNaN(str) && !isNaN(parseFloat(str));
 	}
-	
-	
+
+
 	// ----- Functions
-	
+
 	// Initialize the IGV functionalities for a given module
 	function igvChangeModule(name){
 		igvDefaultGenome = localStorage.getItem("igvDefaultGenome::" + name);
@@ -1524,12 +1524,12 @@
 			}
 		}
 	}
-	
+
 	// Open the IGV modal, initialise the browser if a default genome is set
-	function igvOpenDialog(){            
+	function igvOpenDialog(){
             if (seqCount === 0) {
                 alert("No sequence to display");
-            } else {                
+            } else {
                 $('#igvPanel').modal('show');
 
                 if (!igvGenomeListLoaded && igvGenomeConfigURL){
@@ -1541,7 +1541,7 @@
                 }
             }
 	}
-	
+
 	/* Load the default genomes list
 	   More or less equivalent to this, but all requests are asynchronous :
 		|	configList = get(igvGenomeConfigURL)
@@ -1558,7 +1558,7 @@
 	async function igvLoadGenomeList(configURL){
 		// Set before the requests to avoid duplicate requests if the modal is closed and reopened meanwhile
 		igvGenomeListLoaded = true;
-		
+
 		// Get the list of genome lists to download, then…
 		return await $.get(igvGenomeConfigURL).then(function (configList){
 			// Wait until all downloads completed (successfully or not)
@@ -1586,13 +1586,13 @@
 				// results is an array that contains the results of all promises in Promise.allSettled
 				// Filter out the failed requests and keep only their value (the genome list + name + url above)
 				igvGenomeList = results.filter(result => result.status == "fulfilled").map(result => result.value);
-				
+
 				// Flatten the genome list for search and IGV
 				igvFlatGenomeList = [];
 				igvGenomeList.forEach(function (listConfig){
 					igvFlatGenomeList = igvFlatGenomeList.concat(listConfig.genomes);
 				});
-				
+
 				igvUpdateGenomeMenu();
 				return igvGenomeList;
 			});
@@ -1601,7 +1601,7 @@
 			handleError(xhr, thrownError);
 		});
 	}
-	
+
 	// Check whether the loaded module changed and do all actions that apply (load the default genome, set the current module)
 	function igvCheckModuleChange(){
 		if (getModuleName() != igvCurrentModule){
@@ -1609,7 +1609,7 @@
 			igvCurrentModule = getModuleName();
 		}
 	}
-	
+
 	// Find a genome that matches the module name if it exists and if igvDefaultMatchingGenome is set to true
 	// Returns undefined if no matching genome exists, if the configuration forbids it or if the genome list is not loaded
 	function igvMatchingGenome(){
@@ -1620,7 +1620,7 @@
 		}
 		return undefined;
 	}
-	
+
 	// Load the default genome, or the matching one if applicable
 	function igvLoadDefaultGenome(){
 		if (igvDefaultGenome){
@@ -1632,12 +1632,12 @@
 			}
 		}
 	}
-	
+
 	// Update the default genomes list in the `load genome` menu
 	function igvUpdateGenomeMenu(){
 		// Discard the existing list, if it exists
 		$("#igvDefaultGenomesDivider").nextAll().remove();
-		
+
 		let menu = $("#igvGenomeMenu");
 		igvGenomeList.forEach(function (listConfig, index){
 			// Make a section header
@@ -1647,7 +1647,7 @@
 			}
 			let header = $('<li class="dropdown-header"></li>').text(listConfig.name);
 			menu.append(header);
-			
+
 			listConfig.genomes.forEach(function (genome){
 				let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
 					igvSwitchGenome(genome.id).then(igvCheckReferenceCounts);
@@ -1657,7 +1657,7 @@
 			});
 		});
 	}
-	
+
 	// Load genome configuration(s) from JSON object
 	function igvLoadJSONGenome(name, config){
 		if (Array.isArray(config)){  // Genome list
@@ -1673,12 +1673,12 @@
 			igvSwitchGenome(config).then(igvCheckReferenceCounts);
 		}
 	}
-	
+
 	// Load a genome file from the modal
 	function igvLoadGenomeFromFile(){
 		let genomeFile = $("#igvGenomeFileInput").get(0).files[0];
 		let indexFile = $("#igvGenomeIndexFileInput").get(0).files[0];
-		
+
 		// Load a JSON genome config
 		if (genomeFile.name.endsWith(".json")){
 			readTextFile(genomeFile).then(function (content){
@@ -1699,25 +1699,25 @@
 					indexed: false,
 				};
 			}
-			
+
 			igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 		}
 	}
-	
+
 	// Load a genome file by URL with the modal
 	function igvLoadGenomeFromURL(){
 		let genomeURL = $("#igvGenomeURLInput").val().trim();
 		let indexURL = $("#igvGenomeIndexURLInput").val().trim();
-		
+
 		let genomeURLObject, indexURLObject;
-		
+
 		try {  // Check whether the genome URL is valid
 			genomeURLObject = new URL(genomeURL);
 		} catch (error){
 			displayMessage("Invalid genome file URL : " + genomeURL);
 			return;
 		}
-		
+
 		if (indexURL.length > 0){
 			try {  // Check whether the index URL is valid
 				indexURLObject = new URL(indexURL);
@@ -1726,9 +1726,9 @@
 				return;
 			}
 		}
-		
+
 		let filename = filenameFromURL(genomeURLObject);
-		
+
 		// Load a JSON genome config
 		if (filename.endsWith(".json")){
 			$.ajax({
@@ -1755,7 +1755,7 @@
 					indexed: false,
 				};
 			}
-			
+
 			// Check the genome file existence beforehand by sending a HEAD request
 			// Configurable with igvCheckGenomeExistence
 			// Default behaviour of IGV is to only download the index, and throwing errors only when zoomed enough to show the genome
@@ -1773,10 +1773,10 @@
 			} else {
 				igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 			}
-			
+
 		}
 	}
-	
+
 	// Change the current genome, create the browser if it doesn't exist
 	function igvSwitchGenome(genome){
 		let moduleName = getModuleName();
@@ -1794,11 +1794,11 @@
 			localStorage.removeItem("igvDefaultGenome::" + moduleName);
 			localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));
 		}  // Impossible to save and reload with local files
-		
+
 		// Take the default tracks separately to ensure the alias table is build before them loading
 		let tracks = genome.tracks || [];
 		genome.tracks = [];
-		
+
 		let promise;
 		if (!igvBrowser){
 			promise = igvCreateBrowser(genome);
@@ -1807,7 +1807,7 @@
 			igvBrowser.removeAllTracks();
 			promise = igvBrowser.loadGenome(genome);
 		}
-		
+
 		return promise.then(async function (){
 			// Build the alias table
 			let targetNames = igvBrowser.genome.chromosomeNames;
@@ -1830,11 +1830,11 @@
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
 				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target;  // With prefix and suffix used by variants
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
-				
+
 				// Associate the target name to the variants reference name
 				igvGenomeRefTable[target] = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
 			}
-			
+
 			// Load the default tracks
 			for (let trackConfig of tracks){
 				await igvBrowser.loadTrack(trackConfig);
@@ -1844,7 +1844,7 @@
 			await igvUpdateVariants();
 		});
 	}
-	
+
 	// Alert the user if the number of sequences do not match by a given ratio
 	// This can be configured with igvCheckReferenceCountDifference and igvReferenceCountDifferenceThreshold
 	function igvCheckReferenceCounts(){
@@ -1854,7 +1854,7 @@
 			displayMessage("The amount of sequences (" + igvBrowser.genome.chromosomeNames.length + ") in the selected genome is substantially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It is likely that you selected a wrong genome", 10000);
 		}
 	}
-	
+
 	// Load a track from a file with the modal
 	function igvLoadTrackFromFile(){
 		let trackFile = $("#igvTrackFileInput").get(0).files[0];
@@ -1870,15 +1870,15 @@
 			trackConfig.url = trackFile;
 			trackConfig.indexed = false;
 		}
-		
+
 		igvLoadTrack(trackConfig);
 	}
-	
+
 	// Load a track by URL with the modal
 	function igvLoadTrackFromURL(){
 		let trackURL = $("#igvTrackURLInput").val().trim();
 		let indexURL = $("#igvTrackIndexURLInput").val().trim();
-		
+
 		let filename;
 		try {  // Check whether the file URL is valid
 			filename = filenameFromURL(new URL(trackURL));  // Get the file name from the given URL
@@ -1886,7 +1886,7 @@
 			displayMessage("Invalid track file URL : " + trackURL);
 			return;
 		}
-		
+
 		if (indexURL.length > 0){
 			try {  // Check whether the index URL is valid
 				indexURLObject = new URL(indexURL);
@@ -1895,7 +1895,7 @@
 				return;
 			}
 		}
-		
+
 		let trackConfig = {
 			name: filename,
 			removable: true,
@@ -1907,10 +1907,10 @@
 			trackConfig.url = trackURL;
 			trackConfig.indexed = false;
 		}
-			
+
 		igvLoadTrack(trackConfig);
 	}
-	
+
 	// Load a track with a track config
 	function igvLoadTrack(config){
 		if (igvBrowser) {
@@ -1929,13 +1929,13 @@
 			showSampleNames: true,
 			sampleNameViewportWidth: 120,
 		};
-		
+
 		return igv.createBrowser($("#igvContainer")[0], browserConfig).then(function (browser){
 			console.log("Created IGV browser");
 			igvBrowser = browser;
 			$("#igvTracksDropdown").removeClass("disabled");
 			$("#igvTracksDropdown ul").addClass("dropdown-menu").attr("hidden", "false");
-			
+
 			// Fix IGV browser resizing bug
 			// Trigger a resize on modal reopening if it bugged
 			$("#igvPanel").on("shown.bs.modal", function(){
@@ -1944,7 +1944,7 @@
 					let posString = igvBrowser.currentLoci()[0].split(":").pop().replace(/,/g, "").split(/\-(.+)/);
 					if (posString.length >= 2 && parseInt(posString[0]) >= parseInt(posString[1])){
 						igvBrowser.resize();
-					}					
+					}
 				}
 			});
 		}).catch(function (reason){
@@ -1952,7 +1952,7 @@
 			igv.removeAllBrowsers();  // Delete the parasite browser
 		});
 	}
-	
+
 	// Called when the individuals groups have been changed
 	// Update the browser's variant track if necessary
 	function igvUpdateIndividuals(){
@@ -1961,13 +1961,13 @@
 			igvUpdateVariants();
 		}
 	}
-	
+
 	// Update the browser's variant track
 	function igvUpdateVariants(){
 		if (igvBrowser){
 			let trackIndividuals = igvSelectedIndividuals();
 			let trackConfigs = [];
-			
+
 			trackIndividuals.forEach (function(individuals, index, array) {
 				trackConfigs.push({
 					name: array.length > 1 ? "Group " + (index+1) : "Query",
@@ -1981,8 +1981,8 @@
 							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
 				});
 			})
-			
-			
+
+
 			// Display bug when updating while hidden
 			// So we delay it until the modal is shown again
 			let updateFunction = async function (){
@@ -1990,9 +1990,9 @@
 				if (igvVariantTracks){
 					for (let track of igvVariantTracks)
 						await igvBrowser.removeTrack(track);
-					igvVariantTracks = undefined;	
+					igvVariantTracks = undefined;
 				}
-				
+
 				// Add the new tracks
 				let availableHeight = igvAvailableHeight();
 				for (let config of trackConfigs){
@@ -2002,37 +2002,37 @@
 					igvVariantTracks.push(track);
 				}
 			}
-			
+
 			// Or .hasClass("in") ?
 			if ($("#igvPanel").is(":visible")){  // Already visible -> update right away
 				return updateFunction();
 			} else {  // Not visible -> hook it on the modal opening event
 				// In case several searches are made without showing the browser, prevents obsolete requests from triggering
 				$("#igvPanel").off("shown.bs.modal.updateVariants");
-			
+
 				return new Promise(function(resolve, reject) {
 					$("#igvPanel").one("shown.bs.modal.updateVariants", function() {
 						updateFunction().then(resolve).catch(reject);
 					});
 				});
-				
+
 			}
 		}
 	}
-	
+
 	// Remove the browser if it is initialised
 	function igvRemoveExistingBrowser(){
 		if (igvBrowser){
 			igv.removeBrowser(igvBrowser);
 			igvBrowser = undefined;
 			igvVariantTracks = undefined;
-			
+
 			// Disable the tracks menu again
 			$("#igvTracksDropdown").addClass("disabled");
 			$("#igvTracksDropdown ul").removeClass("dropdown-menu").attr("hidden", "true");
 		}
 	}
-	
+
 	// Calculate the available height in the browser
 	function igvAvailableHeight(){
 		// NOTE : Hack with internal attributes, high risk of breaking in future IGV releases
@@ -2043,12 +2043,12 @@
 		let height = bottom - top - 20;
 		return height;
 	}
-	
+
 	// Select a group of individuals to display
 	function igvSelectGroup(){
 		igvUpdateVariants();
 	}
-	
+
 	// Get the list of individuals to display in IGV
 	// Return an empty array for all individuals
 	function igvSelectedIndividuals(){
@@ -2089,7 +2089,7 @@
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
 			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
-		<div class="margin-top" style="padding:10px 0; text-align:center; text-align:center;" id="logoRow">	 
+		<div class="margin-top" style="padding:10px 0; text-align:center; text-align:center;" id="logoRow">
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
 			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
@@ -2125,7 +2125,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
 									<p id="listqueries" onclick="listQueries()"><span class="glyphicon glyphicon-th-list" aria-hidden="true"> </span> View bookmarked query list </p>
 					   			</c:if>
-								
+
 							</div>
 							<div class="panel-body panel-grey shadowed-panel">
 								<form class="form">
@@ -2134,8 +2134,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  <div class="row">
 											<div class="col-xl-6 half-width" style="float:left;">
 												<label for="variantTypes" class="custom-label" id="variantTypesLabel">Variant types</label>
-												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"											
-													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="variantTypes"></select>												
+												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"
+													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="variantTypes"></select>
 										  	</div>
 										  	<div class="col-xl-6 half-width" style="float:left; margin-left:10px;" id="nbAlleleGrp">
 												<label for="numberOfAlleles" class="custom-label">Number of alleles</label>
@@ -2184,13 +2184,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
-                                                                        <div id="VariantIds" class="margin-top-md">
+                                    <div id="VariantIds" class="margin-top-md">
                                         <div class="container-fluid">
                                             <div class="row">
-                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
+                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-input">
                                             <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                         </div>
@@ -2386,7 +2386,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 				</div>
 			</div>
-			
+
 			<!-- Variant table panel -->
 			<div class="col-md-9">
 				<div id="serverExportBox" class="panel"></div>
@@ -2398,7 +2398,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				<div id="rightSidePanel">
 					<div class="row text-center" id="navigationPanel">
 						<div id="navigationDiv">
-							<div style="float:left;"><button class="btn btn-primary btn-sm" type="button" id="prev" onclick="iteratePages(false);"> &lt; </button></div>					
+							<div style="float:left;"><button class="btn btn-primary btn-sm" type="button" id="prev" onclick="iteratePages(false);"> &lt; </button></div>
 							<div style="float:right;"><button class="col btn btn-primary btn-sm" type="button" id="next" onclick="iteratePages(true);"> &gt; </button></div>
 							<div id="currentPage"></div>
 						</div>
@@ -2407,12 +2407,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeAndShowDensityChart(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
-								
+
 								<!-- IGV.js browser button -->
 								<button style="padding:2px;" title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
 									<img title="IGV genome browser" src="images/igvjs.png" height="25" width="25" />
 								</button>
-								
+
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
 									<div class="panel panel-default panel-grey shadowed-panel">
 										<div class="panel-body panel-center text-center">
@@ -2480,7 +2480,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 			</div>
 		</div>
-		
+
 		<!-- IGV visualizer panel
 		<div id="viewerPanel" class="row" hidden>
 			<div id="igvContainer" class="col">
@@ -2646,7 +2646,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 		</div>
 	</div>
-	
+
 	<!-- modal which displays a box for managing saved queries -->
 	<div id="queryManager" class="modal fade" role="dialog">
 		<div class="modal-dialog modal-medium" role="document">
@@ -2708,15 +2708,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</ul>
 					</div>
 				</div>
-				
+
 				<!-- IGV browser container -->
 				<div id="igvContainer"></div>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- IGV menu submodals -->
-	
+
 	<!-- Load genome by URL -->
 	<div id="igvGenomeURLModal" class="modal fade" role="dialog" aria-hidden=true>
 		<div class="modal-md modal-dialog">
@@ -2727,14 +2727,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<span>×</span>
 					</button>
 				</div>
-				
+
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Genome file URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
 						<tr><td>Index file URL (recommended)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
 					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromURL()">OK</button>
@@ -2742,7 +2742,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load genome from local file -->
 	<div id="igvGenomeFileModal" class="modal fade" role="dialog" aria-hidden=true>
 		<div class="modal-md modal-dialog">
@@ -2753,14 +2753,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<span>×</span>
 					</button>
 				</div>
-				
+
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Genome file</td><td><input type="file" id="igvGenomeFileInput" style="width:100%;"/></td></tr>
 						<tr><td>Index file (recommended)</td><td><input type="file" id="igvGenomeIndexFileInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
 					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromFile()">OK</button>
@@ -2768,7 +2768,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load track by URL -->
 	<div id="igvTrackURLModal" class="modal fade" role="dialog" aria-hidden=true>
 		<div class="modal-md modal-dialog">
@@ -2779,14 +2779,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<span>×</span>
 					</button>
 				</div>
-				
+
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Track file URL</td><td><input type="url" id="igvTrackURLInput" style="width:100%;"/></td></tr>
 						<tr><td>Index file URL (optional)</td><td><input type="url" id="igvTrackIndexURLInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
 					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromURL()">OK</button>
@@ -2794,7 +2794,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load genome from local file -->
 	<div id="igvTrackFileModal" class="modal fade" role="dialog" aria-hidden=true>
 		<div class="modal-md modal-dialog">
@@ -2805,14 +2805,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<span>×</span>
 					</button>
 				</div>
-				
+
 				<div class="modal-body">
 					<table style="width:100%;">
 						<tr><td>Track file</td><td><input type="file" id="igvTrackFileInput" style="width:100%;"/></td></tr>
 						<tr><td>Index file (optional)</td><td><input type="file" id="igvTrackIndexFileInput" style="width:100%;" /></td></tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
 					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromFile()">OK</button>
