@@ -224,8 +224,10 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+
     static public final String SNPEFF_ANNOTATION_PATH = "/snpEff/annotate";
     static public final String SNPEFF_GENOME_LIST = "/snpEff/genomes";
+    static public final String SNPEFF_INSTALL_GENOME = "/snpEff/install";
 
 	/**
 	 * instance of Service to manage all interaction with database
@@ -2070,7 +2072,7 @@ public class GigwaRestController extends ControllerInterface {
     		@RequestParam("module") final String sModule,
 			@RequestParam("project") final String sProject,
 			@RequestParam("run") final String sRun,
-			@RequestParam("genome") final String snpEffDatabase) throws Exception {
+			@RequestParam("genome") final String genomeName) throws Exception {
     	String token = tokenManager.readToken(request);
     	if (token.length() == 0)
     		return null;
@@ -2084,17 +2086,15 @@ public class GigwaRestController extends ControllerInterface {
 		ProgressIndicator.registerProgressIndicator(progress);
 		progress.setPercentageEnabled(false);
 
-		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(snpEffDatabase)) {
-			SnpEffAnnotationService.downloadGenome(configFile, dataPath, snpEffDatabase, progress);
-		}
-
-		if (progress.getError() != null)
+		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(genomeName)) {
+			progress.setError("Unknown genome, you must install it first");
 			return null;
+		}
 
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		if (tokenManager.canUserWriteToProject(token, sModule, project.getId())) {
-			SnpEffAnnotationService.annotateRun(configFile, dataPath, sModule, project.getId(), sRun, snpEffDatabase, progress);
+			SnpEffAnnotationService.annotateRun(configFile, dataPath, sModule, project.getId(), sRun, genomeName, progress);
 			progress.markAsComplete();
 		} else {
 			LOG.error("NOT AUTHENTICATED");
@@ -2115,5 +2115,40 @@ public class GigwaRestController extends ControllerInterface {
     	result.put("downloadableGenomes", SnpEffAnnotationService.getDownloadableGenomes(configFile, dataPath));
 
     	return result;
+    }
+
+    @ApiIgnore
+    @RequestMapping(value = BASE_URL + SNPEFF_INSTALL_GENOME, method = RequestMethod.POST)
+    public String snpEffInstallGenome(HttpServletRequest request, HttpServletResponse response,
+    		@RequestParam(value="genomeName", required=false) final String genomeName,
+			@RequestParam(value="genomeURL", required=false) final URL genomeURL) throws Exception {
+
+    	String token = tokenManager.readToken(request);
+    	if (token.length() == 0)
+    		return null;
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+    	if (configFile == null || dataPath == null)
+    		throw new Exception("Online annotation is not available");
+
+    	ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
+		ProgressIndicator.registerProgressIndicator(progress);
+		progress.setPercentageEnabled(false);
+
+    	if (genomeName != null) {
+    		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(genomeName)) {
+				SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeName, progress);
+			}
+		} else if (genomeURL != null) {
+			SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeURL, progress);
+		} else {
+			progress.setError("No genome specified");
+			return null;
+		}
+    	// TODO : Upload : https://pcingola.github.io/SnpEff/se_buildingdb/
+
+    	progress.markAsComplete();
+    	return null;
     }
 }

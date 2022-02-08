@@ -86,14 +86,23 @@
                     if (!isValidNewName($(this).val()))
                     	$(this).val("");
                 });
-                $('#progress').on('hidden.bs.modal', function () {
-                    if (!$('#progress').data('error')) {
-                        $('.importFormDiv input').prop('disabled', true);
-                        $('.importFormDiv button').prop('disabled', true);
-                        $('.importFormDiv textarea').prop('disabled', true);
-						var link1 = "<c:url value='/' />?module=" + $("#moduleExistingG").val() + "&project=" + $("#projectExisting").val();
-						$('#progressContents').html('<p class="bold panel" style="padding:10px;">Annotation complete.<br/>The annotated data is <a style="cursor:pointer;" href="' + link1 + '">available here</a></p>');
-						$('#progress').modal('show');
+
+                $("#genomeInputType").on("change", function (event) {
+                    switch ($("#genomeInputType").val()) {
+                    	case "select":
+                    	    $("#downloadableGenomesContainer").show();
+                    	    $("#downloadURLContainer").hide();
+                    	    $("#uploadContainer").hide();
+                    	    break;
+                    	case "url":
+                    	    $("#downloadableGenomesContainer").hide();
+                    	    $("#downloadURLContainer").show();
+                    	    $("#uploadContainer").hide();
+                    	    break;
+                    	case "files":
+                    	    $("#downloadableGenomesContainer").hide();
+                    	    $("#downloadURLContainer").hide();
+                    	    $("#uploadContainer").show();
                     }
                 });
             });
@@ -106,6 +115,10 @@
                 loadGenomes();
 
                 $('button#startButton').on("click", function() {annotateVariants()});
+
+                $("#downloadableGenomesContainer").show();
+                $("#downloadURLContainer").hide();
+                $("#uploadContainer").hide();
             });
 
         	function isValidKeyForNewName(evt) {
@@ -257,15 +270,16 @@
 					    availableGenomes = jsonResult.availableGenomes.sort();
 					    downloadableGenomes = jsonResult.downloadableGenomes.sort();
 
-					    let options = '<optgroup label="Available genomes">';
+					    let availableOptions = "";
 					    for (let genome of availableGenomes)
-					        options += '<option value="' + genome + '">' + genome + '</option>';
-					    options += '</optgroup><optgroup label="Downloadable genomes">';
-					    for (let genome of downloadableGenomes)
-					        options += '<option value="' + genome + '">' + genome + '</option>';
-					    options += '</optgroup>';
+					        availableOptions += '<option value="' + genome + '">' + genome + '</option>';
 
-						$("#genomeList").html(options);
+					    let downloadableOptions = "";
+					    for (let genome of downloadableGenomes)
+					        downloadableOptions += '<option value="' + genome + '">' + genome + '</option>';
+
+						$("#availableGenomes").html(availableOptions).selectpicker('refresh');
+						$("#downloadableGenomeList").html(downloadableOptions);
 					}
                 });
             }
@@ -282,18 +296,14 @@
                 data.set("module", $("#moduleExistingG").val());
                 data.set("project", $("#projectExisting").val());
                 data.set("run", $("#runExisting").val());
-                data.set("genome", $("#genomeSelect").val());
-				switch ($("genomeInputType").val()) {
-					case "select":
-					    const genomeName = $("#genomeSelect").val();
-					    if (!genomeName) {
-						    alert("You must select a genome");
-		                    $('#progress').modal('hide');
-		                    return;
-					    }
-					    data.set("genomeName", $("#genomeSelect").val());
-					    break;
-				}
+
+                const genomeName = $("#availableGenomes").val();
+			    if (!genomeName) {
+				    alert("You must select a genome");
+                    $('#progress').modal('hide');
+                    return;
+			    }
+			    data.set("genome", genomeName);
 
 				$.ajax({
 				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />",
@@ -308,7 +318,58 @@
 
                 $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
                 $('#progress').data('error', false);
+                $('#progress').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    if (!$('#progress').data('error')) {
+                        $('.importFormDiv input').prop('disabled', true);
+                        $('.importFormDiv button').prop('disabled', true);
+                        $('.importFormDiv textarea').prop('disabled', true);
+						var link1 = "<c:url value='/' />?module=" + $("#moduleExistingG").val() + "&project=" + $("#projectExisting").val();
+						$('#progressContents').html('<p class="bold panel" style="padding:10px;">Annotation complete.<br/>The annotated data is <a style="cursor:pointer;" href="' + link1 + '">available here</a></p>');
+						$('#progress').modal('show');
+                    }
+                });
+
                 displayProcessProgress(5, token);
+            }
+
+            function submitGenomeInstall() {
+                const data = new FormData();
+                switch ($("#genomeInputType").val()) {
+					case "select":
+					    const genomeName = $("#downloadableGenomes").val();
+					    if (!genomeName) {
+						    alert("You must select a genome");
+		                    $('#progress').modal('hide');
+		                    return;
+					    }
+					    data.set("genomeName", genomeName);
+					    break;
+
+					case "url":
+					    data.set("genomeURL", $("#genomeURL").val());
+					    break;
+
+					case "files":
+					    // TODO
+					    break;
+				}
+
+                $.ajax({
+				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
+				    method: "POST",
+				    headers: {
+				        "Authorization": "Bearer " + token,
+				    },
+				    processData: false,
+				    contentType: false,
+				    data: data,
+				});
+
+                $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
+                $('#progress').data('error', true);
+                $('#progress').off('hidden.bs.modal');
+                $("#installDialog").modal('hide');
+                displayProcessProgress(5, token, () => loadGenomes());
             }
         </script>
     </head>
@@ -359,30 +420,17 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="form-group text-left">
-                                        <div class="row">
-	                                     	<div class="col-md-2" style="text-align:right;">
-	                                            <label for="genomeInputType">Genome input</label>
-	                                      	</div>
-                                            <div class="col-md-3">
-                                            	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
-                                            		<option value="select">Default genomes</option>
-                                            		<option value="url">Download from URL</option>
-                                            		<option value="files">Upload files</option>
-                                            		<option value="database">Upload SnpEff database</option>
-                                            	</select>
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <!-- Default genomes selector -->
-                                    <div class="form-group text-left">
+                                    <div id="genomeSelectContainer" class="form-group text-left">
                                         <div class="row">
 	                                     	<div class="col-md-2" style="text-align:right;">
-	                                            <label for="genomeSelect">Select a genome<span class="text-red">*</span></label>
+	                                            <label for="availableGenomes">Select a genome<span class="text-red">*</span></label>
 	                                      	</div>
-                                            <input class="col-md-6" list="genomeList" name="genomeSelect" id="genomeSelect"/>
-                                            <datalist id="genomeList"></datalist>
+	                                      	<div class="col-md-4">
+	                                      		<select id="availableGenomes" name="availableGenomes" class="selectpicker col-md-6" title="Select a genome" data-live-search="true"></select>
+	                                      	</div>
+                                            <button class="col-md-2 btn btn-primary btn-sm" type="button" data-toggle="modal" data-target="#installDialog">Install a new genome</button>
                                         </div>
                                     </div>
                               <div class ="row">
@@ -414,6 +462,61 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Genome install modal -->
+        <div class="modal fade" role="dialog" id="installDialog" aria-hidden="true">
+        	<div class="modal-dialog modal-lg">
+        		<div class="modal-content">
+        			<div class="modal-header">
+	        			Install a new genome
+	        		</div>
+        			<div class="modal-body">
+			            <div class="row">
+				          	<div class="col-md-3" style="text-align:right;">
+				                 <label for="genomeInputType">Genome input</label>
+				           	</div>
+			                <div class="col-md-6">
+			                	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
+			                		<option value="select">Default genomes</option>
+			                		<option value="url">Download from URL</option>
+			                		<option value="files">Upload genome</option>
+			                	</select>
+			                </div>
+			            </div>
+
+			            <!-- Default genomes selector -->
+			            <div class="row" id="downloadableGenomesContainer">
+			            	<div class="col-md-3" style="text-align:right;">
+				                 <label for="downloadableGenomes">Downloadable genomes</label>
+				           	</div>
+		            		<input class="col-md-9" list="downloadableGenomeList" name="downloadableGenomes" id="downloadableGenomes"/>
+                            <datalist id="downloadableGenomeList"></datalist>
+			            </div>
+
+			            <!-- Download from URL -->
+			            <div class="row" id="downloadURLContainer">
+			            	<div class="col-md-3" style="text-align:right;">
+			            		<label for="genomeURL">SnpEff database URL (.zip)</label>
+			            	</div>
+			            	<input type="url" class="col-md-9" id="genomeURL" name="genomeURL" />
+			            </div>
+
+			            <!-- Upload files -->
+			            <div class="row" id="uploadContainer">
+			            	<div class="col-md-3" style="text-align:right;">
+			            		<label for="uploadDropzone">Upload a genome</label>
+			            	</div>
+			            	<div id="uploadDropzone">
+			            		<!-- TODO -->
+			            	</div>
+			            </div>
+			        </div>
+			        <div class="modal-footer">
+	        			<button class="btn btn-info btn-sm" type="button" onclick="submitGenomeInstall()">Install</button>
+	        		</div>
+        		</div>
+        	</div>
         </div>
     </body>
 </html>
