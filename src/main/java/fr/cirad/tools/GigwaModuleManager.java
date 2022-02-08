@@ -16,27 +16,31 @@
  *******************************************************************************/
 package fr.cirad.tools;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -46,6 +50,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import com.mongodb.BasicDBObject;
 
 import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpValidity;
@@ -63,19 +75,6 @@ import fr.cirad.security.base.IModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
-
-// FIXME
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.mongodb.BasicDBObject;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 @Component
 public class GigwaModuleManager implements IModuleManager {
@@ -135,7 +134,14 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 
 	@Override
-	public boolean removeDataSource(String sModule, boolean fAlsoDropDatabase) {
+	public boolean removeDataSource(String sModule, boolean fAlsoDropDatabase, boolean fRemoveDumps) {
+	    if (fRemoveDumps)
+            try {
+                FileUtils.deleteDirectory(new File(getDumpPath(sModule)));
+            } catch (IOException e) {
+                LOG.warn("Error removing dumps while deleting database " + sModule, e);
+            }
+
 		return MongoTemplateManager.removeDataSource(sModule, fAlsoDropDatabase);
 	}
 
@@ -404,9 +410,8 @@ public class GigwaModuleManager implements IModuleManager {
 
 	private String getDumpPath(String sModule) {
 		String dumpBase = appConfig.get("dumpFolder");
-		if (dumpBase == null) {
+		if (dumpBase == null)
 			dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
-		}
 
 		String dumpPath = dumpBase + File.separator + sModule;
 		return dumpPath;
@@ -454,5 +459,10 @@ public class GigwaModuleManager implements IModuleManager {
     @Override
     public long getModuleSize(String module) {
         return ((Number) MongoTemplateManager.get(module).getDb().runCommand(new BasicDBObject("dbStats", 1)).get("storageSize")).longValue();
+    }
+
+    @Override
+    public InputStream getDumpInputStream(String sModule, String sDumpName) throws FileNotFoundException {
+        return new BufferedInputStream(new FileInputStream(new File(getDumpPath(sModule) + File.separator + sDumpName + ".gz")));
     }
 }
