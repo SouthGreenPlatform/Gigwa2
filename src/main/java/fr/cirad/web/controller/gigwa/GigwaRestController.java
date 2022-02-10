@@ -18,6 +18,7 @@ package fr.cirad.web.controller.gigwa;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -30,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +48,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
@@ -86,6 +89,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
@@ -2119,9 +2123,11 @@ public class GigwaRestController extends ControllerInterface {
 
     @ApiIgnore
     @RequestMapping(value = BASE_URL + SNPEFF_INSTALL_GENOME, method = RequestMethod.POST)
-    public String snpEffInstallGenome(HttpServletRequest request, HttpServletResponse response,
+    public Map<String, Object> snpEffInstallGenome(MultipartHttpServletRequest request, HttpServletResponse response,
     		@RequestParam(value="genomeName", required=false) final String genomeName,
-			@RequestParam(value="genomeURL", required=false) final URL genomeURL) throws Exception {
+			@RequestParam(value="genomeURL", required=false) final URL genomeURL,
+			@RequestParam(value="newGenomeID", required=false) String newGenomeID,
+			@RequestParam(value="newGenomeName", required=false) String newGenomeName) throws Exception {
 
     	String token = tokenManager.readToken(request);
     	if (token.length() == 0)
@@ -2136,19 +2142,129 @@ public class GigwaRestController extends ControllerInterface {
 		ProgressIndicator.registerProgressIndicator(progress);
 		progress.setPercentageEnabled(false);
 
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("log", null);
+		result.put("success", false);
+
+		Map<String, MultipartFile> fileMap = request.getFileMap();
+
     	if (genomeName != null) {
     		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(genomeName)) {
 				SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeName, progress);
+				result.put("success", true);
 			}
 		} else if (genomeURL != null) {
 			SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeURL, progress);
+			result.put("success", true);
+		} else if (fileMap != null && newGenomeID != null) {
+			if (newGenomeName == null)
+				newGenomeName = newGenomeID;
+			File fastaFile = File.createTempFile("snpEffFasta-", "");
+			File referenceFile = File.createTempFile("snpEffRef-", "");
+			File cdsFile = File.createTempFile("snpEffCDS-", "");
+			File proteinFile = File.createTempFile("snpEffProtein-", "");
+			String referenceFormat = null;
+			boolean fastaFound = false, cdsFound = false, proteinFound = false;
+
+			for (MultipartFile file : fileMap.values()) {
+				// Some browsers (or malicious users) might supply additional path components in surplus of the raw file name
+				String fileName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+
+				boolean gzipped = false;
+				int extensionPosition = fileName.lastIndexOf('.');
+				String extension = fileName.substring(extensionPosition + 1).toLowerCase();
+				String baseName = fileName.substring(0, extensionPosition);
+
+				if (extension.equals("gz")) {
+					gzipped = true;
+					extensionPosition = baseName.lastIndexOf('.');
+					extension = baseName.substring(extensionPosition + 1).toLowerCase();
+					baseName = baseName.substring(0, extensionPosition);
+				}
+
+				if (extension.equals("fa") || extension.equals("fasta")) {
+					if (baseName.toLowerCase().equals("cds")) {
+						transferSnpEffImport(file, cdsFile, gzipped, progress);
+						cdsFound = true;
+					} else if (baseName.toLowerCase().equals("protein")) {
+						transferSnpEffImport(file, proteinFile, gzipped, progress);
+						proteinFound = true;
+					} else {
+						transferSnpEffImport(file, fastaFile, gzipped, progress);
+						fastaFound = true;
+					}
+				} else if (extension.equals("gtf")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gtf22";
+				} else if (extension.equals("gff") || extension.equals("gff3")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gff3";
+				} else if (extension.equals("gff2")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gff2";
+				} else if (extension.equals("genbank") || extension.equals("gbk")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "genbank";
+				} else if (extension.equals("refseq")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "refSeq";
+				} else if (extension.equals("embl")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "embl";
+				} else if (extension.equals("kg") || extension.equals("knowngenes")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "knowngenes";
+				} else {
+					progress.setError("Unsupported file type : " + fileName);
+					return result;
+				}
+			}
+
+			if (referenceFormat == null) {
+				progress.setError("No reference file found");
+				return result;
+			} else if (!fastaFound) {
+				progress.setError("No sequence file found");
+				return result;
+			}
+
+			LOG.debug("FASTA found, reference format is " + referenceFormat);
+
+			String log = SnpEffAnnotationService.importGenome(newGenomeID, newGenomeName, fastaFile, referenceFile, (cdsFound ? cdsFile : null), (proteinFound ? proteinFile : null), referenceFormat, configFile, dataPath, progress);
+			result.put("log", log);
 		} else {
 			progress.setError("No genome specified");
-			return null;
+			return result;
 		}
     	// TODO : Upload : https://pcingola.github.io/SnpEff/se_buildingdb/
 
+    	if (progress.getError() != null)
+    		return result;
+
+    	result.put("success", true);
     	progress.markAsComplete();
-    	return null;
+    	return result;
+    }
+
+    // FIXME : Is this compatible with BGZip-compressed files ?
+    private void transferSnpEffImport(MultipartFile inputFile, File outputFile, boolean gzipped, ProgressIndicator progress) throws FileNotFoundException, IOException {
+    	String fileName = Paths.get(inputFile.getOriginalFilename()).getFileName().toString();
+    	if (gzipped) {
+    		progress.addStep("Decompressing " + fileName);
+    		progress.moveToNextStep();
+
+	    	GZIPInputStream input = new GZIPInputStream(inputFile.getInputStream());
+	    	FileOutputStream output = new FileOutputStream(outputFile);
+
+	    	byte[] buffer = new byte[65536];
+	    	int readLength;
+	    	while ((readLength = input.read(buffer)) > 0)
+	    		output.write(buffer, 0, readLength);
+
+	    	input.close();
+	    	output.close();
+    	} else {
+    		inputFile.transferTo(outputFile);
+    	}
     }
 }

@@ -119,6 +119,62 @@
                 $("#downloadableGenomesContainer").show();
                 $("#downloadURLContainer").hide();
                 $("#uploadContainer").hide();
+
+                $.ajax({
+    	            url: maxUploadSizeURL + "?capped=true",
+    	            async: false,
+    	            type: "GET",
+    	            contentType: "application/json;charset=utf-8",
+              	  	headers: {
+              	  		"Authorization": "Bearer " + token
+              	  	},
+    	            success: function(maxUploadSize) {
+    	            	maxUploadSizeInMb = parseInt(maxUploadSize);
+    	            	$("span#maxUploadSize").html(maxUploadSizeInMb);
+    	    	        $.ajax({
+    	    	            url: maxUploadSizeURL + "?capped=false",
+    	    	            async: false,
+    	    	            type: "GET",
+    	    	            contentType: "application/json;charset=utf-8",
+    	              	  	headers: {
+    	              	  		"Authorization": "Bearer " + token
+    	              	  	},
+    	    	            success: function(maxImportSize) {
+    	    	            	if (maxImportSize != null && maxImportSize != "" && maxImportSize != maxUploadSize) {
+    	    	            		maxImportSizeInMb = parseInt(maxImportSize);
+    	    	            		$("span#maxImportSizeSpan").html("Your local or http import volume is limited to <b>" + maxImportSizeInMb + "</b> Mb.");
+    	    	            	}
+    	    	            },
+    	    	            error: function(xhr, thrownError) {
+    	    	                handleError(xhr, thrownError);
+    	    	            }
+    	    	        });
+    	            },
+    	            error: function(xhr, thrownError) {
+    	                handleError(xhr, thrownError);
+    	            }
+    	        }).then(function() {
+    	            $("#importDropzone").dropzone({
+    	                url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
+    	                previewsContainer: "#dropZonePreviews",
+   		           	    dictResponseError: 'Error importing data',
+   		           	    parallelUploads: 10,
+   		           	    acceptedFiles: ".fasta,.fasta.gz,.fa,.fa.gz,.gtf,.gtf.gz,.gff,.gff.gz,.gff2,.gff2.gz,.gff3,.gff3.gz,.genbank,.gbk,.genbank.gz,.gbk.gz,.refseq,.refseq.gz,.embl,.embl.gz,.knowngenes,.knowngenes.gz,.kg,.kg.gz",
+   		           	  	headers: {
+   		           	  		"Authorization": "Bearer " + token
+   		           	  	},
+   		           	  	previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path></g></g></svg></div></div>",
+   		           	    init: function() {
+   							var self = this;
+   							self.options.maxFilesize = maxUploadSizeInMb;
+   							self.options.autoProcessQueue = false;
+   							self.options.uploadMultiple = true;
+   							self.on("sending", function (file) {
+   								$('.meter').show();
+   							});
+   						}
+   		        	});
+    	        });
             });
 
         	function isValidKeyForNewName(evt) {
@@ -350,8 +406,33 @@
 					    break;
 
 					case "files":
-					    // TODO
-					    break;
+					    if ($("#newGenomeID").val().length == 0) {
+					        alert("Please specify an identifier for the new genome");
+					        $("#progress").modal("hide");
+					        return;
+					    }
+					    const importDropzone = new Dropzone("#importDropzone");
+					    if (importDropzone.getRejectedFiles().length > 0) {
+		                    alert("Please remove any rejected files before submitting!");
+		                    $('#progress').modal('hide');
+		                    return;
+		                }
+					    //$('#progress').modal({backdrop: 'static', keyboard: false, show: true});
+		                //$('#progress').data('error', true);
+		                //$('#progress').off('hidden.bs.modal');
+		                //$("#installDialog").modal('hide');
+		                //displayProcessProgress(5, token, () => loadGenomes());
+					    //importDropzone.processQueue();
+					    //return;
+
+					    // Must do this manually because we need the API response
+					    data.set("newGenomeID", $("#newGenomeID").val());
+					    data.set("newGenomeName", $("#newGenomeName").val());
+					    let i = 0;
+					    for (let file of importDropzone.files) {
+					        data.set("file[" + i + "]", file, file.name);
+					        i += 1;
+					    }
 				}
 
                 $.ajax({
@@ -363,6 +444,21 @@
 				    processData: false,
 				    contentType: false,
 				    data: data,
+				    dataType: "json",
+				    success: function (jsonResult) {
+						console.log(jsonResult);
+				        if (jsonResult == null)
+						    return;
+
+						$("#importResult").modal("show");
+						if (jsonResult.success) {
+						    $("#importResultSuccess").html("Success");
+						} else {
+						    $("#importResultSuccess").html("Failure");
+						}
+
+						$("#importResultLog").text(jsonResult.log);
+				    },
 				});
 
                 $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
@@ -504,17 +600,62 @@
 
 			            <!-- Upload files -->
 			            <div class="row" id="uploadContainer">
-			            	<div class="col-md-3" style="text-align:right;">
-			            		<label for="uploadDropzone">Upload a genome</label>
-			            	</div>
-			            	<div id="uploadDropzone">
-			            		<!-- TODO -->
-			            	</div>
+			            	<form action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
+			            		<div class="row">
+			            			<div class="col-md-3" style="text-align:right;">
+			            				<label for="newGenomeID">New genome identifier</label>
+			            			</div>
+			            			<input type="text" class="col-md-9" id="newGenomeID" name="newGenomeID" />
+			            		</div>
+			            		<div class="row">
+			            			<div class="col-md-3" style="text-align:right;">
+			            				<label for="newGenomeName">New genome real name</label>
+			            			</div>
+			            			<input type="text" class="col-md-9" id="newGenomeName" name="newGenomeName" />
+			            		</div>
+			            		<div class="row">
+                                	<div class="col-md-3">Upload a genome</div>
+                                    <div class="col-md-5" id="dropZonePreviews"></div>
+                                    <div class="col-md-4" style="padding-right:0;">
+										<div class="dz-default dz-message" style="background-color:#e8e8e8;">
+	       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
+	       									<div>
+	       										<b>Necessary files :</b>
+	       										<br/>FASTA sequence and one of
+	       										<ul>
+	       											<li>.gtf</li>
+	       											<li>.gff</li>
+													<li>.gbk</li>
+													<li>.refseq</li>
+													<li>.embl</li>
+													<li>.kg</li>
+												</ul>
+												When possible, you should also provide a CDS sequence and a protein sequence to check the genome, named cds.fa[.gz] and protein.fa[.gz]
+											</div>
+       									</div>
+                                    </div>
+                                </div>
+			            	</form>
 			            </div>
 			        </div>
 			        <div class="modal-footer">
 	        			<button class="btn btn-info btn-sm" type="button" onclick="submitGenomeInstall()">Install</button>
 	        		</div>
+        		</div>
+        	</div>
+        </div>
+
+        <!-- Genome install result modal -->
+        <div class="modal fade" role="dialog" id="importResult" aria-hidden="true">
+        	<div class="modal-dialog modal-lg">
+        		<div class="modal-content">
+        			<div class="modal-header">
+	        			Genome installation
+	        		</div>
+        			<div class="modal-body">
+			            <h5 id="importResultSuccess"></h5>
+			            <pre id="importResultLog"></pre>
+			        </div>
         		</div>
         	</div>
         </div>
