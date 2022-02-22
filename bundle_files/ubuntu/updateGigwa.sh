@@ -26,6 +26,12 @@ if [ -d "$1" ]; then
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/users.properties $2/WEB-INF/classes/users.properties
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/config.properties $2/WEB-INF/classes/config.properties
 		cp -avr $3/gigwa.$DATE/WEB-INF/classes/log4j.xml $2/WEB-INF/classes/log4j.xml
+
+		# Changes specific to migration to v2.5
+		sed -i 's/project\$CREATOR/SUPERVISOR/g' $2/WEB-INF/classes/users.properties	# replace the deprecated project-CREATOR role with the new DB-level SUPERVISOR role
+		if [ "$(grep -c dumpFolder $2/WEB-INF/classes/config.properties)" -eq 0 ]; then
+			printf "\ndumpFolder=$HOME/gigwaDumps\n" >> $2/WEB-INF/classes/config.properties	# add dumpFolder entry to config.properties it not present
+		fi		
 	fi
 fi
 
