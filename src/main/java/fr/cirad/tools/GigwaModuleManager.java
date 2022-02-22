@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -33,6 +34,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -41,6 +43,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -82,7 +85,7 @@ public class GigwaModuleManager implements IModuleManager {
 	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
 	private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
-
+    
 	private String actionRequiredToEnableDumps = null;
 
 	@Autowired AppConfig appConfig;
@@ -105,11 +108,15 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 
 	@Override
-	public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny)
+	public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny, Collection<String> modules) throws Exception
 	{
 		Map<String, Map<Comparable, String>> entitiesByModule = new LinkedHashMap<String, Map<Comparable, String>>();
-		if ("project".equals(entityType))
-			for (String sModule : MongoTemplateManager.getAvailableModules())
+		if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
+            Query q = new Query();
+            q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
+            q.fields().include(GenotypingProject.FIELDNAME_NAME);
+
+			for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
 				if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny))
 				{
 					Map<Comparable, String> moduleEntities = entitiesByModule.get(sModule);
@@ -119,12 +126,13 @@ public class GigwaModuleManager implements IModuleManager {
 						entitiesByModule.put(sModule, moduleEntities);
 					}
 
-					Query q = new Query();
-					q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
-					q.fields().include(GenotypingProject.FIELDNAME_NAME);
 					for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
 						moduleEntities.put(project.getId(), project.getName());
 				}
+		}
+        else
+            throw new Exception("Not managing entities of type " + entityType);
+
 		return entitiesByModule;
 	}
 
@@ -165,9 +173,6 @@ public class GigwaModuleManager implements IModuleManager {
 		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
 		{
 			final int nProjectIdToRemove = Integer.parseInt(entityId.toString());
-			if (!tokenManager.canUserWriteToProject(SecurityContextHolder.getContext().getAuthentication(), sModule, nProjectIdToRemove))
-				throw new Exception("You are not allowed to remove this project");
-
 			MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 			Query query = new Query();
 			query.fields().include("_id");
@@ -249,12 +254,26 @@ public class GigwaModuleManager implements IModuleManager {
     		    actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
     		else if (Files.isDirectory(Paths.get(dumpFolder))) {
     		    try {
-    		        Runtime.getRuntime().exec("mongodump --help");
-    		        Runtime.getRuntime().exec("mongorestore --help");
-                    actionRequiredToEnableDumps = "";
+    		        String commandPrefix = GigwaDumpProcess.operatingSystem.startsWith("win") ? "cmd.exe /c " : "";
+
+    		        Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help");   // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+    		        Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
+    		        IOUtils.toString(p.getInputStream(), defaultCharset);    // necessary otherwise the Thread hangs...
+    		        String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+    		        if (!stdErr.isEmpty())
+                        throw new IOException(stdErr);
+
+                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help");   // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                    IOUtils.toString(p.getInputStream(), defaultCharset);    // necessary otherwise the Thread hangs...
+                    stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                    if (!stdErr.isEmpty())
+                        throw new IOException(stdErr);
+
+                    actionRequiredToEnableDumps = "";   // all seems OK
     		    }
     		    catch (IOException ioe) {
-                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then reload webapp)";
+    		        LOG.error("error checking for mongodump presence", ioe);
+                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
     		    }
     		}
     		else
@@ -279,11 +298,13 @@ public class GigwaModuleManager implements IModuleManager {
 			for (File file : fileList) {
 				String filename = file.getName();
 				if (filename.endsWith(".gz") && !filename.endsWith(".log.gz")) {
-					String prefix = filename.substring(0, filename.lastIndexOf('.'));
-					String[] splitName = prefix.split("__");
-					String module = splitName[0];
-					String name = splitName[1];
-
+					String extensionLessFilename = filename.substring(0, filename.lastIndexOf('.'));
+					if (!extensionLessFilename.contains("__")) {
+					    if (withDescription)
+					        LOG.warn("Ignoring archive " + file.getName() + " found in dump folder for database " + sModule + " (wrong naming structure)");
+					    continue;
+					}
+					    
 					Date creationDate;
 					long fileSizeMb;
 					try {
@@ -291,19 +312,15 @@ public class GigwaModuleManager implements IModuleManager {
 						creationDate = Date.from(fileAttr.creationTime().toInstant());
 						fileSizeMb = fileAttr.size();
 					} catch (IOException e) {
-						LOG.error("Creation date unreadable for dump file " + filename);
-						e.printStackTrace();
+						LOG.error("Creation date unreadable for dump file " + filename, e);
 						continue;
 					}
 
 					String description = null;
 					if (withDescription) {
-						File descriptionFile = new File(dumpPath + "/" + prefix + "description.txt");
 						try {
-							description = new String(Files.readAllBytes(descriptionFile.toPath()));
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						    description = FileUtils.readFileToString(new File(dumpPath + "/" + extensionLessFilename + "__description.txt"));
+						} catch (IOException ignored) {}
 					}
 
 					DumpValidity validity;
@@ -321,7 +338,7 @@ public class GigwaModuleManager implements IModuleManager {
 						validity = DumpValidity.VALID;
 					}
 
-					result.add(new DumpMetadata(prefix, module, name, creationDate, fileSizeMb, description, validity));
+					result.add(new DumpMetadata(extensionLessFilename, extensionLessFilename.split("__")[1], creationDate, fileSizeMb, description == null ? "" : description, validity));
 				}
 			}
 			return result;
@@ -345,29 +362,31 @@ public class GigwaModuleManager implements IModuleManager {
 	}
 
 	@Override
-	public IBackgroundProcess startDump(String sModule, String sName, String sDescription) {
-		String sHost = this.getModuleHost(sModule);
-		String credentials = this.getHostCredentials(sHost);
-		String databaseName = MongoTemplateManager.getDatabaseName(sModule);
-		String outPath = this.getDumpPath(sModule);
-		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
-				databaseName,
-				MongoTemplateManager.getServerHosts(sHost),
-				servletContext.getRealPath(""),
-				outPath);
+    public IBackgroundProcess startDump(String sModule, String dumpName, String sDescription) {
+        String sHost = this.getModuleHost(sModule);
+        String credentials = this.getHostCredentials(sHost);
+        String databaseName = MongoTemplateManager.getDatabaseName(sModule);
+        String outPath = this.getDumpPath(sModule);
 
-		String fileName = sModule + "__" + sName + "__";
+        new File(outPath).mkdirs();
+
+        GigwaDumpProcess process = new GigwaDumpProcess(sModule,
+            databaseName,
+            MongoTemplateManager.getServerHosts(sHost).stream().map(host -> accountForEnvVariables(host)).collect(Collectors.toList()),
+            servletContext.getRealPath(""),
+            outPath);
+
+        String fileName = databaseName + "__" + dumpName;
 		process.startDump(fileName, credentials);
 
-		new File(outPath).mkdirs();
-		String descriptionPath = outPath + File.separator + fileName + "description.txt";
-		try {
-			FileWriter descriptionWriter = new FileWriter(descriptionPath);
-			descriptionWriter.write(sDescription);
-			descriptionWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		if (sDescription != null && !sDescription.trim().isEmpty())
+    		try {
+    			FileWriter descriptionWriter = new FileWriter(outPath + File.separator + fileName + "__description.txt");
+    			descriptionWriter.write(sDescription);
+    			descriptionWriter.close();
+    		} catch (IOException e) {
+    			LOG.error("Error creating description file", e);
+    		}
 		return process;
 	}
 
@@ -377,10 +396,10 @@ public class GigwaModuleManager implements IModuleManager {
 		String credentials = this.getHostCredentials(sHost);
 		String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
 		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
-				MongoTemplateManager.getDatabaseName(sModule),
-				MongoTemplateManager.getServerHosts(sHost),
-				servletContext.getRealPath(""),
-				appConfig.get("dumpFolder"));
+			MongoTemplateManager.getDatabaseName(sModule),
+			MongoTemplateManager.getServerHosts(sHost).stream().map(host -> accountForEnvVariables(host)).collect(Collectors.toList()),
+			servletContext.getRealPath(""),
+			appConfig.get("dumpFolder"));
 
 		process.startRestore(dumpFile, drop, credentials);
 		return process;
@@ -432,17 +451,29 @@ public class GigwaModuleManager implements IModuleManager {
 					String credentialString = client.getAttribute("credential");
 					if (credentialString.length() == 0) {
 						return null;
-					} else {
-						return credentialString;
-					}
+					} else
+						return accountForEnvVariables(credentialString);
 				}
 			}
 			return null;
 		} catch (ParserConfigurationException | IOException | SAXException e) {
-			LOG.error(e.getMessage());
-			e.printStackTrace();
+		    LOG.error("Error parsing host credentials", e);
 			return null;
 		}
+	}
+	
+	static public String accountForEnvVariables(String stringContainingEnvVariables) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("#\\{systemEnvironment\\['(.*?)\\']\\}").matcher(stringContainingEnvVariables);
+        StringBuffer output = new StringBuffer();
+        while (matcher.find()) {
+            String matchingString = matcher.group(1), replacementString = System.getenv(matchingString);
+            if (replacementString == null)
+                matcher.appendReplacement(output, "#{systemEnvironment['" + matchingString + "']}");    // replacement failed (no such env variable)
+            else
+                matcher.appendReplacement(output, replacementString);
+        }
+        matcher.appendTail(output);
+        return output.toString();
 	}
 
 //	private int compareFileCreationDates(File f1, File f2) {
@@ -464,5 +495,10 @@ public class GigwaModuleManager implements IModuleManager {
     @Override
     public InputStream getDumpInputStream(String sModule, String sDumpName) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(new File(getDumpPath(sModule) + File.separator + sDumpName + ".gz")));
+    }
+    
+    @Override
+    public InputStream getDumpLogInputStream(String sModule, String sDumpName) throws FileNotFoundException {
+        return new BufferedInputStream(new FileInputStream(new File(getDumpPath(sModule) + File.separator + sDumpName + "__dump.log.gz")));
     }
 }

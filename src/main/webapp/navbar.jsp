@@ -35,7 +35,7 @@
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
 						<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
-		                    <c:if test="${userDao.doesLoggedUserOwnEntities()}">
+		                    <c:if test="${userDao.canLoggedUserWriteToSystem() || userDao.doesLoggedUserOwnEntities()}">
 								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and user permissions</a></li>
 							</c:if>
 							<c:if test="${principal != null && !isAnonymous}">

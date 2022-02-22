@@ -1,10 +1,9 @@
 #!/bin/bash
 
-
-
-# Arguments parsing
+# Argument parsing
 INPUT="."
 HOST="127.0.0.1:27017"
+AUTHDB="admin"
 
 while [ $# -gt 0 ]; do
 	case $1 in
@@ -14,6 +13,14 @@ while [ $# -gt 0 ]; do
 			;;
 		-i | -f | --input | --file)
 			FILENAME="$2"
+			shift; shift
+			;;
+		-nf | --nsFrom)
+			NAMESPACE_FROM="$2"
+			shift; shift
+			;;
+		-nt | --nsTo)
+			NAMESPACE_TO="$2"
 			shift; shift
 			;;
 		-u | --username)
@@ -48,8 +55,7 @@ while [ $# -gt 0 ]; do
 done
 
 
-# Arguments checks
-
+# Argument checking
 if [ -z $HOST ]; then
 	echo "You must specify the database host"
 	exit 11
@@ -68,10 +74,9 @@ if [ ! -z $DBUSERNAME ]; then
 	fi
 fi
 
-
 logged_part(){
 	set -x
-	mongorestore -v $CREDENTIAL_OPTIONS --host=$HOST --archive=$FILENAME --gzip $DROP_OPTION
+	mongorestore -v $CREDENTIAL_OPTIONS --host=$HOST --archive=$FILENAME --nsTo=$NAMESPACE_TO --nsFrom=$NAMESPACE_FROM --gzip $DROP_OPTION
 	return $?
 }
 

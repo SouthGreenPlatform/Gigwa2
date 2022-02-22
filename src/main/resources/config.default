@@ -74,9 +74,5 @@ maxExportableBillionGenotypes = 2
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
 
-# Defines the directory where the database backups will be exported
-#dumpFolder = /tmp/gigwa_dumps
-
-
 # Defines the limit number of variant ids that are returned in the variant IDs filter
 variantIdLookupMaxSize = 50

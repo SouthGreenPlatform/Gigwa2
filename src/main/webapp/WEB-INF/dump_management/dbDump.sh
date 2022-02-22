@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Arguments parsing
+# Argument parsing
 OUTPUT="."
 AUTHDB="admin"
+
 while [ $# -gt 0 ]; do
 	case $1 in
 		-h | --host)
@@ -49,8 +50,7 @@ while [ $# -gt 0 ]; do
 done
 
 
-# Arguments checks
-
+# Argument checking
 if [ -z $HOST ]; then
 	echo "You must specify the database host"
 	exit 11
@@ -77,23 +77,23 @@ if [ ! -z $DBUSERNAME ]; then
 	fi
 fi
 
-#FILENAME=$OUTPUT/$DATABASE/$DATABASE"_"`date +%Y-%m-%dT%H-%M-%S`".gz"
 FILENAME="$OUTPUT/$DUMPNAME.gz"
 
 logged_part(){
 	echo "Name : $DUMPNAME"
 	set -x
-	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollection=cachedCounts --excludeCollection=brapiGermplasmsSearches --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
+	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
 	return $?
 }
-
 
 if [ ! -z $LOGFILE ]; then
 	logged_part 2>&1 | tee $LOGFILE
 	STATUS=${PIPESTATUS[0]}
 	gzip $LOGFILE
+	chmod -R 777 $OUTPUT
 	exit $STATUS
 else
 	logged_part
+	chmod -R 777 $OUTPUT
 	exit $?
 fi

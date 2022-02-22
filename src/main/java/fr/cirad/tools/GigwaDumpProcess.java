@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,15 +18,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
+import org.apache.log4j.Logger;
+
 import fr.cirad.manager.dump.IBackgroundProcess;
 import fr.cirad.manager.dump.ProcessStatus;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaDumpProcess implements IBackgroundProcess {
-    static final String dumpManagementPath = "WEB-INF/dump_management";
-    private static final String dumpCommand = dumpManagementPath + "/dbDump.sh";
-    private static final String restoreCommand = dumpManagementPath + "/dbRestore.sh";
+    
+    private static final Logger LOG = Logger.getLogger(GigwaDumpProcess.class);
+    
+    static final String dumpManagementPath = "WEB-INF" + File.separator + "dump_management";
+    public static String operatingSystem = System.getProperty("os.name").toLowerCase();
+    private static String scriptExtension = operatingSystem.startsWith("win") ? "bat" : (operatingSystem.startsWith("mac") ? "command" : "sh");
+    private static final String dumpCommand = dumpManagementPath + File.separator + "dbDump." + scriptExtension;
+    private static final String restoreCommand = dumpManagementPath + File.separator + "dbRestore." + scriptExtension;
 
 	private String module;
 	private String dbName;
@@ -50,8 +60,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		this.basePath = basePath;
 		this.outPath = outPath;
 
-		File outPathCheck = new File(this.outPath);
-		outPathCheck.mkdirs();
+		new File(this.outPath).mkdirs();
 
 		this.log = new StringBuilder();
 		this.status = ProcessStatus.IDLE;
@@ -61,7 +70,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		abortable = true;
 		deleteOnError = true;
 		abortWarning = null;
-		logFile = outPath + File.separator + fileName + "dump.log";
+		logFile = outPath + File.separator + fileName + "__dump.log";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + dumpCommand);
@@ -85,7 +94,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 					password = userAndPass[1];
 					args.add("--username"); args.add(userAndPass[0]);
 					args.add("--authenticationDatabase"); args.add(loginAndAuthDb[1]);
-					args.add("-pp");
+                    args.add("--passwordPrompt");
 				}
 
 				ProcessBuilder builder = new ProcessBuilder(args);
@@ -100,7 +109,7 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 		abortable = true;
 		deleteOnError = false;
 		abortWarning = "This database may be left in an unstable state if you proceed.";
-		logFile = dumpFile.substring(0, dumpFile.indexOf(".gz")) + "restore-" + DateTimeFormatter.ofPattern("uuuuMMddHHmmss").format(LocalDateTime.now()) + ".log";
+		logFile = dumpFile.substring(0, dumpFile.indexOf(".gz")) + "__restore-" + DateTimeFormatter.ofPattern("uuuuMMddHHmmss").format(LocalDateTime.now()) + ".log";
 		(new Thread() {
 			public void run() {
 				File scriptFile = new File(basePath + restoreCommand);
@@ -110,6 +119,8 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				String hostString = String.join(",", hosts);
 				List<String> args = new ArrayList<String>(Arrays.asList(
 					basePath + restoreCommand,
+                    "--nsFrom", "\"" + dumpFile.substring(dumpFile.lastIndexOf(File.separator) + 1).split("__")[0] + ".*\"",
+                    "--nsTo", "\"" + dbName + ".*\"",
 					"--host", hostString,
 					"--input", dumpFile,
 					"--log", logFile
@@ -140,24 +151,29 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			this.updateLog();
 			return this.log.toString();
 		} else {
-			File baseFile = new File(logFile);
-			File gzipFile = new File(logFile + ".gz");
+			File plainLogFile = new File(logFile);
+			File gzippedLogFile = new File(logFile + ".gz");
 			InputStream logInput = null;
+            boolean fDeletePlainFile = false;
 			try {
-				if (Files.exists(baseFile.toPath())) {
-					logInput = new FileInputStream(baseFile);
-				} else if (Files.exists(gzipFile.toPath())){
-					logInput = new GZIPInputStream(new FileInputStream(gzipFile));
-				} else {
-					throw new FileNotFoundException();
-				}
+
+                if (gzippedLogFile.exists())
+                    logInput = new GZIPInputStream(new FileInputStream(gzippedLogFile));
+                else if (plainLogFile.exists()) {   // Windows script does not gzip logfiles: let's do it now
+                    logInput = new FileInputStream(plainLogFile);
+                    try (GzipCompressorOutputStream gos = new GzipCompressorOutputStream(new FileOutputStream(gzippedLogFile), new GzipParameters() {{setFilename(plainLogFile.getName());}} )) {
+                        Files.copy(plainLogFile.toPath(), gos);
+                        fDeletePlainFile = true;
+                    }
+                }
+                else
+                    throw new FileNotFoundException();
 
 				int readLength;
 				ByteArrayOutputStream logBuilder = new ByteArrayOutputStream();
 				byte[] buffer = new byte[65536];  // FIXME ?
-				while ((readLength = logInput.read(buffer)) != -1) {
+				while ((readLength = logInput.read(buffer)) != -1)
 					logBuilder.write(buffer, 0, readLength);
-				}
 
 				return logBuilder.toString("UTF-8");
 			} catch (FileNotFoundException e) {
@@ -168,15 +184,18 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				try {
 					if (logInput != null)
 						logInput.close();
+
+					if (fDeletePlainFile)
+	                    plainLogFile.delete();
 				} catch (Throwable t) {
-					t.printStackTrace();
+					LOG.error(t);
 				}
 			}
 		}
 	}
 
 	private void updateLog() {
-		if (this.log != null) {
+		if (this.log != null && this.subprocess != null) {
 			try {
 				InputStream stream = this.subprocess.getInputStream();
 				int length = stream.available();

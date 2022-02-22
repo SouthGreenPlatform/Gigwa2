@@ -1415,6 +1415,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sHost the host
 	 * @param sModule the module
 	 * @param ncbiTaxonIdNameAndSpecies the ncbi TaxonId, Taxon Name and Species Name
+	 * @param nPloidy the ploidy level
 	 * @param sProject the project
 	 * @param sRun the run
 	 * @param sProjectDescription the project description
@@ -1430,6 +1431,7 @@ public class GigwaRestController extends ControllerInterface {
 	public @ResponseBody String importGenotypingData(HttpServletRequest request,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
+			@RequestParam(value = "ploidy", required = false) final Integer nPloidy,
 			@RequestParam("project") final String sProject,
 			@RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
@@ -1645,7 +1647,7 @@ public class GigwaRestController extends ControllerInterface {
 			String sReferer = request.getHeader("referer");
 			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
 			boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
-			boolean fMayOnlyWriteTmpData = fAnonymousImporter || tokenManager.listWritableDBs(auth).size() == 0;
+			boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || tokenManager.listWritableDBs(auth).size() == 0);
 			final boolean fDatasourceAlreadyExisted = fDatasourceExists;
 
 			if (progress.getError() != null)
@@ -1749,7 +1751,7 @@ public class GigwaRestController extends ControllerInterface {
 									else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsLocalFile = mapFile instanceof File;
-										newProjId = new FlapjackImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new FlapjackImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsLocalFile ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 
 									}
 									else {
@@ -1757,7 +1759,7 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsLocalFile = s instanceof File;
 										scanner = fIsLocalFile ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
-											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											newProjId = new HapMapImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsLocalFile ? ((File) s).toURI().toURL() : (URL) s, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										else
 											throw new Exception("Unsupported file format or extension: " + s);
 									}
