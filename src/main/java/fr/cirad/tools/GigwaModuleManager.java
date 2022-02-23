@@ -34,7 +34,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -51,9 +50,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -82,286 +79,279 @@ import fr.cirad.tools.security.base.AbstractTokenManager;
 @Component
 public class GigwaModuleManager implements IModuleManager {
 
-	private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
+    private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
-	private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
-    
-	private String actionRequiredToEnableDumps = null;
+    private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
 
-	@Autowired AppConfig appConfig;
-	@Autowired ApplicationContext appContext;
-    @Autowired TokenManager tokenManager;
-    @Autowired ServletContext servletContext;
+    private String actionRequiredToEnableDumps = null;
+
+    @Autowired
+    AppConfig appConfig;
+    @Autowired
+    ApplicationContext appContext;
+    @Autowired
+    TokenManager tokenManager;
+    @Autowired
+    ServletContext servletContext;
 
     @Override
     public String getModuleHost(String sModule) {
         return MongoTemplateManager.getModuleHost(sModule);
     }
 
-	@Override
-	public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
-		if (fTrueForPublicFalseForPrivateNullForBoth == null)
-			return MongoTemplateManager.getAvailableModules();
-		if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
-			return MongoTemplateManager.getPublicDatabases();
-		return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
-	}
+    @Override
+    public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
+        if (fTrueForPublicFalseForPrivateNullForBoth == null)
+            return MongoTemplateManager.getAvailableModules();
+        if (Boolean.TRUE.equals(fTrueForPublicFalseForPrivateNullForBoth))
+            return MongoTemplateManager.getPublicDatabases();
+        return CollectionUtils.disjunction(MongoTemplateManager.getAvailableModules(), MongoTemplateManager.getPublicDatabases());
+    }
 
-	@Override
-	public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny, Collection<String> modules) throws Exception
-	{
-		Map<String, Map<Comparable, String>> entitiesByModule = new LinkedHashMap<String, Map<Comparable, String>>();
-		if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
+    @Override
+    public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny, Collection<String> modules) throws Exception {
+        Map<String, Map<Comparable, String>> entitiesByModule = new LinkedHashMap<String, Map<Comparable, String>>();
+        if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
             Query q = new Query();
             q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
             q.fields().include(GenotypingProject.FIELDNAME_NAME);
 
-			for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
-				if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny))
-				{
-					Map<Comparable, String> moduleEntities = entitiesByModule.get(sModule);
-					if (moduleEntities == null)
-					{
-						moduleEntities = new LinkedHashMap<Comparable, String>();
-						entitiesByModule.put(sModule, moduleEntities);
-					}
+            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
+                if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny)) {
+                    Map<Comparable, String> moduleEntities = entitiesByModule.get(sModule);
+                    if (moduleEntities == null) {
+                        moduleEntities = new LinkedHashMap<Comparable, String>();
+                        entitiesByModule.put(sModule, moduleEntities);
+                    }
 
-					for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
-						moduleEntities.put(project.getId(), project.getName());
-				}
-		}
+                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
+                        moduleEntities.put(project.getId(), project.getName());
+                }
+        }
         else
             throw new Exception("Not managing entities of type " + entityType);
 
-		return entitiesByModule;
-	}
+        return entitiesByModule;
+    }
 
-	@Override
-	public boolean isModuleHidden(String sModule) {
-		return MongoTemplateManager.isModuleHidden(sModule);
-	}
+    @Override
+    public boolean isModuleHidden(String sModule) {
+        return MongoTemplateManager.isModuleHidden(sModule);
+    }
 
-	@Override
-	public boolean removeDataSource(String sModule, boolean fAlsoDropDatabase, boolean fRemoveDumps) {
-	    if (fRemoveDumps)
+    @Override
+    public boolean removeDataSource(String sModule, boolean fAlsoDropDatabase, boolean fRemoveDumps) {
+        if (fRemoveDumps)
             try {
                 FileUtils.deleteDirectory(new File(getDumpPath(sModule)));
             } catch (IOException e) {
                 LOG.warn("Error removing dumps while deleting database " + sModule, e);
             }
 
-		return MongoTemplateManager.removeDataSource(sModule, fAlsoDropDatabase);
-	}
+        return MongoTemplateManager.removeDataSource(sModule, fAlsoDropDatabase);
+    }
 
-	@Override
-	public boolean updateDataSource(String sModule, boolean fPublic, boolean fHidden, String ncbiTaxonIdNameAndSpecies) throws Exception {
-		return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.UPDATE_STATUS, sModule, fPublic, fHidden, null, ncbiTaxonIdNameAndSpecies, null);
-	}
+    @Override
+    public boolean updateDataSource(String sModule, boolean fPublic, boolean fHidden, String ncbiTaxonIdNameAndSpecies) throws Exception {
+        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.UPDATE_STATUS, sModule, fPublic, fHidden, null, ncbiTaxonIdNameAndSpecies, null);
+    }
 
-	@Override
-	public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
-		return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
-	}
+    @Override
+    public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
+        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
+    }
 
-	@Override
-	public Collection<String> getHosts() {
-		return MongoTemplateManager.getHostNames();
-	}
+    @Override
+    public Collection<String> getHosts() {
+        return MongoTemplateManager.getHostNames();
+    }
 
-	@Override
-	public boolean removeManagedEntity(String sModule, String sEntityType, Comparable entityId) throws Exception {
-		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
-		{
-			final int nProjectIdToRemove = Integer.parseInt(entityId.toString());
-			MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-			Query query = new Query();
-			query.fields().include("_id");
-			Collection<String> individualsInThisProject = null, individualsInOtherProjects = new ArrayList<>();
-			int nProjCount = 0;
-			for (GenotypingProject proj : mongoTemplate.find(query, GenotypingProject.class))
-			{
-				nProjCount++;
-				if (proj.getId() == nProjectIdToRemove)
-					individualsInThisProject = MgdbDao.getProjectIndividuals(sModule, proj.getId());
-				else
-					individualsInOtherProjects.addAll(MgdbDao.getProjectIndividuals(sModule, proj.getId()));
-			}
-			if (nProjCount == 1 && !individualsInThisProject.isEmpty())
-			{
-				mongoTemplate.getDb().drop();
-				LOG.debug("Dropped database for module " + sModule + " instead of removing its only project");
-				return true;
-			}
+    @Override
+    public boolean removeManagedEntity(String sModule, String sEntityType, Comparable entityId) throws Exception {
+        if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType)) {
+            final int nProjectIdToRemove = Integer.parseInt(entityId.toString());
+            MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+            Query query = new Query();
+            query.fields().include("_id");
+            Collection<String> individualsInThisProject = null, individualsInOtherProjects = new ArrayList<>();
+            int nProjCount = 0;
+            for (GenotypingProject proj : mongoTemplate.find(query, GenotypingProject.class)) {
+                nProjCount++;
+                if (proj.getId() == nProjectIdToRemove)
+                    individualsInThisProject = MgdbDao.getProjectIndividuals(sModule, proj.getId());
+                else
+                    individualsInOtherProjects.addAll(MgdbDao.getProjectIndividuals(sModule, proj.getId()));
+            }
+            if (nProjCount == 1 && !individualsInThisProject.isEmpty()) {
+                mongoTemplate.getDb().drop();
+                LOG.debug("Dropped database for module " + sModule + " instead of removing its only project");
+                return true;
+            }
 
-			long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
-			LOG.debug("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
+            long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
+            LOG.debug("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
 
-			Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject, CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
-			long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
-			LOG.debug("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
+            Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject,
+                    CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
+            long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
+            LOG.debug("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
 
-			if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
-				LOG.debug("Removed project " + nProjectIdToRemove + " from module " + sModule);
+            if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
+                LOG.debug("Removed project " + nProjectIdToRemove + " from module " + sModule);
 
-			new Thread() {
-				public void run() {
-					long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
-					LOG.debug("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
-				}
-			}.start();
-			LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
+            new Thread() {
+                public void run() {
+                    long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
+                    LOG.debug("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
+                }
+            }.start();
+            LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
             MongoTemplateManager.updateDatabaseLastModification(sModule);
-			return true;
-		}
-		else
-			throw new Exception("Not managing entities of type " + sEntityType);
-	}
+            return true;
+        } else
+            throw new Exception("Not managing entities of type " + sEntityType);
+    }
 
-	@Override
-	public boolean doesEntityExistInModule(String sModule, String sEntityType, Comparable entityId) {
-		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
-		{
-			final int nProjectId = Integer.parseInt(entityId.toString());
-			return MongoTemplateManager.get(sModule).count(new Query(Criteria.where("_id").is(nProjectId)), GenotypingProject.class) == 1;
-		}
-		else
-		{
-			LOG.error("Not managing entities of type " + sEntityType);
-			return false;
-		}
-	}
+    @Override
+    public boolean doesEntityExistInModule(String sModule, String sEntityType, Comparable entityId) {
+        if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType)) {
+            final int nProjectId = Integer.parseInt(entityId.toString());
+            return MongoTemplateManager.get(sModule).count(new Query(Criteria.where("_id").is(nProjectId)),
+                    GenotypingProject.class) == 1;
+        } else {
+            LOG.error("Not managing entities of type " + sEntityType);
+            return false;
+        }
+    }
 
+    @Override
+    public boolean doesEntityTypeSupportVisibility(String sModule, String sEntityType) {
+        return false;
+    }
 
-	@Override
-	public boolean doesEntityTypeSupportVisibility(String sModule, String sEntityType) {
-		return false;
-	}
+    @Override
+    public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic)
+            throws Exception {
+        return false;
+    }
 
+    @Override
+    public String getActionRequiredToEnableDumps() {
+        if (actionRequiredToEnableDumps == null) {
+            String dumpFolder = appConfig.get("dumpFolder");
+            if (dumpFolder == null)
+                actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
+            else if (Files.isDirectory(Paths.get(dumpFolder))) {
+                try {
+                    String commandPrefix = GigwaDumpProcess.operatingSystem.startsWith("win") ? "cmd.exe /c " : "";
 
-	@Override
-	public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic) throws Exception {
-		return false;
-	}
-
-
-	@Override
-	public String getActionRequiredToEnableDumps() {
-	    if (actionRequiredToEnableDumps == null) {
-    		String dumpFolder = appConfig.get("dumpFolder");
-    		if (dumpFolder == null)
-    		    actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
-    		else if (Files.isDirectory(Paths.get(dumpFolder))) {
-    		    try {
-    		        String commandPrefix = GigwaDumpProcess.operatingSystem.startsWith("win") ? "cmd.exe /c " : "";
-
-    		        Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help");   // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-    		        Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
-    		        IOUtils.toString(p.getInputStream(), defaultCharset);    // necessary otherwise the Thread hangs...
-    		        String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-    		        if (!stdErr.isEmpty())
+                    Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                    Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
+                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                    String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                    if (!stdErr.isEmpty())
                         throw new IOException(stdErr);
 
-                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help");   // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    IOUtils.toString(p.getInputStream(), defaultCharset);    // necessary otherwise the Thread hangs...
+                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
                     stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
                     if (!stdErr.isEmpty())
                         throw new IOException(stdErr);
 
-                    actionRequiredToEnableDumps = "";   // all seems OK
-    		    }
-    		    catch (IOException ioe) {
-    		        LOG.error("error checking for mongodump presence", ioe);
+                    actionRequiredToEnableDumps = ""; // all seems OK
+                } catch (IOException ioe) {
+                    LOG.error("error checking for mongodump presence", ioe);
                     actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
-    		    }
-    		}
-    		else
-    		    actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
-	    }
+                }
+            } else
+                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? ""
+                        : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
+        }
         return actionRequiredToEnableDumps;
-	}
+    }
 
-	@Override
-	public List<DumpMetadata> getDumps(String sModule) {
-		return getDumps(sModule, true);
-	}
+    @Override
+    public List<DumpMetadata> getDumps(String sModule) {
+        return getDumps(sModule, true);
+    }
 
-	public List<DumpMetadata> getDumps(String sModule, boolean withDescription) {
-		DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
-		String dumpPath = this.getDumpPath(sModule);
+    public List<DumpMetadata> getDumps(String sModule, boolean withDescription) {
+        DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
+        String dumpPath = this.getDumpPath(sModule);
 
-		// List files in the database's dump directory, filter out subdirectories and logs
-		File[] fileList = new File(dumpPath).listFiles();
-		if (fileList != null) {
-			ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
-			for (File file : fileList) {
-				String filename = file.getName();
-				if (filename.endsWith(".gz") && !filename.endsWith(".log.gz")) {
-					String extensionLessFilename = filename.substring(0, filename.lastIndexOf('.'));
-					if (!extensionLessFilename.contains("__")) {
-					    if (withDescription)
-					        LOG.warn("Ignoring archive " + file.getName() + " found in dump folder for database " + sModule + " (wrong naming structure)");
-					    continue;
-					}
-					    
-					Date creationDate;
-					long fileSizeMb;
-					try {
-					    BasicFileAttributes fileAttr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-						creationDate = Date.from(fileAttr.creationTime().toInstant());
-						fileSizeMb = fileAttr.size();
-					} catch (IOException e) {
-						LOG.error("Creation date unreadable for dump file " + filename, e);
-						continue;
-					}
+        // List files in the database's dump directory, filter out subdirectories and logs
+        File[] fileList = new File(dumpPath).listFiles();
+        if (fileList != null) {
+            ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
+            for (File file : fileList) {
+                String filename = file.getName();
+                if (filename.endsWith(".gz") && !filename.endsWith(".log.gz")) {
+                    String extensionLessFilename = filename.substring(0, filename.lastIndexOf('.'));
+                    if (!extensionLessFilename.contains("__")) {
+                        if (withDescription)
+                            LOG.warn("Ignoring archive " + file.getName() + " found in dump folder for database " + sModule + " (wrong naming structure)");
+                        continue;
+                    }
 
-					String description = null;
-					if (withDescription) {
-						try {
-						    description = FileUtils.readFileToString(new File(dumpPath + "/" + extensionLessFilename + "__description.txt"));
-						} catch (IOException ignored) {}
-					}
+                    Date creationDate;
+                    long fileSizeMb;
+                    try {
+                        BasicFileAttributes fileAttr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                        creationDate = Date.from(fileAttr.creationTime().toInstant());
+                        fileSizeMb = fileAttr.size();
+                    } catch (IOException e) {
+                        LOG.error("Creation date unreadable for dump file " + filename, e);
+                        continue;
+                    }
 
-					DumpValidity validity;
+                    String description = null;
+                    if (withDescription) {
+                        try {
+                            description = FileUtils.readFileToString(new File(dumpPath + "/" + extensionLessFilename + "__description.txt"));
+                        } catch (IOException ignored) {}
+                    }
 
-					// No last modification date set : default to valid ?
-					if (dbInfo == null) {
-						validity = DumpValidity.VALID;
-					// creationDate < lastModification : outdated
-					} else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
-						validity = DumpValidity.OUTDATED;
-					// The last modification was a dump restore, and this dump is more recent than the restored dump
-					} else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.getRestoreDate() != null && creationDate.compareTo(dbInfo.getRestoreDate()) < 0) {
-						validity = DumpValidity.DIVERGED;
-					} else {
-						validity = DumpValidity.VALID;
-					}
+                    DumpValidity validity;
 
-					result.add(new DumpMetadata(extensionLessFilename, extensionLessFilename.split("__")[1], creationDate, fileSizeMb, description == null ? "" : description, validity));
-				}
-			}
-			return result;
-		} else {  // The database dump directory does not exist
-			return new ArrayList<DumpMetadata>();
-		}
-	}
+                    // No last modification date set : default to valid ?
+                    if (dbInfo == null) {
+                        validity = DumpValidity.VALID;
+                        // creationDate < lastModification : outdated
+                    } else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
+                        validity = DumpValidity.OUTDATED;
+                        // The last modification was a dump restore, and this dump is more recent than the restored dump
+                    } else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.getRestoreDate() != null && creationDate.compareTo(dbInfo.getRestoreDate()) < 0) {
+                        validity = DumpValidity.DIVERGED;
+                    } else {
+                        validity = DumpValidity.VALID;
+                    }
 
-	@Override
-	public DumpValidity getDumpStatus(String sModule) {
-		if (!isModuleAvailableForDump(sModule))
-			return DumpValidity.BUSY;
+                    result.add(new DumpMetadata(extensionLessFilename, extensionLessFilename.split("__")[1], creationDate, fileSizeMb, description == null ? "" : description, validity));
+                }
+            }
+            return result;
+        } else { // The database dump directory does not exist
+            return new ArrayList<DumpMetadata>();
+        }
+    }
 
-		DumpValidity result = DumpValidity.NONE;
-		for (DumpMetadata metadata : getDumps(sModule, false)) {
-			if (metadata.getValidity().validity > result.validity)
-				result = metadata.getValidity();
-		}
+    @Override
+    public DumpValidity getDumpStatus(String sModule) {
+        if (!isModuleAvailableForDump(sModule))
+            return DumpValidity.BUSY;
 
-		return result;
-	}
+        DumpValidity result = DumpValidity.NONE;
+        for (DumpMetadata metadata : getDumps(sModule, false)) {
+            if (metadata.getValidity().validity > result.validity)
+                result = metadata.getValidity();
+        }
 
-	@Override
+        return result;
+    }
+
+    @Override
     public IBackgroundProcess startDump(String sModule, String dumpName, String sDescription) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
@@ -370,111 +360,103 @@ public class GigwaModuleManager implements IModuleManager {
 
         new File(outPath).mkdirs();
 
-        GigwaDumpProcess process = new GigwaDumpProcess(sModule,
-            databaseName,
-            MongoTemplateManager.getServerHosts(sHost).stream().map(host -> accountForEnvVariables(host)).collect(Collectors.toList()),
-            servletContext.getRealPath(""),
-            outPath);
+        GigwaDumpProcess process = new GigwaDumpProcess(sModule, databaseName, MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), outPath);
 
         String fileName = databaseName + "__" + dumpName;
-		process.startDump(fileName, credentials);
+        process.startDump(fileName, credentials);
 
-		if (sDescription != null && !sDescription.trim().isEmpty())
-    		try {
-    			FileWriter descriptionWriter = new FileWriter(outPath + File.separator + fileName + "__description.txt");
-    			descriptionWriter.write(sDescription);
-    			descriptionWriter.close();
-    		} catch (IOException e) {
-    			LOG.error("Error creating description file", e);
-    		}
-		return process;
-	}
+        if (sDescription != null && !sDescription.trim().isEmpty())
+            try {
+                FileWriter descriptionWriter = new FileWriter(outPath + File.separator + fileName + "__description.txt");
+                descriptionWriter.write(sDescription);
+                descriptionWriter.close();
+            } catch (IOException e) {
+                LOG.error("Error creating description file", e);
+            }
+        return process;
+    }
 
-	@Override
-	public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
-		String sHost = this.getModuleHost(sModule);
-		String credentials = this.getHostCredentials(sHost);
-		String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
-		GigwaDumpProcess process = new GigwaDumpProcess(sModule,
-			MongoTemplateManager.getDatabaseName(sModule),
-			MongoTemplateManager.getServerHosts(sHost).stream().map(host -> accountForEnvVariables(host)).collect(Collectors.toList()),
-			servletContext.getRealPath(""),
-			appConfig.get("dumpFolder"));
+    @Override
+    public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
+        String sHost = this.getModuleHost(sModule);
+        String credentials = this.getHostCredentials(sHost);
+        String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
+        GigwaDumpProcess process = new GigwaDumpProcess(sModule, MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), appConfig.get("dumpFolder"));
 
-		process.startRestore(dumpFile, drop, credentials);
-		return process;
-	}
+        process.startRestore(dumpFile, drop, credentials);
+        return process;
+    }
 
-	@Override
-	public boolean isModuleAvailableForDump(String sModule) {
-		return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
-	}
+    @Override
+    public boolean isModuleAvailableForDump(String sModule) {
+        return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
+    }
 
-	@Override
-	public boolean deleteDump(String sModule, String sDump) {
-		String dumpPath = getDumpPath(sModule);
-		String basename = dumpPath + File.separator + sDump;
+    @Override
+    public boolean deleteDump(String sModule, String sDump) {
+        String dumpPath = getDumpPath(sModule);
+        String basename = dumpPath + File.separator + sDump;
 
-		File archiveFile = new File(basename + ".gz");
-		boolean result = archiveFile.delete();
+        File archiveFile = new File(basename + ".gz");
+        boolean result = archiveFile.delete();
 
-		for (File file : new File(dumpPath).listFiles()) {
-			String filename = file.getName();
-			if (filename.startsWith(sDump) && (filename.endsWith(".log") || filename.endsWith(".log.gz") || filename.endsWith(".txt")))
-				file.delete();
-		}
+        for (File file : new File(dumpPath).listFiles()) {
+            String filename = file.getName();
+            if (filename.startsWith(sDump) && (filename.endsWith(".log") || filename.endsWith(".log.gz") || filename.endsWith(".txt")))
+                file.delete();
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	private String getDumpPath(String sModule) {
-		String dumpBase = appConfig.get("dumpFolder");
-		if (dumpBase == null)
-			dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
+    String getDumpPath(String sModule) {
+        String dumpBase = appConfig.get("dumpFolder");
+        if (dumpBase == null)
+            dumpBase = servletContext.getRealPath("") + defaultDumpFolder;
 
-		String dumpPath = dumpBase + File.separator + sModule;
-		return dumpPath;
-	}
+        String dumpPath = dumpBase + File.separator + sModule;
+        return dumpPath;
+    }
 
-	// FIXME
-	private String getHostCredentials(String sHost) {
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		try {
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document document = builder.parse(appContext.getResource("classpath:/applicationContext-data.xml").getFile());
+    // FIXME
+    private String getHostCredentials(String sHost) {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try {
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(appContext.getResource("classpath:/applicationContext-data.xml").getFile());
 
-			NodeList clients = document.getElementsByTagName("mongo:mongo-client");
-			for (int i = 0; i < clients.getLength(); i++) {
-				Node node = clients.item(i);
-				if (node.getNodeType() == Node.ELEMENT_NODE) {
-					Element client = (Element) node;
-					String credentialString = client.getAttribute("credential");
-					if (credentialString.length() == 0) {
-						return null;
-					} else
-						return accountForEnvVariables(credentialString);
-				}
-			}
-			return null;
-		} catch (ParserConfigurationException | IOException | SAXException e) {
-		    LOG.error("Error parsing host credentials", e);
-			return null;
-		}
-	}
-	
-	static public String accountForEnvVariables(String stringContainingEnvVariables) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("#\\{systemEnvironment\\['(.*?)\\']\\}").matcher(stringContainingEnvVariables);
+            NodeList clients = document.getElementsByTagName("mongo:mongo-client");
+            for (int i = 0; i < clients.getLength(); i++) {
+                Node node = clients.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Element client = (Element) node;
+                    String credentialString = client.getAttribute("credential");
+                    if (credentialString.length() == 0) {
+                        return null;
+                    } else
+                        return accountForEnvVariables(credentialString);
+                }
+            }
+            return null;
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            LOG.error("Error parsing host credentials", e);
+            return null;
+        }
+    }
+
+    static public String accountForEnvVariables(String stringContainingEnvVariables) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("#\\{systemEnvironment\\[(.*?)\\]\\}").matcher(stringContainingEnvVariables);
         StringBuffer output = new StringBuffer();
         while (matcher.find()) {
-            String matchingString = matcher.group(1), replacementString = System.getenv(matchingString);
+            String matchingString = matcher.group(1), replacementString = System.getenv(matchingString.replaceAll("'|\"", ""));
             if (replacementString == null)
-                matcher.appendReplacement(output, "#{systemEnvironment['" + matchingString + "']}");    // replacement failed (no such env variable)
+                matcher.appendReplacement(output, "#{systemEnvironment['" + matchingString + "']}"); // replacement failed (no such env variable)
             else
                 matcher.appendReplacement(output, replacementString);
         }
         matcher.appendTail(output);
         return output.toString();
-	}
+    }
 
 //	private int compareFileCreationDates(File f1, File f2) {
 //		try {
@@ -496,9 +478,9 @@ public class GigwaModuleManager implements IModuleManager {
     public InputStream getDumpInputStream(String sModule, String sDumpName) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(new File(getDumpPath(sModule) + File.separator + sDumpName + ".gz")));
     }
-    
+
     @Override
-    public InputStream getDumpLogInputStream(String sModule, String sDumpName) throws FileNotFoundException {
-        return new BufferedInputStream(new FileInputStream(new File(getDumpPath(sModule) + File.separator + sDumpName + "__dump.log.gz")));
+    public InputStream getDumpLogInputStream(String sModule, String sDumpName) throws IOException {
+        return GigwaDumpProcess.getLogInputStream(getDumpPath(sModule) + File.separator + sDumpName + "__dump.log");
     }
 }

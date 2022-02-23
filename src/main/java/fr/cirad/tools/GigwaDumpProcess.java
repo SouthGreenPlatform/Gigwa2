@@ -144,6 +144,25 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			}
 		}).start();
 	}
+	
+	
+	public static InputStream getLogInputStream(String logFile) throws IOException {
+        File plainLogFile = new File(logFile);
+        File gzippedLogFile = new File(logFile + ".gz");
+        InputStream logInputStream = null;
+        if (gzippedLogFile.exists())
+            logInputStream = new GZIPInputStream(new FileInputStream(gzippedLogFile));
+        else if (plainLogFile.exists()) {   // Windows script does not gzip logfiles: let's do it now
+            try (GzipCompressorOutputStream gos = new GzipCompressorOutputStream(new FileOutputStream(gzippedLogFile), new GzipParameters() {{setFilename(plainLogFile.getName());}} )) {
+                Files.copy(plainLogFile.toPath(), gos);
+                plainLogFile.delete();
+                logInputStream = new GZIPInputStream(new FileInputStream(gzippedLogFile));
+            }
+        }
+        else
+            throw new FileNotFoundException("Could find neither gzipped nor plain log file: " + logFile);
+        return logInputStream;
+	}
 
 
 	public String getLog(){
@@ -151,28 +170,13 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 			this.updateLog();
 			return this.log.toString();
 		} else {
-			File plainLogFile = new File(logFile);
-			File gzippedLogFile = new File(logFile + ".gz");
-			InputStream logInput = null;
-            boolean fDeletePlainFile = false;
-			try {
-
-                if (gzippedLogFile.exists())
-                    logInput = new GZIPInputStream(new FileInputStream(gzippedLogFile));
-                else if (plainLogFile.exists()) {   // Windows script does not gzip logfiles: let's do it now
-                    logInput = new FileInputStream(plainLogFile);
-                    try (GzipCompressorOutputStream gos = new GzipCompressorOutputStream(new FileOutputStream(gzippedLogFile), new GzipParameters() {{setFilename(plainLogFile.getName());}} )) {
-                        Files.copy(plainLogFile.toPath(), gos);
-                        fDeletePlainFile = true;
-                    }
-                }
-                else
-                    throw new FileNotFoundException();
-
+			InputStream logIS = null;
+            try {
+			    logIS = getLogInputStream(logFile);
 				int readLength;
 				ByteArrayOutputStream logBuilder = new ByteArrayOutputStream();
 				byte[] buffer = new byte[65536];  // FIXME ?
-				while ((readLength = logInput.read(buffer)) != -1)
+				while ((readLength = logIS.read(buffer)) != -1)
 					logBuilder.write(buffer, 0, readLength);
 
 				return logBuilder.toString("UTF-8");
@@ -182,11 +186,8 @@ public class GigwaDumpProcess implements IBackgroundProcess {
 				return "Error reading the log file";
 			} finally {
 				try {
-					if (logInput != null)
-						logInput.close();
-
-					if (fDeletePlainFile)
-	                    plainLogFile.delete();
+					if (logIS != null)
+						logIS.close();
 				} catch (Throwable t) {
 					LOG.error(t);
 				}
