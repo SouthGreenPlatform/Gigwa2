@@ -21,9 +21,9 @@ services:
       - type: volume
         source: gigwa
         target: /usr/local/tomcat/config
-#      - type: bind                 	# Uncomment this line to make dumps accessible from the host machine         
-#        source: /tmp/gigwaDockerDumps	# Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you with to use as source)
-#        target: /root/gigwaDumps		# Uncomment this line to make dumps accessible from the host machine
+#      - type: bind                      # Uncomment this line to make dumps accessible from the host machine         
+#        source: /tmp/gigwaDockerDumps   # Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you with to use as source)
+#        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine
 
   mongo:
     image: mongo:4.2.18

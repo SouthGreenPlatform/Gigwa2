@@ -7,7 +7,7 @@ COPY docker/setenv.sh /usr/local/tomcat/bin/setenv.sh
 RUN echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<beans xmlns=\"http://www.springframework.org/schema/beans\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:mongo=\"http://www.springframework.org/schema/data/mongo\" xsi:schemaLocation=\"http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd\">\n<mongo:mongo-client host=\"#{systemEnvironment['MONGO_IP']}\" port=\"#{systemEnvironment['MONGO_PORT']}\" id=\"defaultMongoHost\" credential=\"#{systemEnvironment['MONGO_INITDB_ROOT_USERNAME']}:#{systemEnvironment['MONGO_INITDB_ROOT_PASSWORD']}@admin\" />\n</beans>" > webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
 && apt-get update && apt-get install -y wget \
 && wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb && dpkg -i mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb && rm -f mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb \
-&& apt-get remove -y wget \
+&& apt-get remove -y wget libpsl5 publicsuffix \
 && sed -i 's|<appender-ref ref="FILE" />|<appender-ref ref="console" /> <appender-ref ref="FILE" />|g' webapps/gigwa/WEB-INF/classes/log4j.xml \
 #allowLinking="true" to be able to use symbolic link
 && sed -i "s|<WatchedResource>WEB-INF\/classes\/config.properties<\/WatchedResource>|<WatchedResource>WEB-INF\/classes\/config.properties<\/WatchedResource><Resources allowLinking\=\"true\" \/>|g" webapps/gigwa/META-INF/context.xml \
