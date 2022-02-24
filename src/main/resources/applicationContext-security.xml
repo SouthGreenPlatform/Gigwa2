@@ -168,8 +168,8 @@
         </property>
     </bean>
 
-	<bean id="authenticationSuccessHandler" class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
-		<property name="defaultTargetUrl" value="/index.jsp" />
+	<bean id="authenticationSuccessHandler" class="fr.cirad.security.GigwaAuthenticationSuccessHandler">
+		<constructor-arg value="/index.jsp" />
 	</bean>
 
 <!-- CAS authentication beans -->
