@@ -35,6 +35,10 @@ xcopy /seyi "%3\gigwa.%d%\WEB-INF\classes\users.properties" "%2\WEB-INF\classes\
 xcopy /seyi "%3\gigwa.%d%\WEB-INF\classes\config.properties" "%2\WEB-INF\classes\config.properties"
 xcopy /seyi "%3\gigwa.%d%\WEB-INF\classes\log4j.xml" "%2\WEB-INF\classes\log4j.xml"
 
+# Changes specific to migration to v2.5
+powershell -Command "(gc %2\WEB-INF\classes\users.properties) -replace 'project$CREATOR', 'SUPERVISOR' | Out-File %2\WEB-INF\classes\users.properties"		# replace the deprecated project-CREATOR role with the new DB-level SUPERVISOR role
+powershell -Command "if ($(Select-String -Path %2\WEB-INF\classes\config.properties -Pattern 'dumpFolder') -eq $null) {Add-Content %2\WEB-INF\classes\config.properties \"`ndumpFolder=%USERPROFILE%\gigwaDumps`n\".replace('\', '\\'")}"# add dumpFolder entry to config.properties it not present
+
 chmod -R 755 $2
 
 echo

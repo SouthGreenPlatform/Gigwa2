@@ -769,153 +769,150 @@
                     <div class="panel panel-default importFormDiv">
                         <div class="panel-body panel-grey">
                             <div class="form text-center">
-                                <div class ="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <h4>Importing genotyping data in VCF / HapMap / PLINK / Intertek / Flapjack / BrAPI format</h4>
-											<p class="margin-top-md text-red">Properties followed by * are required</p>
-                                    </div>
+                                <div class ="row" style='margin:0 50px 0 25px;'>
+	                                <h4>Importing genotyping data in VCF / HapMap / PLINK / Intertek / Flapjack / BrAPI format</h4>
+									<p class="margin-top-md text-red">Properties followed by * are required</p>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-1" style="text-align:right;"></div>
-                                    <div class="col-md-10">
-                                        <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
-                                            <div class="row" id="rowModuleExisting">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="moduleExistingG">Database <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-4" id="taxonDiv" align="center">
-                                                	<div style="float:left;">
-		                                                <label for="ncbiTaxon">Taxon</label>
-		                                                <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
-	                                                </div>
-	                                                <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
-	                                                <input id="ncbiTaxon" name="ncbiTaxon" 
-		                                                onblur="grabNcbiTaxon($(this));"
-		                                                onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
-		                                                class="form-control text-input input-sm" style="min-width:100px; max-width:62%;" type="text" placeholder="Taxon id / name">
-												</div>
-                                                <div class="col-md-3" id="newModuleDiv">
-                                                    <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left" id="hostGrp">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-	                                            	<label for="host">Host</label>
-	                                            </div>
-                                                <div class="col-md-3" id="hostDiv">
-                                                    <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <c:if test="${!isAdmin}">
-	                                                <div class="col-md-3 text-red" style="font-size:11px;">
-                                                		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
-                                                		You are only allowed to create temporary databases
-                                                	</div>
-                                                </c:if>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-	                                            	<label for="projectExisting">Project <span class="text-red">*</span></label>
-	                                            </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-4" id="emptyBeforeImportDiv" style="display:none;">
-                                                    <input type="checkbox" id="clearProjectData" name="clearProjectData" title="If box is ticked, all project runs will be discarded before import">&nbsp;<label class="label-checkbox" title="If box is ticked, all project runs will be discarded before import" for="clearProjectData"> Clear project before import</label>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input id="projectToImport" name="project" class="form-control text-input input-sm" type="text" placeholder="New project name" onchange="if ($(this).val().trim().length > 0) $('#projectDescDiv').show(50); else $('#projectDescDiv').hide(50);">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group text-left">
-                                            <div class="row">
-	                                        	<div class="col-md-2" style="text-align:right;">
-		                                            <label for="runExisting">Run <span class="text-red">*</span></label>
-		                                        </div>
-                                                <div class="col-md-3">
-                                                    <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                                </div>
-                                                <div class="col-md-3 text-red" id="overwriteRunWarning" style="display:none; font-size:11px;">
-                                                    <span class="glyphicon glyphicon-warning-sign" style="font-size:13px;"></span>
-                                                    Existing run data will be erased!
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input id="runToImport" name="run" class="form-control text-input input-sm" type="text" placeholder="New run name">
-                                                </div>
-                                                <div class="col-md-4">
-                                                	<div style="width:100%; position:absolute; margin-top:-90px;" id="projectDescDiv">
-                                                		<label for="projectDesc">
-                                                			Project description
-                                                			<img id="igvTooltip" style="margin-left:10px;" src="images/lightbulb.gif" title='TIP: Publication reference(s) may be specified at the bottom of this text, preceded by "HOW TO CITE"' />
-                                                		</label>
-                                                		<textarea id="projectDesc" name="projectDesc" style="resize:none; width:100%; height:140px;"></textarea>
-                                                	</div>
-												</div>
-                                            </div>
-                                        </div>
-                                        <div class="row text-left form-group">
-                                        	<div class="col-md-2" style="text-align:right;">
-	                                             <label for="technology">Technology</label>
-	                                        </div>
+                                <div class ="row" style='margin:0 50px 0 25px;'>
+                                    <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
+                                        <div class="row" id="rowModuleExisting">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="moduleExistingG">Database <span class="text-red">*</span></label>
+                                         </div>
                                             <div class="col-md-3">
-	                                            <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
-	                                        </div>
-	                                        <div class="col-md-4"><input type='checkbox' checked sftyle="margin-top:3px;" id="skipMonomorphic" name="skipMonomorphic" /> <label class="bold text-left" for="skipMonomorphic">Skip monomorphic variants</label></div>
+                                                <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                            <div class="col-md-3" id="taxonDiv" align="center">
+                                            	<div style="float:left;">
+                                              <label for="ncbiTaxon">Taxon</label>
+                                              <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
+                                             </div>
+                                             <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
+                                             <input id="ncbiTaxon" name="ncbiTaxon" 
+                                              onblur="grabNcbiTaxon($(this));"
+                                              onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
+                                              class="form-control text-input input-sm" style="min-width:100px; max-width:62%;" type="text" placeholder="Taxon id / name">
+											</div>
+                                            <div class="col-md-1" style="padding-right:0px;">
+                                            	<input id="ploidy" name="ploidy" class="form-control text-input input-sm" type='number' step="1" min="1" placeholder="ploidy" title="Specifying ploidy is recommended for HapMap and Flapjack formats (if left blank, guessing will be attempted and import will take longer)">
+                                            </div>
+                                            <div class="col-md-3" id="newModuleDiv">
+                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
+                                            </div>
                                         </div>
-                                        <div>
-	                                        <div class="row text-left">
-	                                        	<div class="col-md-2 text-nowrap" style="text-align:right;">
-		                                             <label for="dataFile1">Data source <span class="text-red">*</span></label>
-		                                        </div>
-	                                        	<div class="col-md-10">
-	                                        		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
-													<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-	                                        		or an absolute path on webserver filesystem.</small>
-	                                        		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
-		                                        </div>
-	                                        </div>
-	                                        <div class="row text-left" style="margin-bottom:5px;">
-	                                        	<div class="col-md-2"></div>
-	                                        	<div style="text-align:right; position:absolute; width:110px;">
-	                                        		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
-	                                        	</div>
-	                                            <div class="col-md-5">
-		                                            <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
-		                                        </div>
-	                                            <div class="col-md-5">
-		                                            <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK (ped + map)">
-		                                        </div>
-	                                        </div>
-			                                <div class ="row">
-			                                	<div class="col-md-2"></div>
-			                                    <div class="col-md-5" id="dropZonePreviewsG"></div>
-			                                    <div class="col-md-4" style="padding-right:0;">
-													<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-				       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
-				       									<div>
-				       										<b>Accepted extensions:</b>
-				       										<br/>.vcf
-				       										<br/>.hapmap or .txt
-															<br/>.ped + .map (PLINK)
-                                                            <br/>.intertek
-															<br/>.genotype + .map (Flapjack)
-				       									</div>
-			       									</div>
-			                                    </div>
-			                                    <div class="col-md-1">
-				                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
-			                                    </div>
-			                                </div>
-	                                	</div>
                                     </div>
+                                    <div class="form-group text-left" id="hostGrp">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                         	<label for="host">Host</label>
+                                         </div>
+                                            <div class="col-md-3" id="hostDiv">
+                                                <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                            <c:if test="${!isAdmin}">
+                                             <div class="col-md-3 text-red" style="font-size:11px;">
+                                            		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
+                                            		You are only allowed to create temporary databases
+                                            	</div>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                         	<label for="projectExisting">Project <span class="text-red">*</span></label>
+                                         </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                            <div class="col-md-4" id="emptyBeforeImportDiv" style="display:none;">
+                                                <input type="checkbox" id="clearProjectData" name="clearProjectData" title="If box is ticked, all project runs will be discarded before import">&nbsp;<label class="label-checkbox" title="If box is ticked, all project runs will be discarded before import" for="clearProjectData"> Clear project before import</label>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input id="projectToImport" name="project" class="form-control text-input input-sm" type="text" placeholder="New project name" onchange="if ($(this).val().trim().length > 0) $('#projectDescDiv').show(50); else $('#projectDescDiv').hide(50);">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="runExisting">Run <span class="text-red">*</span></label>
+                                      </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                            <div class="col-md-3 text-red" id="overwriteRunWarning" style="display:none; font-size:11px;">
+                                                <span class="glyphicon glyphicon-warning-sign" style="font-size:13px;"></span>
+                                                Existing run data will be erased!
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input id="runToImport" name="run" class="form-control text-input input-sm" type="text" placeholder="New run name">
+                                            </div>
+                                            <div class="col-md-4">
+                                            	<div style="width:100%; position:absolute; margin-top:-90px;" id="projectDescDiv">
+                                            		<label for="projectDesc">
+                                            			Project description
+                                            			<img id="igvTooltip" style="margin-left:10px;" src="images/lightbulb.gif" title='TIP: Publication reference(s) may be specified at the bottom of this text, preceded by "HOW TO CITE"' />
+                                            		</label>
+                                            		<textarea id="projectDesc" name="projectDesc" style="resize:none; width:100%; height:140px;"></textarea>
+                                            	</div>
+											</div>
+                                        </div>
+                                    </div>
+                                    <div class="row text-left form-group">
+                                    	<div class="col-md-2" style="text-align:right;">
+                                          <label for="technology">Technology</label>
+                                     </div>
+                                        <div class="col-md-3">
+                                         <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
+                                     </div>
+                                     <div class="col-md-4"><input type='checkbox' checked sftyle="margin-top:3px;" id="skipMonomorphic" name="skipMonomorphic" /> <label class="bold text-left" for="skipMonomorphic">Skip monomorphic variants</label></div>
+                                    </div>
+                                    <div>
+                                     <div class="row text-left">
+                                     	<div class="col-md-2 text-nowrap" style="text-align:right;">
+                                           <label for="dataFile1">Data source <span class="text-red">*</span></label>
+                                      </div>
+                                     	<div class="col-md-10">
+                                     		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
+									<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
+                                     		or an absolute path on webserver filesystem.</small>
+                                     		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
+                                      </div>
+                                     </div>
+                                     <div class="row text-left" style="margin-bottom:5px;">
+                                     	<div class="col-md-2"></div>
+                                     	<div style="text-align:right; position:absolute; width:110px;">
+                                     		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
+                                     	</div>
+                                         <div class="col-md-5">
+                                          <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
+                                      </div>
+                                         <div class="col-md-5">
+                                          <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK (ped + map)">
+                                      </div>
+                                     </div>
+                               <div class ="row">
+                               	<div class="col-md-2"></div>
+                                   <div class="col-md-5" id="dropZonePreviewsG"></div>
+                                   <div class="col-md-4" style="padding-right:0;">
+									<div class="dz-default dz-message" style="background-color:#e8e8e8;">
+       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
+       									<div>
+       										<b>Accepted extensions:</b>
+       										<br/>.vcf
+       										<br/>.hapmap or .txt
+											<br/>.ped + .map (PLINK)
+                                                        <br/>.intertek
+											<br/>.genotype + .map (Flapjack)
+       									</div>
+      									</div>
+                                   </div>
+                                   <div class="col-md-1">
+                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
+                                   </div>
+                               </div>
+                             	</div>
                                 </div>
                             </div>
                         </div>

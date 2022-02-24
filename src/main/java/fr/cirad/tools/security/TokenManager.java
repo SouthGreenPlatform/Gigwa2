@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
+import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -159,8 +161,7 @@ public class TokenManager extends AbstractTokenManager {
         boolean hasAccess = false;
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
 		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
-        if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
+        if (fAdminUser || (fAuthentifiedUser && (userDao.getSupervisedModules(authentication.getAuthorities()).contains(module) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
             hasAccess = true;
         return hasAccess;
     }
@@ -189,8 +190,7 @@ public class TokenManager extends AbstractTokenManager {
 
 		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
 		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-		Collection<String> writableEntityTypes = userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).get(module);
-        if (fAdminUser || (fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)))))
+        if (fAdminUser || (fAuthentifiedUser && userDao.getSupervisedModules(authentication.getAuthorities()).contains(module)))
             return true;
         return false;
     }
@@ -254,17 +254,15 @@ public class TokenManager extends AbstractTokenManager {
      * @return List<String> writable modules
      */
     public Collection<String> listWritableDBs(Authentication authentication) {
-		Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
-		Map<String, Collection<String>> writableEntityTypesByModule = userDao.getWritableEntityTypesByModule(authentication.getAuthorities());
+        boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
+        if (fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)))
+            return MongoTemplateManager.getAvailableModules();
+        
+		HashSet<String> authorizedModules = userDao.getSupervisedModules(authentication.getAuthorities());
 		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
-		for (String module : modules)
-		{
-//			boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
-			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
-			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-			Collection<String> writableEntityTypes = writableEntityTypesByModule.get(module);
-			boolean fAuthorizedUser = fAuthentifiedUser && ((writableEntityTypes != null && writableEntityTypes.contains(ENTITY_PROJECT)) || managedEntitiesByModuleAndType.get(module) != null);
-			if (fAdminUser || (/*!fHiddenModule && */fAuthorizedUser))
+		for (String module : managedEntitiesByModuleAndType.keySet()) {
+			Collection<Comparable> managedProjects = managedEntitiesByModuleAndType.get(module).get(ENTITY_PROJECT);
+			if (managedProjects != null && !managedProjects.isEmpty())
 				authorizedModules.add(module);
 		}
         return authorizedModules;

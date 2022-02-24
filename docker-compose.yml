@@ -1,13 +1,13 @@
 version: '3.5'
 
-# You may use the following (Linux) command to start metaXplor by dynamically setting the docker0 IP address:
+# You may use the following (Linux) command to start gigwa by dynamically setting the docker0 IP address:
 # export docker0=$(ip a list docker0 | grep "inet " | sed 's/^ *//g' | awk -F'[ |/]' '{print $2}') && docker-compose up -d && sleep 2 && xdg-open http://$docker0:8080/gigwa &> /dev/null
 
 services:
   tomcat:
     depends_on:
       - mongo
-    image: guilhemsempere/gigwa:2.4.1-RELEASE
+    image: guilhemsempere/gigwa:2.5-alpha
     ports:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
@@ -21,9 +21,12 @@ services:
       - type: volume
         source: gigwa
         target: /usr/local/tomcat/config
+#      - type: bind                 	# Uncomment this line to make dumps accessible from the host machine         
+#        source: /tmp/gigwaDockerDumps	# Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you with to use as source)
+#        target: /root/gigwaDumps		# Uncomment this line to make dumps accessible from the host machine
 
   mongo:
-    image: mongo:4.2.15
+    image: mongo:4.2.18
     restart: always
     command: --profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet
     ports:

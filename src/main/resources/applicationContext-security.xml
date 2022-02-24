@@ -17,8 +17,6 @@
     	<property name="location" value="classpath:config.properties" />
 	</bean>
 
-
-
 <!-- HTTP authorization settings -->
     <secur:http request-matcher="regex" pattern="^.*/css/.*$" security="none" />
     <secur:http request-matcher="regex" pattern="^.*/img/.*$" security="none" />
@@ -26,20 +24,31 @@
     <secur:http request-matcher="regex" pattern="^.*\/.*filt\/tmpOutput\/.*\.zip.*$" security="none" />
 
     <secur:http use-expressions="true" request-matcher="ant" realm="GIGwA WebApp Security Administration" access-decision-manager-ref="accessDecisionManager" entry-point-ref="gigwaAuthenticationEntryPoint">
+		<secur:session-management>
+            <secur:concurrency-control max-sessions="1" expired-url="/index.jsp"/>
+        </secur:session-management>
+    
 		<secur:csrf disabled="true" />  <!-- FIXME -->
         <secur:headers>
             <secur:frame-options policy="ALLOW-FROM" strategy="whitelist" value="*"/>
             <secur:content-security-policy policy-directives="frame-ancestors *" />
         </secur:headers>
-		<secur:intercept-url pattern="/permissionManagement.jsp*" access="isFullyAuthenticated()" />
+
+		<secur:intercept-url pattern="/private/*.do_*" access="isFullyAuthenticated()" />
+		<secur:intercept-url pattern="/private/**/*.do_*" access="isFullyAuthenticated()" />
+	  	<secur:intercept-url pattern="/permissionManagement.jsp*" access="isFullyAuthenticated()" />
 		<secur:intercept-url pattern="/login/cas.do*" access="isRememberMe() or isFullyAuthenticated()" />
 		<secur:intercept-url pattern="/login.do*" access="permitAll" />
         <secur:intercept-url pattern="/index.jsp*" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
         <secur:intercept-url pattern="/rest/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
         <secur:intercept-url pattern="/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
+
         <secur:form-login login-page="/login.do" authentication-failure-url="/login.do?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" authentication-success-handler-ref="authenticationSuccessHandler" />
+
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />
+
         <secur:logout success-handler-ref="logoutDispatchHandler" invalidate-session="true"/>
+
         <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
         <secur:custom-filter before="LOGOUT_FILTER" ref="requestSingleLogoutFilter" />
         <secur:custom-filter before="CAS_FILTER" ref="singleLogoutFilter" />
@@ -162,7 +171,6 @@
 	<bean id="authenticationSuccessHandler" class="fr.cirad.security.GigwaAuthenticationSuccessHandler">
 		<constructor-arg value="/index.jsp" />
 	</bean>
-
 
 <!-- CAS authentication beans -->
     <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">
