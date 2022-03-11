@@ -779,7 +779,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, produces = "text/plain;charset=UTF-8", consumes = "application/json")
+	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
 		long before = System.currentTimeMillis();
 
@@ -813,7 +813,8 @@ public class GigwaRestController extends ControllerInterface {
 
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
-        String header = "variant\talleles\tchrom\tpos";
+		resp.setContentType("text/tsv;charset=UTF-8");
+		String header = "variant\talleles\tchrom\tpos";
         resp.getWriter().append(header);
         for (String individual : individualPositions.keySet())
             resp.getWriter().write(("\t" + individual));
