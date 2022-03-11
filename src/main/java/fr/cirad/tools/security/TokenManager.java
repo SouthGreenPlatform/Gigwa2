@@ -133,7 +133,7 @@ public class TokenManager extends AbstractTokenManager {
         {	// database is not public
     		boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
     		boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-            if (fAdminUser || (fAuthentifiedUser && (userDao.getCustomRolesByModuleAndEntityType(authentication.getAuthorities()).get(module) != null || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
+            if (fAdminUser || (fAuthentifiedUser && (userDao.getSupervisedModules(authentication.getAuthorities()).contains(module) || userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(module) != null)))
                 hasAccess = true;
         }
         return hasAccess;
@@ -211,7 +211,7 @@ public class TokenManager extends AbstractTokenManager {
 			boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
 			boolean fAuthentifiedUser = authentication != null && authentication.getAuthorities() != null && !"anonymousUser".equals(authentication.getPrincipal());
 			boolean fAdminUser = fAuthentifiedUser && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-			boolean fAuthorizedUser = fAuthentifiedUser && (customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
+			boolean fAuthorizedUser = fAuthentifiedUser && (userDao.getSupervisedModules(authentication.getAuthorities()).contains(module) || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
 			if (fAdminUser || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
 				authorizedModules.add(module);
 		}
@@ -288,6 +288,9 @@ public class TokenManager extends AbstractTokenManager {
 		if ("anonymousUser".equals(authentication.getPrincipal()))
 			return false;
 		
+		if (userDao.getSupervisedModules(authentication.getAuthorities()).contains(sModule))
+		    return true;
+		
 		Map<String, Collection<Comparable>> managedEntitesByType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities()).get(sModule);
 		if (managedEntitesByType != null)
 		{
@@ -323,6 +326,9 @@ public class TokenManager extends AbstractTokenManager {
 		
 		if ("anonymousUser".equals(authentication.getPrincipal()))
 			return false;	// it's not public
+		
+        if (userDao.getSupervisedModules(authentication.getAuthorities()).contains(sModule))
+            return true;
 
 		Map<String, Map<String, Collection<Comparable>>> customRolesByEntityType = userDao.getCustomRolesByModuleAndEntityType(authentication.getAuthorities()).get(sModule);
 		if (customRolesByEntityType != null)
