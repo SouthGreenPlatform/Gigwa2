@@ -53,7 +53,7 @@ onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.f
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 define a genome list to be retrieved as a default genome list section for the integrated IGV.js genome browser
 # Each property is in the form igvGenomeConfig_N = Name;URL
-igvGenomeConfig_1 = South Green provided genomes;res/genomes.json
+igvGenomeConfig_1 = Public genomes provided by South Green;res/genomes.json
 igvGenomeConfig_2 = IGV default genomes;https://igv.org/genomes/genomes.json
 
 

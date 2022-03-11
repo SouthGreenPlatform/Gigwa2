@@ -324,7 +324,7 @@ class GigwaSearchReader {
 		    
 			if (!chr) {  // Chromosome not found, probably because gigwa has no data for it
 				if (self.lastIGVChromosome != igvChr) {
-					displayMessage("No data found for the sequence " + igvChr + " in Gigwa");
+					displayMessage("Sequence " + igvChr + " is unknown from Gigwa database");
 				}
 				return {chr: null, start: -1, end: -1, features: [], result: []};
 			}

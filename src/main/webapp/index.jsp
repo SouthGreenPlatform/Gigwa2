@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/highcharts/exporting.js"></script>
 <script type="text/javascript" src="js/highcharts/export-data.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
+<script type="text/javascript" src="js/igv.min.js"></script>
 <script type="text/javascript" src="js/IgvCsvSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
 <script type="text/javascript">
@@ -1480,6 +1480,19 @@
 		}
 		return prefix;
 	}
+	
+	// Get the prefixes present at least twice in elements of a list of strings, along with their numbers of occurences (prefixes are anything before a digit occurence)
+	function getContigPrefixes(contigNames) {
+		var prefixCounts = [];
+		for (var i=0; i<contigNames.length; i++) {
+		  var pfx = contigNames[i].replace(/\d+.*/, ""), count = prefixCounts[pfx];
+		  prefixCounts[pfx] = count == null ? 1 : (count + 1) ;
+		}
+		for (var pfx in prefixCounts)	// Remove prefixes that were only found once
+			if (prefixCounts[pfx] == 1)
+				delete prefixCounts[pfx];
+		return prefixCounts;
+	}
 
 	// Get the constant prefix in each element of a list of strings
 	function getSuffix(names){
@@ -1569,7 +1582,7 @@
 						url: config.url,
 						method: "GET",
 						dataType: "json",
-					}).then(function(genomeList){
+					}).then(function(genomeList) {
 						genomeList.sort((a, b) => a.id > b.id ? 1 : -1);
 						return {
 							name: config.name,
@@ -1578,7 +1591,8 @@
 						}
 					}, function (xhr, ajaxOption, thrownError){
 						// Error handler for each genome list download : show an error but do not abort
-						displayMessage("Loading of genome list from " + config.url + " failed");
+						console.log(xhr);
+						displayMessage("Loading of genome list from " + config.url + " failed: " + thrownError);
 					})
 				)
 			).then(function (results){
@@ -1812,9 +1826,18 @@
 			// Build the alias table
 			let targetNames = igvBrowser.genome.chromosomeNames;
 			let variantPrefix = getPrefix(referenceNames);
+			let refNamesForNumberedContigsCount = referenceNames.filter(nm => !isNaN(nm.substring(nm.length - 1))).length;
+			let targetPrefixCounts = getContigPrefixes(targetNames);
+			let targetPrefix = "";
+			for (var pfx in targetPrefixCounts)
+				if (pfx.toLowerCase() == "chr" || targetPrefixCounts[pfx] == refNamesForNumberedContigsCount) {
+					targetPrefix = pfx;
+// 					console.log("Using " + pfx + " as contig name prefix");
+					break;
+				}
+
 			let variantSuffix = getSuffix(referenceNames);
 			let variantSuffixRegex = new RegExp(variantSuffix + "$");
-			let targetPrefix = getPrefix(targetNames);
 			let targetSuffix = getSuffix(targetNames);
 			let targetSuffixRegex = new RegExp(targetSuffix + "$");
 			igvGenomeRefTable = {};
@@ -1824,15 +1847,19 @@
 				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
 				igvBrowser.genome.chrAliasTable[zeroname.toLowerCase()] = target;  // 02 -> target
 				igvBrowser.genome.chrAliasTable[basename.toLowerCase()] = target;  // 2 -> target
-				igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
-				igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
+				if (zeroname.toLowerCase().startsWith("chr"))
+					igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
+				if (basename.toLowerCase().startsWith("chr"))
+					igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
 				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname).toLowerCase()] = target;  // With prefix used by variants
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
 				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target;  // With prefix and suffix used by variants
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
 				
 				// Associate the target name to the variants reference name
-				igvGenomeRefTable[target] = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
+				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
+				if (gigwaContigName != null)
+					igvGenomeRefTable[target] = gigwaContigName;
 			}
 			
 			// Load the default tracks
@@ -2410,7 +2437,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								
 								<!-- IGV.js browser button -->
 								<button style="padding:2px;" title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
-									<img title="IGV genome browser" src="images/igvjs.png" height="25" width="25" />
+									<img title="IGV.js online genome browser" src="images/igvjs.png" height="25" width="25" />
 								</button>
 								
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
