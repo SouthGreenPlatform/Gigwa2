@@ -1,6 +1,6 @@
 version: '3.5'
 
-# You may use the following (Linux) command to start gigwa by dynamically setting the docker0 IP address:
+# You may use the following (Linux) command to start Gigwa by dynamically setting the docker0 IP address:
 # export docker0=$(ip a list docker0 | grep "inet " | sed 's/^ *//g' | awk -F'[ |/]' '{print $2}') && docker-compose up -d && sleep 2 && xdg-open http://$docker0:8080/gigwa &> /dev/null
 
 services:
@@ -17,14 +17,17 @@ services:
       MONGO_INITDB_ROOT_USERNAME: yourMongoRootUser
       MONGO_INITDB_ROOT_PASSWORD: yourMongoRootPassword
       HOST_LOCALE: "${LANG}"
+#     casServerURL: https://sso.cirad.fr:443                # URL of the CAS server to use for Single-Sign-On
+#     enforcedWebapRootUrl: http://${docker0}:8080/gigwa    # Gigwa base-URL for CAS to direct to after login. System will attempt guessing it if not provided, but it's always better to specify it
+#     casOrganisation: MyOrganisation                       # Not required, will only be displayed on login page if provided
+      
     volumes:
       - type: volume
         source: gigwa
         target: /usr/local/tomcat/config
 #      - type: bind                      # Uncomment this line to make dumps accessible from the host machine         
 #        source: /tmp/gigwaDockerDumps   # Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you with to use as source)
-#        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine
-
+#        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine (must match the dumpFolder attribute's value in config.properties)
   mongo:
     image: mongo:4.2.18
     restart: always
