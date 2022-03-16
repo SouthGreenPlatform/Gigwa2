@@ -160,7 +160,7 @@ function displayMessage(message, duration) {
 function handleError(xhr, thrownError) {
     if (xhr != null && xhr.status == 401)
     {
-        location.href = 'login.jsp';
+        location.href = 'login.do';
         return;
     }
 
@@ -915,15 +915,11 @@ function getToken() {
         url: tokenURL,
         async: false,
         type: "POST",
-        data: JSON.stringify({
-            "username": "",
-            "password": ""
-        }),
         dataType: "json",
         contentType: "application/json;charset=utf-8",
         success: function (jsonResult) {
             token = jsonResult.token;
-            if (document.referrer.endsWith("/login.jsp") && jsonResult.msg != null)
+            if (document.referrer.endsWith("/login.do") && jsonResult.msg != null)
                 alert(jsonResult.msg);
         },
         error: function (xhr, thrownError) {

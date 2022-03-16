@@ -141,7 +141,7 @@
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
-				dropTempCol();
+				dropTempColl();
 
 			referenceset = $(this).val();
 			if (!loadProjects(referenceset))
@@ -298,15 +298,6 @@
 				searchVariants(2, '0');
 			}
 		});
-
-		$(window).on('beforeunload', function() {
-			if (!exporting) {
-				if (referenceset != "")
-					dropTempCol();
-				clearToken(); // after collection drop, otherwise token will be re-created
-			}
-			exporting = false;
-		});
 		
 		$('#grpProj').hide();
 		$('[data-toggle="tooltip"]').tooltip({
@@ -341,6 +332,21 @@
                     }
                 });
 	});
+	
+	var onbeforeunloadCalled = false;
+	window.onbeforeunload = function(e) {
+		if (onbeforeunloadCalled)
+			return;
+		
+		onbeforeunloadCalled = true;
+		if (!exporting) {
+			if (referenceset != "")
+				dropTempColl(true);
+			else
+				clearToken();
+		}
+		exporting = false;
+	};
         
     function removeUploadedFile() {
         $('#uploadVariantIdsFile').val('');
@@ -361,32 +367,33 @@
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event 
-	function dropTempCol() {
+	// clear session and user's temporary collection 
+	function dropTempColl(clearTokenAfterDroppingTempColl) {
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset + (clearTokenAfterDroppingTempColl ? "?clearToken=true" : ""),
 			type: "DELETE",
+			async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
 			headers: {
 				"Authorization": "Bearer " + token
 			},
 			success: function(jsonResult) {
-				if (!jsonResult.success) {
+				if (!jsonResult.success)
 					alert("unable to drop temporary collection");
-				}
 			},
 			error: function(xhr, thrownError) {
 				console.log("Error dropping temp coll (status " + xhr.status + "): " + thrownError);
 			}
 		});
 	}
-
-	// clear user token, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
+	
+	// clear user token
 	function clearToken() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
 			type: "DELETE",
+			async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
 			headers: {
@@ -809,6 +816,9 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
+			headers: {
+				"Authorization": "Bearer " + token
+			},
 			success: function(ploidyLevel) {
 				ploidy = ploidyLevel;
 			},

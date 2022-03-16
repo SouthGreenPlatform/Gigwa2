@@ -975,8 +975,7 @@
     									<h5>... or drop file here or click to upload<br/><i>(max size: 5 Mb)</i></h5>
     									<div>
     										<b>Accepted extensions:</b>
-    										<br/>.tsv or .csv
-    										<br/>(tab-separated only)
+    										<br/>.tsv or .csv (tab-separated only)
     										<br/>.phenotype
     									</div>
    									</div>
