@@ -265,9 +265,9 @@ public class GigwaModuleManager implements IModuleManager {
                     LOG.error("error checking for mongodump presence", ioe);
                     actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
                 }
-            } else
-                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? ""
-                        : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
+            }
+            else
+                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
         }
         return actionRequiredToEnableDumps;
     }

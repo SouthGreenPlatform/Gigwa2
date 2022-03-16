@@ -31,12 +31,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.Normalizer;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -73,7 +75,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -125,6 +130,7 @@ import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
+import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
@@ -137,6 +143,9 @@ import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
+import fr.cirad.web.controller.rest.BrapiRestController;
+import fr.cirad.web.controller.rest.BrapiRestController.CreateTokenRequestBody;
+import fr.cirad.web.controller.security.UserPermissionController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -167,8 +176,10 @@ public class GigwaRestController extends ControllerInterface {
 	private AppConfig appConfig;
 	
 	@Autowired 
+	private BrapiRestController brapiV1Controller;
+	
+	@Autowired 
 	private GigwaGa4ghServiceImpl ga4ghService;
-
 	/**
 	 * The Constant LOG.
 	 */
@@ -244,33 +255,49 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GET_SESSION_TOKEN, notes = "Generate a token. The obtained token then needs to be passed along with every request.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
-		int maxInactiveIntervalInSeconds = request.getSession().getMaxInactiveInterval();
-		if (maxInactiveIntervalInSeconds > 0)
-			tokenManager.setSessionTimeoutInSeconds(maxInactiveIntervalInSeconds);
-		String token = tokenManager.createAndAttachToken(userInfo.getUsername(), userInfo.getPassword());
+	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse response, @RequestBody(required = false) UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
+        if (userInfo != null && (userInfo.getUsername() == null || userInfo.getUsername().isEmpty() ||  userInfo.getPassword() == null || userInfo.getPassword().isEmpty())) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
 
-		Authentication authentication = null;
-		if (userInfo.getUsername() != null && userInfo.getUsername().length() > 0) {
-			authentication = tokenManager.getAuthenticationFromToken(token);
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-			repository.saveContext(SecurityContextHolder.getContext(), request, resp);
+        int maxInactiveIntervalInSeconds = request.getSession().getMaxInactiveInterval();
+        if (maxInactiveIntervalInSeconds > 0)
+            tokenManager.setSessionTimeoutInSeconds(maxInactiveIntervalInSeconds);
 
-			if (authentication == null) { // we don't return a token in case of a login failure
-				resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-				return null;
-			}
-		}
-		resp.setStatus(HttpServletResponse.SC_CREATED);
-
-		Map<String, String> result = new HashMap<>();
-
-		result.put(Constants.TOKEN, token);
-		authentication = tokenManager.getAuthenticationFromToken(token);
-		if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
-			result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
-		return result;
+        try
+        {
+            Map<String, String> result = new HashMap<>();
+            Authentication authentication;
+            if (userInfo == null) {
+                authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
+                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
+                LOG.info("Returning token for user in current session " + authentication.getName());
+            }
+            else {
+                authentication = authenticationManager.authenticate((new UsernamePasswordAuthenticationToken(userInfo.getUsername(), userInfo.getPassword())));
+                LOG.info("Successful authentication for user " + userInfo.getUsername());
+            }
+            response.setStatus(HttpServletResponse.SC_CREATED);
+            result.put(Constants.TOKEN, tokenManager.generateToken(authentication));
+            return result;
+        
+        }
+        catch (BadCredentialsException ignored)
+        {
+            LOG.info("Authentication failed for user " + userInfo.getUsername());
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return null;
+        }
+        finally {
+            if (userInfo != null)   // we don't want to do the cleanup too often
+                try {
+                    tokenManager.cleanupTokenMap();
+                } catch (ParseException e) {
+                    LOG.warn("Error executing cleanupTokenMap", e);
+                }
+        }
 	}
 
 	/**
@@ -641,15 +668,15 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DROP_TEMP_COL_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
-	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String referenceSetId) throws IOException {
-
+	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
 		Map<String, Boolean> response = new HashMap<>();
 		boolean success = false;
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
 				service.onInterfaceUnload(referenceSetId, token);
+				if (Boolean.parseBoolean(request.getParameter("clearToken")))
+				    clearToken(request, resp);
 				success = true;
 			} else
 				build401Response(resp);
@@ -1215,14 +1242,16 @@ public class GigwaRestController extends ControllerInterface {
                 if (filesByExtension.containsKey(fileExtension)) {
                     progress.setError("Each provided file must have a different extension!");
                 } else {
-                    File file;
+                    File file = null;
                     if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
                         // make sure we transfer it to a file in the same location so it is a move rather than a copy!
                         File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-                        file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-                    } else {
-                        file = File.createTempFile(null, "_" + mpf.getOriginalFilename());
-                        LOG.debug("Had to transfer MultipartFile for tmp directory for " + mpf.getOriginalFilename());
+                        if (uploadedFile != null)
+                            file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+                    }
+                    if (file == null) {
+                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
                     }
                     mpf.transferTo(file);
                     uploadedFiles.add(file);
@@ -1466,14 +1495,16 @@ public class GigwaRestController extends ControllerInterface {
 					if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided file must have a different extension!");
 					else {
-						File file;
+						File file = null;
 						if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
 							// make sure we transfer it to a file in the same location so it is a move rather than a copy!
 							File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-							file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-						} else {
-							file = File.createTempFile(null, "_" + mpf.getOriginalFilename());
-							LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+							if (uploadedFile != null)
+							    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+						}
+						if (file == null) {
+                            file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                            LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
 						}
 						mpf.transferTo(file);
 						nTotalUploadSize += file.length();
@@ -1648,7 +1679,7 @@ public class GigwaRestController extends ControllerInterface {
 			String sReferer = request.getHeader("referer");
 			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
 			boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
-			boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || tokenManager.listWritableDBs(auth).size() == 0);
+			boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || tokenManager.listWritableDBs(token).size() == 0);
 			final boolean fDatasourceAlreadyExisted = fDatasourceExists;
 
 			if (progress.getError() != null)
@@ -1710,8 +1741,14 @@ public class GigwaRestController extends ControllerInterface {
 			}
 
 			if (fDatasourceExists) {
-				final MongoTemplate finalMongoTemplate = MongoTemplateManager.get(sNormalizedModule /*sModule*/);
-				if (project == null && expiryDate == null && !tokenManager.canUserCreateProjectInDB(auth, sModule)) // if it's a temp db then don't check for permissions
+				final MongoTemplate finalMongoTemplate = MongoTemplateManager.get(sNormalizedModule);
+				if (project != null) {
+				    if (!tokenManager.canUserWriteToProject(token, sNormalizedModule, project.getId())) {
+				        progress.setError("You are not allowed to write to this project!");
+				        return null;
+				    }
+				}
+				else if (expiryDate == null && !tokenManager.canUserCreateProjectInDB(token, sModule)) // if it's a temp db then don't check for permissions
 				{
 					progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
 					if (!fDatasourceAlreadyExisted) {
@@ -1809,9 +1846,21 @@ public class GigwaRestController extends ControllerInterface {
 							}
 						}
 						finally {
-							if (createdProjectId.get() != -1 && !fAnonymousImporter) { // a new project was created so we give this user management permissions on it
+							if (!fDatasourceAlreadyExisted && !fAnonymousImporter && !fAdminImporter) { // a new temporary database was created so we give this user supervisor role on it
 								try {
-									userDao.allowManagingEntity(sModule, AbstractTokenManager.ENTITY_PROJECT, createdProjectId.get(), auth.getName());
+							        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
+							        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
+							            return; // no need to grant any role to administrators
+
+							        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
+							        if (!owner.getAuthorities().contains(role)) {
+							            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
+							            authoritiesToSave.add(role);
+							            for (GrantedAuthority authority : owner.getAuthorities())
+							                authoritiesToSave.add(authority);
+							            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
+							        }
+
 									tokenManager.reloadUserPermissions(securityContext);
 								}
 								catch (IOException e) {
