@@ -176,9 +176,6 @@ public class GigwaRestController extends ControllerInterface {
 	private AppConfig appConfig;
 	
 	@Autowired 
-	private BrapiRestController brapiV1Controller;
-	
-	@Autowired 
 	private GigwaGa4ghServiceImpl ga4ghService;
 	/**
 	 * The Constant LOG.
@@ -273,7 +270,7 @@ public class GigwaRestController extends ControllerInterface {
                 authentication = SecurityContextHolder.getContext().getAuthentication();
                 if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
                     result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
-                LOG.info("Returning token for user in current session " + authentication.getName());
+                LOG.info("Returning token for current session user " + authentication.getName());
             }
             else {
                 authentication = authenticationManager.authenticate((new UsernamePasswordAuthenticationToken(userInfo.getUsername(), userInfo.getPassword())));
