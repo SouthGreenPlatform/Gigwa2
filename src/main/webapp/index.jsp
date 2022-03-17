@@ -129,6 +129,7 @@
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
+	var exportedIndividualCount = 0;
 	
 	$.ajaxSetup({cache: false});
 
@@ -1238,9 +1239,9 @@
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
+		exportedIndividualCount = indToExport == null ? indCount : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-			var indToExportCount = indToExport == null ? indCount : indToExport.length;
-			if (indToExportCount * count > 1000000000) {
+			if (exportedIndividualCount * count > 1000000000) {
 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
 				return;
 			}
