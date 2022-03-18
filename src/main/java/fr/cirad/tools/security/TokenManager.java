@@ -192,6 +192,7 @@ public class TokenManager extends AbstractTokenManager {
      */
     public Collection<String> listReadableDBs(Collection<? extends GrantedAuthority> authorities)
     {
+        boolean fAdminUser = authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
         Map<String, Map<String, Map<String, Collection<Comparable>>>> customRolesByModuleAndEntityType = userDao.getCustomRolesByModuleAndEntityType(authorities);
         Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authorities);
         Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
@@ -199,9 +200,9 @@ public class TokenManager extends AbstractTokenManager {
         {
             boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
             boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
-            boolean fAdminUser = authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
-            boolean fAuthorizedUser = authorities != null && (userDao.getSupervisedModules(authorities).contains(module) || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
-            if (fAdminUser || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
+            boolean fIsSupervisor = !fAdminUser && userDao.getSupervisedModules(authorities).contains(module);
+            boolean fAuthorizedUser = authorities != null && (fIsSupervisor || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
+            if (fAdminUser || fIsSupervisor || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
                 authorizedModules.add(module);
         }
         return authorizedModules;
