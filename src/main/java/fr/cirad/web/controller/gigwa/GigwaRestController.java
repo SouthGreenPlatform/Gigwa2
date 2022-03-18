@@ -139,12 +139,9 @@ import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
-import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
-import fr.cirad.web.controller.rest.BrapiRestController;
-import fr.cirad.web.controller.rest.BrapiRestController.CreateTokenRequestBody;
 import fr.cirad.web.controller.security.UserPermissionController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import io.swagger.annotations.ApiOperation;
@@ -320,7 +317,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				return service.listVariantTypesSorted(info[0], Integer.parseInt(info[1]));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -345,7 +342,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				response.put(Constants.RUNS, service.getRunList(info[0], Integer.parseInt(info[1])));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 			}
 			return response;
 		} catch (ObjectNotFoundException e) {
@@ -372,7 +369,7 @@ public class GigwaRestController extends ControllerInterface {
 			response.put(Constants.HOSTS, hosts);
 			return response;
 		} else {
-			build401Response(resp);
+			build403Response(resp);
 			return null;
 		}
 	}
@@ -401,7 +398,7 @@ public class GigwaRestController extends ControllerInterface {
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 			}
 			return response;
 		} catch (ObjectNotFoundException e) {
@@ -433,7 +430,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				response.put(Constants.SEQUENCES, service.listSequences(request, info[0], Integer.parseInt(info[1])));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 			}
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
@@ -466,7 +463,7 @@ public class GigwaRestController extends ControllerInterface {
 				response.put(Constants.EFFECT_ANNOTATIONS,
 						service.getProjectEffectAnnotations(info[0], Integer.parseInt(info[1])));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 			}
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
@@ -496,7 +493,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				return service.searchableAnnotationFields(info[0], Integer.parseInt(info[1]));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -524,7 +521,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				return service.getProjectPloidyLevel(info[0], Integer.parseInt(info[1]));
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -584,7 +581,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
 				response.put(Constants.SEQUENCE_FILTER_COUNT, service.getSequenceFilterCount(request, referenceSetId));
 			} else
-				build401Response(resp);
+				build403Response(resp);
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -613,7 +610,7 @@ public class GigwaRestController extends ControllerInterface {
 				service.clearSequenceFilterFile(request, referenceSetId);
 				success = true;
 			} else
-				build401Response(resp);
+				build403Response(resp);
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -676,7 +673,7 @@ public class GigwaRestController extends ControllerInterface {
 				    clearToken(request, resp);
 				success = true;
 			} else
-				build401Response(resp);
+				build403Response(resp);
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -711,7 +708,7 @@ public class GigwaRestController extends ControllerInterface {
 				gdr.setRequest(request);
 				return service.selectionDensity(gdr);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -746,7 +743,7 @@ public class GigwaRestController extends ControllerInterface {
 				gdr.setRequest(request);
 				return service.selectionFst(gdr);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -781,7 +778,7 @@ public class GigwaRestController extends ControllerInterface {
 				gdr.setRequest(request);
 				return service.selectionTajimaD(gdr);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -998,7 +995,7 @@ public class GigwaRestController extends ControllerInterface {
 				gvfpr.setRequest(request);
 				return service.selectionVcfFieldPlotData(gvfpr);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -1024,7 +1021,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				return service.distinctSequencesInSelection(request, info[0], Integer.parseInt(info[1]), token);
 			} else {
-				build401Response(resp);
+				build403Response(resp);
 				return null;
 			}
 		} catch (ObjectNotFoundException e) {
@@ -1064,7 +1061,7 @@ public class GigwaRestController extends ControllerInterface {
 	            }
 		}
 		else
-			build401Response(resp);
+			build403Response(resp);
 
 		return result;
 	}
@@ -1089,7 +1086,7 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				response.put(Constants.ANN_HEADERS, service.getAnnotationHeaders(info[0], Integer.parseInt(info[1])));
 			} else
-				build401Response(resp);
+				build403Response(resp);
 			return response;
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
@@ -1138,7 +1135,7 @@ public class GigwaRestController extends ControllerInterface {
                 gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
                 service.exportVariants(gsver, token, resp);
             } else {
-                build401Response(resp);
+                build403Response(resp);
             }
         }
         catch (ObjectNotFoundException e)
@@ -1455,7 +1452,7 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = genotypeImportSubmissionURL, notes = "Import genotyping data.")
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
-	public @ResponseBody String importGenotypingData(HttpServletRequest request,
+	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
 			@RequestParam(value = "ploidy", required = false) final Integer nPloidy,
@@ -1470,12 +1467,16 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
 			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2) throws Exception
 	{
-		final String token = tokenManager.readToken(request);
-		final ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking submitted data" });
-		ProgressIndicator.registerProgressIndicator(progress);
+        final String token = tokenManager.readToken(request);
+        final ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking submitted data" });
+        ProgressIndicator.registerProgressIndicator(progress);
 
-		if (token.length() == 0)
-			progress.setError("You must pass a token to be allowed to import.");
+		Authentication auth = tokenManager.getAuthenticationFromToken(token);
+		if (auth == null) {
+		    build401Response(response);
+		    progress.setError("You must pass a valid token to be allowed to import.");
+            return token;
+		}
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
 		if (!AbstractGenotypeImport.isModuleAvailableForWriting(sNormalizedModule))
@@ -1514,8 +1515,7 @@ public class GigwaRestController extends ControllerInterface {
 				progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
 		}
 
-		Authentication auth = tokenManager.getAuthenticationFromToken(token);
-		boolean fAdminImporter = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
+		boolean fAdminImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 
 		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2))
@@ -1959,8 +1959,13 @@ public class GigwaRestController extends ControllerInterface {
 		resp.getWriter().write(message);
 	}
 	
-	public void build401Response(HttpServletResponse resp) throws IOException {
-		resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    public void build401Response(HttpServletResponse resp) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        resp.getWriter().write("This action requires authentication");
+    }
+    
+	public void build403Response(HttpServletResponse resp) throws IOException {
+		resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		resp.getWriter().write("You are not allowed to access this resource");
 	}
 
@@ -1981,7 +1986,7 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-    		build401Response(response);
+    		build403Response(response);
     		return;
     	}
     	String sQueryLabel = jsonNode.get("queryLabel").asText();
@@ -2027,7 +2032,7 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-    		build401Response(response);
+    		build403Response(response);
     		return null;
     	}
 
@@ -2047,7 +2052,7 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-    		build401Response(response);
+    		build403Response(response);
     		return null;
     	}
     	
@@ -2059,7 +2064,7 @@ public class GigwaRestController extends ControllerInterface {
         }
         
         if (!cachedQuery.getLabelsForUsers().containsKey(authentication.getName())) {
-    		build401Response(response);
+    		build403Response(response);
     		return null;
     	}
 
@@ -2072,7 +2077,7 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);
     	if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-    		build401Response(response);
+    		build403Response(response);
     		return;
     	}
     	
