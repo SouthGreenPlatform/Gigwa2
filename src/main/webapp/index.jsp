@@ -252,7 +252,10 @@
 		});
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
-			enableMafOnlyIfApplicable();
+			var hideMaf = $('#numberOfAlleles option[value=2]').length == 0;
+	        for (var nGroup=1; nGroup<=2; nGroup++) {
+			    $('.mafZone').css('display', hideMaf ? "none" : "block");
+	        }
 		});
 		$('#exportFormat').on('change', function() {
 			var opt = $(this).children().filter(':selected');
@@ -798,7 +801,7 @@
 				alleleCount = jsonResult.numberOfAllele.length;
 				var option = "";
 				for (var allele in jsonResult.numberOfAllele)
-					option += '<option>' + jsonResult.numberOfAllele[allele] + '</option>';
+					option += '<option value="' + jsonResult.numberOfAllele[allele] + '">' + jsonResult.numberOfAllele[allele] + '</option>';
 				$('#numberOfAlleles').html(option).selectpicker('refresh');
 				$('#nbAlleleGrp').show();
 
@@ -842,13 +845,13 @@
 					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					enableMafOnlyIfApplicable();
+					resetMafWidgetsIfNecessary(1);
 				});
 				$('#Genotypes2').on('change', function() {
 					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					enableMafOnlyIfApplicable();
+					resetMafWidgetsIfNecessary(2);
 				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -2294,7 +2297,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 								</div>
-								<div class="margin-top-md">
+								<div class="margin-top-md mafZone">
 									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
@@ -2302,14 +2305,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf1" value="0"
 													 id="minmaf1" class="form-control input-sm" type="number" step="0.1"
 													 maxlength="2" min="0" max="50"
-													 onblur="$(this).val(($(this).val() === '' || $(this).val() < 0 || $(this).val() > 50) ? 0 : $(this).val());">
+													 onblur="mafChanged(1);">
 											<span class="input-group-addon input-sm">%</span>
 										</div>
 									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
 										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf1" value="50"
 											 id="maxmaf1" class="form-control input-sm" type="number" step="0.1"
 											 maxlength="2" min="0" max="50"
-											 onblur="$(this).val(($(this).val() === '' || $(this).val() > 50) ? 50 : $(this).val());">
+											 onblur="mafChanged(1);">
 										  <span class="input-group-addon input-sm">%</span>
 										</div>
 									  </div>
@@ -2374,7 +2377,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											  <input id="missingdata2" class="form-control input-sm"
 												 name="missingdata2" value="100" type="number" step="0.1"
 											 	 maxlength="3" min="0" max="100"
-												 onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
+												  onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
 											  <span class="input-group-addon input-sm">%</span>
 										   	</div>
 									  	  </div>
@@ -2384,7 +2387,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 								</div>
-								<div class="margin-top-md">
+								<div class="margin-top-md" mafZone>
 									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
@@ -2392,14 +2395,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf2" value="0"
 													 id="minmaf2" class="form-control input-sm" type="number" step="0.1"
 													 maxlength="2" min="0" max="50"
-													 onblur="$(this).val(($(this).val() === '' || $(this).val() < 0 || $(this).val() > 50) ? 0 : $(this).val());">
+													 onblur="mafChanged(2);">
 											<span class="input-group-addon input-sm">%</span>
 										</div>
 									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
 										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf2" value="50"
 											 id="maxmaf2" class="form-control input-sm" type="number" step="0.1"
 											 maxlength="2" min="0" max="50"
-											 onblur="$(this).val(($(this).val() === '' || $(this).val() > 50) ? 50 : $(this).val());">
+											 onblur="mafChanged(2);">
 										  <span class="input-group-addon input-sm">%</span>
 										</div>
 									  </div>

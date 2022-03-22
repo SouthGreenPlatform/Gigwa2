@@ -192,7 +192,8 @@ function initializeAndShowDensityChart(){
     });
 }
 
-function clearVcfFieldBasedSeries() {
+function onManualIndividualSelection() {
+	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " selected)"));
 	$('.showHideSeriesBox').attr('checked', false);
 	$('.showHideSeriesBox').change();
 }
@@ -254,8 +255,8 @@ function buildCustomisationDiv(chartInfo) {
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
-    if (getGenotypeInvestigationMode() != 0 && (hasVcfMetadata || chartInfo.selectIndividuals))
-        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="clearVcfFieldBasedSeries(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'clearVcfFieldBasedSeries\');">' + getExportIndividualSelectionModeOptions() + '</select></div>';
+    if (hasVcfMetadata || chartInfo.selectIndividuals)
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -273,6 +274,12 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '</div>'
     
     $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
+    showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
+}
+
+function showSelectedIndCount(selectionObj, selectionLabelObj) {
+	var selectedOption = selectionObj.find("option:selected"), chooseMode = selectedOption.val() == "choose";
+	selectionLabelObj.text(!chooseMode ? "(" + (selectedOption.val() == "" ? indCount : Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length) + " selected)" : "");
 }
 
 function displayOrAbort() {
