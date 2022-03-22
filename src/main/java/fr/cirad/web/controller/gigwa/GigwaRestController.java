@@ -1436,6 +1436,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * Import genotyping data.
 	 *
 	 * @param request the request
+	 * @param request the response
 	 * @param sHost the host
 	 * @param sModule the module
 	 * @param ncbiTaxonIdNameAndSpecies the ncbi TaxonId, Taxon Name and Species Name
@@ -1445,8 +1446,12 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sProjectDescription the project description
 	 * @param sTechnology the technology
 	 * @param fClearProjectData whether or not to clear project data
+	 * @param skipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
 	 * @param dataUri1 data file 1
 	 * @param dataUri2 data file 2
+	 * @param sBrapiMapDbId BrAPI map id for the server to pull genotypes from
+	 * @param sBrapiStudyDbId BrAPI study id for the server to pull genotypes from
+	 * @param sBrapiToken BrAPI token for the server to pull genotypes from
 	 * @return the token to use for checking progress
 	 * @throws Exception the exception
 	 */
@@ -1456,14 +1461,13 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
 			@RequestParam(value = "ploidy", required = false) final Integer nPloidy,
-			@RequestParam("project") final String sProject,
-			@RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
+			@RequestParam("project") final String sProject, @RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
 			@RequestParam(value = "clearProjectData", required = false) final Boolean fClearProjectData,
 			@RequestParam(value = "skipMonomorphic", required = false) final boolean fSkipMonomorphic,
 			@RequestParam(value = "dataFile1", required = false) final String dataUri1, @RequestParam(value = "dataFile2", required = false) final String dataUri2,
-			@RequestParam(value = "brapiParameter_mapDbId", required = false) final String sBrapiMapDbId,
-			@RequestParam(value = "brapiParameter_studyDbId", required = false) final String sBrapiStudyDbId,
+			@RequestParam(value = "brapiParameter_mapDbId", required = false) final String sBrapiMapDbId, @RequestParam(value = "brapiParameter_studyDbId", required = false) final String sBrapiStudyDbId,
+			@RequestParam(value = "brapiParameter_token", required = false) final String sBrapiToken,
 			@RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
 			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2) throws Exception
 	{
@@ -1765,7 +1769,7 @@ public class GigwaRestController extends ControllerInterface {
 						try {
 							Integer newProjId = null;
 							if (fBrapiImport)
-								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else {
 								if (!filesByExtension.containsKey("gz")) {
 									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {

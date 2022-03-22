@@ -56,7 +56,7 @@
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
-                        var extRefTypeField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
+            var extRefTypeField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
@@ -140,7 +140,7 @@
                 });
                 $('#brapiPwdDialog').on('hidden.bs.modal', function () {
                 	brapiUserPassword = $('#brapiPassword').val();
-                	if (brapiUserPassword .length == 0)
+                	if (brapiUserPassword.length == 0)
                 		$('div#brapiDataSelectionDiv').remove();
                 	else
                 	{
@@ -486,6 +486,8 @@
         		{
         			$('#brapiParameter_mapDbId').val(brapiParameters['mapDbId']);
         			$('#brapiParameter_studyDbId').val(brapiParameters['studyDbId']);
+        			if (brapiToken != null)
+        				$('#brapiParameter_token').val(brapiToken);
         		}
 
                 $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
@@ -766,6 +768,7 @@
             	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL%>' />" method="post">
 	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
 	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
+	            	<input type="hidden" name="brapiParameter_token" id="brapiParameter_token"/>
                     <div class="panel panel-default importFormDiv">
                         <div class="panel-body panel-grey">
                             <div class="form text-center">

@@ -2502,7 +2502,9 @@
               this.mouseOverPosition = [x, y];
             }
           } else */
-          if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth) {
+          if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth / 1.1
+          /*accounting for apennded blank space*/
+          ) {
             var xPos = 0,
                 traitIndex = undefined; // Get the trait under the mouse (columns are not of equal size)
 
@@ -2580,7 +2582,7 @@
           this.traitValueColumnWidths = this.displayTraits.map(function (name) {
             return _this5.backContext.measureText(_this5.dataSet.getTrait(name).longestValue).width + 2 * _this5.scorePadding;
           });
-          if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = 0;else if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = this.traitValueColumnWidths[0];else this.traitValuesCanvasWidth = this.traitValueColumnWidths.reduce(function (a, b) {
+          if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = 0;else this.traitValuesCanvasWidth = this.traitValueColumnWidths.reduce(function (a, b) {
             return a + b;
           }); // Add 10% blank space to separate it from the genotypes, otherwise readability is really bad
 
@@ -2905,7 +2907,7 @@
           var imageData = this.createImage(context.createImageData(width, height), highlightReference);
           context.putImageData(imageData, 0, 0);
         } catch (thrownError) {
-          alert(thrownError.indexOf("Cannot read properties of undefined (reading 'genotypeData')") != 0 ? "Error loading genotypes (dataset may be too large for the available RAM)" : thrownError);
+          alert(thrownError.message.indexOf("Cannot read properties of undefined (reading 'genotypeData')") != -1 ? "Error loading genotypes (dataset may be too large for the available RAM)" : thrownError);
           throw thrownError;
         }
       } // Calculate the number of markers and germplasms per pixel in the overview
