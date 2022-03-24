@@ -146,8 +146,6 @@
         <property name="resource" value="classpath:users.properties"/>
     </bean>
 
-    <bean id="gigwaService" class="fr.cirad.mgdb.service.GigwaGa4ghServiceImpl" />
-
     <bean id="accessDecisionManager" class="org.springframework.security.access.vote.GigwaAccessDecisionManager">
         <constructor-arg>
             <list>

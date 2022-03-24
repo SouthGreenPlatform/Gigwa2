@@ -99,7 +99,6 @@ import com.mongodb.BasicDBList;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
 
-import fr.cirad.controller.GigwaMethods;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
@@ -123,6 +122,8 @@ import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
+import fr.cirad.mgdb.service.IGigwaService;
+import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
@@ -156,24 +157,23 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 public class GigwaRestController extends ControllerInterface {
 
-	@Autowired
-	SecurityContextRepository repository;
+	@Qualifier("authenticationManager")
+	@Autowired AuthenticationManager authenticationManager;
 
-	/** The upload resolver. */
+	@Autowired SecurityContextRepository repository;
+
 	@Autowired private CommonsMultipartResolver uploadResolver;
 
-	@Autowired
-	TokenManager tokenManager;
+	@Autowired private TokenManager tokenManager;
 
-	@Autowired
-	@Qualifier("authenticationManager")
-	AuthenticationManager authenticationManager;
-
-	@Autowired
-	private AppConfig appConfig;
+	@Autowired private AppConfig appConfig;
 	
-	@Autowired 
-	private GigwaGa4ghServiceImpl ga4ghService;
+	@Autowired private GigwaGa4ghServiceImpl ga4ghService;
+	
+	@Autowired private VisualizationService vizService;
+
+	@Autowired private ReloadableInMemoryDaoImpl userDao;
+
 	/**
 	 * The Constant LOG.
 	 */
@@ -225,18 +225,9 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
 	static public final String LOAD_QUERY_URL = "/loadQuery";
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
-        static public final String VARIANTS_BY_IDS = "/variants/byIds";
-        static public final String VARIANTS_LOOKUP = "/variants/lookup";
-	
-	/**
-	 * instance of Service to manage all interaction with database
-	 */
-	@Autowired
-	private GigwaGa4ghServiceImpl service;
-
-	@Autowired
-	private ReloadableInMemoryDaoImpl userDao;
-	
+    static public final String VARIANTS_BY_IDS = "/variants/byIds";
+    static public final String VARIANTS_LOOKUP = "/variants/lookup";
+		
 	/**
 	 * get a unique processID
 	 *
@@ -311,11 +302,11 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.listVariantTypesSorted(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.listVariantTypesSorted(info[0], Integer.parseInt(info[1]));
 			} else {
 				build403Response(resp);
 				return null;
@@ -335,12 +326,12 @@ public class GigwaRestController extends ControllerInterface {
 	public Map<String, List<String>> getRunList(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
 
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.RUNS, service.getRunList(info[0], Integer.parseInt(info[1])));
+				response.put(Constants.RUNS, ga4ghService.getRunList(info[0], Integer.parseInt(info[1])));
 			} else {
 				build403Response(resp);
 			}
@@ -389,12 +380,12 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				List<Integer> result = new ArrayList<Integer>(service.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
+				List<Integer> result = new ArrayList<Integer>(ga4ghService.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
@@ -423,12 +414,12 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.SEQUENCES, service.listSequences(request, info[0], Integer.parseInt(info[1])));
+				response.put(Constants.SEQUENCES, ga4ghService.listSequences(request, info[0], Integer.parseInt(info[1])));
 			} else {
 				build403Response(resp);
 			}
@@ -455,13 +446,13 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, TreeSet<String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				response.put(Constants.EFFECT_ANNOTATIONS,
-						service.getProjectEffectAnnotations(info[0], Integer.parseInt(info[1])));
+						ga4ghService.getProjectEffectAnnotations(info[0], Integer.parseInt(info[1])));
 			} else {
 				build403Response(resp);
 			}
@@ -487,11 +478,11 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> listSearchableAnnotationFields(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.searchableAnnotationFields(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.searchableAnnotationFields(info[0], Integer.parseInt(info[1]));
 			} else {
 				build403Response(resp);
 				return null;
@@ -515,11 +506,11 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.getProjectPloidyLevel(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.getProjectPloidyLevel(info[0], Integer.parseInt(info[1]));
 			} else {
 				build403Response(resp);
 				return null;
@@ -550,7 +541,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response) {
 		String token = tokenManager.readToken(request);
-		ProgressIndicator progress = service.getProgressIndicator(token);
+		ProgressIndicator progress = ga4ghService.getProgressIndicator(token);
 		// LOG.debug("returning " + (progress == null ? null :
 		// progress.hashCode()));
 		if (progress == null)
@@ -579,7 +570,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, Integer> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				response.put(Constants.SEQUENCE_FILTER_COUNT, service.getSequenceFilterCount(request, referenceSetId));
+				response.put(Constants.SEQUENCE_FILTER_COUNT, ga4ghService.getSequenceFilterCount(request, referenceSetId));
 			} else
 				build403Response(resp);
 		} catch (ObjectNotFoundException e) {
@@ -607,7 +598,7 @@ public class GigwaRestController extends ControllerInterface {
 		boolean success = false;
 		try {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				service.clearSequenceFilterFile(request, referenceSetId);
+				ga4ghService.clearSequenceFilterFile(request, referenceSetId);
 				success = true;
 			} else
 				build403Response(resp);
@@ -632,7 +623,7 @@ public class GigwaRestController extends ControllerInterface {
 	public Map<String, Boolean> abortProcess(HttpServletRequest request) {
 		String token = tokenManager.readToken(request);
 		Map<String, Boolean> response = new HashMap<>();
-		response.put(Constants.PROCESS_ABORTED, service.abortProcess(token));
+		response.put(Constants.PROCESS_ABORTED, ga4ghService.abortProcess(token));
 		return response;
 	}
 
@@ -668,7 +659,7 @@ public class GigwaRestController extends ControllerInterface {
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				service.onInterfaceUnload(referenceSetId, token);
+				ga4ghService.onInterfaceUnload(referenceSetId, token);
 				if (Boolean.parseBoolean(request.getParameter("clearToken")))
 				    clearToken(request, resp);
 				success = true;
@@ -701,12 +692,12 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return service.selectionDensity(gdr);
+				return vizService.selectionDensity(gdr);
 			} else {
 				build403Response(resp);
 				return null;
@@ -736,12 +727,12 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return service.selectionFst(gdr);
+				return vizService.selectionFst(gdr);
 			} else {
 				build403Response(resp);
 				return null;
@@ -771,12 +762,12 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return service.selectionTajimaD(gdr);
+				return vizService.selectionTajimaD(gdr);
 			} else {
 				build403Response(resp);
 				return null;
@@ -988,12 +979,12 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
-				return service.selectionVcfFieldPlotData(gvfpr);
+				return vizService.selectionVcfFieldPlotData(gvfpr);
 			} else {
 				build403Response(resp);
 				return null;
@@ -1015,11 +1006,11 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return service.distinctSequencesInSelection(request, info[0], Integer.parseInt(info[1]), token);
+				return ga4ghService.distinctSequencesInSelection(request, info[0], Integer.parseInt(info[1]), token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -1079,12 +1070,12 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ANNOTATION_HEADERS_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(GigwaMethods.ID_SEPARATOR);
+		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, Map<String, String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.ANN_HEADERS, service.getAnnotationHeaders(info[0], Integer.parseInt(info[1])));
+				response.put(Constants.ANN_HEADERS, ga4ghService.getAnnotationHeaders(info[0], Integer.parseInt(info[1])));
 			} else
 				build403Response(resp);
 			return response;
@@ -1105,7 +1096,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + EXPORT_FORMAT_PATH, method = RequestMethod.GET, produces = "application/json")
 	public TreeMap<String, HashMap<String, String>> getExportFormats(HttpServletRequest request, HttpServletResponse resp) throws IOException {
-		return service.getExportFormats();
+		return ga4ghService.getExportFormats();
 	}
 
 	/**
@@ -1133,7 +1124,7 @@ public class GigwaRestController extends ControllerInterface {
                 gsver.setRequest(request);		
                 Authentication authentication = tokenManager.getAuthenticationFromToken(token);
                 gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
-                service.exportVariants(gsver, token, resp);
+                ga4ghService.exportVariants(gsver, token, resp);
             } else {
                 build403Response(resp);
             }
@@ -1350,7 +1341,7 @@ public class GigwaRestController extends ControllerInterface {
                     MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
                     for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
                         SearchCallSetsRequest scsr = new SearchCallSetsRequest();
-                        scsr.setVariantSetId(sModule + GigwaMethods.ID_SEPARATOR + projId);
+                        scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
                         for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
                             List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                             List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
@@ -1369,7 +1360,7 @@ public class GigwaRestController extends ControllerInterface {
                                 LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceType + " expected for individual " + ga4ghCallSet.getId());
                             }
 
-                            String[] splitId = ga4ghCallSet.getId().split(GigwaMethods.ID_SEPARATOR);
+                            String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 
                             String endPointUrl = extRefSrcValues.get(0);
                             if (!endPointUrl.endsWith("/")) {
@@ -2004,7 +1995,7 @@ public class GigwaRestController extends ControllerInterface {
         String sModule = info[0];
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);        
 
-        String queryKey = service.getQueryKey(gsvr);
+        String queryKey = ga4ghService.getQueryKey(gsvr);
         
         BookmarkedQuery existingQueryWithThisName = mongoTemplate.findOne(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName()).is(sQueryLabel.trim())), BookmarkedQuery.class);
         if (existingQueryWithThisName != null && !existingQueryWithThisName.getId().equals(queryKey)) {
@@ -2108,10 +2099,10 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
 
         try {
-            String[] info = URLDecoder.decode(projectId, "UTF-8").split(GigwaMethods.ID_SEPARATOR);
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(IGigwaService.ID_SEPARATOR);
             int project = Integer.parseInt(info[1]);
             if (tokenManager.canUserReadDB(token, info[0])) {            
-                return service.searchVariantsLookup(info[0], project, lookupText);
+                return ga4ghService.searchVariantsLookup(info[0], project, lookupText);
             }
                 
         } catch (UnsupportedEncodingException ex) {
