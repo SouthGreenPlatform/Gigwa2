@@ -274,7 +274,8 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '</div>'
     
     $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
-    showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
+    if (hasVcfMetadata || chartInfo.selectIndividuals)
+    	showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
 }
 
 function showSelectedIndCount(selectionObj, selectionLabelObj) {
