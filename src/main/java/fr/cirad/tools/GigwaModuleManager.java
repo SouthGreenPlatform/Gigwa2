@@ -59,10 +59,11 @@ import org.xml.sax.SAXException;
 
 import com.mongodb.BasicDBObject;
 
+import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.dump.DumpMetadata;
+import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpValidity;
 import fr.cirad.manager.dump.IBackgroundProcess;
-import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
@@ -71,17 +72,16 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
-import fr.cirad.security.base.IModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
 @Component
-public class GigwaModuleManager implements IModuleManager {
+public class GigwaModuleManager /*extends Mgdb2ModuleManager */implements IModuleManager {
 
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
-    private static final String defaultDumpFolder = GigwaDumpProcess.dumpManagementPath + "/dumps";
+    private static final String defaultDumpFolder = DumpProcess.dumpManagementPath + "/dumps";
 
     private String actionRequiredToEnableDumps = null;
 
@@ -245,7 +245,7 @@ public class GigwaModuleManager implements IModuleManager {
                 actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
             else if (Files.isDirectory(Paths.get(dumpFolder))) {
                 try {
-                    String commandPrefix = GigwaDumpProcess.operatingSystem.startsWith("win") ? "cmd.exe /c " : "";
+                    String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
 
                     Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
                     Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
@@ -360,7 +360,7 @@ public class GigwaModuleManager implements IModuleManager {
 
         new File(outPath).mkdirs();
 
-        GigwaDumpProcess process = new GigwaDumpProcess(sModule, databaseName, MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), outPath);
+        DumpProcess process = new DumpProcess(this, sModule, databaseName, MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), outPath);
 
         String fileName = databaseName + "__" + dumpName;
         process.startDump(fileName, credentials);
@@ -381,15 +381,10 @@ public class GigwaModuleManager implements IModuleManager {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
-        GigwaDumpProcess process = new GigwaDumpProcess(sModule, MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), appConfig.get("dumpFolder"));
+        DumpProcess process = new DumpProcess(this, sModule, MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), appConfig.get("dumpFolder"));
 
         process.startRestore(dumpFile, drop, credentials);
         return process;
-    }
-
-    @Override
-    public boolean isModuleAvailableForDump(String sModule) {
-        return AbstractGenotypeImport.isModuleAvailableForWriting(sModule);
     }
 
     @Override
@@ -481,6 +476,35 @@ public class GigwaModuleManager implements IModuleManager {
 
     @Override
     public InputStream getDumpLogInputStream(String sModule, String sDumpName) throws IOException {
-        return GigwaDumpProcess.getLogInputStream(getDumpPath(sModule) + File.separator + sDumpName + "__dump.log");
+        return DumpProcess.getLogInputStream(getDumpPath(sModule) + File.separator + sDumpName + "__dump.log");
+    }
+
+	@Override
+	public void updateDatabaseLastModification(String sModule, Date lastModification, boolean restored) {
+		MongoTemplateManager.updateDatabaseLastModification(sModule, lastModification, restored);
+	}
+	
+	public boolean isModuleAvailableForWriting(String sModule) {
+		return MongoTemplateManager.isModuleAvailableForWriting(sModule);
+	}
+
+	public void lockProjectForWriting(String sModule, String sProject) {
+		MongoTemplateManager.lockProjectForWriting(sModule, sProject);
+	}
+
+	public void unlockProjectForWriting(String sModule, String sProject) {
+		MongoTemplateManager.unlockProjectForWriting(sModule, sProject);
+	}
+
+	public void lockModuleForWriting(String sModule) {
+		MongoTemplateManager.lockModuleForWriting(sModule);
+	}
+
+	public void unlockModuleForWriting(String sModule) {
+		MongoTemplateManager.unlockModuleForWriting(sModule);
+	}
+
+    public boolean isModuleAvailableForDump(String sModule) {
+        return isModuleAvailableForWriting(sModule);
     }
 }

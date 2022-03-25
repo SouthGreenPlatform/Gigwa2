@@ -1474,7 +1474,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
-		if (!AbstractGenotypeImport.isModuleAvailableForWriting(sNormalizedModule))
+		if (!MongoTemplateManager.isModuleAvailableForWriting(sNormalizedModule))
 			progress.setError("Some data is already being imported into this database. Please try again later.");
 
 		HashMap<String, Serializable> filesByExtension = new HashMap<>();
