@@ -1,6 +1,11 @@
 # Set memory range allocated to Tomcat
 export CATALINA_OPTS=" -Xms512m -Xmx2048m"
 
+
+# Manage Log4jV vulnerability CVE-2021-44228
+export JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
+
 # In container start Tomcat using the host's locale
 if [ ! -z "${HOST_LOCALE}" ]; then
 	export LANG=${HOST_LOCALE};
