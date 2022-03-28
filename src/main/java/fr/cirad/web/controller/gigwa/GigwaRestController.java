@@ -1475,7 +1475,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
 		if (!MongoTemplateManager.isModuleAvailableForWriting(sNormalizedModule))
-			progress.setError("Some data is already being imported into this database. Please try again later.");
+			progress.setError("This database is currently locked for writing. Please try again later.");
 
 		HashMap<String, Serializable> filesByExtension = new HashMap<>();
 		Long nTotalUploadSize = 0l, nTotalImportSize = 0l, maxUploadSize = maxUploadSize(request, true), maxImportSize = maxUploadSize(request, false);
