@@ -2502,8 +2502,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</div>
 							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 12px;">
 								External tools
-								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
-								<!-- <img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" /> -->
+								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
+								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="(DEPRECATED in favor of using the embedded IGV.js) You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>
