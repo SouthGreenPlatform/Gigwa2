@@ -892,7 +892,7 @@
                                           <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
                                       </div>
                                          <div class="col-md-5">
-                                          <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK (ped + map)">
+                                          <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
                                       </div>
                                      </div>
                                <div class ="row">
