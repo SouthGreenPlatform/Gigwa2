@@ -280,7 +280,14 @@ function buildCustomisationDiv(chartInfo) {
 
 function showSelectedIndCount(selectionObj, selectionLabelObj) {
 	var selectedOption = selectionObj.find("option:selected"), chooseMode = selectedOption.val() == "choose";
-	selectionLabelObj.text(!chooseMode ? "(" + (selectedOption.val() == "" ? indCount : Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length) + " selected)" : "");
+	if (chooseMode)
+		selectionLabelObj.text("");
+	else if (selectedOption.val() == "")
+		selectionLabelObj.text(" (" + indCount + " selected)");
+	else {
+		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length;
+		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indCount : selectedIndCount) + " selected)");
+	}
 }
 
 function displayOrAbort() {
