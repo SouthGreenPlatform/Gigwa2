@@ -592,7 +592,9 @@
 									<executable>echo</executable>
 									<arguments>
 										<argument>-e</argument>
-										<argument>LC_ALL=\nexport CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+										<argument>LC_ALL=</argument>
+										<argument>\nexport CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>
 									</arguments>
 									<outputFile>${bundle.dir.ubuntu}/tomcat/bin/setenv.sh</outputFile>
 								</configuration>
@@ -606,7 +608,9 @@
 								<configuration>
 									<executable>echo</executable>
 									<arguments>
+										<argument>-e</argument>
 										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
+										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>
 									</arguments>
 									<outputFile>${bundle.dir.osx}/tomcat/bin/setenv.sh</outputFile>
 								</configuration>
@@ -620,7 +624,9 @@
 								<configuration>
 									<executable>echo</executable>
 									<arguments>
+										<argument>-e</argument>
 										<argument>set "JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m"</argument>
+										<argument>\nset "JAVA_OPTS=%JAVA_OPTS% -Dlog4j2.formatMsgNoLookups=true"</argument>
 									</arguments>
 									<outputFile>${bundle.dir.windows}/tomcat/bin/setenv.bat</outputFile>
 								</configuration>
