@@ -594,6 +594,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
                 $('#currentPage').html("no results");
                 $('#next').prop('disabled', true);
                 $('#showdensity').hide();
+                $('#showIGV').hide();
                 $('#exportBoxToggleButton').hide();
             } else {
                 if (count < 100) {

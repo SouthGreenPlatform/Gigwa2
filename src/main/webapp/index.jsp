@@ -908,6 +908,7 @@
 			show: true
 		}); // prevent the user from hiding progress modal when clicking outside
 		$('#showdensity').show();
+		$('#showIGV').show();
 		$('#exportBoxToggleButton').show();
 		processAborted = false;
 		$('button#abort').attr('rel', token);
