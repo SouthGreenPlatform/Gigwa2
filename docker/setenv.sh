@@ -49,11 +49,11 @@ if [ ! -z "${casServerURL}" ]; then
         fi
 fi
 
-# add or override casOrganisation parameter if present in docker-compose.yml
-if [ ! -z "${casOrganisation}" ]; then
-        if [ $(grep -c "^casOrganisation\s*=" /usr/local/tomcat/config/config.properties) -eq 0 ]; then
-                printf "\ncasOrganisation=${casOrganisation}\n" >> /usr/local/tomcat/config/config.properties
+# add or override casOrganization parameter if present in docker-compose.yml
+if [ ! -z "${casOrganization}" ]; then
+        if [ $(grep -c "^casOrganization\s*=" /usr/local/tomcat/config/config.properties) -eq 0 ]; then
+                printf "\ncasOrganization=${casOrganization}\n" >> /usr/local/tomcat/config/config.properties
         else
-                sed -i "s|^casOrganisation\s*.*|casOrganisation=${casOrganisation}|g" /usr/local/tomcat/config/config.properties
+                sed -i "s|^casOrganization\s*.*|casOrganization=${casOrganization}|g" /usr/local/tomcat/config/config.properties
         fi
 fi

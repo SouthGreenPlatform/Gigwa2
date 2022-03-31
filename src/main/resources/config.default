@@ -51,8 +51,7 @@ maxImportSize_anonymousUser=200
 onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url=;VCF
 
 
-# Properties named igvGenomeConfig_N with N being an integer >= 1 define a genome list to be retrieved as a default genome list section for the integrated IGV.js genome browser
-# Each property is in the form igvGenomeConfig_N = Name;URL
+# Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
 igvGenomeConfig_1 = Public genomes provided by South Green;res/genomes.json
 igvGenomeConfig_2 = IGV default genomes;https://igv.org/genomes/genomes.json
 
@@ -80,12 +79,12 @@ maxExportableBillionGenotypes = 2
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
 
-# If defined, enables CAS authentication and defines the CAS server URL
+# If defined, enables CAS authentication by defining the CAS server URL
 #casServerURL = https://localhost:8443/cas
 
-# Defines the name of the organisation providing the CAS authentication. Optional.
-#casOrganisation = MyOrganisation
+# Defines the name of the organization providing the CAS authentication. Optional
+#casOrganization = MyOrganization
 
 
-# Defines the limit number of variant ids that are returned in the variant IDs filter
+# Defines the limit number of variant IDs that are returned by the text lookup functionality of the "Variant IDs" widget
 variantIdLookupMaxSize = 50
