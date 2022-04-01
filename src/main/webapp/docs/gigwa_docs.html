@@ -415,7 +415,7 @@
                      <SPAN LANG="en-US"><B>export CATALINA_OPTS=&quot;$CATALINA_OPTS -Xms512m -Xmx2048m&quot; (Ubuntu / OSX)</B></SPAN><br/>
                      <SPAN LANG="en-US"><B>set &quot;JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m&quot; (Windows)</B></SPAN>
                      </FONT>
-                     <SPAN LANG="en-US"><BR>(This setting may of course be adapted to get the best out of the hardware configuration)</SPAN>
+                     <SPAN LANG="en-US"><BR>(This setting may of course be adapted to get the best out of the hardware configuration: we found -Xmx8192m to be a good compromise on production servers with large amounts of RAM). If MongoDB and Tomcat are running on the same host (default for bundle archive installations) you should <u>leave most RAM available for MongoDB</u> though.</SPAN>
                   </P>
 			   <LI>
                   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
