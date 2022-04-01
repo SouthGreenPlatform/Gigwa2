@@ -5,7 +5,7 @@
 
 	<groupId>fr.cirad</groupId>
 	<artifactId>gigwa2</artifactId>
-	<version>2.5-beta</version>
+	<version>2.5-RELEASE</version>
 	<packaging>war</packaging>
 
 	<name>gigwa2</name>
@@ -13,7 +13,7 @@
 	<properties>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<Gigwa2ServiceImpl.version>2.5-beta</Gigwa2ServiceImpl.version>
+		<Gigwa2ServiceImpl.version>2.5-RELEASE</Gigwa2ServiceImpl.version>
 		<bundle.dir>target/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
@@ -891,7 +891,7 @@
 						<executions>
 							<!-- Set port to 59395 instead of 8080 in server.xml -->
 							<execution>
-								<id>set-tomcat-port-ubuntu</id>
+								<id>set-tomcat-ports-ubuntu</id>
 								<phase>post-integration-test</phase>
 								<goals>
 									<goal>replace</goal>
@@ -903,11 +903,23 @@
 											<token>8080</token>
 											<value>59395</value>
 										</replacement>
+										<replacement>
+											<token>8005</token>
+											<value>59396</value>
+										</replacement>
+										<replacement>
+											<token>8009</token>
+											<value>59397</value>
+										</replacement>
+										<replacement>
+											<token>Connector port="59395"</token>
+											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
+										</replacement>
 									</replacements>
 								</configuration>
 							</execution>
 							<execution>
-								<id>set-tomcat-port-osx</id>
+								<id>set-tomcat-ports-osx</id>
 								<phase>post-integration-test</phase>
 								<goals>
 									<goal>replace</goal>
@@ -919,11 +931,23 @@
 											<token>8080</token>
 											<value>59395</value>
 										</replacement>
+										<replacement>
+											<token>8005</token>
+											<value>59396</value>
+										</replacement>
+										<replacement>
+											<token>8009</token>
+											<value>59397</value>
+										</replacement>
+										<replacement>
+											<token>Connector port="59395"</token>
+											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
+										</replacement>
 									</replacements>
 								</configuration>
 							</execution>
 							<execution>
-								<id>set-tomcat-port-windows</id>
+								<id>set-tomcat-ports-windows</id>
 								<phase>post-integration-test</phase>
 								<goals>
 									<goal>replace</goal>
@@ -934,6 +958,18 @@
 										<replacement>
 											<token>8080</token>
 											<value>59395</value>
+										</replacement>
+										<replacement>
+											<token>8005</token>
+											<value>59396</value>
+										</replacement>
+										<replacement>
+											<token>8009</token>
+											<value>59397</value>
+										</replacement>
+										<replacement>
+											<token>Connector port="59395"</token>
+											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
 										</replacement>
 									</replacements>
 								</configuration>
