@@ -382,6 +382,28 @@
 							</arguments>
 						</configuration>
 					</execution>
+					
+					<!-- copy updateGigwa scripts so users always get the latest version for their OS -->
+					<execution>
+						<id>copy-updateGigwa-scripts</id>
+						<phase>pre-integration-test</phase>	<!-- This should be in package phase but when it's there it executes before set-default-config -->
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>zip</executable>
+							<workingDirectory>${project.build.directory}</workingDirectory>
+							<arguments>
+								<argument>-j</argument>
+								<argument>-u</argument>
+								<argument>Gigwa_V${project.version}_Webapp.zip</argument>
+								<argument>${project.basedir}/bundle_files/ubuntu/updateGigwa.sh</argument>
+								<argument>${project.basedir}/bundle_files/windows/updateGigwa.bat</argument>
+								<argument>${project.basedir}/bundle_files/osx/updateGigwa.command</argument>
+								<argument>target</argument>
+							</arguments>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 		</plugins>
