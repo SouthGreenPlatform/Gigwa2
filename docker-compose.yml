@@ -7,7 +7,7 @@ services:
   tomcat:
     depends_on:
       - mongo
-    image: guilhemsempere/gigwa:2.5-beta
+    image: guilhemsempere/gigwa:2.5-RELEASE
     ports:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
@@ -19,7 +19,7 @@ services:
       HOST_LOCALE: "${LANG}"
 #     casServerURL: https://sso.cirad.fr:443                # URL of the CAS server to use for Single-Sign-On
 #     enforcedWebapRootUrl: http://${docker0}:8080/gigwa    # Gigwa base-URL for CAS to direct to after login. System will attempt guessing it if not provided, but it's always better to specify it
-#     casOrganisation: MyOrganisation                       # Not required, will only be displayed on login page if provided
+#     casOrganization: MyOrganization                       # Not required, will only be displayed on login page if provided
       
     volumes:
       - type: volume
