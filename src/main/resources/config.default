@@ -1,3 +1,6 @@
+trackerUrl = https://gigwa-dev.southgreen.fr/GigwaInstanceTracker
+instanceUUID = devInstance
+
 # You may specify under this property, a csv list of hosts for which this instance will drop temporary variant collections on startup (e.g. 127.0.0.1:27017,another.server.com:27018).
 # Temporary variant collections are often used once a search has been completed, for browsing/exporting results. They are normally dropped upon user interface unload, but some may remain if the web-browser is exited ungracefully or the application goes down while someone is using the search interface.
 # If this property does not exist then the instance will drop all found temp collections, if it exists but is empty, none will be dropped.
@@ -48,9 +51,8 @@ maxImportSize_anonymousUser=200
 onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url=;VCF
 
 
-# Properties named igvGenomeConfig_N with N being an integer >= 1 define a genome list to be retrieved as a default genome list section for the integrated IGV.js genome browser
-# Each property is in the form igvGenomeConfig_N = Name;URL
-igvGenomeConfig_1 = South Green provided genomes;res/genomes.json
+# Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
+igvGenomeConfig_1 = Public genomes provided by South Green;res/genomes.json
 igvGenomeConfig_2 = IGV default genomes;https://igv.org/genomes/genomes.json
 
 
@@ -75,17 +77,20 @@ maxExportableBillionGenotypes = 2
 # Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
-# If defined, enables CAS authentication and defines the CAS server URL
-#casServerURL = https://localhost:8443/cas
-
-# Defines the name of the organisation providing the CAS authentication. Optional.
-#casOrganisation = MyOrganisation
-
-# Defines the limit number of variant ids that are returned in the variant IDs filter
-variantIdLookupMaxSize = 50
 
 # Path to the SnpEff config file. Online annotation will be available only if this is defined.
 snpEffConfigFile = /opt/SnpEff/snpEff.config
 
 # Path to the SnpEff data repository. Online annotation will be available only if this is defined
 snpEffDataRepository = /opt/SnpEff/data
+
+
+# If defined, enables CAS authentication by defining the CAS server URL
+#casServerURL = https://localhost:8443/cas
+
+# Defines the name of the organization providing the CAS authentication. Optional
+#casOrganization = MyOrganization
+
+
+# Defines the limit number of variant IDs that are returned by the text lookup functionality of the "Variant IDs" widget
+variantIdLookupMaxSize = 50

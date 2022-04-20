@@ -7,17 +7,11 @@
   function _typeof(obj) {
     "@babel/helpers - typeof";
 
-    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-      _typeof = function (obj) {
-        return typeof obj;
-      };
-    } else {
-      _typeof = function (obj) {
-        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-      };
-    }
-
-    return _typeof(obj);
+    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
+      return typeof obj;
+    } : function (obj) {
+      return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    }, _typeof(obj);
   }
 
   function _classCallCheck(instance, Constructor) {
@@ -39,6 +33,9 @@
   function _createClass(Constructor, protoProps, staticProps) {
     if (protoProps) _defineProperties(Constructor.prototype, protoProps);
     if (staticProps) _defineProperties(Constructor, staticProps);
+    Object.defineProperty(Constructor, "prototype", {
+      writable: false
+    });
     return Constructor;
   }
 
@@ -2505,7 +2502,9 @@
               this.mouseOverPosition = [x, y];
             }
           } else */
-          if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth) {
+          if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth / 1.1
+          /*accounting for apennded blank space*/
+          ) {
             var xPos = 0,
                 traitIndex = undefined; // Get the trait under the mouse (columns are not of equal size)
 
@@ -2583,7 +2582,7 @@
           this.traitValueColumnWidths = this.displayTraits.map(function (name) {
             return _this5.backContext.measureText(_this5.dataSet.getTrait(name).longestValue).width + 2 * _this5.scorePadding;
           });
-          if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = 0;else if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = this.traitValueColumnWidths[0];else this.traitValuesCanvasWidth = this.traitValueColumnWidths.reduce(function (a, b) {
+          if (this.traitValueColumnWidths.length == 0) this.traitValuesCanvasWidth = 0;else this.traitValuesCanvasWidth = this.traitValueColumnWidths.reduce(function (a, b) {
             return a + b;
           }); // Add 10% blank space to separate it from the genotypes, otherwise readability is really bad
 
@@ -2904,8 +2903,13 @@
     }, {
       key: "renderImage",
       value: function renderImage(context, width, height, highlightReference) {
-        var imageData = this.createImage(context.createImageData(width, height), highlightReference);
-        context.putImageData(imageData, 0, 0);
+        try {
+          var imageData = this.createImage(context.createImageData(width, height), highlightReference);
+          context.putImageData(imageData, 0, 0);
+        } catch (thrownError) {
+          alert(thrownError.message.indexOf("Cannot read properties of undefined (reading 'genotypeData')") != -1 ? "Error loading genotypes (dataset may be too large for the available RAM)" : thrownError);
+          throw thrownError;
+        }
       } // Calculate the number of markers and germplasms per pixel in the overview
 
     }, {
@@ -4506,13 +4510,13 @@
     return CanvasController;
   }();
 
-  var Marker = function Marker(name, chromosome, position) {
+  var Marker = /*#__PURE__*/_createClass(function Marker(name, chromosome, position) {
     _classCallCheck(this, Marker);
 
     this.name = name;
     this.chromosome = chromosome;
     this.position = position;
-  };
+  });
 
   var Chromosome = /*#__PURE__*/function () {
     function Chromosome(name, end, markers) {
@@ -6131,7 +6135,7 @@
 
     function sendEvent(eventName, domParent) {
       // TODO: Invesitgate using older event emitting code for IE support
-      var canvasHolder = document.getElementById(domParent.slice(1)); // Create the event.
+      var canvasHolder = document.getElementById(domParent.replace('#', '')); // Create the event.
 
       var event = new Event(eventName);
       canvasHolder.dispatchEvent(event);
@@ -6147,7 +6151,7 @@
     }
 
     function clearParent(domParent) {
-      var canvasHolder = document.getElementById(domParent.slice(1));
+      var canvasHolder = document.getElementById(domParent.replace('#', ''));
 
       while (canvasHolder.firstChild) {
         canvasHolder.removeChild(canvasHolder.firstChild);
@@ -6158,7 +6162,7 @@
       // Canvas
       if (config.minGenotypeAutoWidth === undefined) config.minGenotypeAutoWidth = 0;
       if (config.minOverviewAutoWidth === undefined) config.minOverviewAutoWidth = 0;
-      var canvasHolder = document.getElementById(config.domParent.slice(1));
+      var canvasHolder = document.getElementById(config.domParent.replace('#', ''));
       canvasHolder.style.fontFamily = 'system-ui';
       canvasHolder.style.fontSize = '14px';
       var computedStyles = window.getComputedStyle(canvasHolder);
@@ -6399,7 +6403,7 @@
       addRadioButton('selectedSort', 'alphabeticSort', 'Alphabetically', false, radioCol);
       addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol, lineSelect);
 
-      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.slice(1)).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
+      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.replace('#', '')).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
         var traitSelect = document.createElement('select');
         traitSelect.id = 'sortTraitSelect';
         traitSelect.disabled = true;
@@ -6453,7 +6457,7 @@
     }
 
     function createDisplayTab(config) {
-      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.slice(1)).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
+      if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.replace('#', '')).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
         var tab = document.createElement('div');
         tab.classList.add('bytes-tab');
         var traitSelectContainer = document.createElement('div');
@@ -6745,7 +6749,7 @@
             genotypeLoaded = progressEvent.loaded;
             genotypeSize = progressEvent.total;
             setAdvancement((mapLoaded + genotypeLoaded + phenotypeLoaded) / (mapSize + genotypeSize + phenotypeSize));
-          }
+          } else setProgressBarLabel("Downloading genotype file... " + formatFileSize(progressEvent.loaded));
         }
       }).then(function (response) {
         genotypeFile = response.data;
@@ -6799,6 +6803,14 @@
       });
       return genotypeRenderer;
     };
+
+    function formatFileSize(sizeInBytes) {
+      if (isNaN(sizeInBytes)) return "";
+      if (sizeInBytes >= 1073741824) return parseFloat(sizeInBytes / 1073741824).toFixed(2) + " GB";
+      if (sizeInBytes >= 1048576) return parseFloat(sizeInBytes / 1048576).toFixed(1) + " MB";
+      if (sizeInBytes >= 1024) return parseFloat(sizeInBytes / 1024).toFixed(0) + " KB";
+      return sizeInBytes.toFixed(1) + " B";
+    }
 
     function loadFromFile(file) {
       return new Promise(function (resolve, reject) {
@@ -6887,7 +6899,7 @@
       var loadingPromises = [];
 
       if (config.mapFileDom !== undefined) {
-        var mapFile = document.getElementById(config.mapFileDom.slice(1)).files[0];
+        var mapFile = document.getElementById(config.mapFileDom.replace('#', '')).files[0];
         var mapPromise = loadFromFile(mapFile); // Load map data
 
         mapPromise = mapPromise.then(function (result) {
@@ -6901,7 +6913,7 @@
       }
 
       if (config.phenotypeFileDom !== undefined) {
-        var phenotypeFile = document.getElementById(config.phenotypeFileDom.slice(1)).files[0];
+        var phenotypeFile = document.getElementById(config.phenotypeFileDom.replace('#', '')).files[0];
         var phenotypePromise = loadFromFile(phenotypeFile); // Load phenotype data
 
         phenotypePromise = phenotypePromise.then(function (result) {
@@ -6917,7 +6929,7 @@
       } // const qtlPromise = loadFromFile(qtlFileDom);
 
 
-      var genotypeFile = document.getElementById(config.genotypeFileDom.slice(1)).files[0];
+      var genotypeFile = document.getElementById(config.genotypeFileDom.replace('#', '')).files[0];
       var genotypePromise = loadFromFile(genotypeFile);
       loadingPromises.push(genotypePromise); // // Then QTL data
       // qtlPromise.then((result) => {

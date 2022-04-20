@@ -8,38 +8,38 @@ import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import fr.cirad.security.GigwaAuthenticationSuccessHandler;
+
 @Controller
 @CrossOrigin
-public class GigwaAuthenticationController {	
+public class GigwaAuthenticationController {
 	private static final String LOGIN_CAS_URL = "/login/cas.do";
 	private static final String LOGIN_FORM_URL = "/login.do";
-	
-	private RequestCache requestCache = new HttpSessionRequestCache();
-	
+
+	@Autowired GigwaAuthenticationSuccessHandler authenticationSuccessHandler;
+
 	@GetMapping(LOGIN_FORM_URL)
 	public String loginFormPath(HttpServletRequest request, HttpServletResponse response) {
-		SavedRequest savedRequest = requestCache.getRequest(request, response);
+		SavedRequest savedRequest = authenticationSuccessHandler.getRequestCache().getRequest(request, response);
 		if (savedRequest != null) {
 			String targetUrl = savedRequest.getRedirectUrl();
 			try {
 				String redirectUrl = URLEncoder.encode(targetUrl, StandardCharsets.UTF_8.name());
 				request.setAttribute("loginOrigin", redirectUrl);
 			} catch (UnsupportedEncodingException ignored) {}
-			requestCache.removeRequest(request, response);
+			//authenticationSuccessHandler.getRequestCache().removeRequest(request, response);
 		}
-		
 
 		return "login";
 	}
-	
+
 	@GetMapping(LOGIN_CAS_URL)
 	public String casLoginPath(@RequestParam(name="url", required=false) String redirectUrl) {
 		if (redirectUrl != null && !"".equals(redirectUrl.trim())) {

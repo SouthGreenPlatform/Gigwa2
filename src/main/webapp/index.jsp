@@ -59,8 +59,8 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/highcharts/exporting.js"></script>
 <script type="text/javascript" src="js/highcharts/export-data.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/igv@2.10.4/dist/igv.min.js"></script>
-<script type="text/javascript" src="js/gigwaCustomSearchReader.js"></script>
+<script type="text/javascript" src="js/igv.min.js"></script>
+<script type="text/javascript" src="js/IgvCsvSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
 <script type="text/javascript">
 	// global variables
@@ -129,7 +129,8 @@
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
-
+	var exportedIndividualCount = 0;
+	
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
@@ -141,7 +142,7 @@
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
-				dropTempCol();
+				dropTempColl();
 
 			referenceset = $(this).val();
 			if (!loadProjects(referenceset))
@@ -251,7 +252,10 @@
 		});
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
-			enableMafOnlyIfApplicable();
+			var hideMaf = $('#numberOfAlleles option[value=2]').length == 0;
+	        for (var nGroup=1; nGroup<=2; nGroup++) {
+			    $('.mafZone').css('display', hideMaf ? "none" : "block");
+	        }
 		});
 		$('#exportFormat').on('change', function() {
 			var opt = $(this).children().filter(':selected');
@@ -299,15 +303,6 @@
 			}
 		});
 
-		$(window).on('beforeunload', function() {
-			if (!exporting) {
-				if (referenceset != "")
-					dropTempCol();
-				clearToken(); // after collection drop, otherwise token will be re-created
-			}
-			exporting = false;
-		});
-
 		$('#grpProj').hide();
 		$('[data-toggle="tooltip"]').tooltip({
 			delay: {
@@ -341,7 +336,22 @@
                     }
                 });
 	});
-
+	
+	var onbeforeunloadCalled = false;
+	window.onbeforeunload = function(e) {
+		if (onbeforeunloadCalled)
+			return;
+		
+		onbeforeunloadCalled = true;
+		if (!exporting) {
+			if (referenceset != "")
+				dropTempColl(true);
+			else
+				clearToken();
+		}
+		exporting = false;
+	};
+        
     function removeUploadedFile() {
         $('#uploadVariantIdsFile').val('');
         $('#varIdsFileName').remove();
@@ -361,32 +371,33 @@
  		$('#serverExportBox').hide();
 	}
 
-	// clear session and user's temporary collection, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
-	function dropTempCol() {
+	// clear session and user's temporary collection 
+	function dropTempColl(clearTokenAfterDroppingTempColl) {
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset,
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DROP_TEMP_COL_PATH%>" />/' + referenceset + (clearTokenAfterDroppingTempColl ? "?clearToken=true" : ""),
 			type: "DELETE",
+			async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
 			headers: {
 				"Authorization": "Bearer " + token
 			},
 			success: function(jsonResult) {
-				if (!jsonResult.success) {
+				if (!jsonResult.success)
 					alert("unable to drop temporary collection");
-				}
 			},
 			error: function(xhr, thrownError) {
 				console.log("Error dropping temp coll (status " + xhr.status + "): " + thrownError);
 			}
 		});
 	}
-
-	// clear user token, must remaining synchronous otherwise Chrome won't execute it when triggered from a beforeunload event
+	
+	// clear user token
 	function clearToken() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
 			type: "DELETE",
+			async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
 			headers: {
@@ -790,7 +801,7 @@
 				alleleCount = jsonResult.numberOfAllele.length;
 				var option = "";
 				for (var allele in jsonResult.numberOfAllele)
-					option += '<option>' + jsonResult.numberOfAllele[allele] + '</option>';
+					option += '<option value="' + jsonResult.numberOfAllele[allele] + '">' + jsonResult.numberOfAllele[allele] + '</option>';
 				$('#numberOfAlleles').html(option).selectpicker('refresh');
 				$('#nbAlleleGrp').show();
 
@@ -809,6 +820,9 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
+			headers: {
+				"Authorization": "Bearer " + token
+			},
 			success: function(ploidyLevel) {
 				ploidy = ploidyLevel;
 			},
@@ -831,13 +845,13 @@
 					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
 					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					enableMafOnlyIfApplicable();
+					resetMafWidgetsIfNecessary(1);
 				});
 				$('#Genotypes2').on('change', function() {
 					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
 					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
 					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					enableMafOnlyIfApplicable();
+					resetMafWidgetsIfNecessary(2);
 				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -894,6 +908,7 @@
 			show: true
 		}); // prevent the user from hiding progress modal when clicking outside
 		$('#showdensity').show();
+		$('#showIGV').show();
 		$('#exportBoxToggleButton').show();
 		processAborted = false;
 		$('button#abort').attr('rel', token);
@@ -1228,9 +1243,9 @@
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
+		exportedIndividualCount = indToExport == null ? indCount : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-			var indToExportCount = indToExport == null ? indCount : indToExport.length;
-			if (indToExportCount * count > 1000000000) {
+			if (exportedIndividualCount * count > 1000000000) {
 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
 				return;
 			}
@@ -1480,6 +1495,19 @@
 		}
 		return prefix;
 	}
+	
+	// Get the prefixes present at least twice in elements of a list of strings, along with their numbers of occurences (prefixes are anything before a digit occurence)
+	function getContigPrefixes(contigNames) {
+		var prefixCounts = [];
+		for (var i=0; i<contigNames.length; i++) {
+		  var pfx = contigNames[i].replace(/\d+.*/, ""), count = prefixCounts[pfx];
+		  prefixCounts[pfx] = count == null ? 1 : (count + 1) ;
+		}
+		for (var pfx in prefixCounts)	// Remove prefixes that were only found once
+			if (prefixCounts[pfx] == 1)
+				delete prefixCounts[pfx];
+		return prefixCounts;
+	}
 
 	// Get the constant prefix in each element of a list of strings
 	function getSuffix(names){
@@ -1569,7 +1597,7 @@
 						url: config.url,
 						method: "GET",
 						dataType: "json",
-					}).then(function(genomeList){
+					}).then(function(genomeList) {
 						genomeList.sort((a, b) => a.id > b.id ? 1 : -1);
 						return {
 							name: config.name,
@@ -1578,7 +1606,8 @@
 						}
 					}, function (xhr, ajaxOption, thrownError){
 						// Error handler for each genome list download : show an error but do not abort
-						displayMessage("Loading of genome list from " + config.url + " failed");
+						console.log(xhr);
+						displayMessage("Loading of genome list from " + config.url + " failed: " + thrownError);
 					})
 				)
 			).then(function (results){
@@ -1812,9 +1841,18 @@
 			// Build the alias table
 			let targetNames = igvBrowser.genome.chromosomeNames;
 			let variantPrefix = getPrefix(referenceNames);
+			let refNamesForNumberedContigsCount = referenceNames.filter(nm => !isNaN(nm.substring(nm.length - 1))).length;
+			let targetPrefixCounts = getContigPrefixes(targetNames);
+			let targetPrefix = "";
+			for (var pfx in targetPrefixCounts)
+				if (pfx.toLowerCase() == "chr" || targetPrefixCounts[pfx] == refNamesForNumberedContigsCount) {
+					targetPrefix = pfx;
+// 					console.log("Using " + pfx + " as contig name prefix");
+					break;
+				}
+
 			let variantSuffix = getSuffix(referenceNames);
 			let variantSuffixRegex = new RegExp(variantSuffix + "$");
-			let targetPrefix = getPrefix(targetNames);
 			let targetSuffix = getSuffix(targetNames);
 			let targetSuffixRegex = new RegExp(targetSuffix + "$");
 			igvGenomeRefTable = {};
@@ -1824,15 +1862,21 @@
 				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
 				igvBrowser.genome.chrAliasTable[zeroname.toLowerCase()] = target;  // 02 -> target
 				igvBrowser.genome.chrAliasTable[basename.toLowerCase()] = target;  // 2 -> target
-				igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
-				igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
+				if (zeroname.toLowerCase().startsWith("chr"))
+					igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
+				if (basename.toLowerCase().startsWith("chr"))
+					igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
 				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname).toLowerCase()] = target;  // With prefix used by variants
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
 				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target;  // With prefix and suffix used by variants
 				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
 
 				// Associate the target name to the variants reference name
-				igvGenomeRefTable[target] = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
+				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
+				if (gigwaContigName != null)
+					igvGenomeRefTable[target] = gigwaContigName;
+				else
+					igvGenomeRefTable[target] = target;
 			}
 
 			// Load the default tracks
@@ -2256,7 +2300,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 								</div>
-								<div class="margin-top-md">
+								<div class="margin-top-md mafZone">
 									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
@@ -2264,14 +2308,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf1" value="0"
 													 id="minmaf1" class="form-control input-sm" type="number" step="0.1"
 													 maxlength="2" min="0" max="50"
-													 onblur="$(this).val(($(this).val() === '' || $(this).val() < 0 || $(this).val() > 50) ? 0 : $(this).val());">
+													 onblur="mafChanged(1);">
 											<span class="input-group-addon input-sm">%</span>
 										</div>
 									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
 										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf1" value="50"
 											 id="maxmaf1" class="form-control input-sm" type="number" step="0.1"
 											 maxlength="2" min="0" max="50"
-											 onblur="$(this).val(($(this).val() === '' || $(this).val() > 50) ? 50 : $(this).val());">
+											 onblur="mafChanged(1);">
 										  <span class="input-group-addon input-sm">%</span>
 										</div>
 									  </div>
@@ -2336,7 +2380,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											  <input id="missingdata2" class="form-control input-sm"
 												 name="missingdata2" value="100" type="number" step="0.1"
 											 	 maxlength="3" min="0" max="100"
-												 onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
+												  onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
 											  <span class="input-group-addon input-sm">%</span>
 										   	</div>
 									  	  </div>
@@ -2346,7 +2390,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 								</div>
-								<div class="margin-top-md">
+								<div class="margin-top-md" mafZone>
 									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
@@ -2354,14 +2398,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf2" value="0"
 													 id="minmaf2" class="form-control input-sm" type="number" step="0.1"
 													 maxlength="2" min="0" max="50"
-													 onblur="$(this).val(($(this).val() === '' || $(this).val() < 0 || $(this).val() > 50) ? 0 : $(this).val());">
+													 onblur="mafChanged(2);">
 											<span class="input-group-addon input-sm">%</span>
 										</div>
 									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
 										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf2" value="50"
 											 id="maxmaf2" class="form-control input-sm" type="number" step="0.1"
 											 maxlength="2" min="0" max="50"
-											 onblur="$(this).val(($(this).val() === '' || $(this).val() > 50) ? 50 : $(this).val());">
+											 onblur="mafChanged(2);">
 										  <span class="input-group-addon input-sm">%</span>
 										</div>
 									  </div>
@@ -2410,7 +2454,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 								<!-- IGV.js browser button -->
 								<button style="padding:2px;" title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
-									<img title="IGV genome browser" src="images/igvjs.png" height="25" width="25" />
+									<img title="IGV.js online genome browser" src="images/igvjs.png" height="25" width="25" />
 								</button>
 
 								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
@@ -2461,8 +2505,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</div>
 							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 12px;">
 								External tools
-								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure a genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
-								<!-- <img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="You may send selected variants to a running instance of IGV by ticking the 'Keep files on server' box and exporting in VCF format. Click if you want to launch IGV from the web" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" /> -->
+								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
+								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="(DEPRECATED in favor of using the embedded IGV.js) You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>

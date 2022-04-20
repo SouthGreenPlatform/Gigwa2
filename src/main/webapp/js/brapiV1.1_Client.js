@@ -125,28 +125,7 @@ function readMapList()
 	    async:false,
 	    data: {pageSize:1000},
 	    timeout:TIMEOUT,
-	    Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken),
-	    success:function(jsonResponse) {
-	    	dataList = getDataList(jsonResponse);
-	    },
-	    error:function(xhr, ajaxOptions, thrownError) {
-			handleError(xhr, ajaxOptions, thrownError);
-	    }
-	});
-	return dataList;
-}
-
-function readMapList()
-{
-	var dataList;
-	$.ajax({
-	    type:"GET",
-		crossDomain:true,
-	    url:BRAPI_V1_URL_ENDPOINT + URL_MAPS,
-	    async:false,
-	    data: {pageSize:1000},
-	    timeout:TIMEOUT,
-	    Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken),
+	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
 	    success:function(jsonResponse) {
 	    	dataList = getDataList(jsonResponse);
 	    },
@@ -168,7 +147,7 @@ function readStudyList(studyType)
 	    data: {pageSize:1000},
 	    data: {pageSize:1000, studyType:(studyType == null ? null : studyType)},
 	    timeout:TIMEOUT,
-	    Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken),
+	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
 	    success:function(jsonResponse) {
 	    	var dataList = getDataList(jsonResponse);
 	    	for (var j=0; j<dataList.length; j++)
@@ -194,7 +173,7 @@ function readMarkerProfiles(studyDbId)
 	    async:false,
 	    data:parameters,
 	    timeout:TIMEOUT,
-	    Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken),
+	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
 	    success:function(jsonResponse) {
 	    	var dataList = getDataList(jsonResponse);
 	    	for (var j=0; j<dataList.length; j++)

@@ -26,8 +26,8 @@
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
 	String appVersion = prop.getProperty("Implementation-version");
 	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
-	String casOrganisation = appConfig.get("casOrganisation");
-	if (casOrganisation == null) casOrganisation = "organisation";
+	String casOrganization = appConfig.get("casOrganization");
+	if (casOrganization == null) casOrganization = "organization";
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
@@ -54,7 +54,7 @@
 	<main style="max-width:700px; margin: 0 auto;">
 		<h3>You have successfully logged out of Gigwa</h3>
 		<p>
-			You may now <strong>log out from your <%= casOrganisation %> account</strong> by clicking <strong><a href="logout/cas" target="_blank">here</a></strong>
+			You may now <strong>log out from your <%= casOrganization %> account</strong> by clicking <strong><a href="logout/cas" target="_blank">here</a></strong>
 		</p>
 	</main>
 </body>

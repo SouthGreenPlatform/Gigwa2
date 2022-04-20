@@ -160,7 +160,7 @@ function displayMessage(message, duration) {
 function handleError(xhr, thrownError) {
     if (xhr != null && xhr.status == 401)
     {
-        location.href = 'login.jsp';
+        location.href = 'login.do';
         return;
     }
 
@@ -181,7 +181,7 @@ function handleError(xhr, thrownError) {
             errorMsg = xhr.statusText + ": " + xhr.responseText;
         }
     }
-    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
+    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
     window.setTimeout(function() {
         $(".alert").fadeTo(500, 0, function(){
             $(this).remove(); 
@@ -243,7 +243,7 @@ function addIgvExportIfRunning() {
 }
 
 function addFjBytesExport() {
-    $('div#serverExportBox').append("<br/><br/><center><input type='button' value='View in Flapjack-Bytes' onclick='sendToFjBytes();'/></center>");
+    $('div#serverExportBox').append("<br/><br/><center><input type='button' value='View in Flapjack-Bytes' onclick='sendToFjBytes();'/>" + (exportedIndividualCount * count > 500000000 ? "<div class='text-red margin-top'>WARNING: Exported dataset potentially contains more than 500 million genotypes.<br/>A standard workstation's web-browser may be unable to load it in with Flapjack-Bytes </div>" : "") + "</center>");
 }
 
 function sendToFjBytes() {
@@ -258,7 +258,7 @@ function sendToFjBytes() {
 	            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
 	            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
 	            "&id=" + getModuleName();
-	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" target="_blank">Open in separate window</a></center>');
+	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#fjBytesPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
 	$("#fjBytesFrame").attr('src', url);
 }
 
@@ -411,18 +411,12 @@ function loadVcfFieldHeaders() {
     });
 }
 
-function enableMafOnlyIfApplicable() {
+function resetMafWidgetsIfNecessary(nGroup) {
     var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
-    var enableMaf = !$("#filterIDsCheckbox").is(":checked") && onlyBiAllelicInSelection && ploidy <= 2 && $('#Genotypes1').val() != null && !$('#Genotypes1').val().startsWith("All Homozygous");
-    $('#minmaf1').prop('disabled', enableMaf ? false : "disabled");
-    $('#maxmaf1').prop('disabled', enableMaf ? false : "disabled");
-    $('#minmaf2').prop('disabled', enableMaf ? false : "disabled");
-    $('#maxmaf2').prop('disabled', enableMaf ? false : "disabled");
+    var enableMaf = onlyBiAllelicInSelection && !$("#filterIDsCheckbox").is(":checked") && ploidy <= 2 && $('#Genotypes' + nGroup).val() != null && !$('#Genotypes' + nGroup).val().startsWith("All Homozygous");
     if (!enableMaf) {
-        $('#minmaf1').val(0);
-        $('#maxmaf1').val(50);
-        $('#minmaf2').val(0);
-        $('#maxmaf2').val(50);                
+        $('#minmaf' + nGroup).val(0);
+        $('#maxmaf' + nGroup).val(50);
     }
 }
 
@@ -600,6 +594,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
                 $('#currentPage').html("no results");
                 $('#next').prop('disabled', true);
                 $('#showdensity').hide();
+                $('#showIGV').hide();
                 $('#exportBoxToggleButton').hide();
             } else {
                 if (count < 100) {
@@ -860,7 +855,7 @@ function getExportIndividualSelectionModeOptions() {
         exportedIndOptions += '<option id="exportedIndividuals1" value="1">Group 1</option>';
     if (mode > 1)
         exportedIndOptions += '<option id="exportedIndividuals2" value="2">Group 2</option>';
-    exportedIndOptions += '<option id="exportedIndividualsAll" value="">All of them (' + indCount + ')</option>';
+    exportedIndOptions += '<option id="exportedIndividualsAll" value="">All of them</option>';
     exportedIndOptions += '<option id="exportedIndividualsChoose" value="choose">Choose some</option>';
     return exportedIndOptions;
 }
@@ -902,7 +897,7 @@ function groupHasFilters(jsonResult, grpNumber){
     var e = grpNumber;
     if (grpNumber == 1) var e = '';
     if(jsonResult['callSetIds'+e].length != 0) return true;
-    if(typeof jsonResult['annotationFieldThresholds'+e]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['DP'].length != 0)  return true;
+    if(typeof jsonResult['annotationFieldThresholds'+e]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['DP'].length != 0) return true;
     if(typeof jsonResult['annotationFieldThresholds'+e]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['GQ'].length != 0) return true;
     if(jsonResult['missingData'+e] != 100) return true;
     if(jsonResult['minmaf'+e] != 0) return true;
@@ -915,15 +910,11 @@ function getToken() {
         url: tokenURL,
         async: false,
         type: "POST",
-        data: JSON.stringify({
-            "username": "",
-            "password": ""
-        }),
         dataType: "json",
         contentType: "application/json;charset=utf-8",
         success: function (jsonResult) {
             token = jsonResult.token;
-            if (document.referrer.endsWith("/login.jsp") && jsonResult.msg != null)
+            if (document.referrer.endsWith("/login.do") && jsonResult.msg != null)
                 alert(jsonResult.msg);
         },
         error: function (xhr, thrownError) {
@@ -1557,13 +1548,13 @@ function onFilterByIds(checked) {
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
-        $('#missingdata1').val(100).prop('disabled', true);
-        $('#mostSameRatio1').prop('disabled', true);
-        $('#Genotypes1').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
-        
-        $('#missingdata2').val(100).prop('disabled', true);
-        $('#mostSameRatio2').prop('disabled', true);
-        $('#Genotypes2').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+		for (var nGroup=1; nGroup<=2; nGroup++) {
+	        $('#missingdata' + nGroup).val(100).prop('disabled', true);
+	        $('#mostSameRatio' + nGroup).prop('disabled', true);
+	        $('#Genotypes' + nGroup).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+		    $('#minmaf' + nGroup).prop('disabled', "disabled");
+		    $('#maxmaf' + nGroup).prop('disabled', "disabled");
+		}
     } else {
 		selectedVariantIDsWhenTooManyToFitInSelect = null;
 	
@@ -1581,18 +1572,48 @@ function onFilterByIds(checked) {
         $('#clearVariantIdSelection').hide();
         $('#pasteVariantIds').prop('disabled', true);
         $('#uploadVariantIds').prop('disabled', true);
-        
-        $('#missingdata1').prop('disabled', false);
-        $('#missingdata1').val(100);
-        $('#mostSameRatio1').prop('disabled', false);
-        $('#Genotypes1').prop('disabled', false).selectpicker('refresh');
-        
-        $('#missingdata2').prop('disabled', false);
-        $('#missingdata2').val(100);
-        $('#mostSameRatio2').prop('disabled', false);
-        $('#Genotypes2').prop('disabled', false).selectpicker('refresh');
+                
+        for (var nGroup=1; nGroup<=2; nGroup++) {
+	        $('#missingdata' + nGroup).prop('disabled', false);
+	        $('#missingdata' + nGroup).val(100);
+	        $('#mostSameRatio' + nGroup).prop('disabled', false);
+	        $('#Genotypes' + nGroup).prop('disabled', false).selectpicker('refresh');        
+		    $('#minmaf' + nGroup).prop('disabled', false);
+		    $('#maxmaf' + nGroup).prop('disabled', false);
+		}
     }
-    enableMafOnlyIfApplicable();
+}
+
+function mafChanged(nGroup) {
+	var minInput = $("input#minmaf" + nGroup), maxInput = $("input#maxmaf" + nGroup);
+	var minApplied = minInput.val() > 0, maxApplied = maxInput.val() < 50, mustBeReset = false;
+	var minInvalid = minInput.val() === '' || minInput.val() < 0 || minInput.val() > 50, maxInvalid = maxInput.val() === '' || maxInput.val() < 0 || maxInput.val() > 50;
+	
+	if ((minApplied || maxApplied) && !minInvalid && !maxInvalid) {
+		var gotMultipleAlleleCounts = $('#numberOfAlleles').children().length > 1;
+		var onlyBiAllelicInSelection = (!gotMultipleAlleleCounts && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
+		if (!onlyBiAllelicInSelection && gotMultipleAlleleCounts) {
+			if (confirm("MAF filter may only be applied to biallelic data. Do you want to restrain search to such variants?"))
+				$('#numberOfAlleles').val(2).selectpicker('refresh');
+			else
+				mustBeReset = true;
+		}
+			
+		if (!mustBeReset) {
+			var allHomozygousSelected = $('#Genotypes' + nGroup).val() != null && $('#Genotypes' + nGroup).val().startsWith("All Homozygous");
+			if (allHomozygousSelected) {
+				if (confirm("MAF filter is incompatible with All Homozygous genotype pattern. Disable All Homozygous for this group?"))
+					$('#Genotypes' + nGroup).val("").selectpicker('refresh');
+				else
+					mustBeReset = true;
+			}
+		}
+	}
+	
+	if (mustBeReset || minInvalid)
+		minInput.val(0);	
+	if (mustBeReset || maxInvalid)
+		maxInput.val(50);	
 }
 
 function onVariantIdsSelect() {

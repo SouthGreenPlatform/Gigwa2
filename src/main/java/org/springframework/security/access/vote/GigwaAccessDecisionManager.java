@@ -62,7 +62,8 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     {
     	if (object instanceof FilterInvocation)
     	{
-    		Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+    	    // not exactly sure how risky it is not to use the passed Authentication parameter, but the authorities Collection we get through getLoggedUserAuthorities provides us always up-to-date info (without need for re-authentication)
+    		Collection<? extends GrantedAuthority> authorities = userDao.getLoggedUserAuthorities(); 
 
     		FilterInvocation fi = (FilterInvocation) object;
     		String sModule = fi.getRequest().getParameter("module");
@@ -75,8 +76,12 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     			// deal with specific URLs
     			if (fi.getRequestUrl().startsWith(UserPermissionController.userPermissionURL))
     			{	// page for granting roles to users
-    				Map<String /*entity-type*/, Collection<Comparable> /*entity-IDs*/> managedEntitiesByType = userDao.getManagedEntitiesByModuleAndType(authorities).get(sModule);
-    				fHasRequiredRole = managedEntitiesByType != null && managedEntitiesByType.size() > 0;
+    			    if (userDao.getSupervisedModules(authorities).contains(sModule))
+    			        fHasRequiredRole = true;
+    			    else {
+        				Map<String /*entity-type*/, Collection<Comparable> /*entity-IDs*/> managedEntitiesByType = userDao.getManagedEntitiesByModuleAndType(authorities).get(sModule);
+        				fHasRequiredRole = managedEntitiesByType != null && managedEntitiesByType.size() > 0;
+    			    }
     			}
     			else
     			{	/*FIXME: this class needs to be refactored or even discarded*/
