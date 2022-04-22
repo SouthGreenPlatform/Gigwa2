@@ -44,6 +44,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.brapi.v2.api.VariantsetsApiController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Sort;
@@ -72,12 +73,13 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
+import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
 @Component
-public class GigwaModuleManager /*extends Mgdb2ModuleManager */implements IModuleManager {
+public class GigwaModuleManager implements IModuleManager {
 
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
@@ -148,6 +150,12 @@ public class GigwaModuleManager /*extends Mgdb2ModuleManager */implements IModul
                 LOG.warn("Error removing dumps while deleting database " + sModule, e);
             }
 
+        File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+        if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
+        	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR)))
+        		if (exportFile.delete())
+        			LOG.debug("Deleted BrAPI v2 VariantSet export file: " + exportFile);
+
         return MongoTemplateManager.removeDataSource(sModule, fAlsoDropDatabase);
     }
 
@@ -191,8 +199,7 @@ public class GigwaModuleManager /*extends Mgdb2ModuleManager */implements IModul
             long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
             LOG.debug("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
 
-            Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject,
-                    CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
+            Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject, CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
             long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
             LOG.debug("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
 
@@ -207,6 +214,12 @@ public class GigwaModuleManager /*extends Mgdb2ModuleManager */implements IModul
             }.start();
             LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 
+            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+            if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + entityId + IGigwaService.ID_SEPARATOR)))
+            		if (exportFile.delete())
+            			LOG.debug("Deleted BrAPI v2 VariantSet export file: " + exportFile);
+            
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
             MongoTemplateManager.updateDatabaseLastModification(sModule);
             return true;
