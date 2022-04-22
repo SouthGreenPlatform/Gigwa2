@@ -1875,6 +1875,8 @@
 				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
 				if (gigwaContigName != null)
 					igvGenomeRefTable[target] = gigwaContigName;
+				else
+					igvGenomeRefTable[target] = target;	// couldn't find it, use the provided name (better than nothing)
 			}
 			
 			// Load the default tracks
