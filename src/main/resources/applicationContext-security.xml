@@ -107,6 +107,7 @@
 
     <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
     	<constructor-arg value="/login.do" />
+   		<property name="forceHttps" value="true" />
     </bean>
 
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
