@@ -774,7 +774,7 @@
                             <div class="form text-center">
                                 <div class ="row" style='margin:0 50px 0 25px;'>
 	                                <h4>Importing genotyping data in VCF / HapMap / PLINK / Intertek / Flapjack / BrAPI format</h4>
-									<p class="margin-top-md text-red">Properties followed by * are required</p>
+									<p style="transform: rotate(-90deg); position:absolute; left:-60px; margin-top:80px;" class="margin-top-md text-red">Properties followed by * are required</p>
                                 </div>
                                 <div class ="row" style='margin:0 50px 0 25px;'>
                                     <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
@@ -813,9 +813,9 @@
                                                 <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
                                             <c:if test="${!isAdmin}">
-                                             <div class="col-md-3 text-red" style="font-size:11px;">
-                                            		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
-                                            		You are only allowed to create temporary databases
+                                       			<div class="col-md-3 text-red row">
+                                            		<div class="col-md-1 glyphicon glyphicon-warning-sign" style="font-size:20px;"></div>
+                                            		<div class="col-md-10" style="font-size:10px; margin-top:-1px;">You may only create temporary databases</div>
                                             	</div>
                                             </c:if>
                                         </div>
@@ -879,43 +879,45 @@
                                      	<div class="col-md-10">
                                      		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
 									<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-                                     		or an absolute path on webserver filesystem.</small>
-                                     		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
+                                     		or an absolute webserver fs-path</small>
+                                     		<div class="text-red" style='float:right;'>You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
                                       </div>
                                      </div>
-                                     <div class="row text-left" style="margin-bottom:5px;">
-                                     	<div class="col-md-2"></div>
-                                     	<div style="text-align:right; position:absolute; width:110px;">
-                                     		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
-                                     	</div>
-                                         <div class="col-md-5">
+ 
+		                             <div class="row text-left margin-top-md" style="margin-bottom:5px;">
+		                             	<div class="col-md-2"></div>
+		                             	<div class="col-md-5">
+	                                      <div style="text-align:right; position:absolute; width:110px; left:-120px;">
+	                                     	<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
+	                                      </div>
                                           <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
-                                      </div>
-                                         <div class="col-md-5">
-                                          <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
-                                      </div>
+                                          <input id="dataFile2" class="form-control input-sm margin-top-md" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
+                                          <input id="dataFile3" class="form-control input-sm margin-top-md" type="text" name="dataFile3" placeholder="Third file (sample / individual mapping)">
+                                        </div>
+                                        <div class="col-md-5">
+										   <div class="dz-default dz-message">
+		       									<h5 style="margin-top:5px; text-align:center;">... or drop files here or click to upload</h5>
+		       									<div class="row">
+		       										<div class="col-md-4 text-bold" style="padding:25px;">Accepted extensions:</div>
+		       										<div class="col-md-8">
+			       										<div><u>VCF format:</u> .vcf</div>
+			       										<div><u>Hapmap format:</u> .hapmap or .txt</div>
+														<div><u>PLINK format:</u> .ped + .map</div>
+			                                            <div><u>Intertek format:</u> .intertek</div>
+														<div><u>Flapjack format:</u> .genotype + .map</div>
+														<div><u>Sample file:</u> .tsv or .csv</div>
+													</div>
+		       									</div>
+		      									</div>
+		                                   </div>
+                                        <div class="col-md-1"></div>
+                                        <div class="col-md-10">
+		                                   <div id="dropZonePreviewsG" style="height:55px;"></div>
+                                        </div>
+                                        <div class="col-md-1" style="height:60px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importGenotypesButton" type="button">Submit</button></div>
                                      </div>
-                               <div class ="row">
-                               	<div class="col-md-2"></div>
-                                   <div class="col-md-5" id="dropZonePreviewsG"></div>
-                                   <div class="col-md-4" style="padding-right:0;">
-									<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
-       									<div>
-       										<b>Accepted extensions:</b>
-       										<br/>.vcf
-       										<br/>.hapmap or .txt
-											<br/>.ped + .map (PLINK)
-                                                        <br/>.intertek
-											<br/>.genotype + .map (Flapjack)
-       									</div>
-      									</div>
-                                   </div>
-                                   <div class="col-md-1">
-                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
-                                   </div>
-                               </div>
-                             	</div>
+		                             
+								   </div>
                                 </div>
                             </div>
                         </div>
