@@ -941,8 +941,6 @@
                                 		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
                                 		<p>The first row in TSV file (header) must contain field labels, one of them must be named "individual".</p>
                                 		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
-                                		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
-										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
                                 	</div>
                                 </div>
                                 <div class="col-md-3">                     
