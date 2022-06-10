@@ -149,6 +149,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.brapi.v2.api.SamplesApiController;
+import org.brapi.v2.model.SampleSearchRequest;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -1213,6 +1215,7 @@ public class GigwaRestController extends ControllerInterface {
             @RequestParam(value = "clearProjectSequences", required = false) final Boolean fClearProjectSeqData,
             @RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
             @RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
+            @RequestParam(value = "metadataType", required = false) final String metadataType,
             @RequestParam(value = "brapiURLs", required = false) final String brapiURLs,
             @RequestParam(value = "brapiTokens", required = false) final String brapiTokens) throws Exception {
         final String token = tokenManager.readToken(request);
@@ -1327,7 +1330,7 @@ public class GigwaRestController extends ControllerInterface {
                         if (fIsFlapjackPhenotype)
                         	nModifiedRecords = FlapjackPhenotypeImport.importIndividualMetadata(sModule, request.getSession(), url, null, username);
                         else
-                        	nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, request.getSession(), url, "individual", null, username);
+                        	nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, request.getSession(), url, metadataType, null, username);
                     } catch (IOException ioe) {
                         if (ioe instanceof FileNotFoundException) {
                             progress.setError("File not found: " + metadataFile);
@@ -1337,47 +1340,74 @@ public class GigwaRestController extends ControllerInterface {
                         metadataFile = null;
                     }
                 } else if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
-                    HashMap<String /*BrAPI url*/, HashMap<String /*sourceType*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>>> brapiUrlToIndividualsMap = new HashMap<>();
+                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
                     MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
                     for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
-                        SearchCallSetsRequest scsr = new SearchCallSetsRequest();
-                        scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
-                        for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
-                            List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-                            List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
-                            List<String> extRefTypesValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceType);
-                            if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty() || extRefTypesValues == null || extRefTypesValues.isEmpty()) {
-                                continue;
-                            }
+                        
+                        if (metadataType.equals("individual")) {
+                            SearchCallSetsRequest scsr = new SearchCallSetsRequest();
+                            scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
+                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
+                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
+                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
 
-                            if (extRefIdValues.size() != 1) {
-                                LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for individual " + ga4ghCallSet.getId());
-                            }
-                            if (extRefSrcValues.size() != 1) {
-                                LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for individual " + ga4ghCallSet.getId());
-                            }
-                            if (extRefTypesValues.size() != 1) {
-                                LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceType + " expected for individual " + ga4ghCallSet.getId());
-                            }
+                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty()) {
+                                    continue;
+                                }
 
-                            String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
+                                if (extRefIdValues.size() != 1) {
+                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+                                }
+                                if (extRefSrcValues.size() != 1) {
+                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+                                }
 
-                            String endPointUrl = extRefSrcValues.get(0);
-                            if (!endPointUrl.endsWith("/")) {
-                                endPointUrl = endPointUrl + "/";
+                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
+
+                                String endPointUrl = extRefSrcValues.get(0);
+                                if (!endPointUrl.endsWith("/")) {
+                                    endPointUrl = endPointUrl + "/";
+                                }
+
+                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+                                }
+
+                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+                                if (individualsCurrentEndpointHasDataFor == null) {
+                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
+                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
+                                }
+
+                                individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                             }
+                        } else {
+                            SampleSearchRequest ssr = new SampleSearchRequest();
+                            List<GenotypingSample> genotypingSamples = MgdbDao.getSamplesForProject(sModule, projId, null);
+                            for (GenotypingSample sample : genotypingSamples) {
+                                if (sample.getAdditionalInfo() != null) {
+                                    String extRefIdValues = sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId).toString();
+                                    String extRefSrcValues = sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource).toString();
 
-                            if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
-                                brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+                                    String endPointUrl = extRefSrcValues;
+                                    if (!endPointUrl.endsWith("/")) {
+                                        endPointUrl = endPointUrl + "/";
+                                    }
+
+                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+                                    }
+
+                                    HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+                                    if (individualsCurrentEndpointHasDataFor == null) {
+                                        individualsCurrentEndpointHasDataFor = new HashMap<>();
+                                        brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
+                                    }
+
+                                    individualsCurrentEndpointHasDataFor.put(extRefIdValues, sample.getSampleName());
+                                }
+                                
                             }
-
-                            HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl).get(extRefTypesValues.get(0));
-                            if (individualsCurrentEndpointHasDataFor == null) {
-                                individualsCurrentEndpointHasDataFor = new HashMap<>();
-                                brapiUrlToIndividualsMap.get(endPointUrl).put(extRefTypesValues.get(0), individualsCurrentEndpointHasDataFor);
-                            }
-
-                            individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                         }
                     }
 
@@ -1389,7 +1419,7 @@ public class GigwaRestController extends ControllerInterface {
                         } else
                             try {
                             String sToken = brapiTokenArray.get(tokenIndex);
-                            nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress);
+                            nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress, metadataType);
                         } catch (Throwable err) {
                             progress.setError(err.getMessage() + " - " + sBrapiUrl);
                             LOG.error("Error importing metadata", err);
