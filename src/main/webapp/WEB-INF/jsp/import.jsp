@@ -156,101 +156,115 @@
                 });
                 
                 $('#moduleExistingMD').on('change', function () {
-            	    $.ajax({
-            	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTSETS_SEARCH%>"/>',
-            	        async: false,
-            	        type: "POST",
-            	        dataType: "json",
-            	        contentType: "application/json;charset=utf-8",
-            	        headers: {
-            	            "Authorization": "Bearer " + token
-            	        },
-            	        data: JSON.stringify({
-            	            "datasetId": $('#moduleExistingMD').val()//,
-            	        }),
-            	        success: function(jsonResult) {
-            	        	distinctBrapiMetadataURLs = new Set();
-                                
-                                if ($('#metadataType').val() == "individual") {
-                                    
-                                
-                                    for (var vs in jsonResult.variantSets) {
-                                        $.ajax({
-                                            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
-                                            type: "POST",
-                                            dataType: "json",
-                                            async:false,
-                                            contentType: "application/json;charset=utf-8",
-                                            headers: {
-                                                "Authorization": "Bearer " + token
-                                            },
-                                            data: JSON.stringify({
-                                                "variantSetId": jsonResult.variantSets[vs].id
-                                            }),
-                                            success: function(individualsResult) {
-                                                    var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
-                                                    for (var cs in individualsResult.callSets) {
-                                                            var ai = individualsResult.callSets[cs].info;
-                                                            if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
-                                                                var url = ai[extRefSrcField].toString();
-                                                                if (!url.endsWith("/")) {
-                                                                    url = url + "/";
-                                                                }                                                               
-                                                                distinctBrapiMetadataURLs.add(url);
-                                                            }
-                                                    }
-                                                    updateBrapiNotice();
-                                            },
-                                            error: function(xhr, ajaxOptions, thrownError) {
-                                                handleError(xhr, thrownError);
-                                            }
-                                        });
-                                    }
-                                } else {
-                                    for (var vs in jsonResult.variantSets) {
-                                        $.ajax({
-                                            url: '<c:url value="<%=GigwaRestController.REST_PATH + \"/brapi/v2/search/samples\"%>" />',
-                                            type: "POST",
-                                            dataType: "json",
-                                            async:false,
-                                            contentType: "application/json;charset=utf-8",
-                                            headers: {
-                                                "Authorization": "Bearer " + token
-                                            },
-                                            data: JSON.stringify({
-                                                "studyDbIds": [jsonResult.variantSets[vs].id]
-                                            }),
-                                            success: function(samplesResult) {
-                                                    var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
-                                                    for (var s in samplesResult.result.data) {
-                                                            var ai = samplesResult.result.data[s].additionalInfo;
-                                                            if (ai != null && ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
-                                                                var url = ai[extRefSrcField].toString();
-                                                                if (!url.endsWith("/")) {
-                                                                    url = url + "/";
-                                                                }                                                               
-                                                                distinctBrapiMetadataURLs.add(url);
-                                                            }
-                                                    }
-                                                    updateBrapiNotice();
-                                            },
-                                            error: function(xhr, ajaxOptions, thrownError) {
-                                                handleError(xhr, thrownError);
-                                            }
-                                        });
-                                    }
-                                }
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            $('#searchPanel').hide();
-                            handleError(xhr, thrownError);
-                            $('#module').val("");
-                            $('#grpProj').hide();
-                            return false;
-                        }
+                	checkBrapiMetadataImport();
                 });
+                
+                $('#metadataType').on('change', function () {
+                	checkBrapiMetadataImport();
                 });
             });
+            
+            function checkBrapiMetadataImport() {                
+                $.ajax({
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTSETS_SEARCH%>"/>',
+                    async: false,
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify({
+                        "datasetId": $('#moduleExistingMD').val()//,
+                    }),
+                    success: function(jsonResult) {
+                            distinctBrapiMetadataURLs = new Set();
+
+                            if ($('#metadataType').val() == "individual") {
+
+
+                                for (var vs in jsonResult.variantSets) {
+                                    $.ajax({
+                                        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
+                                        type: "POST",
+                                        dataType: "json",
+                                        async:false,
+                                        contentType: "application/json;charset=utf-8",
+                                        headers: {
+                                            "Authorization": "Bearer " + token
+                                        },
+                                        data: JSON.stringify({
+                                            "variantSetId": jsonResult.variantSets[vs].id
+                                        }),
+                                        success: function(individualsResult) {
+                                                var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
+                                                for (var cs in individualsResult.callSets) {
+                                                        var ai = individualsResult.callSets[cs].info;
+                                                        if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
+                                                            var url = ai[extRefSrcField].toString();
+                                                            if (!url.endsWith("/")) {
+                                                                url = url + "/";
+                                                            }                                                               
+                                                            distinctBrapiMetadataURLs.add(url);
+                                                        }
+                                                }
+                                                updateBrapiNotice();
+                                        },
+                                        error: function(xhr, ajaxOptions, thrownError) {
+                                            handleError(xhr, thrownError);
+                                        }
+                                    });
+                                }
+                            } else {
+                                for (var vs in jsonResult.variantSets) {
+                                    $.ajax({
+                                        url: '<c:url value="<%=GigwaRestController.REST_PATH + \"/brapi/v2/search/samples\"%>" />',
+                                        type: "POST",
+                                        dataType: "json",
+                                        async:false,
+                                        contentType: "application/json;charset=utf-8",
+                                        headers: {
+                                            "Authorization": "Bearer " + token
+                                        },
+                                        data: JSON.stringify({
+                                            "studyDbIds": [jsonResult.variantSets[vs].id]
+                                        }),
+                                        success: function(samplesResult) {
+                                                var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
+                                                for (var s in samplesResult.result.data) {
+                                                        var ai = samplesResult.result.data[s].externalReferences;                                                        
+                                                        if (ai !== null) {
+                                                            for (var ref in ai) {
+                                                                if (ai[ref].referenceID !== null && urlRegexp.test(ai[ref].referenceSource.toString())) {
+                                                                    var url = ai[ref].referenceSource.toString();
+                                                                    if (!url.endsWith("/")) {
+                                                                        url = url + "/";
+                                                                    }                                                               
+                                                                    distinctBrapiMetadataURLs.add(url);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                }
+                                                updateBrapiNotice();
+                                        },
+                                        error: function(xhr, ajaxOptions, thrownError) {
+                                            handleError(xhr, thrownError);
+                                        }
+                                    });
+                                }
+                            }
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        $('#searchPanel').hide();
+                        handleError(xhr, thrownError);
+                        $('#module').val("");
+                        $('#grpProj').hide();
+                        return false;
+                    }
+                });
+            }
+            
 
             $(document).ready(function () {    	   
             	updateBrapiNotice();
