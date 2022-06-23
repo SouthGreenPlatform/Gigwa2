@@ -312,7 +312,8 @@
                 
                 $(function(){
               	  Dropzone.options.importDropzoneG = {
-              		maxFiles: 2,
+              		maxFiles: 3,
+              		parallelUploads: 3,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
               	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.tsv,.csv",
@@ -420,8 +421,11 @@
                		$("#projectToImport").val($("#projectExisting").val());
                 if ($("#runExisting").val() != '- new run -')
                		$("#runToImport").val($("#runExisting").val());
-                var dataFile1 = $("#dataFile1").val().trim();
-                var dataFile2 = $("#dataFile2").val().trim();
+//                 var dataFile1 = $("#dataFile1").val().trim();
+//                 var dataFile2 = $("#dataFile2").val().trim();
+//                 var dataFile3 = $("#dataFile3").val().trim();
+        		var dataFile1Input = $("input[name=dataFile1]");
+        		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
 
                 if (!isValidNewName($("#moduleToImport").val()) || !isValidNewName($("#projectToImport").val()) || !isValidNewName($("#runToImport").val())) {
                     alert("Database, project and run names must only consist in digits, accentless letters, dashes and hyphens!");
@@ -457,9 +461,9 @@
 	                }
                 }
 
-                var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0);
-                if (totalDataSourceCount > 2) {
-                    alert("You may not provide more than 2 data-source entries!");
+                var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0) + (dataFile3 != "" ? 1 : 0);
+                if (totalDataSourceCount > 3) {
+                    alert("You may not provide more than 3 data-source entries!");
                     $('#progress').modal('hide');
                     return;
                 }
@@ -493,11 +497,17 @@
                     return;
                 }
 
-        		var dataFile1Input = $("input[name=dataFile1]");
-        		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim();
+//         		var dataFile1Input = $("input[name=dataFile1]");
+//         		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
         		if (dataFile2.length > 0 && dataFile1.length == 0)
                 {
                    	alert("You may only use the second field along with the first!");
+                    $('#progress').modal('hide');
+                    return;
+                }
+        		if (dataFile3.length > 0 && dataFile2.length == 0)
+                {
+                   	alert("You may only use the third field along with the two first!");
                     $('#progress').modal('hide');
                     return;
                 }
