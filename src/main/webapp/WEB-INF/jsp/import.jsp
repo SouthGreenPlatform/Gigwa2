@@ -497,17 +497,15 @@
                     return;
                 }
 
-//         		var dataFile1Input = $("input[name=dataFile1]");
-//         		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
         		if (dataFile2.length > 0 && dataFile1.length == 0)
                 {
-                   	alert("You may only use the second field along with the first!");
+                   	alert("You may only use the second datasource field along with the first!");
                     $('#progress').modal('hide');
                     return;
                 }
         		if (dataFile3.length > 0 && dataFile2.length == 0)
                 {
-                   	alert("You may only use the third field along with the two first!");
+                   	alert("You may only use the third datasource field along with the two first!");
                     $('#progress').modal('hide');
                     return;
                 }
