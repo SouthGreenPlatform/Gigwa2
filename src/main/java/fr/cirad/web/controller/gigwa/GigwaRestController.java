@@ -1674,7 +1674,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
 		int nSampleMappingFileCount = 0 + (filesByExtension.containsKey("tsv") ? 1 : 0) + (filesByExtension.containsKey("csv") ? 1 : 0);
-		if (nSampleMappingFileCount == 2)
+		if (nSampleMappingFileCount > 1)
 			progress.setError("You may only provide a single sample-mappping file per import!");
 
 		if (progress.getError() != null)
@@ -1820,6 +1820,11 @@ public class GigwaRestController extends ControllerInterface {
 						try {							
 							Integer newProjId = null;
 							HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
+							if (sampleToIndividualMapping != null && mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet())), GenotypingSample.class) > 0) {
+						        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
+						        return;
+						    }
+
 							if (fBrapiImport)
 								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, sampleToIndividualMapping, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else {
