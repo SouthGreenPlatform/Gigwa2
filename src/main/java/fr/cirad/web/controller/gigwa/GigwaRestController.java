@@ -1228,7 +1228,7 @@ public class GigwaRestController extends ControllerInterface {
             if (mpf != null && !mpf.isEmpty()) {
                 String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
                 if (filesByExtension.containsKey(fileExtension)) {
-                    progress.setError("Each provided file must have a different extension!");
+                    progress.setError("Each provided datasource entry must be of a different kind!");
                 } else {
                     File file = null;
                     if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
@@ -1270,7 +1270,7 @@ public class GigwaRestController extends ControllerInterface {
                 if (uri != null && uri.trim().length() > 0) {
                     String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
                     if (filesByExtension.containsKey(fileExtension)) {
-                        progress.setError("Each provided file must have a different extension!");
+                        progress.setError("Each provided datasource entry must be of a different kind!");
                     } else if (brapiUrlList.size() == 0) {
                         filesByExtension.put(fileExtension, uri);
                     }
@@ -1521,7 +1521,7 @@ public class GigwaRestController extends ControllerInterface {
 				if (mpf != null && !mpf.isEmpty()) {
 					String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
 					if (filesByExtension.containsKey(fileExtension))
-						progress.setError("Each provided file must have a different extension!");
+						progress.setError("Each provided datasource entry must be of a different kind!");
 					else {
 						File file = null;
 						if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
@@ -1555,7 +1555,7 @@ public class GigwaRestController extends ControllerInterface {
 					try {
 						String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
 						if (filesByExtension.containsKey(fileExtension))
-							progress.setError("Each provided file must have a different extension!");
+							progress.setError("Each provided datasource entry must be of a different kind!");
 						else {
 							String lcURI = uri.toLowerCase();
 							boolean fIsFtp = lcURI.startsWith("ftp://");
@@ -1604,7 +1604,7 @@ public class GigwaRestController extends ControllerInterface {
 											catch (Exception ignored)
 											{}
 											if (fileSize == null)
-												progress.setError("Only administrators may upload files with unspecified Content-Length");
+												progress.setError("Only instance administrators and DB supervisors may import files with unspecified Content-Length");
 											else
 												nTotalImportSize += fileSize * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
 										}
@@ -1793,6 +1793,11 @@ public class GigwaRestController extends ControllerInterface {
 				Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
 				boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
 				if (sampleMappingFile != null) {
+					if (fBrapiImport) {
+				        progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
+				        return null;
+				    }
+
 					Scanner sampleMappingScanner = new Scanner(new File(sampleMappingFile.toString()));
 		        	if (!sampleMappingScanner.hasNextLine()) {
 				        progress.setError("Sample-mapping file is empty!");
@@ -1819,15 +1824,15 @@ public class GigwaRestController extends ControllerInterface {
 						Scanner scanner = null;
 						try {							
 							Integer newProjId = null;
-							HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
-							if (sampleToIndividualMapping != null && mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet())), GenotypingSample.class) > 0) {
-						        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
-						        return;
-						    }
-
 							if (fBrapiImport)
-								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, sampleToIndividualMapping, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else {
+								HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
+								if (sampleToIndividualMapping != null && mongoTemplate != null && !Boolean.TRUE.equals(fClearProjectData) && mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet())), GenotypingSample.class) > 0) {
+							        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
+							        return;
+							    }
+
 								if (!filesByExtension.containsKey("gz")) {
 									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");

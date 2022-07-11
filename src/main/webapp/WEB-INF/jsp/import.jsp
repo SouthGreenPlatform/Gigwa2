@@ -953,7 +953,7 @@
                                           <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
                                           <input id="dataFile2" class="form-control input-sm margin-top-md" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
                                           <input id="dataFile3" class="form-control input-sm margin-top-md" type="text" name="dataFile3" placeholder="Third file (sample / individual mapping)">
-                                          <div class='text-red margin-top-md' style='margin-left:-140px; font-size:11px; '><u>NB:</u> If your genotyping data contains sample IDs rather than individual IDs you may supply a tab-delimited file (.tsv or .csv) providing a mapping based on columns named 'individual' and 'sample'</div>
+                                          <div class='text-red margin-top-md' style='margin-left:-140px; font-size:11px; '><u>NB:</u> If your genotyping data contains sample IDs rather than individual IDs you may supply a tab-delimited file (.tsv or .csv) providing a mapping based on columns named 'individual' and 'sample' (not supported for BrAPI imports)</div>
                                         </div>
                                         <div class="col-md-5">
 										   <div class="dz-default dz-message">
