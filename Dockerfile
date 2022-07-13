@@ -1,5 +1,8 @@
 FROM tomcat:8.5.75-jre8-openjdk-slim-bullseye
 
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 COPY target/gigwa webapps/gigwa
 COPY docker/setenv.sh /usr/local/tomcat/bin/setenv.sh
 
