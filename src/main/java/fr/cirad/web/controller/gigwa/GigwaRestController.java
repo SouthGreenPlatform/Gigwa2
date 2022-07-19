@@ -1909,25 +1909,31 @@ public class GigwaRestController extends ControllerInterface {
 							}
 						}
 						finally {
-							if (!fDatasourceAlreadyExisted && !fAnonymousImporter && !fAdminImporter) { // a new temporary database was created so we give this user supervisor role on it
-								try {
-							        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
-							        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
-							            return; // no need to grant any role to administrators
-
-							        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
-							        if (!owner.getAuthorities().contains(role)) {
-							            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
-							            authoritiesToSave.add(role);
-							            for (GrantedAuthority authority : owner.getAuthorities())
-							                authoritiesToSave.add(authority);
-							            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
-							        }
-
-									tokenManager.reloadUserPermissions(securityContext);
+							if (!fDatasourceAlreadyExisted) {
+								if (progress.getError() != null) {
+									MongoTemplateManager.removeDataSource(sModule, true);
+					                LOG.debug("Removed datasource created for an import that failed: " + sModule);
 								}
-								catch (IOException e) {
-									LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
+								else if (!fAnonymousImporter && !fAdminImporter) { // a new permanent database was created so we give this user supervisor role on it
+									try {
+								        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
+								        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
+								            return; // no need to grant any role to administrators
+	
+								        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
+								        if (!owner.getAuthorities().contains(role)) {
+								            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
+								            authoritiesToSave.add(role);
+								            for (GrantedAuthority authority : owner.getAuthorities())
+								                authoritiesToSave.add(authority);
+								            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
+								        }
+	
+										tokenManager.reloadUserPermissions(securityContext);
+									}
+									catch (IOException e) {
+										LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
+									}
 								}
 							}
 
