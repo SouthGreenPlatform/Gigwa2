@@ -1828,9 +1828,14 @@ public class GigwaRestController extends ControllerInterface {
 								newProjId = new BrapiImport(token).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else {
 								HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
-								if (sampleToIndividualMapping != null && mongoTemplate != null && !Boolean.TRUE.equals(fClearProjectData) && mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet())), GenotypingSample.class) > 0) {
-							        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
-							        return;
+								if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
+									Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
+									if (Boolean.TRUE.equals(fClearProjectData))
+										crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
+									if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
+								        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
+								        return;
+									}
 							    }
 
 								if (!filesByExtension.containsKey("gz")) {
