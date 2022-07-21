@@ -5,7 +5,7 @@
 
 	<groupId>fr.cirad</groupId>
 	<artifactId>gigwa2</artifactId>
-	<version>2.5.1-snapshot</version>
+	<version>2.5.1-alpha</version>
 	<packaging>war</packaging>
 
 	<name>gigwa2</name>
@@ -24,11 +24,11 @@
 <!-- 		ubuntu	https://cfdownload.adobe.com/pub/adobe/coldfusion/java/java8/java8u331/jre/jre-8u331-linux-x64.tar.gz -->
 <!-- 		macos	https://sdlc-esd.oracle.com/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-macosx-x64.tar.gz?GroupName=JSC&FilePath=/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-macosx-x64.tar.gz&BHost=javadl.sun.com&File=jre-8u331-macosx-x64.tar.gz&AuthParam=1657550500_b0a2e3436c72688179c78d4c3067bbe4&ext=.gz -->
 <!-- 		win		https://sdlc-esd.oracle.com/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-windows-x64.tar.gz?GroupName=JSC&FilePath=/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-windows-x64.tar.gz&BHost=javadl.sun.com&File=jre-8u331-windows-x64.tar.gz&AuthParam=1657550603_cf3567392aa04e9c3f466abb0507ecf8&ext=.gz -->
-		<tomcat.version>8.5.75</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.18</mongodb.linux.file>
-		<mongodb.windows.file>win32-x86_64-2012plus-4.2.18</mongodb.windows.file>
-		<mongodb.osx.file>macos-x86_64-4.2.18</mongodb.osx.file>
-		<mongodb.osx.folder>macos-x86_64-4.2.18</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<tomcat.version>8.5.81</tomcat.version>
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.21</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.21</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.21</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.21</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
 	<dependencies>		
