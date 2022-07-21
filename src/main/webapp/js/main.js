@@ -683,7 +683,7 @@ function markInconsistentGenotypesAsMissing() {
                 genotypes = new Array();
 
 			var genotype = $(this).find("td:eq(0)").html().trim();
-			if (!genotypes.includes(genotype))
+			if (genotype != '' && !genotypes.includes(genotype))
 				genotypes.push(genotype);
 			indivGenotypes[individual] = genotypes;
 
