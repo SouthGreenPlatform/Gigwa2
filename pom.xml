@@ -22,8 +22,8 @@
 		<path.to.osx.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/jre-8u331-macosx-x64.tar.gz</path.to.osx.jre>
 		<path.to.windows.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/jre-8u331-windows-x64.tar.gz</path.to.windows.jre>
 <!-- 		ubuntu	https://cfdownload.adobe.com/pub/adobe/coldfusion/java/java8/java8u331/jre/jre-8u331-linux-x64.tar.gz -->
-<!-- 		macos	https://sdlc-esd.oracle.com/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-macosx-x64.tar.gz?GroupName=JSC&FilePath=/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-macosx-x64.tar.gz&BHost=javadl.sun.com&File=jre-8u331-macosx-x64.tar.gz&AuthParam=1657550500_b0a2e3436c72688179c78d4c3067bbe4&ext=.gz -->
-<!-- 		win		https://sdlc-esd.oracle.com/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-windows-x64.tar.gz?GroupName=JSC&FilePath=/ESD6/JSCDL/jdk/8u331-b09/165374ff4ea84ef0bbd821706e29b123/jre-8u331-windows-x64.tar.gz&BHost=javadl.sun.com&File=jre-8u331-windows-x64.tar.gz&AuthParam=1657550603_cf3567392aa04e9c3f466abb0507ecf8&ext=.gz -->
+<!-- 		macos	https://javadl.oracle.com/webapps/download/GetFile/1.8.0_331-b09/165374ff4ea84ef0bbd821706e29b123/unix-i586/jre-8u331-macosx-x64.tar.gz -->
+<!-- 		win		https://javadl.oracle.com/webapps/download/GetFile/1.8.0_331-b09/165374ff4ea84ef0bbd821706e29b123/windows-i586/jre-8u331-windows-x64.tar.gz -->
 		<tomcat.version>8.5.81</tomcat.version>
 		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.21</mongodb.linux.file>
 		<mongodb.windows.file>win32-x86_64-2012plus-4.2.21</mongodb.windows.file>

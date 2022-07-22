@@ -1594,7 +1594,7 @@ public class GigwaRestController extends ControllerInterface {
 												url = new URL(sNewUrl);
 										}
 	
-										if (!fAdminImporter)
+										if (!fAdminImporter && !auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)))
 										{
 											Integer fileSize = null;
 											try
