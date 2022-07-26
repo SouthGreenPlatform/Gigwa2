@@ -1,8 +1,8 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.GenotypeRenderer = factory());
-}(this, (function () { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.GenotypeRenderer = factory());
+})(this, (function () { 'use strict';
 
   function _typeof(obj) {
     "@babel/helpers - typeof";
@@ -1566,34 +1566,34 @@
   }
 
   // Create the default instance to be exported
-  var axios = createInstance(defaults_1);
+  var axios$1 = createInstance(defaults_1);
 
   // Expose Axios class to allow class inheritance
-  axios.Axios = Axios_1;
+  axios$1.Axios = Axios_1;
 
   // Factory for creating new instances
-  axios.create = function create(instanceConfig) {
-    return createInstance(mergeConfig(axios.defaults, instanceConfig));
+  axios$1.create = function create(instanceConfig) {
+    return createInstance(mergeConfig(axios$1.defaults, instanceConfig));
   };
 
   // Expose Cancel & CancelToken
-  axios.Cancel = Cancel_1;
-  axios.CancelToken = CancelToken_1;
-  axios.isCancel = isCancel;
+  axios$1.Cancel = Cancel_1;
+  axios$1.CancelToken = CancelToken_1;
+  axios$1.isCancel = isCancel;
 
   // Expose all/spread
-  axios.all = function all(promises) {
+  axios$1.all = function all(promises) {
     return Promise.all(promises);
   };
-  axios.spread = spread;
+  axios$1.spread = spread;
 
-  var axios_1 = axios;
+  var axios_1 = axios$1;
 
   // Allow use of default import syntax in TypeScript
-  var default_1 = axios;
+  var default_1 = axios$1;
   axios_1.default = default_1;
 
-  var axios$1 = axios_1;
+  var axios = axios_1;
 
   var ScrollBarWidget = /*#__PURE__*/function () {
     function ScrollBarWidget(x, y, width, height) {
@@ -1866,15 +1866,16 @@
           var dW = Math.min(renderData.lastMarker - renderData.firstMarker, chromosomeMarkerWidth);
           var firstMarkerPos = chromosome.markers[renderData.firstMarker].position;
           var lastMarkerPos = chromosome.markers[renderData.firstMarker + dW].position;
-          var dist = lastMarkerPos - firstMarkerPos;
-          var scaleFactor = chromosomeWidth / dist;
-          this.highlightMarkerName(firstMarkerPos, scaleFactor, drawStart);
+          var scaleFactor = lastMarkerPos == 0 ? 0
+          /* hack for cases where variants are not positioned */
+          : chromosomeWidth / (lastMarkerPos - firstMarkerPos);
+          this.highlightMarkerName(firstMarkerPos, scaleFactor, scaleFactor == 0 ? xPos : drawStart);
           this.drawingContext.save(); // Translate to the correct position to draw the map
 
           this.drawingContext.translate(this.alleleCanvasXOffset, 10);
           xPos += this.boxSize / 2;
           this.drawingContext.strokeStyle = '#F00';
-          this.renderMarker(this.drawingContext, this.markerUnderMouse, xPos, firstMarkerPos, scaleFactor, drawStart);
+          this.renderMarker(this.drawingContext, this.markerUnderMouse, xPos, firstMarkerPos, scaleFactor, scaleFactor == 0 ? xPos : drawStart);
           this.drawingContext.restore();
         }
       }
@@ -1887,7 +1888,9 @@
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.markerNameFont;
           var xPos = this.calcMapMarkerPos(this.markerUnderMouse, firstMarkerPos, scaleFactor, drawStart);
-          var text = "".concat(this.markerUnderMouse.name, " (").concat(this.markerUnderMouse.position, ")"); // Measure the text width so we can guarantee it doesn't get drawn off
+          var text = this.markerUnderMouse.name + (scaleFactor == 0
+          /*unpositioned data*/
+          ? "" : " (" + this.markerUnderMouse.position + ")"); // Measure the text width so we can guarantee it doesn't get drawn off
           // the right hand side of the display
 
           var textWidth = this.drawingContext.measureText(text).width;
@@ -2090,14 +2093,15 @@
         var dataWidth = Math.min(renderData.lastMarker - renderData.firstMarker, chromosomeMarkerWidth);
         var firstMarkerPos = chromosome.markers[renderData.firstMarker].position;
         var lastMarkerPos = chromosome.markers[renderData.firstMarker + dataWidth].position;
-        var dist = lastMarkerPos - firstMarkerPos;
-        var scaleFactor = chromosomeWidth / dist;
+        var scaleFactor = lastMarkerPos == 0 ? 0
+        /* hack for cases where variants are not positioned */
+        : chromosomeWidth / (lastMarkerPos - firstMarkerPos);
 
         for (var markerIndex = renderData.firstMarker; markerIndex <= renderData.lastMarker; markerIndex += 1) {
           var marker = this.dataSet.genomeMap.chromosomes[this.selectedChromosome].markers[markerIndex];
           var xPos = drawStart + markerIndex * this.boxSize;
           xPos += this.boxSize / 2;
-          this.renderMarker(this.backContext, marker, xPos, firstMarkerPos, scaleFactor, drawStart);
+          this.renderMarker(this.backContext, marker, xPos, firstMarkerPos, scaleFactor, scaleFactor == 0 ? xPos : drawStart);
         }
       }
     }, {
@@ -2926,8 +2930,8 @@
       key: "createImage",
       value: function createImage(imageData, highlightReference) {
         var scale = this.renderingScale(imageData.width, imageData.height);
-        var germplasmsPerPixel = this.dataSet.germplasmList.length / imageData.height;
-        var markersPerPixel = this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
+        this.dataSet.germplasmList.length / imageData.height;
+        this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
 
         for (var x = 0; x < imageData.width; x += 1) {
           for (var y = 0; y < imageData.height; y += 1) {
@@ -3447,7 +3451,7 @@
       key: "sort",
       value: function sort(dataSet) {
         var self = this;
-        var trait = dataSet.getTrait(self.traitName);
+        dataSet.getTrait(self.traitName);
         dataSet.germplasmList.sort(function (a, b) {
           if (a.phenotype === undefined) return 1;
           if (b.phenotype === undefined) return -1;
@@ -5307,10 +5311,10 @@
   });
 
   var IntervalTree = unwrapExports(lib);
-  var lib_1 = lib.Node;
-  var lib_2 = lib.IntervalTree;
-  var lib_3 = lib.InOrder;
-  var lib_4 = lib.PreOrder;
+  lib.Node;
+  lib.IntervalTree;
+  lib.InOrder;
+  lib.PreOrder;
 
   var GenomeMap = /*#__PURE__*/function () {
     function GenomeMap(chromosomes) {
@@ -6599,7 +6603,7 @@
       clearParent(config.domParent);
       createRendererComponents(config, false);
       var germplasmData;
-      var client = axios$1.create({
+      var client = axios.create({
         baseURL: config.baseURL
       });
       client.defaults.headers.common.Authorization = "Bearer ".concat(config.authToken);
@@ -6649,7 +6653,7 @@
           germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
           var _genotypeImporter2 = genotypeImporter,
               stateTable = _genotypeImporter2.stateTable;
-          var dataSetId = config.dataSetId === undefined ? config.matrixId : config.dataSetId;
+          config.dataSetId === undefined ? config.matrixId : config.dataSetId;
           dataSet = new DataSet(config.matrixId, genomeMap, germplasmData, stateTable);
           populateLineSelect();
           populateChromosomeSelect();
@@ -6701,7 +6705,7 @@
       setAdvancement(0);
 
       if (config.mapFileURL) {
-        var mapPromise = axios$1.get(config.mapFileURL, {
+        var mapPromise = axios.get(config.mapFileURL, {
           headers: {
             'Content-Type': 'text/plain'
           },
@@ -6721,7 +6725,7 @@
       }
 
       if (config.phenotypeFileURL) {
-        var phenotypePromise = axios$1.get(config.phenotypeFileURL, {
+        var phenotypePromise = axios.get(config.phenotypeFileURL, {
           headers: {
             'Content-Type': 'text/plain'
           },
@@ -6740,7 +6744,7 @@
         loadingPromises.push(phenotypePromise);
       }
 
-      var genotypePromise = axios$1.get(config.genotypeFileURL, {
+      var genotypePromise = axios.get(config.genotypeFileURL, {
         headers: {
           'Content-Type': 'text/plain'
         },
@@ -6978,4 +6982,4 @@
 
   return GenotypeRenderer;
 
-})));
+}));
