@@ -156,63 +156,115 @@
                 });
                 
                 $('#moduleExistingMD').on('change', function () {
-            	    $.ajax({
-            	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTSETS_SEARCH%>"/>',
-            	        async: false,
-            	        type: "POST",
-            	        dataType: "json",
-            	        contentType: "application/json;charset=utf-8",
-            	        headers: {
-            	            "Authorization": "Bearer " + token
-            	        },
-            	        data: JSON.stringify({
-            	            "datasetId": $('#moduleExistingMD').val()//,
-            	        }),
-            	        success: function(jsonResult) {
-            	        	distinctBrapiMetadataURLs = new Set();
-            	        	for (var vs in jsonResult.variantSets) {
-                        	    $.ajax({
-                        	        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
-                        	        type: "POST",
-                        	        dataType: "json",
-                        	        async:false,
-                        	        contentType: "application/json;charset=utf-8",
-                        	        headers: {
-                        	            "Authorization": "Bearer " + token
-                        	        },
-                        	        data: JSON.stringify({
-                        	            "variantSetId": jsonResult.variantSets[vs].id
-                        	        }),
-                        	        success: function(individualsResult) {
-                        	        	var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
-                        	        	for (var cs in individualsResult.callSets) {
-                        	        		var ai = individualsResult.callSets[cs].info;
-                        	        		if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
+                	checkBrapiMetadataImport();
+                });
+                
+                $('#metadataType').on('change', function () {
+                	checkBrapiMetadataImport();
+                });
+            });
+            
+            function checkBrapiMetadataImport() {                
+                $.ajax({
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTSETS_SEARCH%>"/>',
+                    async: false,
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify({
+                        "datasetId": $('#moduleExistingMD').val()//,
+                    }),
+                    success: function(jsonResult) {
+                            distinctBrapiMetadataURLs = new Set();
+
+                            if ($('#metadataType').val() == "individual") {
+
+
+                                for (var vs in jsonResult.variantSets) {
+                                    $.ajax({
+                                        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
+                                        type: "POST",
+                                        dataType: "json",
+                                        async:false,
+                                        contentType: "application/json;charset=utf-8",
+                                        headers: {
+                                            "Authorization": "Bearer " + token
+                                        },
+                                        data: JSON.stringify({
+                                            "variantSetId": jsonResult.variantSets[vs].id
+                                        }),
+                                        success: function(individualsResult) {
+                                                var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
+                                                for (var cs in individualsResult.callSets) {
+                                                        var ai = individualsResult.callSets[cs].info;
+                                                        if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
                                                             var url = ai[extRefSrcField].toString();
                                                             if (!url.endsWith("/")) {
                                                                 url = url + "/";
                                                             }                                                               
                                                             distinctBrapiMetadataURLs.add(url);
                                                         }
-                        	        	}
-                        	        	updateBrapiNotice();
-                        	        },
-                        	        error: function(xhr, ajaxOptions, thrownError) {
-                        	            handleError(xhr, thrownError);
-                        	        }
-                        	    });
-            	        	}
-            	        },
-            	        error: function(xhr, ajaxOptions, thrownError) {
-            	            $('#searchPanel').hide();
-            	            handleError(xhr, thrownError);
-            	            $('#module').val("");
-            	            $('#grpProj').hide();
-            	            return false;
-            	        }
-            	    });
+                                                }
+                                                updateBrapiNotice();
+                                        },
+                                        error: function(xhr, ajaxOptions, thrownError) {
+                                            handleError(xhr, thrownError);
+                                        }
+                                    });
+                                }
+                            } else {
+                                for (var vs in jsonResult.variantSets) {
+                                    $.ajax({
+                                        url: '<c:url value="<%=GigwaRestController.REST_PATH + \"/brapi/v2/search/samples\"%>" />',
+                                        type: "POST",
+                                        dataType: "json",
+                                        async:false,
+                                        contentType: "application/json;charset=utf-8",
+                                        headers: {
+                                            "Authorization": "Bearer " + token
+                                        },
+                                        data: JSON.stringify({
+                                            "studyDbIds": [jsonResult.variantSets[vs].id]
+                                        }),
+                                        success: function(samplesResult) {
+                                                var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
+                                                for (var s in samplesResult.result.data) {
+                                                        var ai = samplesResult.result.data[s].externalReferences;                                                        
+                                                        if (ai !== null) {
+                                                            for (var ref in ai) {
+                                                                if (ai[ref].referenceID !== null && urlRegexp.test(ai[ref].referenceSource.toString())) {
+                                                                    var url = ai[ref].referenceSource.toString();
+                                                                    if (!url.endsWith("/")) {
+                                                                        url = url + "/";
+                                                                    }                                                               
+                                                                    distinctBrapiMetadataURLs.add(url);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                }
+                                                updateBrapiNotice();
+                                        },
+                                        error: function(xhr, ajaxOptions, thrownError) {
+                                            handleError(xhr, thrownError);
+                                        }
+                                    });
+                                }
+                            }
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        $('#searchPanel').hide();
+                        handleError(xhr, thrownError);
+                        $('#module').val("");
+                        $('#grpProj').hide();
+                        return false;
+                    }
                 });
-            });
+            }
+            
 
             $(document).ready(function () {    	   
             	updateBrapiNotice();
@@ -260,10 +312,11 @@
                 
                 $(function(){
               	  Dropzone.options.importDropzoneG = {
-              		maxFiles: 2,
+              		maxFiles: 3,
+              		parallelUploads: 3,
               		previewsContainer: "#dropZonePreviewsG",
               	    dictResponseError: 'Error importing data',
-              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype",
+              	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.tsv,.csv",
               	  	headers: {
               	  		"Authorization": "Bearer " + token
               	  	},
@@ -368,8 +421,11 @@
                		$("#projectToImport").val($("#projectExisting").val());
                 if ($("#runExisting").val() != '- new run -')
                		$("#runToImport").val($("#runExisting").val());
-                var dataFile1 = $("#dataFile1").val().trim();
-                var dataFile2 = $("#dataFile2").val().trim();
+//                 var dataFile1 = $("#dataFile1").val().trim();
+//                 var dataFile2 = $("#dataFile2").val().trim();
+//                 var dataFile3 = $("#dataFile3").val().trim();
+        		var dataFile1Input = $("input[name=dataFile1]");
+        		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
 
                 if (!isValidNewName($("#moduleToImport").val()) || !isValidNewName($("#projectToImport").val()) || !isValidNewName($("#runToImport").val())) {
                     alert("Database, project and run names must only consist in digits, accentless letters, dashes and hyphens!");
@@ -405,9 +461,9 @@
 	                }
                 }
 
-                var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0);
-                if (totalDataSourceCount > 2) {
-                    alert("You may not provide more than 2 data-source entries!");
+                var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0) + (dataFile3 != "" ? 1 : 0);
+                if (totalDataSourceCount > 3) {
+                    alert("You may not provide more than 3 data-source entries!");
                     $('#progress').modal('hide');
                     return;
                 }
@@ -441,11 +497,15 @@
                     return;
                 }
 
-        		var dataFile1Input = $("input[name=dataFile1]");
-        		var dataFile1 = dataFile1Input.val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim();
         		if (dataFile2.length > 0 && dataFile1.length == 0)
                 {
-                   	alert("You may only use the second field along with the first!");
+                   	alert("You may only use the second datasource field along with the first!");
+                    $('#progress').modal('hide');
+                    return;
+                }
+        		if (dataFile3.length > 0 && dataFile2.length == 0)
+                {
+                   	alert("You may only use the third datasource field along with the two first!");
                     $('#progress').modal('hide');
                     return;
                 }
@@ -530,25 +590,25 @@
                 var dataFile1 = $("#metadataFilePath1").val().trim();
 <%--  		        var dataFile2 = $("#metadataFilePath2").val().trim(); --%>
 
-				var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) <%--+ (dataFile2 != "" ? 1 : 0)--%>;
-				if (providedFileCount > 1) {
-				    alert("You may not provide more than 1 metadata source!");
-				    $('#progress').modal('hide');
-				    return;
-				}
+                var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) <%--+ (dataFile2 != "" ? 1 : 0)--%>;
+                if (providedFileCount > 1) {
+                    alert("You may not provide more than 1 metadata source!");
+                    $('#progress').modal('hide');
+                    return;
+                }
 
-				if (dataFile1 == "" && importDropzoneMD.getAcceptedFiles().length == 0 && distinctBrapiMetadataURLs.size > 0) {
-					$('#brapiURLs').val("");
-					$('#brapiTokens').val("");
-        			distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
-	        			var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
-	        			if (brapiToken == null)
-	        				return;
-						var fFirstEntry = $('#brapiURLs').val() == "";
-        				$('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
-        				$('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
-        			});
-        		}
+                if (dataFile1 == "" && importDropzoneMD.getAcceptedFiles().length == 0 && distinctBrapiMetadataURLs.size > 0) {
+                    $('#brapiURLs').val("");
+                    $('#brapiTokens').val("");
+                    distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
+                            var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
+                            if (brapiToken == null)
+                                    return;
+                                    var fFirstEntry = $('#brapiURLs').val() == "";
+                            $('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
+                            $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+                    });
+                }
 
                 if (providedFileCount + ($('#brapiURLs').val() == "" ? 0 : 1) < 1) {
                 	if (distinctBrapiMetadataURLs.size == 0)
@@ -774,7 +834,7 @@
                             <div class="form text-center">
                                 <div class ="row" style='margin:0 50px 0 25px;'>
 	                                <h4>Importing genotyping data in VCF / HapMap / PLINK / Intertek / Flapjack / BrAPI format</h4>
-									<p class="margin-top-md text-red">Properties followed by * are required</p>
+									<p style="transform: rotate(-90deg); position:absolute; left:-60px; margin-top:80px;" class="margin-top-md text-red">Properties followed by * are required</p>
                                 </div>
                                 <div class ="row" style='margin:0 50px 0 25px;'>
                                     <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
@@ -813,9 +873,9 @@
                                                 <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
                                             <c:if test="${!isAdmin}">
-                                             <div class="col-md-3 text-red" style="font-size:11px;">
-                                            		<span class="glyphicon glyphicon-warning-sign" style="font-size:14px;"></span>
-                                            		You are only allowed to create temporary databases
+                                       			<div class="col-md-3 text-red row">
+                                            		<div class="col-md-1 glyphicon glyphicon-warning-sign" style="font-size:20px;"></div>
+                                            		<div class="col-md-10" style="font-size:10px; margin-top:-1px;">You may only create temporary databases</div>
                                             	</div>
                                             </c:if>
                                         </div>
@@ -879,43 +939,46 @@
                                      	<div class="col-md-10">
                                      		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
 									<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-                                     		or an absolute path on webserver filesystem.</small>
-                                     		<div class="text-red">You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
+                                     		or an absolute webserver fs-path</small>
+                                     		<div class="text-red" style='float:right;'>You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
                                       </div>
                                      </div>
-                                     <div class="row text-left" style="margin-bottom:5px;">
-                                     	<div class="col-md-2"></div>
-                                     	<div style="text-align:right; position:absolute; width:110px;">
-                                     		<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
-                                     	</div>
-                                         <div class="col-md-5">
+ 
+		                             <div class="row text-left margin-top-md" style="margin-bottom:5px;">
+		                             	<div class="col-md-2"></div>
+		                             	<div class="col-md-5">
+	                                      <div style="text-align:right; position:absolute; width:110px; left:-120px;">
+	                                     	<small class="text-info">Only one file may be submitted at once, except for the PLINK format where .ped and .map are expected.</small>
+	                                      </div>
                                           <input id="dataFile1" class="form-control input-sm" type="text" name="dataFile1" placeholder="First file or BrAPI endpoint">
-                                      </div>
-                                         <div class="col-md-5">
-                                          <input id="dataFile2" class="form-control input-sm" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
-                                      </div>
+                                          <input id="dataFile2" class="form-control input-sm margin-top-md" type="text" name="dataFile2" placeholder="Second file for PLINK or Flapjack">
+                                          <input id="dataFile3" class="form-control input-sm margin-top-md" type="text" name="dataFile3" placeholder="Third file (sample / individual mapping)">
+                                          <div class='text-red margin-top-md' style='margin-left:-140px; font-size:11px; '><u>NB:</u> If your genotyping data contains sample IDs rather than individual IDs you may supply a tab-delimited file (.tsv or .csv) providing a mapping based on columns named 'individual' and 'sample' (not supported for BrAPI imports)</div>
+                                        </div>
+                                        <div class="col-md-5">
+										   <div class="dz-default dz-message">
+		       									<h5 style="margin-top:5px; text-align:center;">... or drop files here or click to upload</h5>
+		       									<div class="row">
+		       										<div class="col-md-4 text-bold" style="padding:25px;">Accepted extensions:</div>
+		       										<div class="col-md-8">
+			       										<div><u>VCF format:</u> .vcf</div>
+			       										<div><u>Hapmap format:</u> .hapmap or .txt</div>
+														<div><u>PLINK format:</u> .ped + .map</div>
+			                                            <div><u>Intertek format:</u> .intertek</div>
+														<div><u>Flapjack format:</u> .genotype + .map</div>
+														<div><u>Sample file:</u> .tsv or .csv</div>
+													</div>
+		       									</div>
+		      									</div>
+		                                   </div>
+                                        <div class="col-md-1"></div>
+                                        <div class="col-md-10">
+		                                   <div id="dropZonePreviewsG" style="height:55px;"></div>
+                                        </div>
+                                        <div class="col-md-1" style="height:60px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importGenotypesButton" type="button">Submit</button></div>
                                      </div>
-                               <div class ="row">
-                               	<div class="col-md-2"></div>
-                                   <div class="col-md-5" id="dropZonePreviewsG"></div>
-                                   <div class="col-md-4" style="padding-right:0;">
-									<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
-       									<div>
-       										<b>Accepted extensions:</b>
-       										<br/>.vcf
-       										<br/>.hapmap or .txt
-											<br/>.ped + .map (PLINK)
-                                                        <br/>.intertek
-											<br/>.genotype + .map (Flapjack)
-       									</div>
-      									</div>
-                                   </div>
-                                   <div class="col-md-1">
-                                    <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="importGenotypesButton" type="button">Submit</button>
-                                   </div>
-                               </div>
-                             	</div>
+		                             
+								   </div>
                                 </div>
                             </div>
                         </div>
@@ -938,14 +1001,21 @@
                                 		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
                                 		<p>The first row in TSV file (header) must contain field labels, one of them must be named "individual".</p>
                                 		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
-                                		<p class="bold">The following BrAPI fields are supported for export via the germplasm-search call:</p>
-										accessionNumber, acquisitionDate, biologicalStatusOfAccessionCode, commonCropName, countryOfOriginCode, defaultDisplayName, genus, germplasmDbId, germplasmPUI, instituteCode, instituteName, pedigree, seedSource, species, speciesAuthority, subtaxa, subtaxaAuthority, typeOfGermplasmStorageCode, 
                                 	</div>
                                 </div>
                                 <div class="col-md-3">                     
                                     <div class="form-group margin-top text-left">
                                         <label for="moduleExistingMD">Database</label>
                                         <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
+                                    </div>                  
+                                </div>
+                                <div class="col-md-3">                     
+                                    <div class="form-group margin-top text-left">
+                                        <label>Import metadata on</label>
+                                        <select class="selectpicker" id="metadataType" class="moduleExisting" name="metadataType" data-actions-box="true" data-width="100%">
+                                            <option value="individual">Individuals</option>
+                                            <option value="sample">Samples</option>
+                                        </select>
                                     </div>                  
                                 </div>
                                 <div class="col-md-3"></div>
