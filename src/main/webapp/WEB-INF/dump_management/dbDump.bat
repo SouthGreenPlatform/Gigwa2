@@ -49,7 +49,7 @@ if not "%DBUSERNAME%"=="" (
 )
 
 set FILENAME=%OUTPUT%\%DUMPNAME%.gz
-set COMMAND=mongodump -vv %CREDENTIAL_OPTIONS% --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --host=%HOST% --db=%DATABASE% --archive=%FILENAME% --gzip
+set COMMAND=mongodump -vv %CREDENTIAL_OPTIONS% --db=%DATABASE% --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --host=%HOST% --archive=%FILENAME% --gzip
 
 if "%LOGFILE%"=="" (
 	%COMMAND%
