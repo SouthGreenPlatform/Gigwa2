@@ -1192,16 +1192,15 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	
-/**
-     * import reference sequence from a fasta file in a specific module
-     *
+    /**
+     * @param request
      * @param sModule
-     * @param dataFile1
-     * @param dataFile2
-     * @param fClearProjectSeqData, currently ignored since FASTA upload is
-     * disabled in the interface
+     * @param dataUri1
+     * @param dataUri2
+     * @param fClearProjectSeqData
      * @param uploadedFile1
      * @param uploadedFile2
+     * @param metadataType
      * @param brapiURLs
      * @param brapiTokens
      * @return
@@ -1351,16 +1350,13 @@ public class GigwaRestController extends ControllerInterface {
                                 List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                                 List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
 
-                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty()) {
+                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
                                     continue;
-                                }
 
-                                if (extRefIdValues.size() != 1) {
+                                if (extRefIdValues.size() != 1)
                                     LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-                                }
-                                if (extRefSrcValues.size() != 1) {
+                                if (extRefSrcValues.size() != 1)
                                     LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-                                }
 
                                 String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 
@@ -1382,14 +1378,16 @@ public class GigwaRestController extends ControllerInterface {
                                 individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                             }
                         } else {
-                            SampleSearchRequest ssr = new SampleSearchRequest();
                             List<GenotypingSample> genotypingSamples = MgdbDao.getSamplesForProject(sModule, projId, null);
                             for (GenotypingSample sample : genotypingSamples) {
                                 if (sample.getAdditionalInfo() != null) {
-                                    String extRefIdValues = sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId).toString();
-                                    String extRefSrcValues = sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource).toString();
+                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
+                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+                                    
+                                    if (extRefSrcValue == null || extRefIdValue == null)
+                                        continue;
 
-                                    String endPointUrl = extRefSrcValues;
+                                    String endPointUrl = extRefSrcValue;
                                     if (!endPointUrl.endsWith("/")) {
                                         endPointUrl = endPointUrl + "/";
                                     }
@@ -1404,7 +1402,7 @@ public class GigwaRestController extends ControllerInterface {
                                         brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
                                     }
 
-                                    individualsCurrentEndpointHasDataFor.put(extRefIdValues, sample.getSampleName());
+                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
                                 }
                                 
                             }
