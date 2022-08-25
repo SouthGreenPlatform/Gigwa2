@@ -128,7 +128,7 @@
                             new Dropzone("#importDropzoneMD").destroy();
                         } else {
                             var link1 = "<c:url value='/' />?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val(), link2 = "<c:url value='<%=GigwaRestController.IMPORT_PAGE_URL%>' />?module=" + $("#moduleToImport").val() + "&type=metadata";
-                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata to individuals <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
+                            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata for individuals or samples <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
                             $('#progress').modal('show');
                             new Dropzone("#importDropzoneG").destroy();
                         }
@@ -160,7 +160,8 @@
                 });
                 
                 $('#metadataType').on('change', function () {
-                	checkBrapiMetadataImport();
+                	if ($('#moduleExistingMD').val() != "")
+                		checkBrapiMetadataImport();
                 });
             });
             
@@ -175,14 +176,12 @@
                         "Authorization": "Bearer " + token
                     },
                     data: JSON.stringify({
-                        "datasetId": $('#moduleExistingMD').val()//,
+                        "datasetId": $('#moduleExistingMD').val()
                     }),
                     success: function(jsonResult) {
                             distinctBrapiMetadataURLs = new Set();
 
-                            if ($('#metadataType').val() == "individual") {
-
-
+                            if ($('#metadataType').val() == "individual")
                                 for (var vs in jsonResult.variantSets) {
                                     $.ajax({
                                         url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
@@ -215,7 +214,7 @@
                                         }
                                     });
                                 }
-                            } else {
+                            else
                                 for (var vs in jsonResult.variantSets) {
                                     $.ajax({
                                         url: '<c:url value="<%=GigwaRestController.REST_PATH + \"/brapi/v2/search/samples\"%>" />',
@@ -253,7 +252,6 @@
                                         }
                                     });
                                 }
-                            }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
                         $('#searchPanel').hide();
