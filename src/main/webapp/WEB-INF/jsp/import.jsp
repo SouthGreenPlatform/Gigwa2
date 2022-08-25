@@ -357,7 +357,7 @@
             
             function updateBrapiNotice() {
             	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.size > 0)
-	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains individuals that are linked to BrAPI germplasm records. You may directly click on SUBMIT to import their metadata</span>");
+	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains individuals that are linked to BrAPI germplasm or sample records. You may directly click on SUBMIT to import their metadata</span>");
 	        	else
 	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1 and v2's search/germplasm or search/samples call is supported in a two-step procedure: <br> \n\
                     (1) Importing metadata fields named <b>" + extRefIdField + "</b>, <b>" + extRefSrcField + "</b> and <b>" + extRefTypeField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b>, <b>BrAPI base-URLs</b> and <b>germplasm</b> or <b>sample</b>; <br> \n\
