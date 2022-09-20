@@ -150,8 +150,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.brapi.v2.api.SamplesApiController;
-import org.brapi.v2.model.SampleSearchRequest;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
