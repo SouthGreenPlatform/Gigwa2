@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,12 +46,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.brapi.v2.api.VariantsetsApiController;
+import org.brapi.v2.api.cache.MongoBrapiCache;
+import org.brapi.v2.model.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -66,6 +70,7 @@ import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpValidity;
 import fr.cirad.manager.dump.IBackgroundProcess;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
+import fr.cirad.mgdb.model.mongo.maintypes.DBVCFHeader;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
@@ -73,9 +78,9 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
+import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.tools.mongo.MongoTemplateManager;
-import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
 @Component
@@ -87,14 +92,9 @@ public class GigwaModuleManager implements IModuleManager {
 
     private String actionRequiredToEnableDumps = null;
 
-    @Autowired
-    AppConfig appConfig;
-    @Autowired
-    ApplicationContext appContext;
-    @Autowired
-    TokenManager tokenManager;
-    @Autowired
-    ServletContext servletContext;
+    @Autowired private AppConfig appConfig;
+    @Autowired private ApplicationContext appContext;
+    @Autowired private ServletContext servletContext;
 
     @Override
     public String getModuleHost(String sModule) {
@@ -135,6 +135,32 @@ public class GigwaModuleManager implements IModuleManager {
 
         return entitiesByModule;
     }
+    
+    @Override
+    public Map<Comparable, String> getSubEntities(String entityType, String sModule, Comparable[] parentEntityIDs) throws Exception {
+        Map<Comparable, String> subEntityIdToNameMap = new LinkedHashMap<Comparable, String>();
+        if (AbstractTokenManager.ENTITY_RUN.equals(entityType)) {
+        	if (parentEntityIDs.length != 1)
+        		throw new Exception("parentEntityIDs should contain a single element: the run's project ID");
+        	try {
+        		int nProjId = (int) parentEntityIDs[0];
+
+                Query q = new Query(Criteria.where("_id").is(nProjId));
+                q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
+                q.fields().include(GenotypingProject.FIELDNAME_RUNS);
+
+    			for (String sRun : MongoTemplateManager.get(sModule).findOne(q, GenotypingProject.class).getRuns())
+    				subEntityIdToNameMap.put(sRun, sRun);
+        	}
+        	catch (ClassCastException cce) {
+        		throw new Exception("Invalid project ID: " + parentEntityIDs[0]);
+        	}
+        }
+        else
+            throw new Exception("Not managing entities of type " + entityType);
+
+        return subEntityIdToNameMap;
+    }
 
     @Override
     public boolean isModuleHidden(String sModule) {
@@ -154,7 +180,7 @@ public class GigwaModuleManager implements IModuleManager {
         if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
         	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR)))
         		if (exportFile.delete())
-        			LOG.debug("Deleted BrAPI v2 VariantSet export file: " + exportFile);
+        			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
 
         return MongoTemplateManager.removeDataSource(sModule, fAlsoDropDatabase);
     }
@@ -175,9 +201,9 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public boolean removeManagedEntity(String sModule, String sEntityType, Comparable entityId) throws Exception {
+    public boolean removeManagedEntity(String sModule, String sEntityType, Collection<Comparable> entityIDs) throws Exception {
         if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType)) {
-            final int nProjectIdToRemove = Integer.parseInt(entityId.toString());
+            final int nProjectIdToRemove = Integer.parseInt(entityIDs.iterator().next().toString());
             MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
             Query query = new Query();
             query.fields().include("_id");
@@ -192,33 +218,75 @@ public class GigwaModuleManager implements IModuleManager {
             }
             if (nProjCount == 1 && !individualsInThisProject.isEmpty()) {
                 mongoTemplate.getDb().drop();
-                LOG.debug("Dropped database for module " + sModule + " instead of removing its only project");
+                LOG.info("Dropped database for module " + sModule + " instead of removing its only project");
                 return true;
             }
 
             long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
-            LOG.debug("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
+            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
 
             Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject, CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
             long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
-            LOG.debug("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
+            if (nRemovedIndCount > 0)
+            	LOG.info("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
 
             if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
-                LOG.debug("Removed project " + nProjectIdToRemove + " from module " + sModule);
+                LOG.info("Removed project " + nProjectIdToRemove + " from module " + sModule);
+            
+            long nDeletedVcfHeaders = mongoTemplate.remove(new Query(Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT).is(nProjectIdToRemove)), DBVCFHeader.class).getDeletedCount();
+            if (nDeletedVcfHeaders > 0)
+                LOG.info("Removed " + nDeletedVcfHeaders + " vcf header(s) for project" + nProjectIdToRemove + " from module " + sModule);
 
             new Thread() {
                 public void run() {
                     long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
-                    LOG.debug("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
+                    LOG.info("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
                 }
             }.start();
-            LOG.debug("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
+            LOG.info("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 
             File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
             if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + entityId + IGigwaService.ID_SEPARATOR)))
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + nProjectIdToRemove + IGigwaService.ID_SEPARATOR)))
             		if (exportFile.delete())
-            			LOG.debug("Deleted BrAPI v2 VariantSet export file: " + exportFile);
+            			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
+            
+            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
+            MongoTemplateManager.updateDatabaseLastModification(sModule);
+            return true;
+        } else if (AbstractTokenManager.ENTITY_RUN.equals(sEntityType)) {
+        	Iterator<Comparable> entityIdIterator = entityIDs.iterator();
+        	final int nProjectId = Integer.parseInt(entityIdIterator.next().toString());
+        	final String sRun = (String) entityIdIterator.next();
+            MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+
+            long nRemovedSampleCount = mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class).getDeletedCount();
+            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectId);
+
+            Collection<String> individualsWithSamples = mongoTemplate.findDistinct(new Query(), GenotypingSample.FIELDNAME_INDIVIDUAL,  GenotypingSample.class, String.class);
+            long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").not().in(individualsWithSamples)), Individual.class).getDeletedCount();
+            if (nRemovedIndCount > 0)
+            	LOG.info("Removed " + nRemovedIndCount + " individuals");
+
+            if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(nProjectId)), new Update().pull(GenotypingProject.FIELDNAME_RUNS, sRun), GenotypingProject.class).getModifiedCount() > 0)
+                LOG.info("Removed run " + sRun + " from project " + nProjectId);
+
+            if (mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT).is(nProjectId), Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_RUN).is(sRun))), DBVCFHeader.class).getDeletedCount() > 0)
+                LOG.info("Removed vcf header for run " + sRun + " in project " + nProjectId + " of module " + sModule);
+
+            new Thread() {
+                public void run() {
+                    long nRemovedVrdCount = mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectId), Criteria.where("_id." + VariantRunDataId.FIELDNAME_RUNNAME).is(sRun))), VariantRunData.class).getDeletedCount();
+                    LOG.info("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectId + " of module " + sModule);
+                }
+            }.start();
+            LOG.info("Launched async VRD cleanup for run " + sRun + " in project " + nProjectId + " of module " + sModule);
+
+            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+            if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + nProjectId + IGigwaService.ID_SEPARATOR)))
+            		if (exportFile.delete())
+            			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
             
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
             MongoTemplateManager.updateDatabaseLastModification(sModule);
@@ -275,7 +343,7 @@ public class GigwaModuleManager implements IModuleManager {
 
                     actionRequiredToEnableDumps = ""; // all seems OK
                 } catch (IOException ioe) {
-                    LOG.error("error checking for mongodump presence", ioe);
+                    LOG.error("error checking for mongodump presence: " + ioe.getMessage());
                     actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
                 }
             }
@@ -520,4 +588,38 @@ public class GigwaModuleManager implements IModuleManager {
     public boolean isModuleAvailableForDump(String sModule) {
         return isModuleAvailableForWriting(sModule);
     }
+
+	@Override
+	public String managedEntityInfo(String sModule, String entityType, Collection<Comparable> entityIDs) throws Exception {
+		
+		boolean fIsRunEntityType = AbstractTokenManager.ENTITY_RUN.equals(entityType);
+    	if (fIsRunEntityType && entityIDs.size() != 2)
+    		throw new Exception("entityIDs should contain 2 elements: project ID and run ID");
+
+		
+        if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
+            Query q = new Query(Criteria.where("_id").is(Integer.valueOf(entityIDs.iterator().next().toString())));
+            q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
+            q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
+            return MongoTemplateManager.get(sModule).findOne(q, GenotypingProject.class).getDescription();
+
+        }
+        else if (AbstractTokenManager.ENTITY_RUN.equals(entityType)) {
+        	int nProjId = Integer.valueOf(entityIDs.iterator().next().toString());
+    	    String sRun = !fIsRunEntityType ? null : (String) entityIDs.toArray(new Comparable[2])[1];
+        	MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+        	VariantSet variantSet = mongoTemplate.findById(GigwaGa4ghServiceImpl.createId(sModule, nProjId, sRun), VariantSet.class, MongoBrapiCache.BRAPI_CACHE_COLL_VARIANTSET);
+        	if (variantSet != null)
+        		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
+        	else {
+                Query q = new Query(Criteria.where("_id").is(nProjId));
+                q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
+                q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
+                return (int) mongoTemplate.count(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class) + " samples";
+
+            }
+        }
+        else
+        	throw new Exception("Not managing entities of type " + entityType);
+	}
 }
