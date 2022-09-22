@@ -79,7 +79,7 @@
 		<p>This process is running as a background task.</p>
 		<p>You may leave the main Gigwa page and either keep this one open or copy its URL to check again later.</p>
 		<h2 id="progressText" class="loading-message" style='margin-top:50px'>Please wait...</h2>
-		<button class="btn btn-danger btn-sm" id="abortButton" style="display:none;" type="button" name="abort" onclick="abort('${param.token}');">Abort</button>
+		<button class="btn btn-danger btn-sm" id="abortButton" style="display:none;" type="button" name="abort" onclick="if (confirm('Are you sure?')) abort('${param.token}');">Abort</button>
 	</div>
 </body>
 

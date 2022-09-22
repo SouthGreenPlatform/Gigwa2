@@ -53,6 +53,7 @@ import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -101,6 +102,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
 
 import fr.cirad.io.brapi.BrapiService;
+import fr.cirad.manager.IModuleManager;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
@@ -141,6 +143,7 @@ import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
+import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
@@ -174,6 +177,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private VisualizationService vizService;
 
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
+	
+	@Autowired private IModuleManager moduleManager;
 
 	/**
 	 * The Constant LOG.
@@ -1781,7 +1786,7 @@ public class GigwaRestController extends ControllerInterface {
 					progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
 					if (!fDatasourceAlreadyExisted) {
 						if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
-							LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to previous import error");
+							LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to unauthorized import attempt");
 					}
 					for (File fileToDelete : uploadedFiles)
 						fileToDelete.delete();
@@ -1879,41 +1884,43 @@ public class GigwaRestController extends ControllerInterface {
 								}
 							}
 							
-							if (newProjId != null) {
-								createdProjectId.set(newProjId);
+							createdProjectId.set(newProjId != null ? newProjId : -1);
+							
+							if (progress.isAborted())
+								throw new ClientAbortException();	// throw an exception so we enter the catch block where cleanup is done
+							
+							if (newProjId != null)
 								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
-							}
 							
 							if (fGotProjectDesc)
 								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 						}
 						catch (Exception e) {
-							String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
-							LOG.error("Error importing data from " + fileExtensions + (e instanceof SocketTimeoutException ? " (server-side needs maxParameterCount set to -1 in server.xml)" : ""), e);
-							progress.setError("Error importing from " + fileExtensions + ": " + ExceptionUtils.getStackTrace(e));
+							boolean fUserAborted = e instanceof ClientAbortException;
+							if (!fUserAborted) {
+								String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
+								LOG.error("Error importing data from " + fileExtensions + (e instanceof SocketTimeoutException ? " (server-side needs maxParameterCount set to -1 in server.xml)" : ""), e);
+								progress.setError("Error importing from " + fileExtensions + ": " + ExceptionUtils.getStackTrace(e));
+							}
+							
+							String sCleanupReason = fUserAborted ? "user abort" : "previous import error";
 							if (!fDatasourceAlreadyExisted && MongoTemplateManager.removeDataSource(sNormalizedModule, true))
-								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to previous import error");
+								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to " + sCleanupReason);
 							else
-							{	// attempt finer cleanup
-								if (project == null && mongoTemplate.findOne(new Query(), GenotypingProject.class) == null) {
-									mongoTemplate.dropCollection(VariantRunData.class);
-									LOG.debug("Dropped VariantRunData collection subsequently to previous import error");
-								}
-								else {
-									Query cleanupQuery = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(project.getId()).andOperator(Criteria.where("_id." + VariantRunDataId.FIELDNAME_RUNNAME).is(sRun)));
-									DeleteResult dr = mongoTemplate.remove(cleanupQuery, VariantRunData.class);
-									if (dr.getDeletedCount() > 0)
-										LOG.debug("Removed " + dr.getDeletedCount() + " records from VariantRunData subsequently to previous import error");
-								}
-				                if (mongoTemplate.findOne(new Query(), VariantRunData.class) == null && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(sModule))
-				                {	// if there is no genotyping data left and we are not working on a fixed list of variants then any other data is irrelevant
-				                    mongoTemplate.getDb().drop();
-				                }
+							{
+								if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
+									try {
+										moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));
+									} catch (Exception e1) {
+										LOG.error("Error cleaning up run data subsequently to " + sCleanupReason, e1);
+									}
+								
+								moduleManager.cleanupDb(sModule);
 							}
 						}
 						finally {
 							if (!fDatasourceAlreadyExisted) {
-								if (progress.getError() != null) {
+								if (progress.getError() != null && !progress.isAborted()) {
 									MongoTemplateManager.removeDataSource(sModule, true);
 					                LOG.debug("Removed datasource created for an import that failed: " + sModule);
 								}

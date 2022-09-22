@@ -47,7 +47,9 @@
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	    	var maxUploadSizeURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAX_UPLOAD_SIZE_PATH%>"/>';
+	    	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
             var token;
+            var processAborted = false;
             var metadataError;
             var maxUploadSizeInMb, maxImportSizeInMb;
         	var BRAPI_V1_URL_ENDPOINT;
@@ -117,7 +119,9 @@
                     	$(this).val("");
                 });
                 $('#progress').on('hidden.bs.modal', function () {
-                    if (!$('#progress').data('error')) {
+                	if (processAborted)
+                		alert("Import aborted as requested");
+                	else if (!$('#progress').data('error')) {
                         $('.importFormDiv input').prop('disabled', true);
                         $('.importFormDiv button').prop('disabled', true);
                         $('.importFormDiv textarea').prop('disabled', true);
@@ -559,6 +563,9 @@
 	                taxonDetailsFieldContents.push($("#ncbiTaxon").attr('species'));
                 }
                 
+                $('#progressText').html("Please wait...");
+                $('button#abort').attr('rel', token);
+                processAborted = false;
 				$("#ncbiTaxonIdNameAndSpecies").val(taxonDetailsFieldContents.join(":"));
                 if (importDropzoneG.getQueuedFiles().length > 0)
                 	importDropzoneG.processQueue();
@@ -1092,8 +1099,9 @@
 <!--                             <div class="c3"></div> -->
 <!--                             <div class="c4"></div> -->
 <!--                         </div> -->
-                        <h3 id="progressText" class="loading-message">Please wait...</h3>      
-                        <button class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=' + token + '&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));" title="This will open a separate page allowing to watch import progress at any time. Leaving the current page will not abort the import process.">Open async progress watch page</button>
+                        <h3 id="progressText" class="loading-message">Please wait...</h3>
+                        <button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="if (confirm('Are you sure?')) abort($(this).attr('rel'));">Abort</button>
+                        <button class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=' + token + '&abortable=true&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));" title="This will open a separate page allowing to watch import progress at any time. Leaving the current page will not abort the import process.">Open async progress watch page</button>
                     </div>
                 </div>
             </div>

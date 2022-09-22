@@ -69,6 +69,7 @@ import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpValidity;
 import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
 import fr.cirad.mgdb.model.mongo.maintypes.DBVCFHeader;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
@@ -261,15 +262,15 @@ public class GigwaModuleManager implements IModuleManager {
             MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 
             long nRemovedSampleCount = mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class).getDeletedCount();
-            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectId);
+            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectId + " of module " + sModule);
 
             Collection<String> individualsWithSamples = mongoTemplate.findDistinct(new Query(), GenotypingSample.FIELDNAME_INDIVIDUAL,  GenotypingSample.class, String.class);
             long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").not().in(individualsWithSamples)), Individual.class).getDeletedCount();
             if (nRemovedIndCount > 0)
-            	LOG.info("Removed " + nRemovedIndCount + " individuals");
+            	LOG.info("Removed " + nRemovedIndCount + " individuals from project " + nProjectId + " of module " + sModule);
 
             if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(nProjectId)), new Update().pull(GenotypingProject.FIELDNAME_RUNS, sRun), GenotypingProject.class).getModifiedCount() > 0)
-                LOG.info("Removed run " + sRun + " from project " + nProjectId);
+                LOG.info("Removed run " + sRun + " from project " + nProjectId + " of module " + sModule);
 
             if (mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT).is(nProjectId), Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_RUN).is(sRun))), DBVCFHeader.class).getDeletedCount() > 0)
                 LOG.info("Removed vcf header for run " + sRun + " in project " + nProjectId + " of module " + sModule);
@@ -293,6 +294,25 @@ public class GigwaModuleManager implements IModuleManager {
             return true;
         } else
             throw new Exception("Not managing entities of type " + sEntityType);
+    }
+    
+    @Override public void cleanupDb(String sModule) {
+    	if (!MongoTemplateManager.isModuleAvailableForWriting(sModule)) {
+    		LOG.warn("finalizeDbCleanup execution skipped because database " + sModule + " is locked for writing");
+    		return;
+    	}
+    	
+    	MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+		if (mongoTemplate.findOne(new Query(), GenotypingProject.class) == null) {
+			mongoTemplate.dropCollection(VariantRunData.class);
+			LOG.info("Dropped VariantRunData collection subsequently because no project in database " + sModule);
+		}
+		
+        if (mongoTemplate.findOne(new Query(), VariantRunData.class) == null && AbstractGenotypeImport.doesDatabaseSupportImportingUnknownVariants(sModule))
+        {	// if there is no genotyping data left and we are not working on a fixed list of variants then any other data is irrelevant
+            mongoTemplate.getDb().drop();
+            LOG.info("Dropped database " + sModule + " which contained no genotypes and is not configured for working with a fixed list of variants");
+        }
     }
 
     @Override
