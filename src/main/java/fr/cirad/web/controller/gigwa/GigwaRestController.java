@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -53,7 +54,6 @@ import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -1887,7 +1887,7 @@ public class GigwaRestController extends ControllerInterface {
 							createdProjectId.set(newProjId != null ? newProjId : -1);
 							
 							if (progress.isAborted())
-								throw new ClientAbortException();	// throw an exception so we enter the catch block where cleanup is done
+								throw new CancellationException();	// throw an exception so we enter the catch block where cleanup is done
 							
 							if (newProjId != null)
 								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
@@ -1896,7 +1896,7 @@ public class GigwaRestController extends ControllerInterface {
 								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 						}
 						catch (Exception e) {
-							boolean fUserAborted = e instanceof ClientAbortException;
+							boolean fUserAborted = e instanceof CancellationException;
 							if (!fUserAborted) {
 								String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
 								LOG.error("Error importing data from " + fileExtensions + (e instanceof SocketTimeoutException ? " (server-side needs maxParameterCount set to -1 in server.xml)" : ""), e);
