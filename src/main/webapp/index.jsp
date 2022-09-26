@@ -2200,12 +2200,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  	<div class="col-xl-6 input-group half-width" style="float:left;">
 												<span class="input-group-addon input-sm">&ge;</span><input style="padding:3px; font-size:11px;"
 													id="minposition" class="form-control input-sm" type="text"
-													name="minposition" maxlength="11" onpaste="return false;" onkeypress="return isNumberKey(event);">
+													name="minposition" maxlength="11" onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);" onkeypress="return isNumberKey(event);">
 											</div>
 										   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
 											  <span class="input-group-addon input-sm">&le;</span><input style="padding:3px; font-size:11px;"
 												  id="maxposition" class="form-control input-sm" type="text"
-												  name="maxposition" maxlength="11" onpaste="return false;" onkeypress="return isNumberKey(event);">
+												  name="maxposition" maxlength="11" onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);" onkeypress="return isNumberKey(event);">
 											</div>
 										  </div>
 										</div>
