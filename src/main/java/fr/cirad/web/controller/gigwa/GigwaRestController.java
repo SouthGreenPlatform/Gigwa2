@@ -84,7 +84,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -120,7 +119,6 @@ import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
@@ -1114,7 +1112,6 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 400, message = "wrong parameters"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@CrossOrigin
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST, consumes =  "application/json")
     public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
         String token = tokenManager.readToken(request);

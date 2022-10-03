@@ -12,6 +12,10 @@
     <context:component-scan base-package="fr.cirad.mgdb.model.mongodao,fr.cirad.tools">
 	    <context:exclude-filter type="regex" expression="^fr.cirad.tools.GlobalExceptionHandler$"/>
     </context:component-scan>
+    
+    <bean id="corsSource" class="fr.cirad.tools.security.CustomCorsConfigurationSource">
+		<constructor-arg ref="appConfig" />
+    </bean>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     	<property name="location" value="classpath:config.properties" />
@@ -52,6 +56,8 @@
         <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
         <secur:custom-filter before="LOGOUT_FILTER" ref="requestSingleLogoutFilter" />
         <secur:custom-filter before="CAS_FILTER" ref="singleLogoutFilter" />
+        
+        <secur:cors configuration-source-ref="corsSource" />
     </secur:http>
 
 

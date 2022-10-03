@@ -88,3 +88,15 @@ maxExportableBillionGenotypes = 2
 
 # Defines the limit number of variant IDs that are returned by the text lookup functionality of the "Variant IDs" widget
 variantIdLookupMaxSize = 50
+
+
+# Properties with prefix "corsOrigins_" allow tuning CORS behaviour
+
+# Ant-style path pattern enabling CORS from any origin for all URLs starting with [context-path]/rest/
+corsOrigins_/**=*
+
+# Examples of customized Ant-style path patterns
+#corsOrigins_/*/brapi/v1/*=http://domain1:59397, http://domain2:8080
+#corsOrigins_/brapi/v2/**=http://domain1:59397, http://domain2:8080
+#corsOrigins_/ga4gh/**=http://domain1:59397, http://domain2:8080
+#corsOrigins_/gigwa/**=http://domain1:59397, http://domain2:8080
