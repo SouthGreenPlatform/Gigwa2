@@ -104,6 +104,7 @@ import com.mongodb.client.result.DeleteResult;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
+import fr.cirad.mgdb.exporting.IExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
@@ -120,7 +121,6 @@ import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
@@ -1349,7 +1349,6 @@ public class GigwaRestController extends ControllerInterface {
                     HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
                     MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
                     for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
-                        
                         if (metadataType.equals("individual")) {
                             SearchCallSetsRequest scsr = new SearchCallSetsRequest();
                             scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
@@ -1368,13 +1367,11 @@ public class GigwaRestController extends ControllerInterface {
                                 String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 
                                 String endPointUrl = extRefSrcValues.get(0);
-                                if (!endPointUrl.endsWith("/")) {
+                                if (!endPointUrl.endsWith("/"))
                                     endPointUrl = endPointUrl + "/";
-                                }
 
-                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
                                     brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-                                }
 
                                 HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
                                 if (individualsCurrentEndpointHasDataFor == null) {
@@ -1385,8 +1382,8 @@ public class GigwaRestController extends ControllerInterface {
                                 individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                             }
                         } else {
-                            List<GenotypingSample> genotypingSamples = MgdbDao.getSamplesForProject(sModule, projId, null);
-                            for (GenotypingSample sample : genotypingSamples) {
+                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, IExportHandler.getLoggedUserName(), Arrays.asList(projId), null).values();
+                            for (GenotypingSample sample : genotypingSamples)
                                 if (sample.getAdditionalInfo() != null) {
                                 	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                                 	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
@@ -1395,13 +1392,11 @@ public class GigwaRestController extends ControllerInterface {
                                         continue;
 
                                     String endPointUrl = extRefSrcValue;
-                                    if (!endPointUrl.endsWith("/")) {
+                                    if (!endPointUrl.endsWith("/"))
                                         endPointUrl = endPointUrl + "/";
-                                    }
 
-                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
                                         brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-                                    }
 
                                     HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
                                     if (individualsCurrentEndpointHasDataFor == null) {
@@ -1411,8 +1406,6 @@ public class GigwaRestController extends ControllerInterface {
 
                                     individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
                                 }
-                                
-                            }
                         }
                     }
 
