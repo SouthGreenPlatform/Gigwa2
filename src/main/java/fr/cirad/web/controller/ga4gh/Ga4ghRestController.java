@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.ListReferenceBasesRequest;
 import org.ga4gh.methods.ListReferenceBasesResponse;
-import org.ga4gh.methods.SearchCallSetsRequest;
 import org.ga4gh.methods.SearchCallSetsResponse;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
 import org.ga4gh.methods.SearchReferenceSetsResponse;
@@ -55,6 +54,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
+import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
@@ -389,13 +389,13 @@ public class Ga4ghRestController extends ControllerInterface {
     })
     @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchCallSetsRequest callSetsRequest) throws IOException {
-        org.ga4gh.models.Call c;
+    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
         String id = callSetsRequest.getVariantSetId();
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        	callSetsRequest.setRequest(request);
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);

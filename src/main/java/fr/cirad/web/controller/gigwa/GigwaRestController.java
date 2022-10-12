@@ -64,7 +64,6 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
-import org.ga4gh.methods.SearchCallSetsRequest;
 import org.ga4gh.models.CallSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -104,7 +103,6 @@ import com.mongodb.client.result.DeleteResult;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
-import fr.cirad.mgdb.exporting.IExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
@@ -129,6 +127,7 @@ import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
+import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
@@ -1350,9 +1349,10 @@ public class GigwaRestController extends ControllerInterface {
                     MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
                     for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
                         if (metadataType.equals("individual")) {
-                            SearchCallSetsRequest scsr = new SearchCallSetsRequest();
-                            scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
-                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
+                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
+                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
+                        	callSetsRequest.setRequest(request);
+                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
                                 List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                                 List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
 
@@ -1382,7 +1382,7 @@ public class GigwaRestController extends ControllerInterface {
                                 individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                             }
                         } else {
-                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, IExportHandler.getLoggedUserName(), Arrays.asList(projId), null).values();
+                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, username, Arrays.asList(projId), null).values();
                             for (GenotypingSample sample : genotypingSamples)
                                 if (sample.getAdditionalInfo() != null) {
                                 	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
