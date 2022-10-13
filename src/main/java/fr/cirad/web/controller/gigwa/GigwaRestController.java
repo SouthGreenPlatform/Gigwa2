@@ -1884,12 +1884,12 @@ public class GigwaRestController extends ControllerInterface {
 							
 							if (progress.isAborted())
 								throw new CancellationException();	// throw an exception so we enter the catch block where cleanup is done
-							
-							if (newProjId != null)
-								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
-							
+
 							if (fGotProjectDesc)
 								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+
+							if (newProjId != null)
+								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
 						}
 						catch (Exception e) {
 							boolean fUserAborted = e instanceof CancellationException;
@@ -1956,6 +1956,7 @@ public class GigwaRestController extends ControllerInterface {
 		else
 		{
 			mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+			MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
 			progress.markAsComplete();
 		}
 
