@@ -1024,6 +1024,7 @@
                                 		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
                                 		<p>The first row in TSV file (header) must contain field labels, one of them must be named "<span class='mdType'></span>".</p>
                                 		<p>Other rows must contain field values, with an exact match for <span class='mdType'></span> names in the above column.</p>
+                                		<p>Flapjack .phenotype files provide no way of specifying the target entity type, so the selection made in the UI is taken for granted.</p>
                                 	</div>
                                		<p></p>
                                		<p style="color:#bb4444;" class='bold' id="metadataScopeDesc"></p>

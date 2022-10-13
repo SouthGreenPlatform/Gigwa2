@@ -106,7 +106,6 @@ import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
-import fr.cirad.mgdb.importing.FlapjackPhenotypeImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
 import fr.cirad.mgdb.importing.IntertekImport;
@@ -1310,15 +1309,7 @@ public class GigwaRestController extends ControllerInterface {
                     filesByExtension.remove(FilenameUtils.getExtension(fastaFile).toLowerCase());
                 }
 
-                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : null;
-                boolean fIsFlapjackPhenotype = false;
-                if (metadataFile == null && filesByExtension.containsKey("csv"))
-                    metadataFile = filesByExtension.get("csv");
-                if (metadataFile == null && filesByExtension.containsKey("phenotype")) {
-                	metadataFile = filesByExtension.get("phenotype");
-                	fIsFlapjackPhenotype = true;
-                }
-                
+                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
                 if (metadataFile != null) {    // deal with individuals' metadata
                     boolean fIsFtp = metadataFile.startsWith("ftp://");
                     boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
@@ -1332,10 +1323,7 @@ public class GigwaRestController extends ControllerInterface {
                         }
                         progress.addStep("Importing metadata for individuals");
                         progress.moveToNextStep();
-                        if (fIsFlapjackPhenotype)
-                        	nModifiedRecords = FlapjackPhenotypeImport.importIndividualMetadata(sModule, request.getSession(), url, null, username);
-                        else
-                        	nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, request.getSession(), url, metadataType, null, username);
+                        nModifiedRecords = IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, request.getSession(), url, metadataType, null, username);
                     } catch (IOException ioe) {
                         if (ioe instanceof FileNotFoundException) {
                             progress.setError("File not found: " + metadataFile);
