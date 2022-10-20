@@ -46,7 +46,6 @@ import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,7 +62,6 @@ import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
-
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -121,7 +119,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = ListReferenceBasesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}" + BASES, method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ListReferenceBasesResponse getReferenceBases(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody ListReferenceBasesRequest listReferenceBasesRequest) throws IOException {
 
@@ -156,7 +153,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no CallSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public CallSet getCallSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -194,7 +190,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no VariantSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -232,7 +227,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
         String token = tokenManager.readToken(request);
@@ -271,7 +265,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
-    @CrossOrigin
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
 
@@ -311,7 +304,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Reference with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Reference getReference(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -349,7 +341,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no ReferenceSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCESETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ReferenceSet getReferenceSet(HttpServletResponse response, @PathVariable String id, HttpServletRequest request) throws IOException {
 
@@ -387,7 +378,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchCallSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -419,7 +409,6 @@ public class Ga4ghRestController extends ControllerInterface {
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchReferenceSetsResponse.class)
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCESETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferenceSetsResponse searchReferenceSets(HttpServletRequest request, @RequestBody SearchReferenceSetsRequest referenceSetsRequest) throws AvroRemoteException {
 
@@ -448,7 +437,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchReferencesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -485,7 +473,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchVariantSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchVariantSetsResponse searchVariantSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchVariantSetsRequest variantSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -533,7 +520,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = GigwaSearchVariantsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
 
@@ -580,7 +566,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no VariantAnnotation with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
     public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 

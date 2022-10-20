@@ -83,7 +83,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -243,7 +242,6 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GET_SESSION_TOKEN, notes = "Generate a token. The obtained token then needs to be passed along with every request.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
-	@CrossOrigin
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse response, @RequestBody(required = false) UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
         if (userInfo != null && (userInfo.getUsername() == null || userInfo.getUsername().isEmpty() ||  userInfo.getPassword() == null || userInfo.getPassword().isEmpty())) {
@@ -543,7 +541,6 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), 
 							@ApiResponse(code = 204, message = "No progress indicator") })
-	@CrossOrigin
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response) {
 		String token = tokenManager.readToken(request);
@@ -1114,7 +1111,6 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 400, message = "wrong parameters"),
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@CrossOrigin
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST, consumes =  "application/json")
     public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
         String token = tokenManager.readToken(request);
@@ -1467,7 +1463,6 @@ public class GigwaRestController extends ControllerInterface {
 	 * @throws Exception the exception
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = genotypeImportSubmissionURL, notes = "Import genotyping data.")
-	@CrossOrigin
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
 	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
