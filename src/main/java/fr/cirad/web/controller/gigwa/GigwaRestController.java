@@ -64,7 +64,6 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
-import org.ga4gh.methods.SearchCallSetsRequest;
 import org.ga4gh.models.CallSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -106,7 +105,6 @@ import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
-import fr.cirad.mgdb.importing.FlapjackPhenotypeImport;
 import fr.cirad.mgdb.importing.HapMapImport;
 import fr.cirad.mgdb.importing.IndividualMetadataImport;
 import fr.cirad.mgdb.importing.IntertekImport;
@@ -127,6 +125,7 @@ import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
+import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
@@ -243,6 +242,7 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GET_SESSION_TOKEN, notes = "Generate a token. The obtained token then needs to be passed along with every request.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@CrossOrigin
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse response, @RequestBody(required = false) UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
         if (userInfo != null && (userInfo.getUsername() == null || userInfo.getUsername().isEmpty() ||  userInfo.getPassword() == null || userInfo.getPassword().isEmpty())) {
@@ -542,6 +542,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), 
 							@ApiResponse(code = 204, message = "No progress indicator") })
+	@CrossOrigin
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response) {
 		String token = tokenManager.readToken(request);
@@ -1306,15 +1307,7 @@ public class GigwaRestController extends ControllerInterface {
                     filesByExtension.remove(FilenameUtils.getExtension(fastaFile).toLowerCase());
                 }
 
-                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : null;
-                boolean fIsFlapjackPhenotype = false;
-                if (metadataFile == null && filesByExtension.containsKey("csv"))
-                    metadataFile = filesByExtension.get("csv");
-                if (metadataFile == null && filesByExtension.containsKey("phenotype")) {
-                	metadataFile = filesByExtension.get("phenotype");
-                	fIsFlapjackPhenotype = true;
-                }
-                
+                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
                 if (metadataFile != null) {    // deal with individuals' metadata
                     boolean fIsFtp = metadataFile.startsWith("ftp://");
                     boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
@@ -1328,10 +1321,7 @@ public class GigwaRestController extends ControllerInterface {
                         }
                         progress.addStep("Importing metadata for individuals");
                         progress.moveToNextStep();
-                        if (fIsFlapjackPhenotype)
-                        	nModifiedRecords = FlapjackPhenotypeImport.importIndividualMetadata(sModule, request.getSession(), url, null, username);
-                        else
-                        	nModifiedRecords = IndividualMetadataImport.importIndividualMetadata(sModule, request.getSession(), url, metadataType, null, username);
+                        nModifiedRecords = IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, request.getSession(), url, metadataType, null, username);
                     } catch (IOException ioe) {
                         if (ioe instanceof FileNotFoundException) {
                             progress.setError("File not found: " + metadataFile);
@@ -1344,11 +1334,11 @@ public class GigwaRestController extends ControllerInterface {
                     HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
                     MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
                     for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
-                        
                         if (metadataType.equals("individual")) {
-                            SearchCallSetsRequest scsr = new SearchCallSetsRequest();
-                            scsr.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
-                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(scsr).getCallSets()) {
+                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
+                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
+                        	callSetsRequest.setRequest(request);
+                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
                                 List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                                 List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
 
@@ -1363,13 +1353,11 @@ public class GigwaRestController extends ControllerInterface {
                                 String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 
                                 String endPointUrl = extRefSrcValues.get(0);
-                                if (!endPointUrl.endsWith("/")) {
+                                if (!endPointUrl.endsWith("/"))
                                     endPointUrl = endPointUrl + "/";
-                                }
 
-                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
                                     brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-                                }
 
                                 HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
                                 if (individualsCurrentEndpointHasDataFor == null) {
@@ -1380,8 +1368,8 @@ public class GigwaRestController extends ControllerInterface {
                                 individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
                             }
                         } else {
-                            List<GenotypingSample> genotypingSamples = MgdbDao.getSamplesForProject(sModule, projId, null);
-                            for (GenotypingSample sample : genotypingSamples) {
+                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, username, Arrays.asList(projId), null).values();
+                            for (GenotypingSample sample : genotypingSamples)
                                 if (sample.getAdditionalInfo() != null) {
                                 	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
                                 	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
@@ -1390,13 +1378,11 @@ public class GigwaRestController extends ControllerInterface {
                                         continue;
 
                                     String endPointUrl = extRefSrcValue;
-                                    if (!endPointUrl.endsWith("/")) {
+                                    if (!endPointUrl.endsWith("/"))
                                         endPointUrl = endPointUrl + "/";
-                                    }
 
-                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null) {
+                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
                                         brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-                                    }
 
                                     HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
                                     if (individualsCurrentEndpointHasDataFor == null) {
@@ -1406,8 +1392,6 @@ public class GigwaRestController extends ControllerInterface {
 
                                     individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
                                 }
-                                
-                            }
                         }
                     }
 
@@ -1481,6 +1465,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @throws Exception the exception
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = genotypeImportSubmissionURL, notes = "Import genotyping data.")
+	@CrossOrigin
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
 	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
@@ -1885,12 +1870,12 @@ public class GigwaRestController extends ControllerInterface {
 							
 							if (progress.isAborted())
 								throw new CancellationException();	// throw an exception so we enter the catch block where cleanup is done
-							
-							if (newProjId != null)
-								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
-							
+
 							if (fGotProjectDesc)
 								finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+
+							if (newProjId != null)
+								MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
 						}
 						catch (Exception e) {
 							boolean fUserAborted = e instanceof CancellationException;
@@ -1957,6 +1942,7 @@ public class GigwaRestController extends ControllerInterface {
 		else
 		{
 			mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+			MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
 			progress.markAsComplete();
 		}
 

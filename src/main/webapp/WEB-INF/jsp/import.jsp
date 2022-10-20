@@ -15,8 +15,9 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
 	java.util.Properties prop = new java.util.Properties();
@@ -26,8 +27,10 @@
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
+
 <html>
     <head>
         <meta charset="utf-8">
@@ -58,7 +61,12 @@
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
-            var extRefTypeField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceType %>";
+   			
+   			var supervisedModules = [];
+   			<c:if test="${!isAnonymous}">
+   				<sec:authentication property="principal.authorities" var="authorities" />
+   				<c:forEach items="${authorities}" var="authority"><c:if test='${fn:endsWith(authority.authority, supervisorRoleSuffix)}'>supervisedModules.push("${authority.authority.split('\\$')[0]}");</c:if></c:forEach>
+   			</c:if>
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
@@ -203,7 +211,7 @@
                                                 var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
                                                 for (var cs in individualsResult.callSets) {
                                                         var ai = individualsResult.callSets[cs].info;
-                                                        if (ai[extRefIdField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
+                                                        if (ai[extRefIdField] != null && ai[extRefSrcField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
                                                             var url = ai[extRefSrcField].toString();
                                                             if (!url.endsWith("/")) {
                                                                 url = url + "/";
@@ -211,7 +219,7 @@
                                                             distinctBrapiMetadataURLs.add(url);
                                                         }
                                                 }
-                                                updateBrapiNotice();
+                                                updateSelectedMetadataType();
                                         },
                                         error: function(xhr, ajaxOptions, thrownError) {
                                             handleError(xhr, thrownError);
@@ -238,7 +246,7 @@
                                                         var ai = samplesResult.result.data[s].externalReferences;                                                        
                                                         if (ai !== null) {
                                                             for (var ref in ai) {
-                                                                if (ai[ref].referenceID !== null && urlRegexp.test(ai[ref].referenceSource.toString())) {
+                                                                if (ai[ref].referenceID !== null && ai[ref].referenceSource != null && urlRegexp.test(ai[ref].referenceSource.toString())) {
                                                                     var url = ai[ref].referenceSource.toString();
                                                                     if (!url.endsWith("/")) {
                                                                         url = url + "/";
@@ -249,7 +257,7 @@
                                                             }
                                                         }
                                                 }
-                                                updateBrapiNotice();
+                                                updateSelectedMetadataType();
                                         },
                                         error: function(xhr, ajaxOptions, thrownError) {
                                             handleError(xhr, thrownError);
@@ -269,7 +277,7 @@
             
 
             $(document).ready(function () {    	   
-            	updateBrapiNotice();
+            	updateSelectedMetadataType();
     	        $('#moduleProjectNavbar').hide();
                 $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
            		getToken();
@@ -359,13 +367,22 @@
                 $('button#importMetadataButton').on("click", function() {importMetadata()});
             });
             
-            function updateBrapiNotice() {
+            function updateSelectedMetadataType() {
+            	$("span.mdType").text($("#metadataType").val());
+
             	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.size > 0)
-	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains individuals that are linked to BrAPI germplasm or sample records. You may directly click on SUBMIT to import their metadata</span>");
+	        		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains " + $("#metadataType").val() + "s that are linked to a remote BrAPI datasource's " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records. You may directly click on SUBMIT to import their metadata</span>");
 	        	else
-	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1 and v2's search/germplasm or search/samples call is supported in a two-step procedure: <br> \n\
-                    (1) Importing metadata fields named <b>" + extRefIdField + "</b>, <b>" + extRefSrcField + "</b> and <b>" + extRefTypeField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b>, <b>BrAPI base-URLs</b> and <b>germplasm</b> or <b>sample</b>; <br> \n\
-                    (2) Coming back to this form and submitting<span style='color:#;'>");
+	        		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
+                    (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
+                    (2) Coming back to this form and submitting");
+
+            	if (${isAnonymous})
+            		$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into this database is only visible to yourself and lasts as long as your web session.");
+             	else if (${isAdmin} || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
+            		$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into this database is considered global and therefore visible to anyone allowed to work with it.");
+             	else
+             		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into this database is is only visible to yourself and is persisted in your account.");
             }
             
             function submitBrapiForm() {
@@ -1001,12 +1018,17 @@
                             <div class="row">
                             	<div class="col-md-1"></div>
                                 <div class="col-md-4">
-                                	<div style="position:absolute; margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
-                                		<p>Providing metadata for individuals will enable users to select them by filtering on that metadata.</p>
+                                	<div style="position:absolute;">
+                                	<div style="margin-top:-5px; padding:12px; text-align:left; font-style:italic;">
+                                		<p>Providing metadata for <span class='mdTypeDisabled'>individual</span>s will enable users to select them by filtering on that metadata.</p>
                                 		<p>The expected format is <b>tab separated values</b> (.tsv or .csv extension), or Flapjack's .phenotype file.</p>
-                                		<p>The first row in TSV file (header) must contain field labels, one of them must be named "individual".</p>
-                                		<p>Other rows must contain field values, with an exact match for individual names in the above column.</p>
+                                		<p>The first row in TSV file (header) must contain field labels, one of them must be named "<span class='mdType'></span>".</p>
+                                		<p>Other rows must contain field values, with an exact match for <span class='mdType'></span> names in the above column.</p>
+                                		<p>Flapjack .phenotype files provide no way of specifying the target entity type, so the selection made in the UI is taken for granted.</p>
                                 	</div>
+                               		<p></p>
+                               		<p style="color:#bb4444;" class='bold' id="metadataScopeDesc"></p>
+                               		</div>
                                 </div>
                                 <div class="col-md-3">                     
                                     <div class="form-group margin-top text-left">

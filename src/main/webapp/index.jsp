@@ -1144,28 +1144,23 @@
 					"Authorization": "Bearer " + token
 				},
 				success: function(jsonResult) {
-					if (jsonResult.calls.length > 0)
-					{
-						if (addedRunCount == 0)
-						{
-							$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-							$('#varSeq').html("Seq: " + jsonResult.referenceName);
-							$('#varType').html("Type: " + jsonResult.info.type[0]);
-							$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-						}
-
-						var htmlTableContents = buildGenotypeTableContents(jsonResult);
-						$("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == 0 ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == 0 ? ' checked' : '') + (addedRunCount == 0 ? ' active' : '') + '>' + runList[runIndex] + '</label>');
-						modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable">' + htmlTableContents + '</table></div>';
-						if ($('#varId').html() == "")
-						{
-							$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-							$('#varSeq').html("Seq: " + jsonResult.referenceName);
-							$('#varType').html("Type: " + jsonResult.info.type[0]);
-							$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-						}
-						addedRunCount++;
+					if (addedRunCount == 0) {
+						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
+						$('#varSeq').html("Seq: " + jsonResult.referenceName);
+						$('#varType').html("Type: " + jsonResult.info.type[0]);
+						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
 					}
+
+					var htmlTableContents = buildGenotypeTableContents(jsonResult);
+					$("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == 0 ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == 0 ? ' checked' : '') + (addedRunCount == 0 ? ' active' : '') + '>' + runList[runIndex] + '</label>');
+					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable">' + htmlTableContents + '</table></div>';
+					if ($('#varId').html() == "") {
+						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
+						$('#varSeq').html("Seq: " + jsonResult.referenceName);
+						$('#varType').html("Type: " + jsonResult.info.type[0]);
+						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+					}
+					addedRunCount++;
 				},
 				error: function(xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);
