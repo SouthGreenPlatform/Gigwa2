@@ -18,9 +18,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
 
-<fmt:setBundle basename="config" />
+<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 
 <html>
     <head>
@@ -66,11 +65,11 @@
                                 <input type="password" name="password" id="password" placeholder="Password" required="required" />
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large">Log me in</button> 
                             </form>
-                            <fmt:message var="casServerURL" key="casServerURL" />
-                            <fmt:message var="enforcedWebapRootUrl" key="enforcedWebapRootUrl" />
+                            <c:set var="casServerURL" value="<%= appConfig.get(\"casServerURL\") %>"></c:set>
+                            <c:set var="enforcedWebapRootUrl" value="<%= appConfig.get(\"enforcedWebapRootUrl\") %>"></c:set>
                             <c:if test='${!fn:startsWith(casServerURL, "??") && !empty casServerURL && !fn:startsWith(enforcedWebapRootUrl, "??") && !empty enforcedWebapRootUrl}'>
-                            	<a id="casAuthenticationEntryPoint" class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do?url=${loginOrigin}" target="_top">Authenticate using my
-                            	<fmt:message var="casOrganization" key="casOrganization" />
+                            	<a id="casAuthenticationEntryPoint" class="btn btn-primary btn-block btn-large margin-top" href="login/cas.do?url=${loginOrigin}" target="_top">Authenticate using
+                            	<c:set var="casOrganization" value="<%= appConfig.get(\"casOrganization\") %>"></c:set>
                             	<c:choose><c:when test='${!fn:startsWith(casOrganization, "??") && !empty casOrganization}'>${casOrganization}</c:when><c:otherwise>organization</c:otherwise></c:choose>
                             	account</a>
 							</c:if>
@@ -86,7 +85,7 @@
 								</c:if>
 							</div>
                             <button type="button" class="btn btn-primary btn-block btn-large margin-top-md" onclick="window.location.href = 'index.jsp';">Return to public databases</button>
-                            <fmt:message var="adminEmail" key="adminEmail" />
+                            <c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
                             <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
                                 <p class="margin-top">Apply for an account at <a href="mailto:${adminEmail}?subject=Gigwa account request">${adminEmail}</a></p>
                             </c:if>
