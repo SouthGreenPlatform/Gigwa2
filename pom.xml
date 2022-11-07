@@ -25,10 +25,10 @@
 <!-- 		macos	https://javadl.oracle.com/webapps/download/GetFile/1.8.0_331-b09/165374ff4ea84ef0bbd821706e29b123/unix-i586/jre-8u331-macosx-x64.tar.gz -->
 <!-- 		win		https://javadl.oracle.com/webapps/download/GetFile/1.8.0_331-b09/165374ff4ea84ef0bbd821706e29b123/windows-i586/jre-8u331-windows-x64.tar.gz -->
 		<tomcat.version>8.5.81</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.21</mongodb.linux.file>
-		<mongodb.windows.file>win32-x86_64-2012plus-4.2.21</mongodb.windows.file>
-		<mongodb.osx.file>macos-x86_64-4.2.21</mongodb.osx.file>
-		<mongodb.osx.folder>macos-x86_64-4.2.21</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.23</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.23</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.23</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.23</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
 	<dependencies>		
@@ -111,7 +111,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
-            <version>5.3.17</version>
+            <version>5.3.23</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework</groupId>
@@ -127,12 +127,12 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
-			<version>5.6.2</version>
+			<version>5.6.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-taglibs</artifactId>
-			<version>5.6.2</version>
+			<version>5.6.9</version>
 			<scope>compile</scope>
 			<exclusions>
 				<exclusion>
@@ -148,7 +148,7 @@
 		<dependency>
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-cas</artifactId>
-		    <version>5.6.2</version>
+		    <version>5.6.9</version>
 		    <exclusions>
 		    	<exclusion>
 				    <groupId>org.slf4j</groupId>

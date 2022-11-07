@@ -2391,19 +2391,18 @@
       key: "init",
       value: function init(dataSet, settings) {
         this.dataSet = dataSet;
+        this.lineSort = settings.lineSort;
+        this.lineSort.sort(this.dataSet);
         this.colorScheme = settings.colorScheme;
         this.colorComparisonLineIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
           return germplasm.name == settings.colorReference;
         });
         this.colorScheme.setComparisonLineIndex(this.colorComparisonLineIndex);
-        this.lineSort = settings.lineSort;
-        this.lineSort.sort(this.dataSet);
         this.font = this.updateFontSize();
         this.displayTraits = settings.displayTraits; // this.updateVisualPositions();
 
         this.colorScheme.setupColorStamps(this.boxSize, this.font, this.fontSize);
-        this.zoom(this.boxSize);
-        this.moveToPosition(0, 0);
+        this.zoom(this.boxSize); //    this.moveToPosition(0, 0);	// useless at startup?
       }
     }, {
       key: "prerender",
@@ -2952,7 +2951,7 @@
         if (!this.enabled) return;
         var xScrollMax = this.maxCanvasWidth() - this.alleleCanvasWidth();
 
-        if (this.canScrollX()) {
+        if (xScrollMax > 0) {
           this.translatedX -= diffX; // Prevent scrolling beyond start or end of data
 
           if (this.translatedX < 0) {
@@ -2974,7 +2973,7 @@
         if (!this.enabled) return;
         var yScrollMax = this.maxCanvasHeight() - this.alleleCanvasHeight();
 
-        if (this.canScrollY()) {
+        if (yScrollMax > 0) {
           this.translatedY -= diffY; // Prevent scrolling beyond start or end of data
 
           if (this.translatedY < 0) {
@@ -2994,9 +2993,9 @@
       key: "dragVerticalScrollbar",
       value: function dragVerticalScrollbar(y) {
         if (!this.enabled) return;
+        var yScrollMax = this.maxCanvasHeight() - this.alleleCanvasHeight();
 
-        if (this.canScrollY()) {
-          var yScrollMax = this.maxCanvasHeight() - this.alleleCanvasHeight();
+        if (yScrollMax > 0) {
           this.translatedY = y / this.verticalScrollbar.height * yScrollMax; // Prevent scrolling beyond start or end of data
 
           if (this.translatedY < 0) {
@@ -3017,9 +3016,9 @@
       key: "dragHorizontalScrollbar",
       value: function dragHorizontalScrollbar(x) {
         if (!this.enabled) return;
+        var xScrollMax = this.maxCanvasWidth() - this.alleleCanvasWidth();
 
-        if (this.canScrollX()) {
-          var xScrollMax = this.maxCanvasWidth() - this.alleleCanvasWidth();
+        if (xScrollMax > 0) {
           this.translatedX = x / this.horizontalScrollbar.width * xScrollMax; // Prevent scrolling beyond start or end of data
 
           if (this.translatedX < 0) {
@@ -3357,10 +3356,10 @@
     }, {
       key: "sortLines",
       value: function sortLines() {
-        // Save the color comparison line to restore it later
-        var colorComparisonName = this.dataSet.germplasmList[this.colorComparisonLineIndex].name;
+        // Save the color comparison line to restore it after sorting
+        var colorComparisonGermplasm = this.dataSet.germplasmList[this.colorComparisonLineIndex];
         this.lineSort.sort(this.dataSet);
-        this.setColorComparisonLine(colorComparisonName);
+        if (colorComparisonGermplasm != null) this.setColorComparisonLine(colorComparisonGermplasm.name);
         this.prerender(true);
       }
     }, {
@@ -6961,14 +6960,30 @@
       range.min = 2;
       range.max = 64;
       range.value = 16;
+      range.style.width = "300px";
+      var zoomPreviewLabel = document.createElement('label');
+      zoomPreviewLabel.setAttribute('for', 'zoom-preview');
+      zoomPreviewLabel.innerHTML = 'Preview while dragging';
+      var zoomPreview = document.createElement('input');
+      zoomPreview.id = 'zoom-preview';
+      zoomPreview.setAttribute('type', 'checkbox');
+      zoomPreview.style.marginLeft = "20px";
       var zoomContainer = document.createElement('div');
       zoomContainer.append(zoomLabel);
       zoomContainer.append(range);
+      zoomContainer.append(zoomPreview);
+      zoomContainer.append(zoomPreviewLabel);
       range.addEventListener('change', function () {
-        zoom(range.value);
+        if (!document.getElementById("zoom-preview").checked) {
+          //console.log("change: " + range.value);
+          zoom(range.value);
+        }
       });
       range.addEventListener('input', function () {
-        zoom(range.value);
+        if (document.getElementById("zoom-preview").checked) {
+          //console.log("input: " + range.value);
+          zoom(range.value);
+        }
       });
       tab.appendChild(chromosomeContainer);
       tab.appendChild(zoomContainer);
