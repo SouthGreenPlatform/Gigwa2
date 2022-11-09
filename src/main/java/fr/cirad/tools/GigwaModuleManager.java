@@ -398,12 +398,14 @@ public class GigwaModuleManager implements IModuleManager {
 
                     Date creationDate;
                     long fileSizeMb;
+                    boolean fRecentlyModified;
                     try {
                         BasicFileAttributes fileAttr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
                         creationDate = Date.from(fileAttr.creationTime().toInstant());
                         fileSizeMb = fileAttr.size();
+                        fRecentlyModified = System.currentTimeMillis() - fileAttr.lastModifiedTime().toMillis() < 5000;
                     } catch (IOException e) {
-                        LOG.error("Creation date unreadable for dump file " + filename, e);
+                        LOG.error("File attributes unreadable for dump " + filename, e);
                         continue;
                     }
 
@@ -418,7 +420,7 @@ public class GigwaModuleManager implements IModuleManager {
 
                     // No last modification date set : default to valid ?
                     if (dbInfo == null) {
-                        validity = DumpValidity.VALID;
+                        validity = (!isModuleAvailableForDump(sModule) && fRecentlyModified) ? DumpValidity.BUSY : DumpValidity.VALID;
                         // creationDate < lastModification : outdated
                     } else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
                         validity = DumpValidity.OUTDATED;

@@ -18,9 +18,10 @@
 <%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.rest.BrapiRestController, fr.cirad.mgdb.service.GigwaGa4ghServiceImpl,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt"%>
-<fmt:setBundle basename="config" />
-<fmt:message var="googleAnalyticsId" key="googleAnalyticsId" />
+
+<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
+<c:set var="googleAnalyticsId" value="<%= appConfig.get(\"googleAnalyticsId\") %>"></c:set>
+
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
@@ -1422,8 +1423,8 @@
 	}
 
 	var igvDataLoadPort, igvGenomeListUrl;
-	<fmt:message var="igvDataLoadPort" key="igvDataLoadPort" />
-	<fmt:message var="igvGenomeListUrl" key="igvGenomeListUrl" />
+	<c:set var="igvDataLoadPort" value="<%= appConfig.get(\"igvDataLoadPort\") %>"></c:set>
+	<c:set var="igvGenomeListUrl" value="<%= appConfig.get(\"igvGenomeListUrl\") %>"></c:set>
 	<c:if test='${!fn:startsWith(igvDataLoadPort, "??") && !empty igvDataLoadPort && !fn:startsWith(igvGenomeListUrl, "??") && !empty igvGenomeListUrl}'>
 	igvDataLoadPort = ${igvDataLoadPort};
 	igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
@@ -2124,7 +2125,7 @@
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
-		<fmt:message var="adminEmail" key="adminEmail" />
+		<c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
 			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
@@ -2136,7 +2137,7 @@
 			<a href="https://www.bioversityinternational.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="45" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
-		<fmt:message var="howToCite" key="howToCite" />
+		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
 		<c:choose>
 			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
 				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
