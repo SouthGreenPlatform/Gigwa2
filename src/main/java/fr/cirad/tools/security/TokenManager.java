@@ -362,39 +362,39 @@ public class TokenManager extends AbstractTokenManager {
 		return tokenToAuthenticationMap.remove(token) != null && tokenLastUseTimes.remove(token) != null;
 	}
 	
-    @Override
-    public String createAndAttachToken(String username, String password) throws IllegalArgumentException, UnsupportedEncodingException
-    {
-    	LOG.debug("createAndAttachToken called");
-    	boolean fLoginAttempt = username != null && username.length() > 0;
-        
-		Authentication authentication = null;
-		if (fLoginAttempt)
-		{
-			try
-			{
-				SecurityContextHolder.getContext().setAuthentication(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password)));
-			}
-			catch (BadCredentialsException ignored)
-			{	// log him out
-				SecurityContextHolder.getContext().setAuthentication(null);
-			}
-		}
-
-		String token = null;
-		authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null && fLoginAttempt)
-			LOG.info("Authentication failed for user " + username);
-		else
-		{	// either login succeeded or anonymous user without login attempt
-		    token = generateToken(authentication);    	
-			if (!"anonymousUser".equals(authentication.getName()))
-				LOG.info("User " + authentication.getName() + " was provided with token " + token);
-			else// if (fLoginAttempt)
-				LOG.info("Anonymous user was provided with token " + token);
-		}
-    	return token;
-    }
+//    @Override
+//    public String createAndAttachToken(String username, String password) throws IllegalArgumentException, UnsupportedEncodingException
+//    {
+//    	LOG.debug("createAndAttachToken called");
+//    	boolean fLoginAttempt = username != null && username.length() > 0;
+//        
+//		Authentication authentication = null;
+//		if (fLoginAttempt)
+//		{
+//			try
+//			{
+//				SecurityContextHolder.getContext().setAuthentication(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password)));
+//			}
+//			catch (BadCredentialsException ignored)
+//			{	// log him out
+//				SecurityContextHolder.getContext().setAuthentication(null);
+//			}
+//		}
+//
+//		String token = null;
+//		authentication = SecurityContextHolder.getContext().getAuthentication();
+//		if (authentication == null && fLoginAttempt)
+//			LOG.info("Authentication failed for user " + username);
+//		else
+//		{	// either login succeeded or anonymous user without login attempt
+//		    token = generateToken(authentication);    	
+//			if (!"anonymousUser".equals(authentication.getName()))
+//				LOG.info("User " + authentication.getName() + " was provided with token " + token);
+//			else// if (fLoginAttempt)
+//				LOG.info("Anonymous user was provided with token " + token);
+//		}
+//    	return token;
+//    }
 
     @Override
     public Authentication getAuthenticationFromToken(String token) {
