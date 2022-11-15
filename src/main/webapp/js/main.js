@@ -1019,6 +1019,9 @@ function resetDropDownFilterTable(tableObj)
 }
 
 function selectGroupUsingMetadata(groupNumber) {
+	if ($("input#resetMetadataFiltersOnDialogShown").prop('checked'))
+		resetDropDownFilterTable(document.getElementById('individualFilteringTable'));
+
     $("span#filteredGroupNumber").html(groupNumber);
     $("table#individualFilteringTable tr:eq(0)").attr("class", "group" + groupNumber);
     updateFilteredIndividualCount();
