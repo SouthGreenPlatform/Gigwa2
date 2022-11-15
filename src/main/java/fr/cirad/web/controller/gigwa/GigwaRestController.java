@@ -123,7 +123,7 @@ import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
-import fr.cirad.model.GigwaDensityRequest;
+import fr.cirad.model.GigwaChartRequest;
 import fr.cirad.model.GigwaIgvRequest;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
@@ -694,7 +694,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaChartRequest gdr, @PathVariable String variantSetId) throws Exception {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -729,7 +729,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaChartRequest gdr, @PathVariable String variantSetId) throws Exception {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -764,7 +764,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaChartRequest gdr, @PathVariable String variantSetId) throws Exception {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -1689,8 +1689,8 @@ public class GigwaRestController extends ControllerInterface {
 
 			String serversAllowedToImport = appConfig.get("serversAllowedToImport");
 			boolean fRemoteMachineMayImport = remoteAddr.equals(request.getLocalAddr()) || (serversAllowedToImport != null && Helper.split(serversAllowedToImport, ",").contains(remoteAddr));
-			String sReferer = request.getHeader("referer");
-			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
+//			String sReferer = request.getHeader("referer");
+//			boolean fIsCalledFromInterface = sReferer != null && sReferer.contains(request.getContextPath());
 			boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 			boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || tokenManager.listWritableDBs(token).size() == 0);
 			final boolean fDatasourceAlreadyExisted = fDatasourceExists;
@@ -1699,29 +1699,29 @@ public class GigwaRestController extends ControllerInterface {
 				for (File fileToDelete : uploadedFiles)
 					fileToDelete.delete();
 				
-				if (!fIsCalledFromInterface || fMayOnlyWriteTmpData)
+				if (/*!fIsCalledFromInterface || */fMayOnlyWriteTmpData)
 				{ // only allow writing to a new, temporary, hidden database
 					if (fDatasourceExists)
 						progress.setError("Datasource " + sNormalizedModule + " already exists!");
-					else if (!fIsCalledFromInterface && !fRemoteMachineMayImport)
+					else if (/*!fIsCalledFromInterface && */!fRemoteMachineMayImport)
 						progress.setError("You are not allowed to create a datasource!");
 					if (progress.getError() != null)
 						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
 							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") + ", fAnonymousImporter:" + fMayOnlyWriteTmpData + ", fIsCalledFromInterface:" + fIsCalledFromInterface);
+							+ request.getHeader("referer") + ", fAnonymousImporter:" + fMayOnlyWriteTmpData /*+ ", fIsCalledFromInterface:" + fIsCalledFromInterface*/);
 				}
 				return null;
 			}
 
 			Long expiryDate = null;
-			boolean fPublicAndHidden = !fIsCalledFromInterface || fMayOnlyWriteTmpData; // remote users (invoking import directly via a URL) and anonymous users are only allowed to create public-and-hidden databases (i.e. for their own use)
+			boolean fPublicAndHidden = /*!fIsCalledFromInterface || */fMayOnlyWriteTmpData; // remote users (invoking import directly via a URL) and anonymous users are only allowed to create public-and-hidden databases (i.e. for their own use)
 			if (!fDatasourceExists) {
 				progress.addStep("Creating datasource");
 				progress.moveToNextStep();
 				try { // create it
 					if (sHost == null || sHost.trim().length() == 0)
 					{
-						if (!fIsCalledFromInterface)
+//						if (!fIsCalledFromInterface)
 						{	// find a host
 							String tempDbHost = appConfig.get("tempDbHost");
 							for (String sAHost : MongoTemplateManager.getHostNames())
@@ -1736,7 +1736,7 @@ public class GigwaRestController extends ControllerInterface {
 							throw new Exception("No host was specified!");
 					}
 
-					if (!fIsCalledFromInterface || !fAdminImporter)
+					if (/*!fIsCalledFromInterface || */!fAdminImporter)
 						expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 //					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 
@@ -1903,27 +1903,27 @@ public class GigwaRestController extends ControllerInterface {
 									MongoTemplateManager.removeDataSource(sModule, true);
 					                LOG.debug("Removed datasource created for an import that failed: " + sModule);
 								}
-								else if (!fAnonymousImporter && !fAdminImporter) { // a new permanent database was created so we give this user supervisor role on it
-									try {
-								        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
-								        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
-								            return; // no need to grant any role to administrators
-	
-								        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
-								        if (!owner.getAuthorities().contains(role)) {
-								            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
-								            authoritiesToSave.add(role);
-								            for (GrantedAuthority authority : owner.getAuthorities())
-								                authoritiesToSave.add(authority);
-								            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
-								        }
-	
-										tokenManager.reloadUserPermissions(securityContext);
-									}
-									catch (IOException e) {
-										LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
-									}
-								}
+//								else if (!fAnonymousImporter && !fAdminImporter) { // a new permanent database was created so we give this user supervisor role on it
+//									try {
+//								        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
+//								        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
+//								            return; // no need to grant any role to administrators
+//	
+//								        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
+//								        if (!owner.getAuthorities().contains(role)) {
+//								            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
+//								            authoritiesToSave.add(role);
+//								            for (GrantedAuthority authority : owner.getAuthorities())
+//								                authoritiesToSave.add(authority);
+//								            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
+//								        }
+//	
+//										tokenManager.reloadUserPermissions(securityContext);
+//									}
+//									catch (IOException e) {
+//										LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
+//									}
+//								}
 							}
 
 							if (scanner != null)

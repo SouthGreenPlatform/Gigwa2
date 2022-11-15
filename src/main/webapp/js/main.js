@@ -262,6 +262,24 @@ function sendToFjBytes() {
 	$("#fjBytesFrame").attr('src', url);
 }
 
+function openIntrogressearch() {
+    $("#introgressearchPanel").modal({
+        opacity: 80,
+        overlayCss: {
+            backgroundColor: "#111111"
+        }
+    });
+    
+    $.getScript("js/introgressearch.js");
+
+//	let url = "introgressearch.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') +
+//	            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
+//	            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
+//	            "&id=" + getModuleName();
+//	$('#introgressearchPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#introgressearchPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
+//	$("#introgressearchFrame").attr('src', "introgressearch.html");
+}
+
 function getNcbiTaxonDetails(ncbiTaxonId)
 {
     var result = $.ajax({
