@@ -3805,7 +3805,7 @@
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var value = _step.value;
             var color = this.colors.get(value);
-            customMap.set(value, color);
+            customMap.set(this.values[value], color);
           }
         } catch (err) {
           _iterator.e(err);
@@ -4044,6 +4044,8 @@
         var self = this;
         var trait = dataSet.getTrait(self.traitName);
         dataSet.germplasmList.sort(function (a, b) {
+          return dataSet.importingOrder.indexOf(a.name) - dataSet.importingOrder.indexOf(b.name);
+        }).sort(function (a, b) {
           if (a.phenotype === undefined) return 1;
           if (b.phenotype === undefined) return -1;
           var valueA = a.getPhenotype(self.traitName); // No need to getValue, the valueIndex are already sorted for category traits
@@ -5034,6 +5036,8 @@
     }, {
       key: "loadDefaultSettings",
       value: function loadDefaultSettings() {
+        var _this3 = this;
+
         var sortId = this.loadSetting("sort");
         var sortReference = this.loadSetting("sortReference");
         var colorSchemeId = this.loadSetting("colorScheme");
@@ -5049,7 +5053,24 @@
           colorScheme: new NucleotideColorScheme(this.dataSet),
           colorSchemeId: "nucleotide",
           traitColors: customColors == null ? {} : JSON.parse(customColors)
-        };
+        }; // We use trait values as keys in inner arrays for persisting in Local-storage, we need to convert those back to list indexes
+
+        Object.entries(settings.traitColors).forEach(function (_ref) {
+          var _ref2 = _slicedToArray(_ref, 2),
+              traitName = _ref2[0],
+              colorByValue = _ref2[1];
+
+          return Object.entries(colorByValue).forEach(function (_ref3) {
+            var _ref4 = _slicedToArray(_ref3, 2),
+                traitValue = _ref4[0],
+                traitValueColor = _ref4[1];
+
+            var traitValueIndex = _this3.dataSet.traits.get(traitName).values.indexOf(traitValue);
+
+            if (traitValueIndex != -1) settings.traitColors[traitName][traitValueIndex] = traitValueColor;
+            delete settings.traitColors[traitName][traitValue];
+          });
+        });
 
         switch (sortId) {
           case "importing":
@@ -6724,7 +6745,7 @@
     var progressBar;
     var progressBarLabel;
     var progressBarBackground;
-    var boxSize = 16;
+    var boxSize = 17;
     var genomeMap;
     var phenotypes;
     var traits;
@@ -6959,7 +6980,7 @@
       range.setAttribute('type', 'range');
       range.min = 2;
       range.max = 64;
-      range.value = 16;
+      range.value = boxSize;
       range.style.width = "300px";
       var zoomPreviewLabel = document.createElement('label');
       zoomPreviewLabel.setAttribute('for', 'zoom-preview');
