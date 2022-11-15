@@ -1,6 +1,6 @@
 # Gigwa2
 
-Gigwa aims at managing genomic and genotyping data from NGS analyses. It is a tool targeted at users with little computer expertise, providing means to explore visually large amounts of genotyping data by filtering it based not only on variant features including functional annotations, but also on genotypes themselves. It also offers several popular export formats and a density chart visualizer.
+Gigwa aims at managing genomic and genotyping data from NGS analyses. It is a tool targeted at users with little computer expertise, providing means to explore visually large amounts of genotyping data by filtering it based not only on variant features including functional annotations, but also on genotypes themselves. It also supports numerous standard import / export formats, statistical graph realtime calculation and dynamic display, and online visualization via IGV.js and Flapjack-Bytes.
 
 Try Gigwa online with public datasets at https://gigwa.southgreen.fr/
 
