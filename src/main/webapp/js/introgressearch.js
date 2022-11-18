@@ -1,0 +1,914 @@
+/*******************************************************************************
+ * GIGWA - Genotype Investigator for Genome Wide Analyses
+ * Copyright (C) 2016 - 2019, <CIRAD> <IRD>
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License, version 3 as published by
+ * the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+ * details.
+ *
+ * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
+ * Public License V3.
+ *******************************************************************************/
+ 
+//var displayedRangeIntervalCount = 300;
+var dataBeingLoaded = false;
+var minimumProcessQueryIntervalUnit = 500;
+//var progressTimeoutId = null;
+
+function showIntrogressearchInterface() {
+	$("div#introgressearchPanelContents").html("<p>Search introgressions originating from group 2 (size " + getSelectedIndividuals(2).length + ") into group 1 (size " + getSelectedIndividuals(1).length + ")</p>")
+	
+	 $("div#introgressearchPanelContents").append('<div id="introgressearchLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
+	                    '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
+	                        'Choose a sequence: <select id="introgressearchSequenceList" style="margin-right:20px; height:25px;"></select>' +
+	                        'Number of intervals: <input type="number" id="introgressearchInvervalCount" style="margin-right:20px; width:65px; height:25px;" value="1000" />' + 
+	                        //'Choose a variant type: <select id="introgressearchVariantTypeList" style="height: 25px;"><option value="">ANY</option></select>' +
+	                    '</div></form>');
+	                        
+	var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
+//	var selectedTypes = getSelectedTypes().split(";");
+	$.ajax({
+	    url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
+	    type: "GET",
+	    headers: {
+	        "Authorization": "Bearer " + token
+	    },
+	    success: function (jsonResult) {
+	    	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
+	    		selectedSequences = jsonResult;
+
+			var sequences = selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences;
+		    for (let key in sequences)
+		        $("#introgressearchSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
+//		    for (let key in types)
+//		        $("#introgressearchVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
+	    		
+//	    	feedSequenceSelectAndLoadVariantTypeList(
+//	                selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
+//	                selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
+	    },
+	    error: function (xhr, ajaxOptions, thrownError) {
+	        handleError(xhr, thrownError);
+	    }
+	});
+	    
+	$("div#introgressearchPanelContents").append("<br/><button id='launchAbortIntrogressearchButton' onclick='launchAbortButtonClicked();'>Launch</button>"); 
+}
+ 
+//function buildRequestPayload(payload) {
+//    const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
+//    if (groupOption != "__"){
+//        const selectedValues = $("#plotGroupingMetadataValues").val();
+//        if (selectedValues === null || selectedValues.length < 2){
+//            return null;
+//        }
+//        
+//        let groups = new Map();
+//        callSetResponse.forEach(function (callset) {
+//            if (callset.info === undefined) return;
+//            
+//            const field = callset.info[groupOption];
+//            if (field === undefined || field.length <= 0) return;
+//            
+//            const fieldValue = callset.info[groupOption][0];
+//            if (fieldValue !== undefined) {
+//                let valueGroup = groups.get(fieldValue);
+//                if (valueGroup !== undefined) {
+//                    valueGroup.push(callset.name);
+//                } else if (selectedValues.includes(fieldValue)) {
+//                    groups.set(fieldValue, [callset.name]);
+//                }
+//            }
+//        });
+//
+//        payload.displayedAdditionalGroups = [];
+//        for (const group of groups.values())
+//            payload.displayedAdditionalGroups.push(group);
+//    }
+//    return payload;
+//}
+
+function launchAbortButtonClicked() {
+	var buttonText = $("button#launchAbortIntrogressearchButton").text();
+	if (buttonText == "Launch")  {
+	    var displayedSequence = $("select#introgressearchSequenceList").val();
+	    var displayedVariantType = "";// $("select#introgressearchVariantTypeList").val();
+	    var dataPayLoad = buildIntrogressearchDataPayLoad(displayedSequence, displayedVariantType);
+	    
+	//    if (buildRequestPayload !== undefined)
+	//        dataPayLoad = buildRequestPayload(dataPayLoad);
+	    if (dataPayLoad === null) return;
+	
+	    $.ajax({
+	        url: selectionFstDataURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+	        type: "POST",
+	        contentType: "application/json;charset=utf-8",
+	        headers: {
+	            "Authorization": "Bearer " + token
+	        },
+	        data: JSON.stringify(dataPayLoad),
+	        success: function(jsonResult) {
+	            if (jsonResult.length == 0)
+	                return; // probably aborted
+	            
+				console.log(jsonResult)
+	        },
+	        error: function(xhr, ajaxOptions, thrownError) {
+	            handleError(xhr, thrownError);
+	        }
+	    });
+	    
+	    $("button#launchAbortIntrogressearchButton").text("Abort");
+		$("button#launchAbortIntrogressearchButton").css('color', 'red');
+	    setTimeout(checkIntrogressearchLoadingProgress, minimumProcessQueryIntervalUnit);
+    }
+    else {
+		abortOngoingOperation();
+		$("button#launchAbortIntrogressearchButton").text("Launch");
+		$("button#launchAbortIntrogressearchButton").css('color', 'black');
+	}
+}
+
+ /*
+var chart = null;
+let localmin, localmax;
+let chartJsonKeys;
+let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
+var currentChartType = null;
+const chartTypes = new Map([
+    ["density", {
+        displayName: "Density",
+        queryURL: selectionDensityDataURL,
+        title: "Distribution of {{totalVariantCount}} {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "The value provided for a position is the number of variants around it in an interval of size {{intervalSize}}",
+        xAxisTitle: "Positions on selected sequence",
+        series: [{
+            name: "Variants in interval",
+            enableMarker: false,
+            lineWidth: 2
+        }],
+    }],
+    ["fst", {
+        displayName: "Fst",
+        queryURL: selectionFstDataURL,
+        title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point",
+        xAxisTitle: "Positions on selected sequence",
+        series: [{
+            name: "Fst estimate",
+            enableMarker: true,
+            lineWidth: 2
+        }],
+        enableCondition: function (){
+            if (genotypeInvestigationMode != 2 && !gotMetaData){
+                return "Fst is only defined with at least two groups. You need to define investigation groups or upload metadata.";
+            } else if (areGroupsOverlapping() && !gotMetaData){
+                return "Investigation groups are overlapping";
+            } else if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
+            } else {
+                return null;
+            }
+        },
+        buildCustomisation: function (){
+            return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
+                     + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
+                     + '<div id="plotMetadata" style="display: none" class="col-md-3">'
+                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="5" style="min-width:150px;"></select>'
+                     + '</div>');
+        },
+        buildRequestPayload: function (payload){
+            const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
+            if (groupOption != "__"){
+                const selectedValues = $("#plotGroupingMetadataValues").val();
+                if (selectedValues === null || selectedValues.length < 2){
+                    return null;
+                }
+                
+                let groups = new Map();
+                callSetResponse.forEach(function (callset) {
+                    if (callset.info === undefined) return;
+                    
+                    const field = callset.info[groupOption];
+                    if (field === undefined || field.length <= 0) return;
+                    
+                    const fieldValue = callset.info[groupOption][0];
+                    if (fieldValue !== undefined) {
+                        let valueGroup = groups.get(fieldValue);
+                        if (valueGroup !== undefined) {
+                            valueGroup.push(callset.name);
+                        } else if (selectedValues.includes(fieldValue)) {
+                            groups.set(fieldValue, [callset.name]);
+                        }
+                    }
+                });
+
+                payload.displayedAdditionalGroups = [];
+                for (const group of groups.values())
+                    payload.displayedAdditionalGroups.push(group);
+            }
+            return payload;
+        },
+        onLoad: function (){
+            setFstGroupingOption();
+        },
+        onDisplay: function (){
+            displayOrHideThreshold(document.getElementById("showFstThreshold").checked);
+        }
+    }],
+    ["tajimad", {
+        displayName: "Tajima's D",
+        queryURL: selectionTajimaDDataURL,
+        title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
+        xAxisTitle: "Positions on selected sequence",
+        selectIndividuals: true,
+        series: [
+            {
+                name: "Tajima's D",
+                enableMarker: true,
+                lineWidth: 2
+            },
+            {
+                name: "Segregating sites",
+                enableMarker: false,
+                lineWidth: 1
+            },
+        ],
+        enableCondition: function (){
+            if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
+            } else {
+                return null;
+            }
+        },
+    }]
+]);
+
+function initializeAndShowDensityChart(){
+    if (distinctSequencesInSelectionURL == null)
+    {
+        alert("distinctSequencesInSelectionURL is not defined!");
+        return;
+    }
+    if (variantTypesListURL == null)
+    {
+        alert("variantTypesListURL is not defined!");
+        return;
+    }
+    if (abortUrl == null)
+    {
+        alert("abortUrl is not defined!");
+        return;
+    }
+    if (selectionDensityDataURL == null)
+    {
+        alert("selectionDensityDataURL is not defined!");
+        return;
+    }
+    if (progressUrl == null)
+    {
+        alert("progressUrl is not defined!");
+        return;
+    }
+    if (token == null)
+    {
+        alert("token is not defined!");
+        return;
+    }
+    if (referenceset == null)
+    {
+        alert("referenceset is not defined!");
+        return;
+    }
+
+    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
+    var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
+    var selectedTypes = getSelectedTypes().split(";");
+    $.ajax({
+        url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
+        type: "GET",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+        	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
+        		selectedSequences = jsonResult;
+        	feedSequenceSelectAndLoadVariantTypeList(
+                    selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
+                    selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+}
+
+function onManualIndividualSelection() {
+	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " selected)"));
+	$('.showHideSeriesBox').attr('checked', false);
+	$('.showHideSeriesBox').change();
+}
+
+function getGroupingOptions() {
+    let options = ""
+    if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
+        options += '<option value="__">Investigated groups</option>';
+    const fields = callSetMetadataFields.slice();
+    fields.sort();
+    fields.forEach(function (field){
+        options += '<option value="' + field + '">' + field + '</option>';
+    });
+    return options;
+}
+
+function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
+    for (let key in sequences)
+        $("#introgressearchSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
+    for (let key in types)
+        $("#introgressearchSequenceList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
+}
+
+function buildCustomisationDiv(chartInfo) {
+    const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
+    
+    let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
+    if (hasVcfMetadata || chartInfo.selectIndividuals)
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
+    customisationDivHTML += '</div>';
+    
+    customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
+    if (hasVcfMetadata) {
+        customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
+        $("#vcfFieldFilterGroup1 input").each(function(index) {
+            let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
+            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
+        });
+        customisationDivHTML += "</div>"
+    }
+
+    if (chartInfo.buildCustomisation !== undefined)
+        customisationDivHTML += chartInfo.buildCustomisation();
+    customisationDivHTML += '</div>'
+    
+    $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
+    if (hasVcfMetadata || chartInfo.selectIndividuals)
+    	showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
+}
+
+function showSelectedIndCount(selectionObj, selectionLabelObj) {
+	var selectedOption = selectionObj.find("option:selected"), chooseMode = selectedOption.val() == "choose";
+	if (chooseMode)
+		selectionLabelObj.text("");
+	else if (selectedOption.val() == "")
+		selectionLabelObj.text(" (" + indCount + " selected)");
+	else {
+		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length;
+		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indCount : selectedIndCount) + " selected)");
+	}
+}
+
+function displayOrAbort() {
+    if (dataBeingLoaded) {
+        abortOngoingOperation();
+    } else {
+        displayChart();
+    }
+}
+
+function setChartType(typeSelect) {
+    currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
+    const chartInfo = chartTypes.get(currentChartType);
+    
+    if (chartInfo.enableCondition !== undefined){
+        const failMessage = chartInfo.enableCondition();
+        if (failMessage !== null){
+            $("#additionalCharts").hide();
+            $("#densityChartArea").html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
+            return;
+        } else {
+            $("#densityChartArea").empty();
+        }
+    }
+    $("#additionalCharts").show();
+    
+    if (chart != null){
+        chart.destroy();
+        chart = null;
+    }
+    
+    buildCustomisationDiv(chartInfo);
+    
+    if (chartInfo.onLoad !== undefined)
+        chartInfo.onLoad();
+    
+    loadChart();
+}
+*/
+function buildIntrogressearchDataPayLoad(displayedSequence, displayedVariantType) {
+    //const chartInfo = chartTypes.get(currentChartType);
+
+	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
+	$('#vcfFieldFilterGroup1 input').each(function() {
+		if (parseInt($(this).val()) > 0)
+			annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+	});
+	$('#vcfFieldFilterGroup2 input').each(function() {
+		if (parseInt($(this).val()) > 0)
+			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+	});
+	
+	/*let plotIndividuals = null;
+	if (chartInfo.selectIndividuals) {
+	    switch ($('#plotIndividualSelectionMode').val()) {
+	        case "choose":
+	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
+	            break;
+	        case "12":
+	            plotIndividuals = getSelectedIndividuals();
+	            break;
+	        case "1":
+	            plotIndividuals = getSelectedIndividuals(1);
+	            break;
+	        case "2":
+	            plotIndividuals = getSelectedIndividuals(2);
+	            break;
+	        default:
+	            plotIndividuals = [];
+	            break;
+	    }
+	}*/
+	
+	return {         	
+        "variantSetId": $('#project :selected').data("id"),
+        "searchMode": 0,
+        "getGT": false,
+
+        "referenceName": displayedSequence,
+        "selectedVariantTypes": displayedVariantType,
+        "alleleCount": getSelectedNumberOfAlleles(),
+        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
+        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
+        "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
+        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+
+        "callSetIds": getSelectedIndividuals(1),
+        "gtPattern": $('#Genotypes1').val(),
+        "mostSameRatio": $('#mostSameRatio1').val(),
+        "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
+        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
+        "missingData": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata1').val()),
+		"annotationFieldThresholds": annotationFieldThresholds,
+
+        "callSetIds2": getSelectedIndividuals(2),
+        "gtPattern2": $('#Genotypes2').val(),
+        "mostSameRatio2": $('#mostSameRatio2').val(),
+        "minmaf2": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf2').val()),
+        "maxmaf2": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
+        "missingData2": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata2').val()),
+        "annotationFieldThresholds2": annotationFieldThresholds2,
+
+        "discriminate": $('#discriminate').prop('checked'),
+        "pageSize": 100,
+        "pageToken": "0",
+        "displayedSequence": displayedSequence,
+        "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
+//        "displayedRangeMin": localmin,
+//        "displayedRangeMax": localmax,
+        "displayedRangeIntervalCount": $("input#introgressearchInvervalCount").val(),
+        "treatFirstGroupIndividualsAsSingletons": true,
+//        "plotIndividuals": plotIndividuals,
+    };
+}
+/*
+function loadChart(minPos, maxPos) {    
+    const chartInfo = chartTypes.get(currentChartType);
+    
+    var zoomApplied = minPos != null && maxPos != null;
+    if (zoomApplied)
+        displayChart(minPos, maxPos);
+    else
+        $("div#chartContainer div#additionalCharts").show();
+}
+
+function displayChart(minPos, maxPos) {
+    localmin = minPos;
+    localmax = maxPos;
+    const chartInfo = chartTypes.get(currentChartType);
+    
+    var zoomApplied = minPos != null && maxPos != null;
+    $("input#resetZoom").toggle(zoomApplied);
+    
+    if (dataBeingLoaded)
+        abortOngoingOperation();
+    
+    if (chart != null) {
+        if (zoomApplied) {
+            chart.showLoading("Zooming in...");
+        } else if (!dataBeingLoaded) {
+            chart.destroy();
+            chart = null;
+        }
+    }
+    
+    // Set the interval count until the next chart reload
+    let tempValue = parseInt($('#intervalCount').val());
+    if (isNaN(tempValue))
+        displayedRangeIntervalCount = 150;
+    else if (tempValue > 300)
+        displayedRangeIntervalCount = 300;
+    else if (tempValue < 50)
+        displayedRangeIntervalCount = 50;
+    else
+        displayedRangeIntervalCount = tempValue;
+    
+    var displayedSequence = $("select#chartSequenceList").val();
+    var displayedVariantType = $("select#chartVariantTypeList").val();
+    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+    if (chartInfo.buildRequestPayload !== undefined)
+        dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
+        if (dataPayLoad === null) return;
+
+    $.ajax({
+        url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+        type: "POST",
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        data: JSON.stringify(dataPayLoad),
+        success: function(jsonResult) {
+            if (jsonResult.length == 0)
+                return; // probably aborted
+            
+            // TODO : Key to the middle of the interval ?
+            chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+            var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
+            
+            let totalVariantCount = 0;
+            if (currentChartType == "density"){
+                for (let key of chartJsonKeys)
+                    totalVariantCount += jsonResult[key];
+            }
+            
+            chart = Highcharts.chart('densityChartArea', {
+                chart: {
+                    type: 'spline',
+                    zoomType: 'x'
+                },
+                title: {
+                    text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
+                },
+                subtitle: {
+                    text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+                },
+                xAxis: {
+                    categories: chartJsonKeys,
+                    title: {
+                        text: chartInfo.xAxisTitle,
+                    },
+                    events: {
+                        afterSetExtremes: function(e) {
+                            if ("zoom" == e.trigger)
+                            {   // reload for best resolution
+                                var xAxisDataArray = this.chart.series[0].data;
+                                var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
+                                var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
+                                displayChart(xMin, xMax);
+                                e.preventDefault();
+                            }
+                        }
+                    }
+                },
+                yAxis: {
+                    text: undefined,
+                    visible: false,
+                },
+                tooltip: {
+                    shared: true,
+                    crosshairs: true
+                },
+                plotOptions: {
+                    line: {
+                        dataLabels: {
+                            enabled: false
+                        },
+                        enableMouseTracking: true
+			        }
+                },
+                exporting: {
+                    enabled: true,
+					buttons: {
+					      contextButton: {
+					        menuItems: ["viewFullscreen", "printChart",
+					                    "separator",
+					                    "downloadPNG", "downloadPDF", "downloadSVG",
+					                    "separator",
+					                    "downloadCSV", "downloadXLS"]
+					      }
+				    }
+                }
+            });
+            
+            for (let seriesIndex in chartInfo.series) {
+                const series = chartInfo.series[seriesIndex];
+                const seriesData = (chartInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
+                const seriesValues = new Array();
+                for (let key of chartJsonKeys)
+                    seriesValues.push(seriesData[key]);
+                
+                chart.addAxis({
+                    id: series.name,
+                    title: {
+                        text: undefined,  //series.yAxisTitle,
+                    },
+                    lineWidth: 3,
+                    lineColor: colorTab[seriesIndex],
+                });
+                
+                chart.addSeries({
+                    name: series.name,
+                    marker: {
+                        enabled: series.enableMarker,
+                    },
+                    lineWidth: series.lineWidth,
+                    color: colorTab[seriesIndex],
+                    data: seriesValues,
+                    yAxis: series.name,
+                });
+            }
+            
+            $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
+            if (!isNaN(intervalSize))
+                $('.showHideSeriesBox').change();
+            
+            if (chartInfo.onDisplay !== undefined)
+                chartInfo.onDisplay();
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+    startProcess();
+}
+
+function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
+    localmin = minPos;
+    localmax = maxPos;
+    
+    var displayedSequence = $("select#chartSequenceList").val();
+    var displayedVariantType = $("select#chartVariantTypeList").val();   
+    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+    dataPayLoad["vcfField"] = fieldName;
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
+    
+    $.ajax({
+        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
+        type: "POST",
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        data: JSON.stringify(dataPayLoad),
+        success: function(jsonResult) {
+            if (jsonResult.length == 0)
+                return;	// probably aborted
+
+            var jsonKeys = Object.keys(jsonResult);
+            var intervalSize = parseInt(jsonKeys[1]) - parseInt(jsonKeys[0]);
+
+            var jsonValues = new Array();
+            var totalVariantCount = 0;
+            for (var i=0; i<jsonKeys.length; i++){
+                jsonValues.push(jsonResult[jsonKeys[i]]);
+                totalVariantCount += jsonResult[jsonKeys[i]];
+                jsonKeys[i] = parseInt(parseInt(jsonKeys[i]) + intervalSize/2);
+            }
+            chart.addAxis({ // Secondary yAxis
+                id: fieldName,
+                title: {
+                    text: "Cumulated " + fieldName
+                },
+                lineWidth: 3,
+                lineColor: colorTab[colorIndex],
+                opposite: true,
+            });
+            chart.addSeries({
+                name: fieldName,
+                type: 'spline',
+                lineWidth: 1,
+                color: colorTab[colorIndex],
+                yAxis: fieldName,
+				marker: {
+		                enabled: false
+		        },
+                data: jsonValues
+            });
+            $('.showHideSeriesBox').prop('disabled', false);
+            finishIntrogressearchProcess();
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+            $('.showHideSeriesBox').prop('disabled', false);
+            finishIntrogressearchProcess();
+        }
+    });
+    startProcess();
+}
+
+function startProcess() {
+    // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
+    if (progressTimeoutId != null)
+        clearTimeout(progressTimeoutId);
+    dataBeingLoaded = true;
+    
+    $("#chartTypeList").prop("disabled", true);
+    $("#chartSequenceList").prop("disabled", true);
+    $("#chartVariantTypeList").prop("disabled", true);
+    
+    $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
+    
+    progressTimeoutId = setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+}
+*/
+function finishIntrogressearchProcess() {
+    if (dataBeingLoaded) {
+        dataBeingLoaded = false;
+        
+        $("button#launchAbortIntrogressearchButton").text("Launch");
+        $("button#launchAbortIntrogressearchButton").css('color', 'black');
+        $("div#introgressearchLoadProgress").html("");
+        
+//        $("#chartTypeList").prop("disabled", false);
+        $("#introgressearchSequenceList").prop("disabled", false);
+//        $("#chartVariantTypeList").prop("disabled", false);
+        
+//        if (progressTimeoutId != null) {
+//            clearTimeout(progressTimeoutId);
+//            progressTimeoutId = null;
+//        }
+//        
+//        $("#showChartButton").addClass("btn-success").removeClass("btn-danger").html("Show");
+    }
+}
+
+function abortOngoingOperation() {
+    $.ajax({
+        url: abortUrl,
+        type: "DELETE",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+            if (!jsonResult.processAborted) {
+                console.log("Unable to abort!");
+            } else {
+                finishIntrogressearchProcess();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+}
+
+function checkIntrogressearchLoadingProgress() {
+    $.ajax({
+        url: progressUrl,
+        type: "GET",
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function(jsonResult) {
+            if (jsonResult == null) {
+                finishIntrogressearchProcess();
+            }
+            else
+            {
+                dataBeingLoaded = true;	// still running
+                if (jsonResult['error'] != null) {
+                    parent.totalRecordCount = 0;
+                    alert("Error occured:\n\n" + jsonResult['error']);
+                    finishIntrogressearchProcess();
+                    $('#density').modal('hide');
+                }
+                else {
+                    $('div#introgressearchLoadProgress').html(jsonResult['progressDescription']);
+                    setTimeout(checkIntrogressearchLoadingProgress, minimumProcessQueryIntervalUnit);
+                }
+            }
+        },
+        error: function(xhr, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+}
+/*
+function displayOrHideSeries(fieldName, isChecked, colorIndex) {
+    if (chart === null)
+        return;
+    
+    $('.showHideSeriesBox').prop('disabled', true);
+    if (isChecked) {
+        addMetadataSeries(localmin, localmax, fieldName, colorIndex);
+        chart.series.forEach(function (element) {
+            if(element.name==fieldName){
+                element.yAxis.update({
+                    visible:true
+                });
+            }
+        })
+    }
+    else {
+        chart.series.forEach(function (element) {
+            if(element.name==fieldName){
+                chart.get(fieldName).remove();
+            }
+        });
+        $('.showHideSeriesBox').prop('disabled', false);
+    }
+}
+
+function displayOrHideThreshold(isChecked) {
+    if (chart === null)
+        return;
+    
+    const chartInfo = chartTypes.get(currentChartType);
+    if (isChecked) {
+        const threshold = parseFloat($("#fstThreshold").val());
+        chart.addSeries({
+            id: "threshold",
+            name: "Threshold",
+            marker: {enabled: false},
+            lineWidth: 0.5,
+            color: "#CC0000",
+            data: chartJsonKeys.map(val => threshold),
+            yAxis: chartInfo.series[0].name,
+        }, true);
+    } else {
+        const series = chart.get("threshold");
+        if (series !== undefined) series.remove();
+    }
+}
+
+function changeIntervalCount() {
+    let tempValue = parseInt($('#intervalCount').val());
+    if (isNaN(tempValue))
+        $("#intervalCount").val(150);
+    else if (tempValue > 300)
+        $("#intervalCount").val(300);
+    else if (tempValue < 50)
+        $("#intervalCount").val(50);
+}
+
+function setFstThreshold(){
+    const threshold = parseFloat($("#fstThreshold").val());
+    const series = chart.get("threshold");
+    if (series !== undefined){
+        series.setData(chartJsonKeys.map(val => threshold), true, true);
+    }
+}
+
+function setFstGroupingOption() {
+    const option = $("#plotGroupingSelectionMode").find(":selected").val();
+    if (option != "__"){
+        let fieldValues = new Set();
+        callSetResponse.forEach(function (callset){
+            if (callset.info[option] !== undefined && callset.info[option].length > 0){
+                fieldValues.add(callset.info[option][0]);
+            }
+        });
+        
+        let selectOptions = "";
+        let orderedValues = Array.from(fieldValues.values());
+        orderedValues.sort();
+        orderedValues.forEach(function (value){
+            selectOptions += '<option value="' + value + '">' + value + '</option>';
+        });
+        $("#plotGroupingMetadataValues").html(selectOptions);
+        $("#plotMetadata").css("display", "block");
+    } else {
+        $("#plotMetadata").css("display", "none");
+    }
+}
+
+$(document).on("ready", function() {
+    $("#density").on("hidden.bs.modal", function () {
+        if (dataBeingLoaded)
+            abortOngoingOperation();
+    });
+    
+    $(window).on('beforeunload', function() {
+        if (dataBeingLoaded)
+            abortOngoingOperation();
+    });
+});
+*/
