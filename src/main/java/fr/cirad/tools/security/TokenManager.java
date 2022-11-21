@@ -196,11 +196,12 @@ public class TokenManager extends AbstractTokenManager {
         Map<String, Map<String, Map<String, Collection<Comparable>>>> customRolesByModuleAndEntityType = userDao.getCustomRolesByModuleAndEntityType(authorities);
         Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authorities);
         Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
+        HashSet<String> supervisedModules = userDao.getSupervisedModules(authorities);
         for (String module : modules)
         {
             boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
             boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
-            boolean fIsSupervisor = !fAdminUser && userDao.getSupervisedModules(authorities).contains(module);
+            boolean fIsSupervisor = !fAdminUser && supervisedModules.contains(module);
             boolean fAuthorizedUser = authorities != null && (fIsSupervisor || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
             if (fAdminUser || fIsSupervisor || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
                 authorizedModules.add(module);
