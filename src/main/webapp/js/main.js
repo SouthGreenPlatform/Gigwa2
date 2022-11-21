@@ -78,17 +78,17 @@ function $_GET(param) {
     return vars;
 }
 
-function displayProcessProgress(nbMin, token, onSuccessMethod) {
+function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
     var functionToCall = function(onSuccessMethod) {
         $.ajax({
-            url: progressUrl,
+            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),
             type: "GET",
             headers: {
                 "Authorization": "Bearer " + token
             },
             success: function (jsonResult, textStatus, jqXHR) {
                 if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
-                    displayProcessProgress(nbMin, token, onSuccessMethod);
+                    displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                 else if (jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
                         onSuccessMethod();
@@ -108,7 +108,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
                         $('#progress').modal('hide');
                     } else {
                         $('#progressText').html(jsonResult.progressDescription);
-                        displayProcessProgress(nbMin, token, onSuccessMethod);
+                        displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                     }
                 }
             },
@@ -260,24 +260,6 @@ function sendToFjBytes() {
 	            "&id=" + getModuleName();
 	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#fjBytesPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
 	$("#fjBytesFrame").attr('src', url);
-}
-
-function openIntrogressearch() {
-    $("#introgressearchPanel").modal({
-        opacity: 80,
-        overlayCss: {
-            backgroundColor: "#111111"
-        }
-    });
-    
-    $.getScript("js/introgressearch.js");
-
-//	let url = "introgressearch.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') +
-//	            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
-//	            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
-//	            "&id=" + getModuleName();
-//	$('#introgressearchPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#introgressearchPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
-//	$("#introgressearchFrame").attr('src', "introgressearch.html");
 }
 
 function getNcbiTaxonDetails(ncbiTaxonId)
