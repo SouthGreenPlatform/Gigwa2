@@ -49,6 +49,7 @@
         <script type="text/javascript">
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
+	    	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
 	    	var maxUploadSizeURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAX_UPLOAD_SIZE_PATH%>"/>';
 	    	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
             var token;
@@ -67,6 +68,15 @@
    				<sec:authentication property="principal.authorities" var="authorities" />
    				<c:forEach items="${authorities}" var="authority"><c:if test='${fn:endsWith(authority.authority, supervisorRoleSuffix)}'>supervisedModules.push("${authority.authority.split('\\$')[0]}");</c:if></c:forEach>
    			</c:if>
+
+   			var onbeforeunloadCalled = false;
+   			window.onbeforeunload = function(e) {
+   				if (onbeforeunloadCalled)
+   					return;
+
+   				onbeforeunloadCalled = true;
+   				clearToken();
+   			};
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {

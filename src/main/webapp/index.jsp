@@ -124,6 +124,7 @@
 	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
+	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
 	var downloadURL;
 	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
@@ -389,24 +390,6 @@
 			},
 			error: function(xhr, thrownError) {
 				console.log("Error dropping temp coll (status " + xhr.status + "): " + thrownError);
-			}
-		});
-	}
-	
-	// clear user token
-	function clearToken() {
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />',
-			type: "DELETE",
-			async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			error: function(xhr, thrownError) {
-				if (xhr.status != 0)	// Firefox gets this instead of 401 (!)
-					handleError(xhr, thrownError);
 			}
 		});
 	}

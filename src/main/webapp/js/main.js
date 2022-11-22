@@ -923,6 +923,24 @@ function getToken() {
     });
 }
 
+// clear user token
+function clearToken() {
+	$.ajax({
+		url: clearTokenURL,
+		type: "DELETE",
+		async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
+		dataType: "json",
+		contentType: "application/json;charset=utf-8",
+		headers: {
+			"Authorization": "Bearer " + token
+		},
+		error: function(xhr, thrownError) {
+			if (xhr.status != 0)	// Firefox gets this instead of 401 (!)
+				handleError(xhr, thrownError);
+		}
+	});
+}
+
 function containsHtmlTags(xStr)
 {
     return xStr != xStr.replace(/<\/?[^>]+>/gi,"");
