@@ -7,17 +7,21 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+
+import fr.cirad.tools.security.TokenManager;
 
 
 /**
  * Redirect the user to different pages based on the authentication method
- * @author Grégori MIGNEROT
+ * @author mignerot, sempere
  */
 public class GigwaLogoutDispatchHandler implements LogoutSuccessHandler {
 	private String defaultRedirect;
 	private Map<String, String> methodRedirects;
+	@Autowired private TokenManager tokenManager;
 	
 	/**
 	 * @param defaultRedirect Page to redirect to when the user was not authenticated or when no redirect was defined for their authentication method
@@ -30,16 +34,14 @@ public class GigwaLogoutDispatchHandler implements LogoutSuccessHandler {
 
 	@Override
 	public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-		if (authentication == null || authentication.getPrincipal() == null) {
+		tokenManager.clearTokensTiedToAuthentication(authentication);	// if user opened several web-browser tabs there may be tokens to clear
+
+		if (authentication == null || authentication.getPrincipal() == null)
 			response.sendRedirect(defaultRedirect);
-		} else {
+		else {
 			UserWithMethod user = (UserWithMethod)authentication.getPrincipal();
 			String redirect = methodRedirects.get(user.getMethod());
-			if (redirect == null) {
-				response.sendRedirect(defaultRedirect);
-			} else {
-				response.sendRedirect(redirect);
-			}
+			response.sendRedirect(redirect == null ? defaultRedirect : redirect);
 		}
 	}
 

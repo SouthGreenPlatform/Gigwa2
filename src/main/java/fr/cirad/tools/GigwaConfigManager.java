@@ -5,8 +5,6 @@ import java.util.Collection;
 
 import org.springframework.stereotype.Component;
 
-import fr.cirad.tools.AbstractConfigManager;
-
 @Component
 public class GigwaConfigManager extends AbstractConfigManager {
 

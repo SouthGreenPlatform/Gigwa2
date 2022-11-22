@@ -1306,61 +1306,61 @@
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
 		if (keepExportOnServer) {
-                    $.ajax({
-                            url: url,
-                            type: "POST",       
-                            contentType: "application/json;charset=utf-8",
-                            headers: {
-                                    "Authorization": "Bearer " + token
-                            },
-                            data: JSON.stringify(query),
-                            success: function(response) {
-                                    downloadURL = response;
-                            },
-                            error: function(xhr, ajaxOptions, thrownError) {
-                                    downloadURL = null;
-                                    $("div#exportPanel").hide();
-                                    $("a#exportBoxToggleButton").removeClass("active");
-                                    handleError(xhr, thrownError);
-                            }
-                    });
+            $.ajax({
+                url: url,
+                type: "POST",       
+                contentType: "application/json;charset=utf-8",
+                headers: {
+                        "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(query),
+                success: function(response) {
+                        downloadURL = response;
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                        downloadURL = null;
+                        $("div#exportPanel").hide();
+                        $("a#exportBoxToggleButton").removeClass("active");
+                        handleError(xhr, thrownError);
+                }
+            });
 		} else {
-                    var headers = {
-                        "Authorization": "Bearer " + token,
-                        "Content-Type": "application/json;charset=utf-8" 
-                    };
+            var headers = {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json;charset=utf-8" 
+            };
 
-                    var request = {
-                        method: "POST",
-                        headers: headers,
-                        body: JSON.stringify(query)
-                    };
-                    
-                    var filename = '';
-                    
-                    fetch(url, request).then((response) => {
-                            var header = response.headers.get('Content-Disposition');
-                            var parts = header.split(';');
-                            filename = parts[1].split('=')[1];
-                            return response.blob();
-                    })
-                    .then((result) => {
-                        if (result !== undefined) {
-                            var objectURL = URL.createObjectURL(result);
-                            var link = document.createElement("a");
-                            link.setAttribute("href", objectURL);
-                            link.setAttribute("download", filename);
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                        }
-                    });
+            var request = {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(query)
+            };
+            
+            var filename = '';
+            
+            fetch(url, request).then((response) => {
+                    var header = response.headers.get('Content-Disposition');
+                    var parts = header.split(';');
+                    filename = parts[1].split('=')[1];
+                    return response.blob();
+            })
+            .then((result) => {
+                if (result !== undefined) {
+                    var objectURL = URL.createObjectURL(result);
+                    var link = document.createElement("a");
+                    link.setAttribute("href", objectURL);
+                    link.setAttribute("download", filename);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                }
+            });
 			downloadURL = null;
 			//postDataToIFrame("outputFrame", url, query);
 			$("div#exportPanel").hide();
 			$("a#exportBoxToggleButton").removeClass("active");
 		}
-		displayProcessProgress(2, "export_" + token, showServerExportBox);
+		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
 	}
 	
 	function showServerExportBox()
@@ -2541,8 +2541,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
 					<br/>
-					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel'));">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>

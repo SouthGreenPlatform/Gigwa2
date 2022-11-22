@@ -78,17 +78,17 @@ function $_GET(param) {
     return vars;
 }
 
-function displayProcessProgress(nbMin, token, onSuccessMethod) {
+function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
     var functionToCall = function(onSuccessMethod) {
         $.ajax({
-            url: progressUrl,
+            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),
             type: "GET",
             headers: {
                 "Authorization": "Bearer " + token
             },
             success: function (jsonResult, textStatus, jqXHR) {
                 if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
-                    displayProcessProgress(nbMin, token, onSuccessMethod);
+                    displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                 else if (jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
                         onSuccessMethod();
@@ -108,7 +108,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
                         $('#progress').modal('hide');
                     } else {
                         $('#progressText').html(jsonResult.progressDescription);
-                        displayProcessProgress(nbMin, token, onSuccessMethod);
+                        displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                     }
                 }
             },

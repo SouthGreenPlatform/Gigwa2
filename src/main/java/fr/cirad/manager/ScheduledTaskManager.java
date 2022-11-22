@@ -50,11 +50,7 @@ public class ScheduledTaskManager {
     @Scheduled(fixedRate = 21600000)
     public void cleanProcessMap() {
     	LOG.debug("Scheduled cleanProcessMap launched");
-        try {
-            tokenManager.cleanupTokenMap();
-        } catch (ParseException ex) {
-            LOG.debug("parsing error while removing old token", ex);
-        }
+        tokenManager.cleanupTokenMap();
     }
     
     /**
