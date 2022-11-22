@@ -78,17 +78,17 @@ function $_GET(param) {
     return vars;
 }
 
-function displayProcessProgress(nbMin, token, onSuccessMethod) {
+function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
     var functionToCall = function(onSuccessMethod) {
         $.ajax({
-            url: progressUrl,
+            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),
             type: "GET",
             headers: {
                 "Authorization": "Bearer " + token
             },
             success: function (jsonResult, textStatus, jqXHR) {
                 if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
-                    displayProcessProgress(nbMin, token, onSuccessMethod);
+                    displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                 else if (jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
                         onSuccessMethod();
@@ -108,7 +108,7 @@ function displayProcessProgress(nbMin, token, onSuccessMethod) {
                         $('#progress').modal('hide');
                     } else {
                         $('#progressText').html(jsonResult.progressDescription);
-                        displayProcessProgress(nbMin, token, onSuccessMethod);
+                        displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                     }
                 }
             },
@@ -934,6 +934,24 @@ function getToken() {
             handleError(xhr, thrownError);
         }
     });
+}
+
+// clear user token
+function clearToken() {
+	$.ajax({
+		url: clearTokenURL,
+		type: "DELETE",
+		async: navigator.userAgent.indexOf("Firefox") == -1,	// for some reason it has to be synchronous for it to work with Firefox when triggered from a beforeunload event
+		dataType: "json",
+		contentType: "application/json;charset=utf-8",
+		headers: {
+			"Authorization": "Bearer " + token
+		},
+		error: function(xhr, thrownError) {
+			if (xhr.status != 0)	// Firefox gets this instead of 401 (!)
+				handleError(xhr, thrownError);
+		}
+	});
 }
 
 function containsHtmlTags(xStr)

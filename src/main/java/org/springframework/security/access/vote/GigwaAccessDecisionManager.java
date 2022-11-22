@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
+import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.security.UserPermissionController;
 
 /**
@@ -49,6 +50,7 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
 	static public String ROLE_ADMIN = "ROLE_ADMIN";
 
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
+	@Autowired private TokenManager tokenManager;
 	
 	public GigwaAccessDecisionManager(List<AccessDecisionVoter<?>> decisionVoters) {
 		super(decisionVoters);
@@ -61,9 +63,11 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes) throws AccessDeniedException
     {
     	if (object instanceof FilterInvocation)
-    	{
+    	{    		
     	    // not exactly sure how risky it is not to use the passed Authentication parameter, but the authorities Collection we get through getLoggedUserAuthorities provides us always up-to-date info (without need for re-authentication)
-    		Collection<? extends GrantedAuthority> authorities = userDao.getLoggedUserAuthorities(); 
+    		final String token = tokenManager.readToken(((FilterInvocation) object).getHttpRequest());
+    		Authentication auth = tokenManager.getAuthenticationFromToken(token);
+    		Collection<? extends GrantedAuthority> authorities = auth != null ? userDao.getUserAuthorities(auth) : userDao.getLoggedUserAuthorities(); 
 
     		FilterInvocation fi = (FilterInvocation) object;
     		String sModule = fi.getRequest().getParameter("module");

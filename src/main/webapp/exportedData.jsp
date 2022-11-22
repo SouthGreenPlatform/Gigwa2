@@ -44,8 +44,9 @@
         <script type="text/javascript" src="js/main.js"></script>
         <script type="text/javascript">
         var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
+        var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
         var token;
-                
+
         function loadExportList()
         {
         	$('#moduleProjectNavbar').hide();
@@ -72,8 +73,11 @@
                    	}
                 	if (fGotData)
                 		$("#exportList").append("</ul>");
+
+                	clearToken();
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
+                	clearToken();
                     handleError(xhr, thrownError);
                 }
             });

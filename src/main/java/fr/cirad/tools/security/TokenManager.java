@@ -18,7 +18,6 @@ package fr.cirad.tools.security;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -33,20 +32,16 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
-import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -196,11 +191,12 @@ public class TokenManager extends AbstractTokenManager {
         Map<String, Map<String, Map<String, Collection<Comparable>>>> customRolesByModuleAndEntityType = userDao.getCustomRolesByModuleAndEntityType(authorities);
         Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authorities);
         Collection<String> modules = MongoTemplateManager.getAvailableModules(), authorizedModules = new ArrayList<String>();
+        HashSet<String> supervisedModules = userDao.getSupervisedModules(authorities);
         for (String module : modules)
         {
             boolean fHiddenModule = MongoTemplateManager.isModuleHidden(module);
             boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
-            boolean fIsSupervisor = !fAdminUser && userDao.getSupervisedModules(authorities).contains(module);
+            boolean fIsSupervisor = !fAdminUser && supervisedModules.contains(module);
             boolean fAuthorizedUser = authorities != null && (fIsSupervisor || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
             if (fAdminUser || fIsSupervisor || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
                 authorizedModules.add(module);
@@ -333,22 +329,37 @@ public class TokenManager extends AbstractTokenManager {
      * remove expired tokens from the map
      * this method is to be called periodically
      *
-     * @throws ParseException
      */
 	@Override
-    public void cleanupTokenMap() throws ParseException {
+    public void cleanupTokenMap() {
         List<String> expiredTokens = new ArrayList<>();
         for (String token : tokenLastUseTimes.keySet()) {
         	Long time = tokenLastUseTimes.get(token);            
             if (System.currentTimeMillis() - time > sessionTimeoutInSeconds * 1000)
                 expiredTokens.add(token);	// token has expired
         }
-        
+
         MongoTemplateManager.dropAllTempColls(expiredTokens);
         for (String expiredToken : expiredTokens)
             removeToken(expiredToken);
         if (expiredTokens.size() > 0)
         	LOG.debug("cleanupTokenMap removed " + expiredTokens.size() + " token(s)");
+    }
+	
+	@Override
+    public void clearTokensTiedToAuthentication(Authentication auth) {
+        List<String> tokensForOutOfDateAuth = new ArrayList<>();
+        for (String token : tokenToAuthenticationMap.keySet()) {
+        	Authentication tokenAuth = tokenToAuthenticationMap.get(token);   
+        	if (tokenAuth.equals(auth))
+        		tokensForOutOfDateAuth.add(token);
+        }
+
+        MongoTemplateManager.dropAllTempColls(tokensForOutOfDateAuth);
+        for (String expiredToken : tokensForOutOfDateAuth)
+            removeToken(expiredToken);
+        if (tokensForOutOfDateAuth.size() > 0)
+        	LOG.debug("cleanupTokensTiedToAuthentication removed " + tokensForOutOfDateAuth.size() + " token(s)");
     }
     
 	public void reloadUserPermissions(SecurityContext securityContext) throws IOException {

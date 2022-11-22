@@ -49,6 +49,10 @@
     <priority value="WARN"/>
 </category>
 
+<category name="org.brapi">
+    <priority value="INFO"/>
+</category>
+
 <category name="fr.cirad">
     <priority value="INFO"/>
 </category>

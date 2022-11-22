@@ -5,10 +5,8 @@ import java.util.Collection;
 
 import org.springframework.stereotype.Component;
 
-import fr.cirad.tools.AbstractConfigManager;
-
 @Component
-public class GigwaAbstractConfigManager extends AbstractConfigManager {
+public class GigwaConfigManager extends AbstractConfigManager {
 
 	@Override
 	public String getPropertyOverridingPrefix() {
