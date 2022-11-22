@@ -350,7 +350,6 @@
               	        $('.meter').show();
               	      });
               	      self.on("success", function(file, processId) {
-                          console.log("Checking progress for ID " + processId);
                           displayProcessProgress(5, token, processId);
                           $("button#asyncWatch").on("click", function() {
                      			window.open('ProgressWatch.jsp?process=' + processId + '&abortable=true&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
@@ -377,7 +376,6 @@
                    	        $('.meter').show();
                    	      });
                    	      self.on("success", function(file, processId) {
-                               console.log("Checking progress for ID " + processId);
                                displayProcessProgress(5, token, processId);
                                $("button#asyncWatch").on("click", function() {
                            			window.open('ProgressWatch.jsp?process=' + processId + '&abortable=true&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
