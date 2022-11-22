@@ -281,11 +281,7 @@ public class GigwaRestController extends ControllerInterface {
         }
         finally {
             if (userInfo != null)   // we don't want to do the cleanup too often
-                try {
-                    tokenManager.cleanupTokenMap();
-                } catch (ParseException e) {
-                    LOG.warn("Error executing cleanupTokenMap", e);
-                }
+            	tokenManager.cleanupTokenMap();
         }
 	}
 
@@ -1705,7 +1701,6 @@ public class GigwaRestController extends ControllerInterface {
 					progress.setError("Remote client not allowed to import: " + remoteAddr);
 			}
 
-//			boolean fIsCalledFromInterface = referer != null && referer.contains(request.getContextPath());
 			boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 			Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
 			boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
@@ -1732,37 +1727,32 @@ public class GigwaRestController extends ControllerInterface {
 				progress.addStep("Creating datasource");
 				progress.moveToNextStep();
 
-				boolean fPublicAndHidden = /*!fIsCalledFromInterface || */fMayOnlyWriteTmpData; // remote users (invoking import directly via a URL) and anonymous users are only allowed to create public-and-hidden databases (i.e. for their own use)
 				try { // create it
-					if (/*!fIsCalledFromInterface || */!fAdminImporter) {	// only administrators may create permanent databases
+					if (!fAdminImporter) {	// only administrators may create permanent databases
 						expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 //					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 						
-						if (sHost == null || sHost.trim().length() == 0)
-						{
-//							if (!fIsCalledFromInterface)
-//							{
-								// find a host for this temp DB
-								String tempDbHost = appConfig.get("tempDbHost");
-								for (String sAHost : MongoTemplateManager.getHostNames())
-									if (tempDbHost == null || tempDbHost.equals(sAHost))
-									{
-										sHost = sAHost;
-										LOG.debug("Module " + sModule + " will be created on host " + sHost);
-										break;
-									}
-//							}
-							if (sHost == null || sHost.trim().length() == 0)
-								throw new Exception("No host was specified!");
+						if (sHost == null || sHost.trim().length() == 0) {	// no host specified in the request
+							String tempDbHost = appConfig.get("tempDbHost");
+							for (String sAHost : MongoTemplateManager.getHostNames())
+								if (tempDbHost == null || tempDbHost.equals(sAHost)) {	// no host specified for temp DBs in configuration properties: use the first host we find
+									sHost = sAHost;
+									break;
+								}
 						}
 					}
+					else if (sHost == null || sHost.trim().length() == 0 && !MongoTemplateManager.getHostNames().isEmpty())
+						sHost = MongoTemplateManager.getHostNames().iterator().next();
 
-					if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, fPublicAndHidden, fPublicAndHidden, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
-						LOG.info("Importing database " + sNormalizedModule + " into host " + sHost);
+					if (sHost == null || sHost.trim().length() == 0)
+						throw new Exception("No host was specified!");
+
+					if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, !fAdminImporter, !fAdminImporter, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
+						LOG.info("Adding database " + sNormalizedModule + " to host " + sHost);
 						fDatasourceExists = true;
 					} 
 					else
-						throw new Exception("Unable to add " + sNormalizedModule + " entry to datasources");
+						throw new Exception("Unable to add " + sNormalizedModule + " entry to datasources of host " + sHost);
 				} catch (Exception e) {
 					LOG.error("Error creating datasource " + sNormalizedModule, e);
 					progress.setError(e.getMessage());
