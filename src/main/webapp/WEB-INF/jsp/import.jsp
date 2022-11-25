@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -59,7 +59,9 @@
 	    	var projectRunUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>' />/";
 	    	var callSetsSearchUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	    	var importPageUrl = "<c:url value='<%=GigwaRestController.IMPORT_PAGE_URL%>' />";
-	    	var searchSamplesUrl = '<c:url value="<%=GigwaRestController.REST_PATH + \"/brapi/v2/search/samples\"%>" />';
+	    	var searchSamplesUrl = '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + \"/\" + SamplesApi.searchSamplesPost_url %>" />';
+	    	var metadataValidationURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataValidationURL %>" />';
+			var metadataImportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>" />';
 	    	var webappUrl = "<c:url value='/' />";
             var token;
             var processAborted = false;
@@ -68,7 +70,7 @@
         	var BRAPI_V1_URL_ENDPOINT;
         	var brapiParameters;
         	var projectDescriptions = [];
-   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
+   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs = new Set();
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
 
@@ -83,7 +85,7 @@
     <body>
         <%@include file="../../../navbar.jsp" %>
         <div class="container margin-top-md">
-        	<div style="position:absolute; left:45%; margin-top:-20px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importGenotypesButton" type="button">Submit</button></div>
+        	<div style="position:absolute; left:45%; margin-top:-20px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importButton" type="button">Submit</button></div>
             <ul class="nav nav-tabs" style="border-bottom:0;">
                 <li id="vcfTab" class="text-nowrap<c:if test='${param.type ne "metadata"}'> active</c:if>">
 	                <a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink" style="width:140px;">
@@ -100,7 +102,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane<c:if test='${param.type ne "metadata"}'> active</c:if>" id="tab1">
-            	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL%>' />" method="post">
+            	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL %>' />" method="post">
 	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
 	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
 	            	<input type="hidden" name="brapiParameter_token" id="brapiParameter_token"/>
@@ -113,12 +115,12 @@
                                 </div>
                                 <div class ="row" style='margin:0 50px 0 25px;'>
                                     <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
-                                        <div class="row" id="rowModuleExisting">
+                                        <div class="row">
                                      	<div class="col-md-2" style="text-align:right;">
                                           <label for="moduleExistingG">Database <span class="text-red">*</span></label>
                                          </div>
                                             <div class="col-md-3">
-                                                <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                                <select class="selectpicker" id="moduleExistingG" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
                                             <div class="col-md-3" id="taxonDiv" align="center">
                                             	<div style="float:left;">
@@ -260,7 +262,7 @@
                 </div>
                 
                 <div class="tab-pane<c:if test='${param.type eq "metadata"}'> active</c:if>" id="tab2">
-                   	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL%>' />" method="post">                
+                   	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>' />" method="post">                
                     <input type="hidden" name="brapiURLs" id="brapiURLs"/>
                     <input type="hidden" name="brapiTokens" id="brapiTokens"/>
                     <div class="panel panel-default importFormDiv">
@@ -281,16 +283,16 @@
                                		<p style="color:#bb4444;" class='bold' id="metadataScopeDesc"></p>
                                		</div>
                                 </div>
-                                <div class="col-md-3">                     
+                                <div class="col-md-3" id="mdModuleZone">                     
                                     <div class="form-group margin-top text-left">
                                         <label for="moduleExistingMD">Database</label>
-                                        <select class="selectpicker" id="moduleExistingMD" class="moduleExisting" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
+                                        <select class="selectpicker moduleExisting mandatoryMdField" id="moduleExistingMD" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
                                     </div>                  
                                 </div>
                                 <div class="col-md-3">                     
                                     <div class="form-group margin-top text-left">
                                         <label>Import metadata on</label>
-                                        <select class="selectpicker" id="metadataType" class="moduleExisting" name="metadataType" data-actions-box="true" data-width="100%">
+                                        <select class="selectpicker" id="metadataType" name="metadataType" data-actions-box="true" data-width="100%">
                                             <option value="individual">Individuals</option>
                                             <option value="sample">Samples</option>
                                         </select>
@@ -305,7 +307,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group text-left">
                                         <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
-                                        <input id="metadataFilePath1" class="form-control input-sm" type="text" name="metadataFilePath1">
+                                        <input id="metadataFilePath1" class="form-control input-sm mandatoryMdField" type="text" name="metadataFilePath1">
                                     </div>
 <%--
                                     <div class="form-group text-left">

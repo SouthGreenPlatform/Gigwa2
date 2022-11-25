@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -54,6 +55,7 @@ import java.util.stream.Collectors;
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -194,6 +196,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String IMPORT_PAGE_URL = "/import.do";
 	static final public String genotypeImportSubmissionURL = "/genotypeImport";
 	static final public String metadataImportSubmissionURL = "/metadataImport";
+	static final public String metadataValidationURL = "/metadataValidation";
 	static public final String GET_SESSION_TOKEN = "/generateToken";
 	static public final String VARIANT_TYPES_PATH = "/variantTypes";
 	static public final String NUMBER_ALLELE_PATH = "/numberOfAllele";
@@ -1189,8 +1192,145 @@ public class GigwaRestController extends ControllerInterface {
 		return mav;
 	}
 
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataValidationURL, notes = "Import metadata for individuals.")
+    @RequestMapping(value = BASE_URL + metadataValidationURL, method = RequestMethod.POST)
+    public @ResponseBody Collection<String> checkMetaDataAndReturnBrapiEndpoints(HttpServletRequest request, HttpServletResponse response,
+    		@RequestParam("moduleExistingMD") final String sModule,
+            @RequestParam("metadataFilePath1") final String dataUri1, @RequestParam(value = "metadataFilePath2", required = false) final String dataUri2,
+            @RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
+            @RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
+            @RequestParam(value = "metadataType", required = false) final String metadataType) throws Exception {
+        final String authToken = tokenManager.readToken(request);
+ 		Authentication auth = tokenManager.getAuthenticationFromToken(authToken);
+		if (auth == null) {
+		    build401Response(response);
+//		    progress.setError("You must pass a valid token to be allowed to import.");
+            return null;
+		}
+		
+		
+
+
+
+//		try {
+			HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
+//		}
+//		catch (Exception e) {
+////			progress.setError(e.getMessage());
+//		}
+			
+//		for (String uri : filesByExtension.values())
+			
+		Set<String> result = new HashSet<>();
+			
+        String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
+        if (metadataFile != null) {    // deal with individuals' metadata
+            boolean fIsFtp = metadataFile.startsWith("ftp://");
+            boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
+//            try {
+                URL url = fIsRemote ? new URL(metadataFile) : new File(metadataFile).toURI().toURL();
+                if (fIsRemote && !fIsFtp) {
+                    int respCode = ((HttpURLConnection) url.openConnection()).getResponseCode();
+                    if (HttpURLConnection.HTTP_OK != respCode)
+                        throw new IOException("Response code " + respCode);
+                }
+                
+                Scanner scanner = null;
+                try {
+	                scanner = new Scanner(url.openStream());
+	                HashMap<Integer, String> columnLabels = IndividualMetadataImport.readMetadataFileHeader(scanner, url.getFile().toLowerCase().endsWith(".phenotype"), metadataType, null);
+	                
+	                Integer extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
+	                if (extRefSrcColumn == null)
+	                	return result;
+	                
+	                
+	                
+	                
+	                
+//	                Integer idColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(metadataType)).map(Map.Entry::getKey).findFirst().orElse(null);
+
+	                String sLine;
+	                while (scanner.hasNextLine()) {
+	                    sLine = scanner.nextLine();
+	                    if (sLine.length() == 0)
+	                        continue;
+	                    
+	                    List<String> cells = Helper.split(sLine, "\t");
+	                    
+	                    String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
+	                    if (extRefSrc != null)
+	                    	result.add(extRefSrc);
+
+//	                    // deal with actual data rows
+//	                    LinkedHashMap<String, Object> additionalInfo = new LinkedHashMap<>();
+//	                    for (int col : columnLabels.keySet())
+//	                        if (col != idColumn)
+//	                            additionalInfo.put(columnLabels.get(col), cells.size() > col ? cells.get(col) : "");
+	                }
+                }
+                catch (Exception e) {
+                	e.printStackTrace();
+		        } finally {
+		        	if (scanner != null)
+		        		scanner.close();
+		        }
+//            } catch (IOException ioe) {
+//                if (ioe instanceof FileNotFoundException)
+//                    progress.setError("File not found: " + metadataFile);
+//                else
+//                    progress.setError(metadataFile + " - " + ioe.getClass().getSimpleName() + ": " + ioe.getMessage());
+//   
+//                metadataFile = null;
+//            }
+        }
+		
+		
+
+		return result;
+	}
+	
+	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> uploadedFiles, Collection<String> filesSpecifiedByURI) throws Exception{
+        HashMap<String, String> filesByExtension = new HashMap<>();
+        for (MultipartFile mpf : uploadedFiles) {
+            if (mpf != null && !mpf.isEmpty()) {
+                String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
+                if (filesByExtension.containsKey(fileExtension))
+                    throw new Exception("Each provided datasource entry must be of a different kind!");
+                else {
+                    File file = null;
+                    if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
+                        // make sure we transfer it to a file in the same location so it is a move rather than a copy!
+                        File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
+                        if (uploadedFile != null)
+                            file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+                    }
+                    if (file == null) {
+                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+                    }
+                    mpf.transferTo(file);
+                    filesByExtension.put(fileExtension, file.getAbsolutePath());
+                }
+            }
+        }
+
+        for (String uri : filesSpecifiedByURI) {
+            if (uri != null && uri.trim().length() > 0) {
+                String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
+                if (filesByExtension.containsKey(fileExtension))
+                	throw new Exception("Each provided datasource entry must be of a different kind!");
+                else /*if (brapiUrlList.size() == 0)*/ // TODO: check why we had this if statement !!!!!!!! 
+                    filesByExtension.put(fileExtension, uri);
+            }
+        }
+        return filesByExtension;
+	}
+	
 	
     /**
+     * Import metadata for individuals
+     * 
      * @param request
      * @param sModule
      * @param dataUri1
@@ -1204,10 +1344,9 @@ public class GigwaRestController extends ControllerInterface {
      * @return
      * @throws Exception
      */
-    @ApiIgnore
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataImportSubmissionURL, notes = "Import metadata for individuals.")
     @RequestMapping(value = BASE_URL + metadataImportSubmissionURL, method = RequestMethod.POST)
-    public @ResponseBody
-    String importMetaData(HttpServletRequest request, HttpServletResponse response,
+    public @ResponseBody String importMetaData(HttpServletRequest request, HttpServletResponse response,
     		@RequestParam("moduleExistingMD") final String sModule,
             @RequestParam("metadataFilePath1") final String dataUri1, @RequestParam(value = "metadataFilePath2", required = false) final String dataUri2,
             @RequestParam(value = "clearProjectSequences", required = false) final Boolean fClearProjectSeqData,
@@ -1228,218 +1367,184 @@ public class GigwaRestController extends ControllerInterface {
         final ProgressIndicator progress = new ProgressIndicator(processId, new String[]{"Checking submitted data"});
         ProgressIndicator.registerProgressIndicator(progress);
 
-        HashMap<String, String> filesByExtension = new HashMap<>();
-        final ArrayList<File> uploadedFiles = new ArrayList<>();
-        for (MultipartFile mpf : Arrays.asList(uploadedFile1, uploadedFile2)) {
-            if (mpf != null && !mpf.isEmpty()) {
-                String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
-                if (filesByExtension.containsKey(fileExtension)) {
-                    progress.setError("Each provided datasource entry must be of a different kind!");
-                } else {
-                    File file = null;
-                    if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
-                        // make sure we transfer it to a file in the same location so it is a move rather than a copy!
-                        File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-                        if (uploadedFile != null)
-                            file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-                    }
-                    if (file == null) {
-                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
-                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
-                    }
-                    mpf.transferTo(file);
-                    uploadedFiles.add(file);
-                    filesByExtension.put(fileExtension, file.getAbsolutePath());
-                }
-            }
-        }
-
         String username = null;
         if (!tokenManager.canUserWriteToDB(authToken, sModule)) {
             Authentication authentication = tokenManager.getAuthenticationFromToken(authToken);
-            if (authentication != null) {
+            if (authentication != null)
                 username = authentication.getName();
-            } else {
+            else {
                 progress.setError("You need to be logged in");
-                return null;
+                return processId;
             }
         }
 
-        List<String> brapiUrlList = Helper.split(brapiURLs, " ; "), brapiTokenArray = Helper.split(brapiTokens, " ; ");
+        List<String> brapiUrlList = brapiURLs.isBlank() ? new ArrayList<>() : Helper.split(brapiURLs, " ; ");
+        List<String> brapiTokenArray = brapiTokens.isBlank() ? new ArrayList<>() : Helper.split(brapiTokens, " ; ");
         if (brapiUrlList.size() != brapiTokenArray.size()) {
             progress.setError("You must provide the same number of BrAPI URLs and tokens (empty tokens mean no token required)");
-            return null;
+            return processId;
         }
 
-        if (progress.getError() == null) {
-            for (String uri : Arrays.asList(dataUri1, dataUri2)) {
-                if (uri != null && uri.trim().length() > 0) {
-                    String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
-                    if (filesByExtension.containsKey(fileExtension)) {
-                        progress.setError("Each provided datasource entry must be of a different kind!");
-                    } else if (brapiUrlList.size() == 0) {
-                        filesByExtension.put(fileExtension, uri);
-                    }
-                }
-            }
-        }
+        String sFinalUsername = username;
+        HttpSession session = request.getSession();
+        new Thread() {
+			public void run() {
+		        HashMap<String, String> filesByExtension = null;
+		        try {
+		        	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
+		        	if (progress.getError() == null) {
+		                AtomicInteger nModifiedRecords = new AtomicInteger(-1);
+		                String fastaFile = null, gzFile = filesByExtension.get("gz");
+		                if (gzFile != null) {
+		                    String extensionBeforeZip = FilenameUtils.getExtension(gzFile.substring(0, gzFile.length() - 3));
+		                    if ("fasta".equals(extensionBeforeZip) || "fa".equals(extensionBeforeZip))
+		                        fastaFile = gzFile;
+		                }
+		                if (fastaFile == null)
+		                    fastaFile = filesByExtension.get("fasta");
+		                if (fastaFile == null)
+		                    fastaFile = filesByExtension.get("fa");
+		                if (fastaFile != null) {
+		                    progress.addStep("Importing sequence data");
+		                    progress.moveToNextStep();
+		                    SequenceImport.main(new String[]{sModule, fastaFile, Boolean.TRUE.equals(fClearProjectSeqData) ? "2" : "0"});
+		//                    filesByExtension.remove(FilenameUtils.getExtension(fastaFile).toLowerCase());
+		                }
+		
+		                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
+		                if (metadataFile != null) {    // deal with individuals' metadata
+		                    boolean fIsFtp = metadataFile.startsWith("ftp://");
+		                    boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
+		                    try {
+		                        URL url = fIsRemote ? new URL(metadataFile) : new File(metadataFile).toURI().toURL();
+		                        if (fIsRemote && !fIsFtp) {
+		                            int respCode = ((HttpURLConnection) url.openConnection()).getResponseCode();
+		                            if (HttpURLConnection.HTTP_OK != respCode)
+		                                throw new IOException("Response code " + respCode);
+		                        }
+		                        progress.addStep("Importing metadata for individuals");
+		                        progress.moveToNextStep();
+		                        nModifiedRecords.set(IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, url, metadataType, null, sFinalUsername));
+		                    } catch (IOException ioe) {
+		                        if (ioe instanceof FileNotFoundException)
+		                            progress.setError("File not found: " + metadataFile);
+		                        else
+		                            progress.setError(metadataFile + " - " + ioe.getClass().getSimpleName() + ": " + ioe.getMessage());
+		           
+		                        metadataFile = null;
+		                    }
+		                } else if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
+		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
+		                    MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+		                    for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
+		                        if (metadataType.equals("individual")) {
+		                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
+		                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
+		                        	callSetsRequest.setRequest(request);
+		                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
+		                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
+		                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+		
+		                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
+		                                    continue;
+		
+		                                if (extRefIdValues.size() != 1)
+		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+		                                if (extRefSrcValues.size() != 1)
+		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+		
+		                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
+		
+		                                String endPointUrl = extRefSrcValues.get(0);
+		                                if (!endPointUrl.endsWith("/"))
+		                                    endPointUrl = endPointUrl + "/";
+		
+		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
+		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+		
+		                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+		                                if (individualsCurrentEndpointHasDataFor == null) {
+		                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
+		                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
+		                                }
+		
+		                                individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
+		                            }
+		                        } else {
+		                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, Arrays.asList(projId), null).values();
+		                            for (GenotypingSample sample : genotypingSamples)
+		                                if (sample.getAdditionalInfo() != null) {
+		                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
+		                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+		                                    
+		                                    if (extRefSrcValue == null || extRefIdValue == null)
+		                                        continue;
+		
+		                                    String endPointUrl = extRefSrcValue;
+		                                    if (!endPointUrl.endsWith("/"))
+		                                        endPointUrl = endPointUrl + "/";
+		
+		                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
+		                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+		
+		                                    HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+		                                    if (individualsCurrentEndpointHasDataFor == null) {
+		                                        individualsCurrentEndpointHasDataFor = new HashMap<>();
+		                                        brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
+		                                    }
+		
+		                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
+		                                }
+		                        }
+		                    }
+		
+		                    nModifiedRecords.set(0);
+		                    for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet()) {
+		                        int tokenIndex = brapiUrlList.indexOf(sBrapiUrl);
+		                        if (tokenIndex == -1) {
+		                            LOG.debug("User chose to skip BrAPI source " + sBrapiUrl);
+		                        } else
+		                            try {
+		                            String sToken = brapiTokenArray.get(tokenIndex);
+		                            nModifiedRecords.addAndGet(IndividualMetadataImport.importBrapiMetadata(sModule, session, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), sFinalUsername, "".equals(sToken) ? null : sToken, progress, metadataType));
+		                        } catch (Throwable err) {
+		                            progress.setError(err.getMessage() + " - " + sBrapiUrl);
+		                            LOG.error("Error importing metadata", err);
+		                        }
+		                    }
+		                }
+		
+		                if (progress.getError() == null) {
+		                    if (nModifiedRecords.get() <= 0) {    // no changes applied
+		                        if (brapiUrlList.size() == 0 && nModifiedRecords.get() == -1)
+		                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
+		                        else
+		                            progress.setError("Provided data did not lead to any changes!");
+		                    } else {
+		                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
+		                        progress.markAsComplete();
+		                    }
+		                }
+		        	}
+		        } catch (Throwable e) {
+		            progress.setError(e.getMessage());
+		            LOG.error("Error importing metadata", e);
+		        } finally {
+		        	if (filesByExtension != null) {
+			        	System.err.println(filesByExtension.size());
+			        	for (String uri : Arrays.asList(dataUri1, dataUri2))
+			        		if (uri != null)
+			        			filesByExtension.remove(FilenameUtils.getExtension(uri));
+			        	System.out.println(filesByExtension.size());
+			//            for (File fileToDelete : uploadedFiles)
+			//                fileToDelete.delete();
+		        	}
+		        }
+			}
+		}.start();
 
-        if (progress.getError() != null) {
-            for (File fileToDelete : uploadedFiles) {
-                fileToDelete.delete();
-            }
-        } else {
-            try {
-                int nModifiedRecords = -1;
-                String fastaFile = null, gzFile = filesByExtension.get("gz");
-                if (gzFile != null) {
-                    String extensionBeforeZip = FilenameUtils.getExtension(gzFile.substring(0, gzFile.length() - 3));
-                    if ("fasta".equals(extensionBeforeZip) || "fa".equals(extensionBeforeZip)) {
-                        fastaFile = gzFile;
-                    }
-                }
-                if (fastaFile == null) {
-                    fastaFile = filesByExtension.get("fasta");
-                }
-                if (fastaFile == null) {
-                    fastaFile = filesByExtension.get("fa");
-                }
-                if (fastaFile != null) {
-                    progress.addStep("Importing sequence data");
-                    progress.moveToNextStep();
-                    SequenceImport.main(new String[]{sModule, fastaFile, Boolean.TRUE.equals(fClearProjectSeqData) ? "2" : "0"});
-                    filesByExtension.remove(FilenameUtils.getExtension(fastaFile).toLowerCase());
-                }
-
-                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
-                if (metadataFile != null) {    // deal with individuals' metadata
-                    boolean fIsFtp = metadataFile.startsWith("ftp://");
-                    boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
-                    try {
-                        URL url = fIsRemote ? new URL(metadataFile) : new File(metadataFile).toURI().toURL();
-                        if (fIsRemote && !fIsFtp) {
-                            int respCode = ((HttpURLConnection) url.openConnection()).getResponseCode();
-                            if (HttpURLConnection.HTTP_OK != respCode) {
-                                throw new IOException("Response code " + respCode);
-                            }
-                        }
-                        progress.addStep("Importing metadata for individuals");
-                        progress.moveToNextStep();
-                        nModifiedRecords = IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, request.getSession(), url, metadataType, null, username);
-                    } catch (IOException ioe) {
-                        if (ioe instanceof FileNotFoundException) {
-                            progress.setError("File not found: " + metadataFile);
-                        } else {
-                            progress.setError(metadataFile + " - " + ioe.getClass().getSimpleName() + ": " + ioe.getMessage());
-                        }
-                        metadataFile = null;
-                    }
-                } else if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
-                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
-                    MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-                    for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
-                        if (metadataType.equals("individual")) {
-                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
-                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
-                        	callSetsRequest.setRequest(request);
-                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
-                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
-
-                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
-                                    continue;
-
-                                if (extRefIdValues.size() != 1)
-                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-                                if (extRefSrcValues.size() != 1)
-                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-
-                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
-
-                                String endPointUrl = extRefSrcValues.get(0);
-                                if (!endPointUrl.endsWith("/"))
-                                    endPointUrl = endPointUrl + "/";
-
-                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
-                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-
-                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
-                                if (individualsCurrentEndpointHasDataFor == null) {
-                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
-                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
-                                }
-
-                                individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
-                            }
-                        } else {
-                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, username, Arrays.asList(projId), null).values();
-                            for (GenotypingSample sample : genotypingSamples)
-                                if (sample.getAdditionalInfo() != null) {
-                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
-                                    
-                                    if (extRefSrcValue == null || extRefIdValue == null)
-                                        continue;
-
-                                    String endPointUrl = extRefSrcValue;
-                                    if (!endPointUrl.endsWith("/"))
-                                        endPointUrl = endPointUrl + "/";
-
-                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
-                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-
-                                    HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
-                                    if (individualsCurrentEndpointHasDataFor == null) {
-                                        individualsCurrentEndpointHasDataFor = new HashMap<>();
-                                        brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
-                                    }
-
-                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
-                                }
-                        }
-                    }
-
-                    nModifiedRecords = 0;
-                    for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet()) {
-                        int tokenIndex = brapiUrlList.indexOf(sBrapiUrl);
-                        if (tokenIndex == -1) {
-                            LOG.debug("User chose to skip BrAPI source " + sBrapiUrl);
-                        } else
-                            try {
-                            String sToken = brapiTokenArray.get(tokenIndex);
-                            nModifiedRecords += IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), username, "".equals(sToken) ? null : sToken, progress, metadataType);
-                        } catch (Throwable err) {
-                            progress.setError(err.getMessage() + " - " + sBrapiUrl);
-                            LOG.error("Error importing metadata", err);
-                        }
-                    }
-                }
-
-                if (progress.getError() == null) {
-                    if (nModifiedRecords <= 0) {    // no changes applied
-                        if (brapiUrlList.size() == 0 && nModifiedRecords == -1) {
-                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
-                        } else {
-                            progress.setError("Provided data did not lead to any changes!");
-                        }
-                    } else {
-                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
-                        progress.markAsComplete();
-                    }
-                }
-            } catch (Throwable e) {
-                progress.setError(e.getMessage());
-                LOG.error("Error importing metadata", e);
-            } finally {
-                for (File fileToDelete : uploadedFiles) {
-                    fileToDelete.delete();
-                }
-            }
-        }
         return processId;
     }
-
-
 
 	/**
 	 * Import genotyping data.
