@@ -158,27 +158,25 @@ function displayMessage(message, duration) {
 }
 
 function handleError(xhr, thrownError) {
-    if (xhr != null && xhr.status == 401)
-    {
+    if (xhr != null && xhr.status == 401) {
         location.href = 'login.do';
         return;
     }
 
-    if (xhr != null && xhr.status == 403)
-    {
-        processAborted = true;
+    if (xhr != null && xhr.status < 500) {
+        //processAborted = true;
         $('div.modal').modal('hide');
-        alert(xhr.statusText + ": " + xhr.responseText);
+        alert((xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText);
         return;
     }
         
     var errorMsg;
     if (xhr != null && xhr.responseText != null) {
         try {
-            errorMsg = xhr.statusText + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
+            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
         }
         catch (err) {
-            errorMsg = xhr.statusText + ": " + xhr.responseText;
+            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText;
         }
     }
     $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');

@@ -87,7 +87,7 @@
         <div class="container margin-top-md">
         	<div style="position:absolute; left:45%; margin-top:-20px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importButton" type="button">Submit</button></div>
             <ul class="nav nav-tabs" style="border-bottom:0;">
-                <li id="vcfTab" class="text-nowrap<c:if test='${param.type ne "metadata"}'> active</c:if>">
+                <li id="genotypesTab" class="text-nowrap<c:if test='${param.type ne "metadata"}'> active</c:if>">
 	                <a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink" style="width:140px;">
 		                Genotype import&nbsp;
 		                <span class="glyphicon glyphicon-ok" style="display:none;" id="gtFormValid"></span>

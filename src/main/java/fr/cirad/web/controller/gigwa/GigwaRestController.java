@@ -1207,94 +1207,70 @@ public class GigwaRestController extends ControllerInterface {
 //		    progress.setError("You must pass a valid token to be allowed to import.");
             return null;
 		}
-		
-		
 
-
-
-//		try {
-			HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
-//		}
-//		catch (Exception e) {
-////			progress.setError(e.getMessage());
-//		}
-			
-//		for (String uri : filesByExtension.values())
-			
 		Set<String> result = new HashSet<>();
-			
-        String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
-        if (metadataFile != null) {    // deal with individuals' metadata
-            boolean fIsFtp = metadataFile.startsWith("ftp://");
-            boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
-//            try {
+        Scanner scanner = null;
+		try {
+			HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
+			String extensionLessFile = filesByExtension.get("");
+			if (extensionLessFile != null)
+				throw new Exception("File has no extension: " + extensionLessFile);
+				
+	        String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
+	        if (metadataFile != null) {    // deal with individuals' metadata
+	            boolean fIsFtp = metadataFile.startsWith("ftp://");
+	            boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
+	            
                 URL url = fIsRemote ? new URL(metadataFile) : new File(metadataFile).toURI().toURL();
                 if (fIsRemote && !fIsFtp) {
-                    int respCode = ((HttpURLConnection) url.openConnection()).getResponseCode();
-                    if (HttpURLConnection.HTTP_OK != respCode)
-                        throw new IOException("Response code " + respCode);
+                	HttpURLConnection connection = ((HttpURLConnection) url.openConnection());
+                    int respCode = connection.getResponseCode();
+                    if (respCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
+            			buildResponse(response, respCode, connection.getResponseMessage() != null ? connection.getResponseMessage() : metadataFile);
+            			return null;
+            	    }
                 }
+
+                scanner = new Scanner(url.openStream());
+                HashMap<Integer, String> columnLabels = IndividualMetadataImport.readMetadataFileHeader(scanner, url.getFile().toLowerCase().endsWith(".phenotype"), metadataType, null);
                 
-                Scanner scanner = null;
-                try {
-	                scanner = new Scanner(url.openStream());
-	                HashMap<Integer, String> columnLabels = IndividualMetadataImport.readMetadataFileHeader(scanner, url.getFile().toLowerCase().endsWith(".phenotype"), metadataType, null);
-	                
-	                Integer extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
-	                if (extRefSrcColumn == null)
-	                	return result;
-	                
-	                
-	                
-	                
-	                
-//	                Integer idColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(metadataType)).map(Map.Entry::getKey).findFirst().orElse(null);
-
-	                String sLine;
-	                while (scanner.hasNextLine()) {
-	                    sLine = scanner.nextLine();
-	                    if (sLine.length() == 0)
-	                        continue;
-	                    
-	                    List<String> cells = Helper.split(sLine, "\t");
-	                    
-	                    String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
-	                    if (extRefSrc != null)
-	                    	result.add(extRefSrc);
-
-//	                    // deal with actual data rows
-//	                    LinkedHashMap<String, Object> additionalInfo = new LinkedHashMap<>();
-//	                    for (int col : columnLabels.keySet())
-//	                        if (col != idColumn)
-//	                            additionalInfo.put(columnLabels.get(col), cells.size() > col ? cells.get(col) : "");
-	                }
+                Integer extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
+                if (extRefSrcColumn == null)
+                	return result;
+                
+                String sLine;
+                while (scanner.hasNextLine()) {
+                    sLine = scanner.nextLine();
+                    if (sLine.length() == 0)
+                        continue;
+                    
+                    List<String> cells = Helper.split(sLine, "\t");
+                    
+                    String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
+                    if (extRefSrc != null)
+                    	result.add(extRefSrc);
                 }
-                catch (Exception e) {
-                	e.printStackTrace();
-		        } finally {
-		        	if (scanner != null)
-		        		scanner.close();
-		        }
-//            } catch (IOException ioe) {
-//                if (ioe instanceof FileNotFoundException)
-//                    progress.setError("File not found: " + metadataFile);
-//                else
-//                    progress.setError(metadataFile + " - " + ioe.getClass().getSimpleName() + ": " + ioe.getMessage());
-//   
-//                metadataFile = null;
-//            }
+	        }
+		}
+		catch (Exception ioe) {
+			build400Response(response, ioe.getMessage());
+			return null;
+	    }
+        finally {
+        	if (scanner != null)
+        		scanner.close();
         }
-		
-		
-
 		return result;
 	}
 	
 	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> uploadedFiles, Collection<String> filesSpecifiedByURI) throws Exception{
         HashMap<String, String> filesByExtension = new HashMap<>();
+        HashMap<String, String> synonymExtensions = new HashMap() {{ put("csv", "tsv"); }};
         for (MultipartFile mpf : uploadedFiles) {
             if (mpf != null && !mpf.isEmpty()) {
                 String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
+                if (synonymExtensions.containsKey(fileExtension))
+                	fileExtension = synonymExtensions.get(fileExtension);
                 if (filesByExtension.containsKey(fileExtension))
                     throw new Exception("Each provided datasource entry must be of a different kind!");
                 else {
@@ -1317,7 +1293,9 @@ public class GigwaRestController extends ControllerInterface {
 
         for (String uri : filesSpecifiedByURI) {
             if (uri != null && uri.trim().length() > 0) {
-                String fileExtension = FilenameUtils.getExtension(new URI(uri).getPath()).toString().toLowerCase();
+                String fileExtension = FilenameUtils.getExtension(new URI(uri.trim()).getPath()).toString().toLowerCase();
+                if (synonymExtensions.containsKey(fileExtension))
+                	fileExtension = synonymExtensions.get(fileExtension);
                 if (filesByExtension.containsKey(fileExtension))
                 	throw new Exception("Each provided datasource entry must be of a different kind!");
                 else /*if (brapiUrlList.size() == 0)*/ // TODO: check why we had this if statement !!!!!!!! 
@@ -2121,26 +2099,27 @@ public class GigwaRestController extends ControllerInterface {
 		
 		return Math.min(uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
+	
+	public void buildResponse(HttpServletResponse resp, int httpCode, String message) throws IOException {
+		resp.setStatus(httpCode);
+		if (message != null)
+			resp.getWriter().write(message);
+	}
 
 	public void build400Response(HttpServletResponse resp, String message) throws IOException {
-		resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-		if (message != null)
-		resp.getWriter().write(message);
+		buildResponse(resp, HttpServletResponse.SC_BAD_REQUEST, message);
 	}
 	
     public void build401Response(HttpServletResponse resp) throws IOException {
-        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        resp.getWriter().write("This action requires authentication");
+    	buildResponse(resp, HttpServletResponse.SC_UNAUTHORIZED, "This action requires authentication");
     }
     
 	public void build403Response(HttpServletResponse resp) throws IOException {
-		resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-		resp.getWriter().write("You are not allowed to access this resource");
+		buildResponse(resp, HttpServletResponse.SC_FORBIDDEN, "You are not allowed to access this resource");
 	}
 
 	public void build404Response(HttpServletResponse resp) throws IOException {
-		resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		resp.getWriter().write("This resource does not exist");
+		buildResponse(resp, HttpServletResponse.SC_NOT_FOUND, "This resource does not exist");
 	}
 	
 	@ApiIgnore
