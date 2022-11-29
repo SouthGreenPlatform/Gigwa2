@@ -15,6 +15,9 @@
  * Public License V3.
  *******************************************************************************/
 
+var importDropzoneG;
+var importDropzoneMD;
+
 var onbeforeunloadCalled = false;
 window.onbeforeunload = function(e) {
 	if (onbeforeunloadCalled)
@@ -25,6 +28,8 @@ window.onbeforeunload = function(e) {
 };
 
 $(document).ready(function () {
+    Dropzone.autoDiscover = false;
+	
 	updateSelectedMetadataType();
     $('#moduleProjectNavbar').hide();
     $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
@@ -101,6 +106,7 @@ $(document).ready(function () {
           });
   	    }
   	  };
+  	  importDropzoneG = new Dropzone("#importDropzoneG");
   	    	  
   	  Dropzone.options.importDropzoneMD = {
        		maxFiles: 1,
@@ -116,6 +122,9 @@ $(document).ready(function () {
        	      self.options.maxFilesize = 5;
        	   	  self.options.autoProcessQueue = false;
        	   	  self.options.uploadMultiple = true;
+	          /*self.options.renameFile = function(file) { // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+				return file.name + (!file.name.endsWith(".phenotype") ? ".phenotype" : "");
+			  };*/
 	  	      self.on("addedfile", function (file) {
 	  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
 	  	      });
@@ -143,6 +152,7 @@ $(document).ready(function () {
               });
        	    }
        	  };
+       	  importDropzoneMD = new Dropzone("#importDropzoneMD");
   	})
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
@@ -156,7 +166,7 @@ function untouchMdDropzoneFiles() {
         $(this).removeClass('dz-error');
     });
 
-    $.each(new Dropzone("form#importDropzoneMD").files, function(i, file) { // re-add files to the queue so they remain available for the actual import
+    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue so they remain available for the actual import
         file.status = Dropzone.QUEUED;
     });
 }
@@ -246,17 +256,17 @@ $(function () {
                 var link = webappUrl + "?module=" + $('#moduleExistingMD').val(); 
                 $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Amended data is now <a href="' + link + '">available here</a></p>');
                 $('#progress').modal('show');
-                new Dropzone("#importDropzoneMD").destroy();
+                importDropzoneMD.destroy();
             } else {
                 var link1 = webappUrl + "?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val(), link2 = importPageUrl + "?module=" + $("#moduleToImport").val() + "&type=metadata";
                 $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata for individuals or samples <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
                 $('#progress').modal('show');
-                new Dropzone("#importDropzoneG").destroy();
+                importDropzoneG.destroy();
             }
         }
         else	// re-add files to the queue if an error occured
-            $.each(new Dropzone($('#metadataTab').hasClass("active") ? "#importDropzoneMD" : "#importDropzoneG").files, function(i, file) {
-                file.status = Dropzone.QUEUED
+            $.each(($('#metadataTab').hasClass("active") ? importDropzoneMD : importDropzoneG).files, function(i, file) {
+                file.status = Dropzone.QUEUED;
             });
     });
 
@@ -293,10 +303,9 @@ $(function () {
 });
 
 function checkBrapiMetadata() {
-	if (dataFile1 = $("#metadataFilePath1").val().trim() == "" && new Dropzone("#importDropzoneMD").getAcceptedFiles().length == 0)
+	if (dataFile1 = $("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
 		return;	// nothing to check
 
-	var importDropzoneMD = new Dropzone("#importDropzoneMD");
     importDropzoneMD.options.url = metadataValidationURL;
     
 //    $('#progress').data('error', false);
@@ -412,7 +421,6 @@ function checkBrapiMetadata_OLD() {
 */
 function importDataIfValid() {
 	var gtFormOK;
-	var importDropzoneG = new Dropzone("#importDropzoneG");
 	var gtDataFile1 = $("input[name=dataFile1]").val().trim(), gtDataFile12 = $("input[name=dataFile2]").val().trim(), gtDataFile3 = $("input[name=dataFile3]").val().trim();
 	if (importDropzoneG.getAcceptedFiles().length + (gtDataFile1 != "" ? 1 : 0) + (gtDataFile12 != "" ? 1 : 0) + (gtDataFile3 != "" ? 1 : 0) > 0)
 		gtFormOK = isGenotypingDataFormValid(true);
@@ -420,7 +428,7 @@ function importDataIfValid() {
 		gtFormOK = false;
 		
 	var mdFormOK;
-	if (dataFile1 = $("#metadataFilePath1").val().trim() != "" || new Dropzone("#importDropzoneMD").getAcceptedFiles().length > 0)
+	if (dataFile1 = $("#metadataFile1").val().trim() != "" || importDropzoneMD.getAcceptedFiles().length > 0)
 		mdFormOK = isMetaDataFormValid(true);
 	else
 		mdFormOK = false;
@@ -429,14 +437,12 @@ function importDataIfValid() {
 	
 	//console.log($('span#gtFormValid').is(":visible") + "  / " + $('span#mFormValid').is(":visible"));
 	
-	if (gtFormOK) {
-		if (mdFormOK)
-			alert("mixed import nyi");
-		else
-			importGenotypes();
-	}
+	if (gtFormOK)
+		importGenotypes(mdFormOK);
 	else if (mdFormOK)
 		importMetadata();
+	else
+		alert("You must fill-in at least one of the two forms!");
 }
 
 function updateSelectedMetadataType() {
@@ -514,7 +520,6 @@ function isGenotypingDataFormValid(showAlerts) {
     if ($("#runExisting").val() != '- new run -')
    		$("#runToImport").val($("#runExisting").val());
 
-    var importDropzoneG = new Dropzone("#importDropzoneG");
     if (!isValidNewName($("#moduleToImport").val()) || !isValidNewName($("#projectToImport").val()) || !isValidNewName($("#runToImport").val())) {
         alert("Database, project and run names must only consist in digits, accentless letters, dashes and hyphens!");
         $('#progress').modal('hide');
@@ -599,7 +604,7 @@ function isGenotypingDataFormValid(showAlerts) {
 	return true;
 } 
             
-function importGenotypes() {
+function importGenotypes(importMetadataToo) {
 	var dataFile1Input = $("input[name=dataFile1]");
 	var dataFile1 = dataFile1Input.val().trim();//, dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
 	var source1Uri = dataFile1.toLowerCase();
@@ -656,7 +661,21 @@ function importGenotypes() {
     $('#progressText').html("Please wait...");
     $('button#abort').attr('rel', token);
     processAborted = false;
-    var importDropzoneG = new Dropzone("#importDropzoneG");
+    
+	if (importMetadataToo) {
+		for (var i=0; i<importDropzoneMD.getQueuedFiles().length; i++) {
+			var file = importDropzoneMD.getQueuedFiles()[i];
+		    importDropzoneG.addFile(file);
+			file.upload.filename += (!file.name.endsWith(".phenotype") ? ".phenotype" : ""); // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+        }
+        $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
+        $("#mixedImport_metadataType").val($("#metadataType").val());
+	}
+    else {
+        $("#mixedImport_metadataFile1").val(null);
+        $("#mixedImport_metadataType").val(null);
+    }
+
 	$("#ncbiTaxonIdNameAndSpecies").val(taxonDetailsFieldContents.join(":"));
     if (importDropzoneG.getQueuedFiles().length > 0)
     	importDropzoneG.processQueue();
@@ -665,11 +684,10 @@ function importGenotypes() {
         blob.upload = { name:"nofiles" };
         importDropzoneG.uploadFile(blob);
     }
+    importDropzoneG.removeFile(importDropzoneMD.getQueuedFiles()[i]);
 }
 
 function isMetaDataFormValid(showAlerts) {
-	var importDropzoneMD = new Dropzone("#importDropzoneMD");
-
     if (importDropzoneMD.getRejectedFiles().length > 0) {
 		if (showAlerts)
 	        alert("Please remove any rejected files before submitting!");
@@ -682,8 +700,8 @@ function isMetaDataFormValid(showAlerts) {
     	return false;
     }
     
-    var dataFile1 = $("#metadataFilePath1").val().trim();
-	//var dataFile2 = $("#metadataFilePath2").val().trim();
+    var dataFile1 = $("#metadataFile1").val().trim();
+	//var dataFile2 = $("#metadataFile2").val().trim();
 
     var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) /*+ (dataFile2 != "" ? 1 : 0)*/;
     if (providedFileCount > 1) {
@@ -715,7 +733,6 @@ function isMetaDataFormValid(showAlerts) {
 }
 
 function importMetadata() {
-	var importDropzoneMD = new Dropzone("#importDropzoneMD");
     importDropzoneMD.options.url = metadataImportURL;
 
     $('#progress').data('error', false);

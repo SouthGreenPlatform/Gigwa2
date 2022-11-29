@@ -258,6 +258,8 @@
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" id="mixedImport_metadataFile1" name="metadataFile1" />
+                    <input type="hidden" id="mixedImport_metadataType" name="metadataType" />
 	                </form>
                 </div>
                 
@@ -306,13 +308,13 @@
                                 <div class="col-md-4"></div>
                                 <div class="col-md-6">
                                     <div class="form-group text-left">
-                                        <label for="metadataFilePath1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
-                                        <input id="metadataFilePath1" class="form-control input-sm mandatoryMdField" type="text" name="metadataFilePath1">
+                                        <label for="metadataFile1">F<%--irst f--%>ile path or URL</label><br /><small class="text-info">Text field may be used to pass an http URL or an absolute path on webserver filesystem.<br>File upload is supported up to the specified size limit.</small>
+                                        <input id="metadataFile1" class="form-control input-sm mandatoryMdField" type="text" name="metadataFile1">
                                     </div>
 <%--
                                     <div class="form-group text-left">
-                                        <label for="metadataFilePath2">Second file path or URL</label> <small class="text-muted">Local to webserver or remote (http / ftp)</small>
-                                        <input id="metadataFilePath2" class="form-control input-sm" type="text" name="metadataFilePath2">
+                                        <label for="metadataFile2">Second file path or URL</label> <small class="text-muted">Local to webserver or remote (http / ftp)</small>
+                                        <input id="metadataFile2" class="form-control input-sm" type="text" name="metadataFile2">
                                     </div>
                                     <div class="row margin-bottom">
                                         <label class="label-checkbox">Clear existing project sequence data before importing <input type="checkbox" name="clearProjectSequences" class="input-checkbox"></label>
