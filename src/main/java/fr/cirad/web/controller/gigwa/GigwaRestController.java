@@ -1580,7 +1580,7 @@ public class GigwaRestController extends ControllerInterface {
             return null;
 		}
 		
-		String metadataFilePath = metadataUri1 != null && !metadataUri1.isEmpty() ? metadataUri1 : null;
+		File metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new File(metadataUri1) : null;
 
 		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
@@ -1599,7 +1599,7 @@ public class GigwaRestController extends ControllerInterface {
 				if (mpf != null && !mpf.isEmpty()) {
 					String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
 					boolean fIsMetadataFile = "phenotype".equals(fileExtension);
-					if (fIsMetadataFile && metadataFilePath != null)
+					if (fIsMetadataFile && metadataFile != null)
 						progress.setError("Only one metadata file may be provided at a time!");
 					else if (filesByExtension.containsKey(fileExtension))
 						progress.setError("Each provided datasource entry must be of a different kind!");
@@ -1617,7 +1617,7 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						mpf.transferTo(file);
 						if (fIsMetadataFile)
-							metadataFilePath = file.getPath();
+							metadataFile = file;
 						else {
 							nTotalUploadSize += file.length();
 							nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
@@ -1766,6 +1766,31 @@ public class GigwaRestController extends ControllerInterface {
 				fileToDelete.delete();
 		else {
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
+			final File finalMetadataFile = metadataFile;
+			final HttpSession session = request.getSession();
+			Thread metadataImportThread = metadataFile == null ? null : new Thread() {	// will run in parallel along the main import process, starting once the latter is able to provide us with the involved individuals and samples
+				public void run() {
+					try {
+						do {
+							sleep(100);
+							System.err.println(genotypeImporter.get().getImportedIndividualsAndSamples() != null);
+						} while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && genotypeImporter.get().getImportedIndividualsAndSamples() == null);
+						
+						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
+							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
+						else
+							LOG.error("Unable to process metadata during mixed import!");
+					} catch (Exception e) {
+						progress.setError(e.getMessage());
+						LOG.error("Error importing metadata along with genotyping data", e);
+					}
+					finally {
+						if (metadataUri1 == null || metadataUri1.isEmpty())
+							finalMetadataFile.delete();
+					}
+				}
+			};
+
 			if (!fGotDataToImport)	{	// we're only updating a project description
 				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 				MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
@@ -1911,8 +1936,10 @@ public class GigwaRestController extends ControllerInterface {
 							Scanner scanner = null;
 							try {							
 								Integer newProjId = null;
-								if (fBrapiImport)
-									newProjId = new BrapiImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								if (fBrapiImport) {
+									genotypeImporter.set(new BrapiImport(processId).setParallelProcess(metadataImportThread));
+									newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								}
 								else {
 									HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
 									if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
@@ -1929,25 +1956,25 @@ public class GigwaRestController extends ControllerInterface {
 										if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 											Serializable mapFile = filesByExtension.get("map");
 											boolean fIsGenotypingFileLocal = mapFile instanceof File;
-											genotypeImporter.set(new PlinkImport(processId));
+											genotypeImporter.set(new PlinkImport(processId).setParallelProcess(metadataImportThread));
 											newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										}
 										else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 											Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 											boolean fIsGenotypingFileLocal = s instanceof File;
-											genotypeImporter.set(new VcfImport(processId));
+											genotypeImporter.set(new VcfImport(processId).setParallelProcess(metadataImportThread));
 											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										}
 	                                    else if (filesByExtension.containsKey("intertek")) {
 	                                        Serializable s = filesByExtension.get("intertek");                                                                               
 	                                        boolean fIsGenotypingFileLocal = s instanceof File;
-	                                        genotypeImporter.set(new IntertekImport(processId));
+	                                        genotypeImporter.set(new IntertekImport(processId).setParallelProcess(metadataImportThread));
 	                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 	                                    }
 										else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 											Serializable mapFile = filesByExtension.get("map");
 											boolean fIsGenotypingFileLocal = mapFile instanceof File;
-											genotypeImporter.set(new FlapjackImport(processId));
+											genotypeImporter.set(new FlapjackImport(processId).setParallelProcess(metadataImportThread));
 											newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 	
 										}
@@ -1956,7 +1983,7 @@ public class GigwaRestController extends ControllerInterface {
 											boolean fIsGenotypingFileLocal = s instanceof File;
 											scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 											if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
-												genotypeImporter.set(new HapMapImport(processId));
+												genotypeImporter.set(new HapMapImport(processId).setParallelProcess(metadataImportThread));
 												newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else
@@ -1971,7 +1998,7 @@ public class GigwaRestController extends ControllerInterface {
 										else
 											LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
 										
-										genotypeImporter.set(new VcfImport(processId));
+										genotypeImporter.set(new VcfImport(processId).setParallelProcess(metadataImportThread));
 										newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 								}
@@ -2050,33 +2077,8 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			}
 			
-			if (metadataFilePath != null) {
-				System.err.println("GotMetadataToImport");
-				final File metadataFile = new File(metadataFilePath);
-				HttpSession session = request.getSession();
-				new Thread() {
-					public void run() {
-						try {
-							do {
-								sleep(100);
-								System.err.println(genotypeImporter.get().getImportedIndividualsAndSamples() != null);
-							} while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && genotypeImporter.get().getImportedIndividualsAndSamples() != null);
-							
-							if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
-								IndividualMetadataImport.importIndividualOrSampleMetadata(null, session, metadataFile.toURI().toURL(), metadataType, null, auth.getName());
-							else
-								LOG.error("Unable to process metadata during mixed import!");
-						} catch (Exception e) {
-							progress.setError(e.getMessage());
-							LOG.error("Error importing metadata along with genotyping data", e);
-						}
-						finally {
-							if (metadataUri1 == null || metadataUri1.isEmpty())
-								metadataFile.delete();
-						}
-					}
-				}.start();
-			}
+			if (metadataFile != null)
+				metadataImportThread.start();
 		}
 
 		return processId;
