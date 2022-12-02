@@ -81,7 +81,7 @@ function $_GET(param) {
 function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
     var functionToCall = function(onSuccessMethod) {
         $.ajax({
-            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),
+            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),	// if no processId provided, server code will use auth token instead
             type: "GET",
             headers: {
                 "Authorization": "Bearer " + token
@@ -91,7 +91,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                     displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                 else if (jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
-                        onSuccessMethod();
+                        onSuccessMethod(jsonResult['finalMessage']);
                     $('#progress').modal('hide');
                 }
                 else if (jsonResult['aborted'] == true) {
@@ -122,7 +122,6 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
 
 function abort(token) {
     $('#progressText').html("Aborting...").fadeIn();
-    processAborted = true;
     $('#exportPanel').hide();
     $.ajax({
         url: abortUrl,
@@ -131,12 +130,13 @@ function abort(token) {
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-            $('#progress').data('error', true);
             if (jsonResult.processAborted === true) {
+				processAborted = true;
+	            $('#progress').data('error', true);
                 $('#progress').modal('hide');
             } else {
                 handleError(null, "unable to abort");
-                $('#progress').modal('hide');
+                //$('#progress').modal('hide');
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {

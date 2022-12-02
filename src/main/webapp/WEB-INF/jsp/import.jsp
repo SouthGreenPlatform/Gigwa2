@@ -65,6 +65,7 @@
 	    	var webappUrl = "<c:url value='/' />";
             var token;
             var processAborted = false;
+            var importFinalMessage = null;
             var metadataError;
             var maxUploadSizeInMb, maxImportSizeInMb;
         	var BRAPI_V1_URL_ENDPOINT;

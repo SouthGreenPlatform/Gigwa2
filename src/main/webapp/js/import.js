@@ -72,11 +72,15 @@ $(document).ready(function () {
             handleError(xhr, thrownError);
         }
     });
-        
+
+    function onImportSuccessMethod(finalMessage) {
+		importFinalMessage = finalMessage;
+	} 
+    
     $(function() {
   	  Dropzone.options.importDropzoneG = {
   		maxFiles: 3,
-  		parallelUploads: 3,
+  		parallelUploads: 5,
   		previewsContainer: "#dropZonePreviewsG",
   	    dictResponseError: 'Error importing data',
   	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.tsv,.csv",
@@ -99,10 +103,14 @@ $(document).ready(function () {
   	        $('.meter').show();
   	      });
   	      self.on("success", function(file, processId) {
-              displayProcessProgress(5, token, processId);
-              $("button#asyncWatch").on("click", function() {
-     			 window.open('ProgressWatch.jsp?process=' + processId + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
-             });
+			  if (importDropzoneG.getActiveFiles().length == 0) {	// wait for the last file to be uploaded before checking for progress
+				  $('button#abort').attr('rel', processId);
+				  importFinalMessage = null;
+	              displayProcessProgress(5, token, processId, onImportSuccessMethod);
+	              $("button#asyncWatch").on("click", function() {
+	     			 window.open('ProgressWatch.jsp?process=' + processId + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
+	              });
+	           }
           });
   	    }
   	  };
@@ -122,9 +130,6 @@ $(document).ready(function () {
        	      self.options.maxFilesize = 5;
        	   	  self.options.autoProcessQueue = false;
        	   	  self.options.uploadMultiple = true;
-	          /*self.options.renameFile = function(file) { // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
-				return file.name + (!file.name.endsWith(".phenotype") ? ".phenotype" : "");
-			  };*/
 	  	      self.on("addedfile", function (file) {
 	  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
 	  	      });
@@ -135,20 +140,27 @@ $(document).ready(function () {
        	        $('.meter').show();
        	      });
        	      self.on("success", function(file, response) {
-                  if (self.options.url == metadataValidationURL) {
-					  untouchMdDropzoneFiles();
-				      console.log(response);
-				  }
-                  else { // in this case the response contains the ID of the process we want to watch
-                      displayProcessProgress(5, token, response);
-                      $("button#asyncWatch").on("click", function() {
-                	       window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
-                      });
-                  }
+				if (self.options.url == metadataValidationURL) {
+			        $(file).removeClass('dz-processing');
+			        $(file).removeClass('dz-success');
+			        $(file).removeClass('dz-complete');
+			        $(file).removeClass('dz-error');
+			        file.status = Dropzone.QUEUED;
+			        
+			        if (importDropzoneG.getActiveFiles().length == 0)
+			        	console.log(response);
+			    }
+				else if (importDropzoneG.getActiveFiles().length == 0) { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
+                	importFinalMessage = null;
+                	displayProcessProgress(5, token, response, onImportSuccessMethod); // in this case the response contains the ID of the process we want to watch
+                	$("button#asyncWatch").on("click", function() {
+                    	window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
+                	});
+                }
               });
-              self.on("error", function(response, ajaxOptions, thrownError) {
-                    untouchMdDropzoneFiles();
-                    handleError(response.xhr, thrownError);
+              self.on("error", function(file, msg) {
+				//untouchMdDropzoneFiles();
+                handleError(file.xhr, msg);
               });
        	    }
        	  };
@@ -158,7 +170,7 @@ $(document).ready(function () {
     $('button#importButton').on("click", function() { importDataIfValid(); });
 });
 
-function untouchMdDropzoneFiles() {
+/*function untouchMdDropzoneFiles() {
     $("form#importDropzoneMD .dz-file-preview").each(function() {
         $(this).removeClass('dz-processing');
         $(this).removeClass('dz-success');
@@ -169,7 +181,7 @@ function untouchMdDropzoneFiles() {
     $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue so they remain available for the actual import
         file.status = Dropzone.QUEUED;
     });
-}
+}*/
 
 $(function () {
     $('#moduleExistingG').on('change', function () {
@@ -195,10 +207,12 @@ $(function () {
     $(".mandatoryGtField").change(function() {
 		var isFormValid = isGenotypingDataFormValid(false);
 //		console.log(isFormValid);
-		if (isFormValid)
+		if (isFormValid) {
 			$('span#gtFormValid').show();
+			$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
+		}
 		else
-			$('span#gtFormValid').hide();
+			$('span#gtFormValid').hide();			
     });
     
     $('#projectExisting').on('change', function () {
@@ -246,28 +260,40 @@ $(function () {
     });
 
     $('#progress').on('hidden.bs.modal', function () {
-    	if (processAborted)
-    		alert("Import aborted as requested");
-    	else if (!$('#progress').data('error')) {
+    	if (!processAborted && !$('#progress').data('error')) {
             $('.importFormDiv input').prop('disabled', true);
             $('.importFormDiv button').prop('disabled', true);
             $('.importFormDiv textarea').prop('disabled', true);
-            if ($('#metadataTab').hasClass("active")) {
-                var link = webappUrl + "?module=" + $('#moduleExistingMD').val(); 
-                $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Amended data is now <a href="' + link + '">available here</a></p>');
-                $('#progress').modal('show');
-                importDropzoneMD.destroy();
-            } else {
-                var link1 = webappUrl + "?module=" + $("#moduleToImport").val() + "&project=" + $("#projectToImport").val(), link2 = importPageUrl + "?module=" + $("#moduleToImport").val() + "&type=metadata";
-                $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>Data is now <a style="cursor:pointer;" href="' + link1 + '">available here</a></p><p class="bold panel" style="padding:10px;">You may upload metadata for individuals or samples <a style="cursor:pointer;" href="' + link2 + '">via this link</a></p>');
-                $('#progress').modal('show');
-                importDropzoneG.destroy();
-            }
+            var gtFormOK = $('span#gtFormValid').is(":visible"), mdFormOK = $('span#mdFormValid').is(":visible");
+            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>This data is now <a style="cursor:pointer;" href="' + webappUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + (gtFormOK ? "&project=" + $("#projectToImport").val() : "") + '">available here</a></p>');
+            if (importFinalMessage != null)
+            	$('#progressContents').append('<p class="bold panel" style="padding:10px;">' + importFinalMessage + '</p>');
+           	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + $("#moduleToImport").val() + '&type=metadata">via this link</a></p>');
+            if (mdFormOK)
+            	importDropzoneMD.destroy();
+            if (gtFormOK)
+            	importDropzoneG.destroy();
+            $('#progress').modal('show');
         }
-        else	// re-add files to the queue if an error occured
-            $.each(($('#metadataTab').hasClass("active") ? importDropzoneMD : importDropzoneG).files, function(i, file) {
+        else {
+	    	if (processAborted)
+	    		alert("Import aborted as requested");
+
+			var gtImportAttempted = $('span#gtFormValid').is(":visible");
+		  	if (gtImportAttempted) {
+				importDropzoneG.options.maxFiles -= importDropzoneMD.getAcceptedFiles().length;
+				for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
+					var file = importDropzoneMD.getAcceptedFiles()[i];
+					console.log("removing " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
+		    		importDropzoneG.removeFile(file);
+				}
+           	}
+			// re-add files to the queue
+            $.each((gtImportAttempted ? importDropzoneG : importDropzoneMD).getAcceptedFiles(), function(i, file) {
+				console.log("queuing " + file.name);
                 file.status = Dropzone.QUEUED;
             });
+        }
     });
 
     $('#brapiPwdDialog').on('hidden.bs.modal', function () {
@@ -303,7 +329,7 @@ $(function () {
 });
 
 function checkBrapiMetadata() {
-	if (dataFile1 = $("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
+	if ($("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
 		return;	// nothing to check
 
     importDropzoneMD.options.url = metadataValidationURL;
@@ -553,9 +579,9 @@ function isGenotypingDataFormValid(showAlerts) {
 
 	var dataFile1 = $("input[name=dataFile1]").val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
     var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0) + (dataFile3 != "" ? 1 : 0);
-    if (totalDataSourceCount > 3) {
+    if (totalDataSourceCount > importDropzoneG.options.maxFiles) {
     	if (showAlerts)
-            alert("You may not provide more than 3 data-source entries!");
+            alert("You may not provide more than " + importDropzoneG.options.maxFiles + " data-source entries!");
         return false;
     }
     
@@ -659,14 +685,22 @@ function importGenotypes(importMetadataToo) {
     }
     
     $('#progressText').html("Please wait...");
-    $('button#abort').attr('rel', token);
     processAborted = false;
     
 	if (importMetadataToo) {
-		for (var i=0; i<importDropzoneMD.getQueuedFiles().length; i++) {
-			var file = importDropzoneMD.getQueuedFiles()[i];
+		importDropzoneG.options.maxFiles += importDropzoneMD.getAcceptedFiles().length;
+		for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
+			var file = importDropzoneMD.getAcceptedFiles()[i];
+			file.accepted = null;	// remove this flag that was for the other DropZone (it needs to be set by this one otherwise it gets confused counting accepted files)
+		    var isPhenotypeFile = file.name.endsWith(".phenotype");
+		    if (isPhenotypeFile)
+				importDropzoneG.options.acceptedFiles += ",.phenotype";
+			console.log("adding " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
 		    importDropzoneG.addFile(file);
-			file.upload.filename += (!file.name.endsWith(".phenotype") ? ".phenotype" : ""); // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+		    if (isPhenotypeFile)
+		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
+	    	else
+				file.upload.filename += ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
         }
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
@@ -684,7 +718,6 @@ function importGenotypes(importMetadataToo) {
         blob.upload = { name:"nofiles" };
         importDropzoneG.uploadFile(blob);
     }
-    importDropzoneG.removeFile(importDropzoneMD.getQueuedFiles()[i]);
 }
 
 function isMetaDataFormValid(showAlerts) {
@@ -694,7 +727,7 @@ function isMetaDataFormValid(showAlerts) {
         return false;
     }
     
-    if ($('#moduleExistingMD').val() == "") {
+    if ($('#moduleExistingMD').is(":visible") && $('#moduleExistingMD').val() == "") {
 		if (showAlerts)
     		alert("Please select a database!");
     	return false;
@@ -852,7 +885,6 @@ function loadModules() {
     			}
     			
                 $('#moduleExistingMD').val(passedModule).selectpicker('refresh');
-                //$('#moduleExistingMD').change();
 			}
         },
         error: function (xhr, ajaxOptions, thrownError) {
