@@ -1265,10 +1265,10 @@ public class GigwaRestController extends ControllerInterface {
 		return result;
 	}
 	
-	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> uploadedFiles, Collection<String> filesSpecifiedByURI) throws Exception{
+	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> importFiles, Collection<String> filesSpecifiedByURI) throws Exception{
         HashMap<String, String> filesByExtension = new HashMap<>();
         HashMap<String, String> synonymExtensions = new HashMap() {{ put("csv", "tsv"); }};
-        for (MultipartFile mpf : uploadedFiles) {
+        for (MultipartFile mpf : importFiles) {
             if (mpf != null && !mpf.isEmpty()) {
                 String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
                 if (synonymExtensions.containsKey(fileExtension))
@@ -1631,6 +1631,7 @@ public class GigwaRestController extends ControllerInterface {
 //		}
 
 		boolean fAdminImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
+		boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2, dataUri3))
 			{
@@ -1765,6 +1766,7 @@ public class GigwaRestController extends ControllerInterface {
 			for (File fileToDelete : uploadedFiles)
 				fileToDelete.delete();
 		else {
+			AtomicReference<String> metadataImportError = new AtomicReference<>();
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
 			final File finalMetadataFile = metadataFile;
 			final HttpSession session = request.getSession();
@@ -1772,17 +1774,17 @@ public class GigwaRestController extends ControllerInterface {
 				public void run() {
 					try {
 						do {
-							sleep(100);
+							sleep(2000);
 							System.err.println(genotypeImporter.get().getImportedIndividualsAndSamples() != null);
 						} while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && genotypeImporter.get().getImportedIndividualsAndSamples() == null);
 						
 						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
 							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
 						else
-							LOG.error("Unable to process metadata during mixed import!");
+							metadataImportError.set("Unable to process metadata during mixed import!");
 					} catch (Exception e) {
-						progress.setError(e.getMessage());
 						LOG.error("Error importing metadata along with genotyping data", e);
+						metadataImportError.set("Error importing metadata along with genotyping data. " + e.getMessage());
 					}
 					finally {
 						if (metadataUri1 == null || metadataUri1.isEmpty())
@@ -1821,30 +1823,30 @@ public class GigwaRestController extends ControllerInterface {
 					String serversAllowedToImport = appConfig.get("serversAllowedToImport");
 					if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
 						progress.setError("Remote client not allowed to import: " + remoteAddr);
-				}
 	
-				boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
-				Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
-				boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
-				if (progress.getError() == null && fDatasourceExists) {
-					if (fMayOnlyWriteTmpData)
-						progress.setError("You may only write to temporary databases");
-					else if (!writableDBs.contains(sNormalizedModule))
-						progress.setError("You may now write to database " + sNormalizedModule);
+					Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
+					boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
+					if (progress.getError() == null && fDatasourceExists) {
+						if (fMayOnlyWriteTmpData)
+							progress.setError("You may only write to temporary databases");
+						else if (!writableDBs.contains(sNormalizedModule))
+							progress.setError("You may now write to database " + sNormalizedModule);
+					}
+
+					if (progress.getError() != null)
+						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
+							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
+							+ request.getHeader("referer") + ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName()/* + ", fIsCalledFromInterface:" + fIsCalledFromInterface*/);
 				}
-				
+			
 				if (progress.getError() != null) {
 					for (File fileToDelete : uploadedFiles)
 						fileToDelete.delete();
-					
-						if (progress.getError() != null)
-							LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
-								+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-								+ request.getHeader("referer") + ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName()/* + ", fIsCalledFromInterface:" + fIsCalledFromInterface*/);
 					return processId;
 				}
 	
 				Long expiryDate = null;
+				final boolean fDatasourceAlreadyExisted = fDatasourceExists;
 				if (!fDatasourceExists) {
 					progress.addStep("Creating datasource");
 					progress.moveToNextStep();
@@ -1878,172 +1880,190 @@ public class GigwaRestController extends ControllerInterface {
 					} catch (Exception e) {
 						LOG.error("Error creating datasource " + sNormalizedModule, e);
 						progress.setError(e.getMessage());
-					}
-				}
-	
-				final boolean fDatasourceAlreadyExisted = fDatasourceExists;
-				if (fDatasourceExists) {
-					final MongoTemplate finalMongoTemplate = MongoTemplateManager.get(sNormalizedModule);
-					if (project != null) {
-					    if (!tokenManager.canUserWriteToProject(authToken, sNormalizedModule, project.getId())) {
-					        progress.setError("You are not allowed to write to this project!");
-					        return processId;
-					    }
-					}
-					else if (expiryDate == null && !tokenManager.canUserCreateProjectInDB(authToken, sModule)) // if it's a temp db then don't check for permissions
-					{
-						progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
-						if (!fDatasourceAlreadyExisted) {
-							if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
-								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to unauthorized import attempt");
-						}
 						for (File fileToDelete : uploadedFiles)
 							fileToDelete.delete();
 						return processId;
 					}
-					
-					Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
-					boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
-					if (sampleMappingFile != null) {
-						if (fBrapiImport) {
-					        progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
-					        return processId;
-					    }
+				}
 	
-						Scanner sampleMappingScanner = new Scanner(new File(sampleMappingFile.toString()));
-			        	if (!sampleMappingScanner.hasNextLine()) {
-					        progress.setError("Sample-mapping file is empty!");
-					        return processId;
-					    }
-			        	else {
-			        		List<String> splitLine = Helper.split(sampleMappingScanner.nextLine(), "\t");
-			        		if (splitLine.size() != 2) {
-						        progress.setError("Sample-mapping file has a wrong structure (2 columns expected)!");
+				try {
+					if (fDatasourceExists) {
+						final MongoTemplate finalMongoTemplate = MongoTemplateManager.get(sNormalizedModule);
+						if (project != null) {
+						    if (!tokenManager.canUserWriteToProject(authToken, sNormalizedModule, project.getId())) {
+						        progress.setError("You are not allowed to write to this project!");
 						        return processId;
 						    }
-			        		if (!splitLine.contains("individual") || !splitLine.contains("sample")) {
-						        progress.setError("Sample-mapping header must contain 2 columns named sample and individual!");
+						}
+						else if (expiryDate == null && !tokenManager.canUserCreateProjectInDB(authToken, sModule)) // if it's a temp db then don't check for permissions
+						{
+							progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
+							return processId;
+						}
+						
+						Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
+						boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
+						if (sampleMappingFile != null) {
+							if (filesByExtension.size() == 1) {
+						        progress.setError("You must provide some genotyping data with your sample-mapping file!");
 						        return processId;
 						    }
-			        	}
-						sampleMappingScanner.close();
-					}
-	
-					final AtomicInteger createdProjectId = new AtomicInteger(-1);
-					final SecurityContext securityContext = SecurityContextHolder.getContext();
-					new Thread() {
-						public void run() {
-							Scanner scanner = null;
-							try {							
-								Integer newProjId = null;
-								if (fBrapiImport) {
-									genotypeImporter.set(new BrapiImport(processId).setParallelProcess(metadataImportThread));
-									newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-								}
-								else {
-									HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
-									if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
-										Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
-										if (Boolean.TRUE.equals(fClearProjectData))
-											crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
-										if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
-									        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
-									        return;
-										}
-								    }
-	
-									if (!filesByExtension.containsKey("gz")) {
-										if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
-											Serializable mapFile = filesByExtension.get("map");
-											boolean fIsGenotypingFileLocal = mapFile instanceof File;
-											genotypeImporter.set(new PlinkImport(processId).setParallelProcess(metadataImportThread));
-											newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-										}
-										else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
-											Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
-											boolean fIsGenotypingFileLocal = s instanceof File;
-											genotypeImporter.set(new VcfImport(processId).setParallelProcess(metadataImportThread));
-											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-										}
-	                                    else if (filesByExtension.containsKey("intertek")) {
-	                                        Serializable s = filesByExtension.get("intertek");                                                                               
-	                                        boolean fIsGenotypingFileLocal = s instanceof File;
-	                                        genotypeImporter.set(new IntertekImport(processId).setParallelProcess(metadataImportThread));
-	                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-	                                    }
-										else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
-											Serializable mapFile = filesByExtension.get("map");
-											boolean fIsGenotypingFileLocal = mapFile instanceof File;
-											genotypeImporter.set(new FlapjackImport(processId).setParallelProcess(metadataImportThread));
-											newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-	
-										}
-										else {
-											Serializable s = filesByExtension.values().iterator().next();                                                                                
-											boolean fIsGenotypingFileLocal = s instanceof File;
-											scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-											if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
-												genotypeImporter.set(new HapMapImport(processId).setParallelProcess(metadataImportThread));
-												newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+							
+							if (fBrapiImport) {
+						        progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
+						        return processId;
+						    }
+		
+							Scanner sampleMappingScanner = new Scanner(new File(sampleMappingFile.toString()));
+				        	if (!sampleMappingScanner.hasNextLine()) {
+						        progress.setError("Sample-mapping file is empty!");
+						        return processId;
+						    }
+				        	else {
+				        		List<String> splitLine = Helper.split(sampleMappingScanner.nextLine(), "\t");
+				        		if (splitLine.size() != 2) {
+							        progress.setError("Sample-mapping file has a wrong structure (2 columns expected)!");
+							        return processId;
+							    }
+				        		if (!splitLine.contains("individual") || !splitLine.contains("sample")) {
+							        progress.setError("Sample-mapping header must contain 2 columns named sample and individual!");
+							        return processId;
+							    }
+				        	}
+							sampleMappingScanner.close();
+							filesByExtension.remove(FilenameUtils.getExtension(sampleMappingFile.toString()));
+						}
+		
+						final AtomicInteger createdProjectId = new AtomicInteger(-1);
+						final SecurityContext securityContext = SecurityContextHolder.getContext();
+						new Thread() {
+							public void run() {
+								Scanner scanner = null;
+//								boolean fUserAborted = false;
+								try {
+									Integer newProjId = null;
+									if (fBrapiImport) {
+										genotypeImporter.set(new BrapiImport(processId));
+										newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									}
+									else {
+										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
+										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
+											Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
+											if (Boolean.TRUE.equals(fClearProjectData))
+												crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
+											if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
+										        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
+										        return;
 											}
+									    }
+		
+										if (!filesByExtension.containsKey("gz")) {
+											if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
+												Serializable mapFile = filesByExtension.get("map");
+												boolean fIsGenotypingFileLocal = mapFile instanceof File;
+												genotypeImporter.set(new PlinkImport(processId));
+												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											}
+											else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
+												Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
+												boolean fIsGenotypingFileLocal = s instanceof File;
+												genotypeImporter.set(new VcfImport(processId));
+												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											}
+		                                    else if (filesByExtension.containsKey("intertek")) {
+		                                        Serializable s = filesByExtension.get("intertek");                                                                               
+		                                        boolean fIsGenotypingFileLocal = s instanceof File;
+		                                        genotypeImporter.set(new IntertekImport(processId));
+		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+		                                    }
+											else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
+												Serializable mapFile = filesByExtension.get("map");
+												boolean fIsGenotypingFileLocal = mapFile instanceof File;
+												genotypeImporter.set(new FlapjackImport(processId));
+												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+		
+											}
+											else {
+												Serializable s = filesByExtension.values().iterator().next();                                                                                
+												boolean fIsGenotypingFileLocal = s instanceof File;
+												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
+												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
+													genotypeImporter.set(new HapMapImport(processId));
+													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												}
+												else
+													throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+											}
+										}
+										else { // looks like a compressed file
+											Serializable s = filesByExtension.get("gz");
+											boolean fIsGenotypingFileLocal = s instanceof File;
+											if (fIsGenotypingFileLocal)
+												BlockCompressedInputStream.assertNonDefectiveFile((File) s);
 											else
-												throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+												LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
+											
+											genotypeImporter.set(new VcfImport(processId));
+											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										}
 									}
-									else { // looks like a compressed file
-										Serializable s = filesByExtension.get("gz");
-										boolean fIsGenotypingFileLocal = s instanceof File;
-										if (fIsGenotypingFileLocal)
-											BlockCompressedInputStream.assertNonDefectiveFile((File) s);
-										else
-											LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
+
+									if (progress.getError() == null && !progress.isAborted()) {
+										createdProjectId.set(newProjId != null ? newProjId : -1);
 										
-										genotypeImporter.set(new VcfImport(processId).setParallelProcess(metadataImportThread));
-										newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										if (fGotProjectDesc)
+											finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
+			
+										if (newProjId != null)
+											MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
+										
+										String sCompletionMessage = null;
+										if (metadataImportThread != null) {
+											if (metadataImportError.get() != null)
+												sCompletionMessage = metadataImportError.get();
+											else {
+												long delay = 1000 * 60, parallelProcessWaitStart = System.currentTimeMillis();
+												while (metadataImportThread.isAlive() && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
+													Thread.sleep(1000);
+													progress.setProgressDescription("Waiting for metadata import to complete...");
+												}
+												if (metadataImportThread.isAlive()) {
+													sCompletionMessage = "WARNING: metadata import may have failed (not terminated 1 minute after genotype import ended)";
+													LOG.error("Gave up waiting for metadata import thread to complete");
+												}
+												else if (metadataImportError.get() != null)
+													sCompletionMessage = metadataImportError.get();
+												else {
+													sCompletionMessage = "NB: Metadata imported successfully";
+													LOG.info("Metadata import thread completed");
+												}
+											}
+										}
+										progress.markAsComplete(sCompletionMessage);
 									}
 								}
-								
-								createdProjectId.set(newProjId != null ? newProjId : -1);
-								
-								if (progress.isAborted())
-									throw new CancellationException();	// throw an exception so we enter the catch block where cleanup is done
-	
-								if (fGotProjectDesc)
-									finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
-	
-								if (newProjId != null)
-									MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
-							}
-							catch (Exception e) {
-								boolean fUserAborted = e instanceof CancellationException;
-								if (!fUserAborted) {
+								catch (Exception e) {
 									String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
 									LOG.error("Error importing data from " + fileExtensions + (e instanceof SocketTimeoutException ? " (server-side needs maxParameterCount set to -1 in server.xml)" : ""), e);
 									progress.setError("Error importing from " + fileExtensions + ": " + ExceptionUtils.getStackTrace(e));
 								}
-								
-								String sCleanupReason = fUserAborted ? "user abort" : "previous import error";
-								if (!fDatasourceAlreadyExisted && MongoTemplateManager.removeDataSource(sNormalizedModule, true))
-									LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to " + sCleanupReason);
-								else
-								{
-									if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
-										try {
-											moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));
-										} catch (Exception e1) {
-											LOG.error("Error cleaning up run data subsequently to " + sCleanupReason, e1);
+								finally {
+									if (progress.getError() != null || progress.isAborted()) {	// failed or aborted: do some cleanup
+										String sCleanupReason = !progress.isAborted() ? "error: " + progress.getError() : "user abort";
+										if (fDatasourceAlreadyExisted) {
+											if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
+												try {
+													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));	// remove run
+												} catch (Exception e1) {
+													LOG.error("Error cleaning up run data subsequently to " + sCleanupReason, e1);
+												}
+												moduleManager.cleanupDb(sModule);
 										}
-									
-									moduleManager.cleanupDb(sModule);
-								}
-							}
-							finally {
-								if (!fDatasourceAlreadyExisted) {
-									if (progress.getError() != null && !progress.isAborted()) {
-										MongoTemplateManager.removeDataSource(sModule, true);
-						                LOG.debug("Removed datasource created for an import that failed: " + sModule);
+										else if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
+											LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to " + sCleanupReason);
 									}
-									else if (!fAnonymousImporter && !fAdminImporter) { // a new permanent database was created so we give this user supervisor role on it
+									else if (!fDatasourceAlreadyExisted && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
 									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
 									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
@@ -2063,17 +2083,26 @@ public class GigwaRestController extends ControllerInterface {
 										catch (IOException e) {
 											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
 										}
-									}
+		
+									if (scanner != null)
+										scanner.close();
+		
+									for (File fileToDelete : uploadedFiles)
+										fileToDelete.delete();
 								}
-	
-								if (scanner != null)
-									scanner.close();
-	
-								for (File fileToDelete : uploadedFiles)
-									fileToDelete.delete();
 							}
+						}.start();
+					}
+				}
+				finally {	// An error was emitted before starting the import thread
+					if (progress.getError() != null) {
+						if (!fDatasourceAlreadyExisted) {
+							if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
+								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to failed or unauthorized import attempt");
 						}
-					}.start();
+						for (File fileToDelete : uploadedFiles)
+							fileToDelete.delete();
+					}
 				}
 			}
 			
