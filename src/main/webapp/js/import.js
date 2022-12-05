@@ -30,7 +30,6 @@ window.onbeforeunload = function(e) {
 $(document).ready(function () {
     Dropzone.autoDiscover = false;
 	
-	updateSelectedMetadataType();
     $('#moduleProjectNavbar').hide();
     $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
 	getToken();
@@ -78,7 +77,7 @@ $(document).ready(function () {
 	} 
     
     $(function() {
-  	  Dropzone.options.importDropzoneG = {
+  	  importDropzoneG = new Dropzone("#importDropzoneG", {
   		maxFiles: 3,
   		parallelUploads: 5,
   		previewsContainer: "#dropZonePreviewsG",
@@ -113,62 +112,81 @@ $(document).ready(function () {
 	           }
           });
   	    }
-  	  };
-  	  importDropzoneG = new Dropzone("#importDropzoneG");
+  	  });
   	    	  
-  	  Dropzone.options.importDropzoneMD = {
-       		maxFiles: 1,
-       		previewsContainer: "#dropZonePreviewsMD",
-       	    dictResponseError: 'Error importing data',
-       	    acceptedFiles: ".tsv,.csv,.phenotype",
-       	  	headers: {
-       	  		"Authorization": "Bearer " + token
-       	  	},
-       	  	previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>",
-       	    init:function(){
-       	      var self = this;
-       	      self.options.maxFilesize = 5;
-       	   	  self.options.autoProcessQueue = false;
-       	   	  self.options.uploadMultiple = true;
-	  	      self.on("addedfile", function (file) {
-	  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
-	  	      });
-	  	      self.on("removedfile", function (file) {
-	  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
-	  	      });
-       	      self.on("sending", function (file) {
-       	        $('.meter').show();
-       	      });
-       	      self.on("success", function(file, response) {
-				if (self.options.url == metadataValidationURL) {
-			        $(file).removeClass('dz-processing');
-			        $(file).removeClass('dz-success');
-			        $(file).removeClass('dz-complete');
-			        $(file).removeClass('dz-error');
-			        file.status = Dropzone.QUEUED;
-			        
-			        if (importDropzoneG.getActiveFiles().length == 0)
-			        	console.log(response);
-			    }
-				else if (importDropzoneG.getActiveFiles().length == 0) { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
-                	importFinalMessage = null;
-                	displayProcessProgress(5, token, response, onImportSuccessMethod); // in this case the response contains the ID of the process we want to watch
-                	$("button#asyncWatch").on("click", function() {
-                    	window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
-                	});
-                }
-              });
-              self.on("error", function(file, msg) {
-				//untouchMdDropzoneFiles();
-                handleError(file.xhr, msg);
-              });
-       	    }
-       	  };
-       	  importDropzoneMD = new Dropzone("#importDropzoneMD");
+   	  importDropzoneMD = new Dropzone("#importDropzoneMD", {
+   		maxFiles: 1,
+   		previewsContainer: "#dropZonePreviewsMD",
+   	    dictResponseError: 'Error importing data',
+   	    acceptedFiles: ".tsv,.csv,.phenotype",
+   	  	headers: {
+   	  		"Authorization": "Bearer " + token
+   	  	},
+   	  	previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>",
+   	    init:function(){
+   	      var self = this;
+   	      self.options.maxFilesize = 5;
+   	   	  self.options.autoProcessQueue = false;
+   	   	  self.options.uploadMultiple = true;
+  	      self.on("addedfile", function (file) {
+  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
+  	      });
+  	      self.on("removedfile", function (file) {
+  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
+  	      });
+   	      self.on("sending", function (file) {
+   	        $('.meter').show();
+   	      });
+   	      self.on("success", function(file, response) {
+			if (self.options.url == metadataValidationURL) {
+		        $(file).removeClass('dz-processing');
+		        $(file).removeClass('dz-success');
+		        $(file).removeClass('dz-complete');
+		        $(file).removeClass('dz-error');
+		        file.status = Dropzone.QUEUED;
+		        
+		        if (importDropzoneG.getActiveFiles().length == 0)
+		        	distinctBrapiMetadataURLs = response;
+		        	//console.log(response);
+		        	//metadataFormChanged();
+		    }
+			else if (importDropzoneG.getActiveFiles().length == 0) { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
+            	importFinalMessage = null;
+            	displayProcessProgress(5, token, response, onImportSuccessMethod); // in this case the response contains the ID of the process we want to watch
+            	$("button#asyncWatch").on("click", function() {
+                	window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
+            	});
+            }
+          });
+          self.on("error", function(file, msg) {
+			//untouchMdDropzoneFiles();
+            handleError(file.xhr, msg);
+          });
+   	    }
+   	  });
   	})
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
 });
+/*
+function getIndividualsWithBrapiMappingURL() {
+    $.ajax({
+        url: individualsWithBrapiMappingURL + "?module=" + ($('#moduleExistingMD').is(":visible") ? $('#moduleExistingMD').val() : $('#moduleExistingG').val()),
+        type: "GET",
+        async: false,
+        dataType: "json",
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+            console.log(jsonResult);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });	
+}*/
 
 /*function untouchMdDropzoneFiles() {
     $("form#importDropzoneMD .dz-file-preview").each(function() {
@@ -207,12 +225,16 @@ $(function () {
     $(".mandatoryGtField").change(function() {
 		var isFormValid = isGenotypingDataFormValid(false);
 //		console.log(isFormValid);
-		if (isFormValid) {
+		$('span#gtFormValid').hide();
+		$('span#gtFormInvalid').hide();
+		if (isFormValid == null)
+			return;	// null means untouched
+
+		if (isFormValid)
 			$('span#gtFormValid').show();
-			$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
-		}
 		else
-			$('span#gtFormValid').hide();			
+			$('span#gtFormInvalid').show();			
+		$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
     });
     
     $('#projectExisting').on('change', function () {
@@ -284,13 +306,13 @@ $(function () {
 				importDropzoneG.options.maxFiles -= importDropzoneMD.getAcceptedFiles().length;
 				for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
 					var file = importDropzoneMD.getAcceptedFiles()[i];
-					console.log("removing " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
+					//console.log("removing " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
 		    		importDropzoneG.removeFile(file);
 				}
            	}
 			// re-add files to the queue
             $.each((gtImportAttempted ? importDropzoneG : importDropzoneMD).getAcceptedFiles(), function(i, file) {
-				console.log("queuing " + file.name);
+				//console.log("queuing " + file.name);
                 file.status = Dropzone.QUEUED;
             });
         }
@@ -314,28 +336,61 @@ $(function () {
 
     $(".mandatoryMdField").change(function() {
 		checkBrapiMetadata();
+
 		var isFormValid = isMetaDataFormValid(false);
 		//console.log(isFormValid);
+		$('span#mdFormValid').hide();
+		$('span#mdFormInvalid').hide();
+		if (isFormValid == null)
+			return;	// null means untouched
+
 		if (isFormValid)
 			$('span#mdFormValid').show();
 		else
-			$('span#mdFormValid').hide();
-    });
-
-    $('#metadataType').on('change', function () {
-    	if ($('#moduleExistingMD').val() != "")
-    		checkBrapiMetadata();
+			$('span#mdFormInvalid').show();		
     });
 });
 
 function checkBrapiMetadata() {
+	$("span.mdType").text($("#metadataType").val());
+
+	var module = ($('#moduleExistingMD').is(":visible") ? $('#moduleExistingMD').val() : $('#moduleExistingG').val());
+	if (module != null && module != "" && module != '- new database -')
+		$.ajax({
+	        url: ($("#metadataType").val() == "sample" ? samplesWithBrapiMappingURL : germplasmWithBrapiMappingURL) + "?module=" + module,
+	        async: false,	// required for tab to be marked as valid if BrAPI external references are available for a module passed by URL
+	        type: "GET",
+	        dataType: "json",
+	        contentType: "application/json;charset=utf-8",
+	        headers: {
+	            "Authorization": "Bearer " + token
+	        },
+	        success: function (jsonResult) {
+				if (jsonResult.length > 0)
+					$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>This database contains " + $("#metadataType").val() + "s that are linked to a remote BrAPI datasource's " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records. You may directly click on SUBMIT to import their metadata</span>");
+				else
+					$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
+			        (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
+			        (2) Coming back to this form and submitting");
+	        },
+	        error: function (xhr, ajaxOptions, thrownError) {
+	            handleError(xhr, thrownError);
+	        }
+	    });
+	else
+		$('div#brapiMetadataNotice').html("");
+
+	if (isAnonymous)
+		$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into a database is only visible to yourself and lasts as long as your web session.");
+ 	else if (isAdmin || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
+		$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into a database is considered global and therefore visible to anyone allowed to work with it.");
+ 	else
+ 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
+
 	if ($("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
-		return;	// nothing to check
+		return;	// nothing new to check
 
     importDropzoneMD.options.url = metadataValidationURL;
-    
-//    $('#progress').data('error', false);
-
     if (importDropzoneMD.getQueuedFiles().length > 0)
     	importDropzoneMD.processQueue();
     else {
@@ -344,120 +399,17 @@ function checkBrapiMetadata() {
         importDropzoneMD.uploadFile(blob);
     }
 }
-/*
-function checkBrapiMetadata_OLD() {
-    distinctBrapiMetadataURLs = new Set();
 
-	if ($('#moduleExistingMD').val() != "")
-	    $.ajax({
-	        url: variantSetsSearchUrl,
-	        async: false,
-	        type: "POST",
-	        dataType: "json",
-	        contentType: "application/json;charset=utf-8",
-	        headers: {
-	            "Authorization": "Bearer " + token
-	        },
-	        data: JSON.stringify({
-	            "datasetId": $('#moduleExistingMD').val()
-	        }),
-	        success: function(jsonResult) {
-	
-	            if ($('#metadataType').val() == "individual")
-	                for (var vs in jsonResult.variantSets) {
-	                    $.ajax({
-	                        url: callSetsSearchUrl,
-	                        type: "POST",
-	                        dataType: "json",
-	                        async:false,
-	                        contentType: "application/json;charset=utf-8",
-	                        headers: {
-	                            "Authorization": "Bearer " + token
-	                        },
-	                        data: JSON.stringify({
-	                            "variantSetId": jsonResult.variantSets[vs].id
-	                        }),
-	                        success: function(individualsResult) {
-	                            var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
-	                            for (var cs in individualsResult.callSets) {
-	                                    var ai = individualsResult.callSets[cs].info;
-	                                    if (ai[extRefIdField] != null && ai[extRefSrcField] != null && urlRegexp.test(ai[extRefSrcField].toString())) {
-	                                        var url = ai[extRefSrcField].toString();
-	                                        if (!url.endsWith("/"))
-	                                            url += "/";                                                           
-	                                        distinctBrapiMetadataURLs.add(url);
-	                                    }
-	                            }
-	                            updateSelectedMetadataType();
-	                        },
-	                        error: function(xhr, ajaxOptions, thrownError) {
-	                            handleError(xhr, thrownError);
-	                        }
-	                    });
-	                }
-	            else
-	                for (var vs in jsonResult.variantSets) {
-	                    $.ajax({
-	                        url: searchSamplesUrl,
-	                        type: "POST",
-	                        dataType: "json",
-	                        async:false,
-	                        contentType: "application/json;charset=utf-8",
-	                        headers: {
-	                            "Authorization": "Bearer " + token
-	                        },
-	                        data: JSON.stringify({
-	                            "studyDbIds": [jsonResult.variantSets[vs].id]
-	                        }),
-	                        success: function(samplesResult) {
-	                                var urlRegexp = new RegExp(/^https?:\/\/.*\/brapi\/v?/i);
-	                                for (var s in samplesResult.result.data) {
-	                                        var ai = samplesResult.result.data[s].externalReferences;                                                        
-	                                        if (ai !== null) {
-	                                            for (var ref in ai) {
-	                                                if (ai[ref].referenceID !== null && ai[ref].referenceSource != null && urlRegexp.test(ai[ref].referenceSource.toString())) {
-	                                                    var url = ai[ref].referenceSource.toString();
-	                                                    if (!url.endsWith("/")) {
-	                                                        url = url + "/";
-	                                                    }                                                               
-	                                                    distinctBrapiMetadataURLs.add(url);
-	                                                    break;
-	                                                }
-	                                            }
-	                                        }
-	                                }
-	                                updateSelectedMetadataType();
-	                        },
-	                        error: function(xhr, ajaxOptions, thrownError) {
-	                            handleError(xhr, thrownError);
-	                        }
-	                    });
-	                }
-				//console.log(distinctBrapiMetadataURLs);
-	        },
-	        error: function(xhr, ajaxOptions, thrownError) {
-	            $('#searchPanel').hide();
-	            handleError(xhr, thrownError);
-	            $('#module').val("");
-	            $('#grpProj').hide();
-	            return false;
-	        }
-	    });
-}
-*/
 function importDataIfValid() {
-	var gtFormOK;
-	var gtDataFile1 = $("input[name=dataFile1]").val().trim(), gtDataFile12 = $("input[name=dataFile2]").val().trim(), gtDataFile3 = $("input[name=dataFile3]").val().trim();
-	if (importDropzoneG.getAcceptedFiles().length + (gtDataFile1 != "" ? 1 : 0) + (gtDataFile12 != "" ? 1 : 0) + (gtDataFile3 != "" ? 1 : 0) > 0)
-		gtFormOK = isGenotypingDataFormValid(true);
-	else
-		gtFormOK = false;
+	if ($('span#gtFormInvalid').is(":visible") && !isGenotypingDataFormValid(true)) {
+		$("#gtFormInvalid").parent().click();
+		return;
+	}
 		
-	var mdFormOK;
-	if (dataFile1 = $("#metadataFile1").val().trim() != "" || importDropzoneMD.getAcceptedFiles().length > 0)
-		mdFormOK = isMetaDataFormValid(true);
-	else
-		mdFormOK = false;
+	if ($('span#mdFormInvalid').is(":visible") && !isMetaDataFormValid(true)) {
+		$("#mdFormInvalid").parent().click();
+		return;
+	}
 
 	var gtFormOK = $('span#gtFormValid').is(":visible"), mdFormOK = $('span#mdFormValid').is(":visible");
 	
@@ -469,24 +421,6 @@ function importDataIfValid() {
 		importMetadata();
 	else
 		alert("You must fill-in at least one of the two forms!");
-}
-
-function updateSelectedMetadataType() {
-	$("span.mdType").text($("#metadataType").val());
-
-	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.size > 0)
-		$('div#brapiMetadataNotice').html("<span style='color:#008800;'>This database contains " + $("#metadataType").val() + "s that are linked to a remote BrAPI datasource's " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records. You may directly click on SUBMIT to import their metadata</span>");
-	else
-		$('div#brapiMetadataNotice').html("<span style='color:#ee8800;'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
-        (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
-        (2) Coming back to this form and submitting");
-
-	if (isAnonymous)
-		$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into a database is only visible to yourself and lasts as long as your web session.");
- 	else if (isAdmin || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
-		$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into a database is considered global and therefore visible to anyone allowed to work with it.");
- 	else
- 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
 }
 
 function submitBrapiForm() {
@@ -579,6 +513,8 @@ function isGenotypingDataFormValid(showAlerts) {
 
 	var dataFile1 = $("input[name=dataFile1]").val().trim(), dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
     var totalDataSourceCount = importDropzoneG.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) + (dataFile2 != "" ? 1 : 0) + (dataFile3 != "" ? 1 : 0);
+    if (totalDataSourceCount == 0)
+    	return null;
     if (totalDataSourceCount > importDropzoneG.options.maxFiles) {
     	if (showAlerts)
             alert("You may not provide more than " + importDropzoneG.options.maxFiles + " data-source entries!");
@@ -695,7 +631,7 @@ function importGenotypes(importMetadataToo) {
 		    var isPhenotypeFile = file.name.endsWith(".phenotype");
 		    if (isPhenotypeFile)
 				importDropzoneG.options.acceptedFiles += ",.phenotype";
-			console.log("adding " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
+			//console.log("adding " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
 		    importDropzoneG.addFile(file);
 		    if (isPhenotypeFile)
 		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
@@ -727,20 +663,22 @@ function isMetaDataFormValid(showAlerts) {
         return false;
     }
     
-    if ($('#moduleExistingMD').is(":visible") && $('#moduleExistingMD').val() == "") {
-		if (showAlerts)
-    		alert("Please select a database!");
-    	return false;
-    }
-    
     var dataFile1 = $("#metadataFile1").val().trim();
 	//var dataFile2 = $("#metadataFile2").val().trim();
 
     var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) /*+ (dataFile2 != "" ? 1 : 0)*/;
+    if (providedFileCount == 0 && $("#brapiMetadataNotice span.metadataToPull-yes").length == 0)
+    	return null;
     if (providedFileCount > 1) {
         if (showAlerts)
         	alert("You may not provide more than 1 metadata source!");
         return false;
+    }
+
+    if (!$('span#gtFormValid').is(":visible") && $('#moduleExistingMD').val() == "") {
+		if (showAlerts)
+    		alert("Please select a database!");
+    	return false;
     }
 
     if (dataFile1 == "" && importDropzoneMD.getAcceptedFiles().length == 0 && distinctBrapiMetadataURLs.size > 0) {
@@ -756,11 +694,11 @@ function isMetaDataFormValid(showAlerts) {
         });
     }
 
-    if (providedFileCount + ($('#brapiURLs').val() == "" ? 0 : 1) < 1) {
+    /*if (providedFileCount + ($('#brapiURLs').val() == "" ? 0 : 1) < 1) {
     	if (distinctBrapiMetadataURLs.size == 0 && showAlerts)
         	alert("You must provide a metadata file!");
         return false;
-    }
+    }*/
 
     return true;
 }
@@ -886,6 +824,7 @@ function loadModules() {
     			
                 $('#moduleExistingMD').val(passedModule).selectpicker('refresh');
 			}
+			$('#moduleExistingMD').change();
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);

@@ -86,6 +86,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -118,6 +119,7 @@ import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
@@ -196,6 +198,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String IMPORT_PAGE_URL = "/import.do";
 	static final public String genotypeImportSubmissionURL = "/genotypeImport";
 	static final public String metadataImportSubmissionURL = "/metadataImport";
+	static final public String germplasmWithBrapiMappingURL = "/individualsWithBrapiMapping";
+	static final public String samplesWithBrapiMappingURL = "/samplesWithBrapiMapping";
 	static final public String metadataValidationURL = "/metadataValidation";
 	static public final String GET_SESSION_TOKEN = "/generateToken";
 	static public final String VARIANT_TYPES_PATH = "/variantTypes";
@@ -301,10 +305,8 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + VARIANT_TYPES_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	@RequestMapping(value = BASE_URL + VARIANT_TYPES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -324,11 +326,8 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getRunList(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
-
+	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, List<String>> getRunList(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
@@ -350,8 +349,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "Unauthorized resource") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + HOSTS_PATH, method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getHostList(HttpServletRequest request, HttpServletResponse resp)
-			throws IOException {
+	public Map<String, List<String>> getHostList(HttpServletRequest request, HttpServletResponse resp) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		if (auth != null && auth.isAuthenticated()) {
 			String tempDbHost = appConfig.get("tempDbHost");
@@ -379,10 +377,8 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + NUMBER_ALLELE_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	@RequestMapping(value = BASE_URL + NUMBER_ALLELE_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<Integer>> response = new HashMap<>();
@@ -413,10 +409,8 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCES_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
@@ -445,10 +439,8 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + EFFECT_ANNOTATION_PATH
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	@RequestMapping(value = BASE_URL + EFFECT_ANNOTATION_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, TreeSet<String>> response = new HashMap<>();
@@ -507,8 +499,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
 		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -564,11 +555,8 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCE_FILTER_COUNT_PATH
-			+ "/{referenceSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, Integer> getSequencesFilterCount(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String referenceSetId) throws IOException {
-
+	@RequestMapping(value = BASE_URL + SEQUENCE_FILTER_COUNT_PATH + "/{referenceSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, Integer> getSequencesFilterCount(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
 		String token = tokenManager.readToken(request);
 		Map<String, Integer> response = new HashMap<>();
 		try {
@@ -1209,8 +1197,9 @@ public class GigwaRestController extends ControllerInterface {
 
 		Set<String> result = new HashSet<>();
         Scanner scanner = null;
-		try {
-			HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
+        HashMap<String, String> filesByExtension = null;
+        try {
+        	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 			String extensionLessFile = filesByExtension.get("");
 			if (extensionLessFile != null)
 				throw new Exception("File has no extension: " + extensionLessFile);
@@ -1241,7 +1230,7 @@ public class GigwaRestController extends ControllerInterface {
                     if (columnLabels == null) {
 		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null);
 		                
-		                extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
+		                extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_externalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
 		                if (extRefSrcColumn == null)
 		                	return result;
 		                continue;
@@ -1261,8 +1250,34 @@ public class GigwaRestController extends ControllerInterface {
         finally {
         	if (scanner != null)
         		scanner.close();
+        	if (filesByExtension != null)
+	        	for (String uri : Arrays.asList(dataUri1, dataUri2))
+	        		if (uri != null && !uri.isBlank())
+	        			filesByExtension.remove(FilenameUtils.getExtension(uri));
+        	for (String uri : filesByExtension.values())
+        		new File(uri).delete();
         }
 		return result;
+	}
+	
+	@ApiIgnore
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = germplasmWithBrapiMappingURL, notes = "Lists IDs of germplasm with external reference source & ID")
+	@GetMapping(value = BASE_URL + germplasmWithBrapiMappingURL)
+	public @ResponseBody Collection<String> germplasmWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
+        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+    		.values().stream()
+    		.filter(ind -> ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+    		.map(ind -> sModule + IGigwaService.ID_SEPARATOR + ind.getId()).toList();
+	}
+	
+	@ApiIgnore
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = samplesWithBrapiMappingURL, notes = "Lists IDs of samples with external reference source & ID")
+	@GetMapping(value = BASE_URL + samplesWithBrapiMappingURL)
+	public @ResponseBody Collection<String> samplesWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
+        return MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+    		.values().stream()
+    		.filter(sp -> sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+    		.map(sp -> sModule + IGigwaService.ID_SEPARATOR + sp.getId()).toList();
 	}
 	
 	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> importFiles, Collection<String> filesSpecifiedByURI) throws Exception{
@@ -1423,16 +1438,16 @@ public class GigwaRestController extends ControllerInterface {
 		                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
 		                        	callSetsRequest.setRequest(request);
 		                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
-		                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-		                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+		                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
+		                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
 		
 		                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
 		                                    continue;
 		
 		                                if (extRefIdValues.size() != 1)
-		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
 		                                if (extRefSrcValues.size() != 1)
-		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
 		
 		                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 		
@@ -1455,8 +1470,8 @@ public class GigwaRestController extends ControllerInterface {
 		                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, Arrays.asList(projId), null).values();
 		                            for (GenotypingSample sample : genotypingSamples)
 		                                if (sample.getAdditionalInfo() != null) {
-		                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-		                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+		                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
+		                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
 		                                    
 		                                    if (extRefSrcValue == null || extRefIdValue == null)
 		                                        continue;
@@ -1513,7 +1528,7 @@ public class GigwaRestController extends ControllerInterface {
 		        } finally {
 		        	if (filesByExtension != null)
 			        	for (String uri : Arrays.asList(dataUri1, dataUri2))
-			        		if (uri != null)
+			        		if (uri != null && !uri.isBlank())
 			        			filesByExtension.remove(FilenameUtils.getExtension(uri));
 		        	for (String uri : filesByExtension.values())
 		        		new File(uri).delete();
@@ -1594,41 +1609,40 @@ public class GigwaRestController extends ControllerInterface {
 		Long nTotalUploadSize = 0l, nTotalImportSize = 0l, maxUploadSize = maxUploadSize(request, true), maxImportSize = maxUploadSize(request, false);
 
 		final ArrayList<File> uploadedFiles = new ArrayList<>();
-//		if (uploadedFile1 != null || uploadedFile2 != null || uploadedFile3 != null || uploadedFile4 != null) {
-			for (MultipartFile mpf : Arrays.asList(uploadedFile1, uploadedFile2, uploadedFile3, uploadedFile4))
-				if (mpf != null && !mpf.isEmpty()) {
-					String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
-					boolean fIsMetadataFile = "phenotype".equals(fileExtension);
-					if (fIsMetadataFile && metadataFile != null)
-						progress.setError("Only one metadata file may be provided at a time!");
-					else if (filesByExtension.containsKey(fileExtension))
-						progress.setError("Each provided datasource entry must be of a different kind!");
+		for (MultipartFile mpf : Arrays.asList(uploadedFile1, uploadedFile2, uploadedFile3, uploadedFile4))
+			if (mpf != null && !mpf.isEmpty()) {
+				String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
+				boolean fIsMetadataFile = "phenotype".equals(fileExtension);
+				if (fIsMetadataFile && metadataFile != null)
+					progress.setError("Only one metadata file may be provided at a time!");
+				else if (filesByExtension.containsKey(fileExtension))
+					progress.setError("Each provided datasource entry must be of a different kind!");
+				else {
+					File file = null;
+					if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
+						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
+						File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
+						if (uploadedFile != null)
+						    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+					}
+					if (file == null) {
+                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+					}
+					mpf.transferTo(file);
+					if (fIsMetadataFile)
+						metadataFile = file;
 					else {
-						File file = null;
-						if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
-							// make sure we transfer it to a file in the same location so it is a move rather than a copy!
-							File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-							if (uploadedFile != null)
-							    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-						}
-						if (file == null) {
-                            file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
-                            LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
-						}
-						mpf.transferTo(file);
-						if (fIsMetadataFile)
-							metadataFile = file;
-						else {
-							nTotalUploadSize += file.length();
-							nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
-							filesByExtension.put(fileExtension, file);
-							uploadedFiles.add(file);
-						}
+						nTotalUploadSize += file.length();
+						nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
+						filesByExtension.put(fileExtension, file);
+						uploadedFiles.add(file);
 					}
 				}
-			if (nTotalUploadSize > maxUploadSize*1024*1024)
-				progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
-//		}
+			}
+
+		if (nTotalUploadSize > maxUploadSize*1024*1024)
+			progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
 
 		boolean fAdminImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
 		boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
@@ -1773,11 +1787,8 @@ public class GigwaRestController extends ControllerInterface {
 			Thread metadataImportThread = metadataFile == null ? null : new Thread() {	// will run in parallel along the main import process, starting once the latter is able to provide us with the involved individuals and samples
 				public void run() {
 					try {
-						do {
+						while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
 							sleep(2000);
-							System.err.println(genotypeImporter.get().getImportedIndividualsAndSamples() != null);
-						} while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && genotypeImporter.get().getImportedIndividualsAndSamples() == null);
-						
 						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
 							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
 						else

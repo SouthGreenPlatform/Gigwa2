@@ -62,6 +62,8 @@
 	    	var searchSamplesUrl = '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + \"/\" + SamplesApi.searchSamplesPost_url %>" />';
 	    	var metadataValidationURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataValidationURL %>" />';
 			var metadataImportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>" />';
+			var germplasmWithBrapiMappingURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.germplasmWithBrapiMappingURL %>" />';
+			var samplesWithBrapiMappingURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.samplesWithBrapiMappingURL %>" />';
 	    	var webappUrl = "<c:url value='/' />";
             var token;
             var processAborted = false;
@@ -72,8 +74,8 @@
         	var brapiParameters;
         	var projectDescriptions = [];
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs = new Set();
-   			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
-   			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
+   			var extRefIdField = "<%=BrapiService.BRAPI_FIELD_externalReferenceId%>";
+   			var extRefSrcField = "<%=BrapiService.BRAPI_FIELD_externalReferenceSource%>";
 
    			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin};
    			var supervisedModules = [];
@@ -92,12 +94,14 @@
 	                <a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink" style="width:140px;">
 		                Genotype import&nbsp;
 		                <span class="glyphicon glyphicon-ok" style="display:none;" id="gtFormValid"></span>
+		                <span class="glyphicon glyphicon-remove" style="display:none;" id="gtFormInvalid"></span>
 	                </a>
 	            </li>
                 <li id="metadataTab" class="text-nowrap<c:if test='${param.type eq "metadata"}'> active</c:if>">
 	                <a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink" style="width:140px;">
 		                Metadata import&nbsp;
 		                <span class="glyphicon glyphicon-ok" style="display:none;" id="mdFormValid"></span>
+		                <span class="glyphicon glyphicon-remove" style="display:none;" id="mdFormInvalid"></span>
 	                </a>
                 </li>
             </ul>
@@ -289,13 +293,13 @@
                                 <div class="col-md-3" id="mdModuleZone">                     
                                     <div class="form-group margin-top text-left">
                                         <label for="moduleExistingMD">Database</label>
-                                        <select class="selectpicker moduleExisting mandatoryMdField" id="moduleExistingMD" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
+                                        <select class="selectpicker mandatoryMdField" id="moduleExistingMD" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
                                     </div>                  
                                 </div>
                                 <div class="col-md-3">                     
                                     <div class="form-group margin-top text-left">
                                         <label>Import metadata on</label>
-                                        <select class="selectpicker" id="metadataType" name="metadataType" data-actions-box="true" data-width="100%">
+                                        <select class="selectpicker mandatoryMdField" id="metadataType" name="metadataType" data-actions-box="true" data-width="100%">
                                             <option value="individual">Individuals</option>
                                             <option value="sample">Samples</option>
                                         </select>
