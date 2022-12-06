@@ -46,6 +46,7 @@ import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -1196,12 +1197,12 @@ public class GigwaRestController extends ControllerInterface {
 					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> (String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)))
+			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
 		    		: 
 		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)));
+			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")));
 		}
 		else
 			endpointByIndividualOrSample = new HashMap<>();	// working on a new database
@@ -1269,7 +1270,7 @@ public class GigwaRestController extends ControllerInterface {
 
                     String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
                     if (extRefSrc != null)
-                    	endpointByIndividualOrSample.put(entityId, extRefSrc);
+                    	endpointByIndividualOrSample.put(entityId, extRefSrc.trim().replaceAll("/+$", ""));
                     else
                     	endpointByIndividualOrSample.remove(entityId);
                 }
@@ -1360,7 +1361,9 @@ public class GigwaRestController extends ControllerInterface {
     /**
      * Import metadata for individuals
      * 
+     * @param session
      * @param request
+     * @param response
      * @param sModule
      * @param dataUri1
      * @param dataUri2
@@ -1375,7 +1378,7 @@ public class GigwaRestController extends ControllerInterface {
      */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataImportSubmissionURL, notes = "Import metadata for individuals.")
     @RequestMapping(value = BASE_URL + metadataImportSubmissionURL, method = RequestMethod.POST)
-    public @ResponseBody String importMetaData(HttpServletRequest request, HttpServletResponse response,
+    public @ResponseBody String importMetaData(HttpSession session, HttpServletRequest request, HttpServletResponse response,
     		@RequestParam("moduleExistingMD") final String sModule,
             @RequestParam(value = "metadataFile1", required = false) final String dataUri1,
             @RequestParam(value = "metadataFile2", required = false) final String dataUri2,
@@ -1385,23 +1388,22 @@ public class GigwaRestController extends ControllerInterface {
             @RequestParam(value = "metadataType", required = false) final String metadataType,
             @RequestParam(value = "brapiURLs", required = false) final String brapiURLs,
             @RequestParam(value = "brapiTokens", required = false) final String brapiTokens) throws Exception {
-        final String authToken = tokenManager.readToken(request);
- 		Authentication auth = tokenManager.getAuthenticationFromToken(authToken);
-		if (auth == null) {
+        final String authToken = request == null ? null /* when request is null we consider we have admin role (used when importing into a new DB to which no permissions have been assigned yet) */: tokenManager.readToken(request);
+        Authentication auth = request == null ? null : tokenManager.getAuthenticationFromToken(authToken);
+		if (auth == null && request != null) {
 		    build401Response(response);
 //		    progress.setError("You must pass a valid token to be allowed to import.");
             return null;
 		}
 
-		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
+		final String processId = (request == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", "");
         final ProgressIndicator progress = new ProgressIndicator(processId, new String[]{"Checking submitted data"});
         ProgressIndicator.registerProgressIndicator(progress);
 
         String username = null;
-        if (!tokenManager.canUserWriteToDB(authToken, sModule)) {
-            Authentication authentication = tokenManager.getAuthenticationFromToken(authToken);
-            if (authentication != null)
-                username = authentication.getName();
+        if (request != null && !tokenManager.canUserWriteToDB(authToken, sModule)) {
+            if (auth != null)
+                username = auth.getName();
             else {
                 progress.setError("You need to be logged in");
                 return processId;
@@ -1416,7 +1418,6 @@ public class GigwaRestController extends ControllerInterface {
         }
 
         String sFinalUsername = username;
-        HttpSession session = request.getSession();
         new SessionAttributeAwareThread(session) {
 			public void run() {
 		        HashMap<String, String> filesByExtension = null;
@@ -1544,8 +1545,8 @@ public class GigwaRestController extends ControllerInterface {
 		                            String sToken = brapiTokenArray.get(tokenIndex);
 		                            nModifiedRecords.addAndGet(IndividualMetadataImport.importBrapiMetadata(sModule, session, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), sFinalUsername, "".equals(sToken) ? null : sToken, progress, metadataType));
 		                        } catch (Throwable err) {
-		                            progress.setError(err.getMessage() + " - " + sBrapiUrl);
-		                            LOG.error("Error importing metadata", err);
+		                            progress.setError("Error importing BrAPI metadata from " + sBrapiUrl + " - " + err.getMessage());
+		                            LOG.error("Error importing BrAPI metadata", err);
 		                        }
 		                    }
 		                }
@@ -1819,35 +1820,13 @@ public class GigwaRestController extends ControllerInterface {
 		if (nSampleMappingFileCount > 1)
 			progress.setError("You may only provide a single sample-mappping file per import!");
 
+		AtomicBoolean fDatasourceAlreadyExisted = new AtomicBoolean();
 		if (progress.getError() != null)
 			for (File fileToDelete : uploadedFiles)
-				fileToDelete.delete();
+				fileToDelete.delete();		
 		else {
-//			AtomicReference<String> metadataImportError = new AtomicReference<>();
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
 			final File finalMetadataFile = metadataFile;
-//			final HttpSession session = request.getSession();
-//			Thread metadataImportThread = metadataFile == null ? null : new Thread() {	// will run in parallel along the main import process, starting once the latter is able to provide us with the involved individuals and samples
-//				public void run() {
-//					try {
-//						while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
-//							sleep(2000);
-//						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
-//							importMetaData(request, response, sModule, finalMetadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens);
-////							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
-//						else
-//							metadataImportError.set("Unable to process metadata during mixed import!");
-//					} catch (Exception e) {
-//						LOG.error("Error importing metadata along with genotyping data", e);
-//						metadataImportError.set("Error importing metadata along with genotyping data. " + e.getMessage());
-//					}
-//					finally {
-//						if (metadataUri1 == null || metadataUri1.isEmpty())
-//							finalMetadataFile.delete();
-//					}
-//				}
-//			};
-
 			if (!fGotDataToImport)	{	// we're only updating a project description
 				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 				MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
@@ -1901,7 +1880,7 @@ public class GigwaRestController extends ControllerInterface {
 				}
 	
 				Long expiryDate = null;
-				final boolean fDatasourceAlreadyExisted = fDatasourceExists;
+				fDatasourceAlreadyExisted.set(fDatasourceExists);
 				if (!fDatasourceExists) {
 					progress.addStep("Creating datasource");
 					progress.moveToNextStep();
@@ -2082,14 +2061,14 @@ public class GigwaRestController extends ControllerInterface {
 											ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
 											while (!mdImportProgress.isComplete() && !mdImportProgress.isAborted() && mdImportProgress.getError() == null && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
 												Thread.sleep(1000);
-												progress.setProgressDescription("Waiting for metadata import to complete...");
+												progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
 											}
 											if (System.currentTimeMillis() - parallelProcessWaitStart > delay) {
 												sCompletionMessage = "WARNING: metadata import may have failed (not terminated 1 minute after genotype import ended)";
 												LOG.error("Gave up waiting for metadata import thread to complete");
 											}
 											else if (mdImportProgress.getError() != null)
-												sCompletionMessage = mdImportProgress.getError();
+												sCompletionMessage = "Error importing metadata: " + mdImportProgress.getError();
 											else {
 												sCompletionMessage = "NB: Metadata imported successfully";
 												LOG.info("Metadata import thread completed");
@@ -2106,7 +2085,7 @@ public class GigwaRestController extends ControllerInterface {
 								finally {
 									if (progress.getError() != null || progress.isAborted()) {	// failed or aborted: do some cleanup
 										String sCleanupReason = !progress.isAborted() ? "error: " + progress.getError() : "user abort";
-										if (fDatasourceAlreadyExisted) {
+										if (fDatasourceAlreadyExisted.get()) {
 											if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
 												try {
 													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));	// remove run
@@ -2118,7 +2097,7 @@ public class GigwaRestController extends ControllerInterface {
 										else if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
 											LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to " + sCleanupReason);
 									}
-									else if (!fDatasourceAlreadyExisted && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
+									else if (!fDatasourceAlreadyExisted.get() && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
 									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
 									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
@@ -2151,7 +2130,7 @@ public class GigwaRestController extends ControllerInterface {
 				}
 				finally {	// An error was emitted before starting the import thread
 					if (progress.getError() != null) {
-						if (!fDatasourceAlreadyExisted) {
+						if (!fDatasourceAlreadyExisted.get()) {
 							if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
 								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to failed or unauthorized import attempt");
 						}
@@ -2166,8 +2145,7 @@ public class GigwaRestController extends ControllerInterface {
 					Thread.sleep(2000);
 
 				if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
-					metadataImportProcessId.set(importMetaData(request, response, sModule, metadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens));
-//					IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
+					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens));
 				else
 					LOG.warn("Unable to process metadata during mixed import!");
 			}
