@@ -62,8 +62,6 @@
 	    	var searchSamplesUrl = '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + \"/\" + SamplesApi.searchSamplesPost_url %>" />';
 	    	var metadataValidationURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataValidationURL %>" />';
 			var metadataImportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>" />';
-			var germplasmWithBrapiMappingURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.germplasmWithBrapiMappingURL %>" />';
-			var samplesWithBrapiMappingURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.samplesWithBrapiMappingURL %>" />';
 	    	var webappUrl = "<c:url value='/' />";
             var token;
             var processAborted = false;
@@ -265,6 +263,8 @@
                     </div>
                     <input type="hidden" id="mixedImport_metadataFile1" name="metadataFile1" />
                     <input type="hidden" id="mixedImport_metadataType" name="metadataType" />
+                    <input type="hidden" name="brapiURLs" id="mixedImport_brapiURLs"/>
+                    <input type="hidden" name="brapiTokens" id="mixedImport_brapiTokens"/>
 	                </form>
                 </div>
                 
@@ -340,7 +340,7 @@
     									</div>
    									</div>
                                 </div>
-                                <div class="col-md-4 align-text-bottom" id="dropZonePreviewsMD">
+                                <div class="col-md-3 align-text-bottom" id="dropZonePreviewsMD">
                                 	<div style='height:100px;'>
 			                        	<div id="brapiMetadataNotice"></div>
 			                        </div>

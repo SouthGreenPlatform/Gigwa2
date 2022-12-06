@@ -43,11 +43,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -67,7 +65,6 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
-import org.ga4gh.models.CallSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -86,7 +83,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -130,7 +126,6 @@ import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
-import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
@@ -142,6 +137,7 @@ import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
+import fr.cirad.tools.SessionAttributeAwareThread;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
@@ -198,8 +194,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String IMPORT_PAGE_URL = "/import.do";
 	static final public String genotypeImportSubmissionURL = "/genotypeImport";
 	static final public String metadataImportSubmissionURL = "/metadataImport";
-	static final public String germplasmWithBrapiMappingURL = "/individualsWithBrapiMapping";
-	static final public String samplesWithBrapiMappingURL = "/samplesWithBrapiMapping";
+//	static final public String germplasmWithBrapiMappingURL = "/germplasmWithBrapiMapping";
+//	static final public String samplesWithBrapiMappingURL = "/samplesWithBrapiMapping";
 	static final public String metadataValidationURL = "/metadataValidation";
 	static public final String GET_SESSION_TOKEN = "/generateToken";
 	static public final String VARIANT_TYPES_PATH = "/variantTypes";
@@ -1191,11 +1187,28 @@ public class GigwaRestController extends ControllerInterface {
  		Authentication auth = tokenManager.getAuthenticationFromToken(authToken);
 		if (auth == null) {
 		    build401Response(response);
-//		    progress.setError("You must pass a valid token to be allowed to import.");
             return null;
 		}
+		
+		Map<Object, String> endpointByIndividualOrSample = null;
+		if (MongoTemplateManager.get(sModule) != null) { // Start with what we've currently got in the database
+			endpointByIndividualOrSample = "sample".equals(metadataType) ? 
+					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+			    		.entrySet().stream()
+			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> (String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)))
+		    		: 
+		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+			    		.entrySet().stream()
+			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)));
+		}
+		else
+			endpointByIndividualOrSample = new HashMap<>();	// working on a new database
 
-		Set<String> result = new HashSet<>();
+//		System.err.println(endpointByIndividualOrSample.keySet());
+
+		// Simulate what this would turn into after import
         Scanner scanner = null;
         HashMap<String, String> filesByExtension = null;
         try {
@@ -1220,31 +1233,50 @@ public class GigwaRestController extends ControllerInterface {
                 }
 
                 scanner = new Scanner(url.openStream());
+                boolean fFlapjackFormat = false;
                 HashMap<Integer, String> columnLabels = null;
-                Integer extRefSrcColumn = null;
+                Integer extRefSrcColumn = null, idColumn = null;
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
-                    if (sLine.isEmpty() || sLine.replaceAll("#.*", "").replaceAll("\\s+", "").isEmpty())
+                    if (sLine.isEmpty() || sLine.replaceAll("\\s+", "").equals("#fjFile=PHENOTYPE")) {
+                    	if (!sLine.isEmpty())
+                    		fFlapjackFormat = true;
                     	continue;
+                    }
 
                     if (columnLabels == null) {
 		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null);
 		                
+		                idColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(metadataType)).map(Map.Entry::getKey).findFirst().orElse(null);
+		                if (idColumn == null) {
+		                	if (!fFlapjackFormat || columnLabels.containsKey(0))
+		                        throw new Exception(columnLabels.size() <= 1 ? "Provided file does not seem to be tab-delimited!" : "Unable to find column named \"" + metadataType + "\" in metadata file header!");
+		
+		                	idColumn = 0;	// FJ phenotype file's field-name line starts with an empty string
+		                }
+
 		                extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_externalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
 		                if (extRefSrcColumn == null)
-		                	return result;
+		                	break;	// There is no extRefSrc column in the metadata file
+
 		                continue;
                     }
                     
                     List<String> cells = Helper.split(sLine, "\t");
+                    String entityId = cells.size() > idColumn ? cells.get(idColumn) : null;
+                    if (entityId == null)
+                    	continue;	// Should not happen...
+
                     String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
                     if (extRefSrc != null)
-                    	result.add(extRefSrc);
+                    	endpointByIndividualOrSample.put(entityId, extRefSrc);
+                    else
+                    	endpointByIndividualOrSample.remove(entityId);
                 }
 	        }
 		}
-		catch (Exception ioe) {
-			build400Response(response, ioe.getMessage());
+		catch (Exception e) {
+			build400Response(response, e.getMessage());
 			return null;
 	    }
         finally {
@@ -1257,29 +1289,31 @@ public class GigwaRestController extends ControllerInterface {
         	for (String uri : filesByExtension.values())
         		new File(uri).delete();
         }
-		return result;
+        
+//		System.out.println(endpointByIndividualOrSample.keySet());
+		return new HashSet<>(endpointByIndividualOrSample.values());
 	}
-	
-	@ApiIgnore
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = germplasmWithBrapiMappingURL, notes = "Lists IDs of germplasm with external reference source & ID")
-	@GetMapping(value = BASE_URL + germplasmWithBrapiMappingURL)
-	public @ResponseBody Collection<String> germplasmWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
-        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
-    		.values().stream()
-    		.filter(ind -> ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-    		.map(ind -> sModule + IGigwaService.ID_SEPARATOR + ind.getId()).toList();
-	}
-	
-	@ApiIgnore
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = samplesWithBrapiMappingURL, notes = "Lists IDs of samples with external reference source & ID")
-	@GetMapping(value = BASE_URL + samplesWithBrapiMappingURL)
-	public @ResponseBody Collection<String> samplesWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
-        return MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
-    		.values().stream()
-    		.filter(sp -> sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-    		.map(sp -> sModule + IGigwaService.ID_SEPARATOR + sp.getId()).toList();
-	}
-	
+
+//	@ApiIgnore
+//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = germplasmWithBrapiMappingURL, notes = "Lists IDs of germplasm with external reference source & ID")
+//	@GetMapping(value = BASE_URL + germplasmWithBrapiMappingURL)
+//	public @ResponseBody Collection<String> germplasmWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
+//        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+//    		.values().stream()
+//    		.filter(ind -> ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+//    		.map(ind -> sModule + IGigwaService.ID_SEPARATOR + ind.getId()).toList();
+//	}
+//	
+//	@ApiIgnore
+//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = samplesWithBrapiMappingURL, notes = "Lists IDs of samples with external reference source & ID")
+//	@GetMapping(value = BASE_URL + samplesWithBrapiMappingURL)
+//	public @ResponseBody Collection<String> samplesWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
+//        return MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+//    		.values().stream()
+//    		.filter(sp -> sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
+//    		.map(sp -> sModule + IGigwaService.ID_SEPARATOR + sp.getId()).toList();
+//	}
+//	
 	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> importFiles, Collection<String> filesSpecifiedByURI) throws Exception{
         HashMap<String, String> filesByExtension = new HashMap<>();
         HashMap<String, String> synonymExtensions = new HashMap() {{ put("csv", "tsv"); }};
@@ -1375,7 +1409,7 @@ public class GigwaRestController extends ControllerInterface {
         }
 
         List<String> brapiUrlList = brapiURLs.isBlank() ? new ArrayList<>() : Helper.split(brapiURLs, " ; ");
-        List<String> brapiTokenArray = brapiTokens.isBlank() ? new ArrayList<>() : Helper.split(brapiTokens, " ; ");
+        List<String> brapiTokenArray = brapiTokens.isBlank() ? (brapiUrlList.size() == 1 ? Arrays.asList("") : new ArrayList<>()) : Helper.split(brapiTokens, " ; ");
         if (brapiUrlList.size() != brapiTokenArray.size()) {
             progress.setError("You must provide the same number of BrAPI URLs and tokens (empty tokens mean no token required)");
             return processId;
@@ -1383,7 +1417,7 @@ public class GigwaRestController extends ControllerInterface {
 
         String sFinalUsername = username;
         HttpSession session = request.getSession();
-        new Thread() {
+        new SessionAttributeAwareThread(session) {
 			public void run() {
 		        HashMap<String, String> filesByExtension = null;
 		        try {
@@ -1429,44 +1463,50 @@ public class GigwaRestController extends ControllerInterface {
 		           
 		                        metadataFile = null;
 		                    }
-		                } else if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
+		                } 
+		                if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
+		                	storeSessionAttributes(session);	// in case external source info was just added
 		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 		                    MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 		                    for (int projId : mongoTemplate.getCollection(MongoTemplateManager.getMongoCollectionName(GenotypingProject.class)).distinct("_id", Integer.class)) {    // invoke searchCallSets for each project to treat all individuals in the DB
 		                        if (metadataType.equals("individual")) {
-		                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
-		                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
-		                        	callSetsRequest.setRequest(request);
-		                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
-		                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
-		                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
-		
-		                                if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
-		                                    continue;
-		
-		                                if (extRefIdValues.size() != 1)
-		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-		                                if (extRefSrcValues.size() != 1)
-		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
-		
-		                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
-		
-		                                String endPointUrl = extRefSrcValues.get(0);
-		                                if (!endPointUrl.endsWith("/"))
-		                                    endPointUrl = endPointUrl + "/";
-		
-		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
-		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
-		
-		                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
-		                                if (individualsCurrentEndpointHasDataFor == null) {
-		                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
-		                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
-		                                }
-		
-		                                individualsCurrentEndpointHasDataFor.put(extRefIdValues.get(0), splitId[splitId.length - 1]);
-		                            }
-		                        } else {
+//		                        	GigwaSearchCallSetsRequest callSetsRequest = new GigwaSearchCallSetsRequest();
+//		                        	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
+//		                        	callSetsRequest.setRequest(request);
+//		                            for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
+		                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, Arrays.asList(projId), null).values();
+		                            for (Individual individual : individuals)
+		                                if (individual.getAdditionalInfo() != null) {
+			                                String extRefIdValue = (String) individual.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
+			                                String extRefSrcValue = (String) individual.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
+			
+			                                if (extRefSrcValue == null || extRefSrcValue.isEmpty() || extRefIdValue == null || extRefIdValue.isEmpty())
+			                                    continue;
+			
+	//		                                if (extRefIdValues.size() != 1)
+	//		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+	//		                                if (extRefSrcValues.size() != 1)
+	//		                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+			
+	//		                                String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
+			
+			                                String endPointUrl = extRefSrcValue;
+			                                if (endPointUrl.endsWith("/"))
+			                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+			
+			                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
+			                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
+			
+			                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+			                                if (individualsCurrentEndpointHasDataFor == null) {
+			                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
+			                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
+			                                }
+			
+			                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, individual.getId());
+			                            }
+		                        }
+		                        else {
 		                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, Arrays.asList(projId), null).values();
 		                            for (GenotypingSample sample : genotypingSamples)
 		                                if (sample.getAdditionalInfo() != null) {
@@ -1477,8 +1517,8 @@ public class GigwaRestController extends ControllerInterface {
 		                                        continue;
 		
 		                                    String endPointUrl = extRefSrcValue;
-		                                    if (!endPointUrl.endsWith("/"))
-		                                        endPointUrl = endPointUrl + "/";
+		                                    if (endPointUrl.endsWith("/"))
+			                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
 		
 		                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 		                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
@@ -1515,7 +1555,7 @@ public class GigwaRestController extends ControllerInterface {
 		                        if (brapiUrlList.size() == 0 && nModifiedRecords.get() == -1)
 		                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
 		                        else
-		                            progress.setError("Provided data did not lead to any changes!");
+		                            progress.setError("Pulling metadata using BrAPI did not lead to any changes!");
 		                    } else {
 		                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
 		                        progress.markAsComplete();
@@ -1584,7 +1624,9 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "file[2]", required = false) MultipartFile uploadedFile3,
 			@RequestParam(value = "file[3]", required = false) MultipartFile uploadedFile4,
             @RequestParam(value = "metadataFile1", required = false) final String metadataUri1,
-            @RequestParam(value = "metadataType", required = false) final String metadataType
+            @RequestParam(value = "metadataType", required = false) final String metadataType,
+            @RequestParam(value = "brapiURLs", required = false) final String brapiURLs,
+            @RequestParam(value = "brapiTokens", required = false) final String brapiTokens
 		) throws Exception
 	{
         final String authToken = tokenManager.readToken(request);
@@ -1596,6 +1638,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 		
 		File metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new File(metadataUri1) : null;
+		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
@@ -1780,29 +1823,30 @@ public class GigwaRestController extends ControllerInterface {
 			for (File fileToDelete : uploadedFiles)
 				fileToDelete.delete();
 		else {
-			AtomicReference<String> metadataImportError = new AtomicReference<>();
+//			AtomicReference<String> metadataImportError = new AtomicReference<>();
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
 			final File finalMetadataFile = metadataFile;
-			final HttpSession session = request.getSession();
-			Thread metadataImportThread = metadataFile == null ? null : new Thread() {	// will run in parallel along the main import process, starting once the latter is able to provide us with the involved individuals and samples
-				public void run() {
-					try {
-						while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
-							sleep(2000);
-						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
-							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
-						else
-							metadataImportError.set("Unable to process metadata during mixed import!");
-					} catch (Exception e) {
-						LOG.error("Error importing metadata along with genotyping data", e);
-						metadataImportError.set("Error importing metadata along with genotyping data. " + e.getMessage());
-					}
-					finally {
-						if (metadataUri1 == null || metadataUri1.isEmpty())
-							finalMetadataFile.delete();
-					}
-				}
-			};
+//			final HttpSession session = request.getSession();
+//			Thread metadataImportThread = metadataFile == null ? null : new Thread() {	// will run in parallel along the main import process, starting once the latter is able to provide us with the involved individuals and samples
+//				public void run() {
+//					try {
+//						while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
+//							sleep(2000);
+//						if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
+//							importMetaData(request, response, sModule, finalMetadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens);
+////							IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
+//						else
+//							metadataImportError.set("Unable to process metadata during mixed import!");
+//					} catch (Exception e) {
+//						LOG.error("Error importing metadata along with genotyping data", e);
+//						metadataImportError.set("Error importing metadata along with genotyping data. " + e.getMessage());
+//					}
+//					finally {
+//						if (metadataUri1 == null || metadataUri1.isEmpty())
+//							finalMetadataFile.delete();
+//					}
+//				}
+//			};
 
 			if (!fGotDataToImport)	{	// we're only updating a project description
 				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
@@ -2020,7 +2064,7 @@ public class GigwaRestController extends ControllerInterface {
 										}
 									}
 
-									if (progress.getError() == null && !progress.isAborted()) {
+									if (progress.getError() == null && !progress.isAborted()) {	// looks like a successful import
 										createdProjectId.set(newProjId != null ? newProjId : -1);
 										
 										if (fGotProjectDesc)
@@ -2028,27 +2072,27 @@ public class GigwaRestController extends ControllerInterface {
 			
 										if (newProjId != null)
 											MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
-										
+
+										while (finalMetadataFile != null && metadataImportProcessId.get() == null)
+											sleep(2000);
+
 										String sCompletionMessage = null;
-										if (metadataImportThread != null) {
-											if (metadataImportError.get() != null)
-												sCompletionMessage = metadataImportError.get();
+										if (metadataImportProcessId.get() != null) {
+											long delay = 1000 * 60, parallelProcessWaitStart = System.currentTimeMillis();
+											ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
+											while (!mdImportProgress.isComplete() && !mdImportProgress.isAborted() && mdImportProgress.getError() == null && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
+												Thread.sleep(1000);
+												progress.setProgressDescription("Waiting for metadata import to complete...");
+											}
+											if (System.currentTimeMillis() - parallelProcessWaitStart > delay) {
+												sCompletionMessage = "WARNING: metadata import may have failed (not terminated 1 minute after genotype import ended)";
+												LOG.error("Gave up waiting for metadata import thread to complete");
+											}
+											else if (mdImportProgress.getError() != null)
+												sCompletionMessage = mdImportProgress.getError();
 											else {
-												long delay = 1000 * 60, parallelProcessWaitStart = System.currentTimeMillis();
-												while (metadataImportThread.isAlive() && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
-													Thread.sleep(1000);
-													progress.setProgressDescription("Waiting for metadata import to complete...");
-												}
-												if (metadataImportThread.isAlive()) {
-													sCompletionMessage = "WARNING: metadata import may have failed (not terminated 1 minute after genotype import ended)";
-													LOG.error("Gave up waiting for metadata import thread to complete");
-												}
-												else if (metadataImportError.get() != null)
-													sCompletionMessage = metadataImportError.get();
-												else {
-													sCompletionMessage = "NB: Metadata imported successfully";
-													LOG.info("Metadata import thread completed");
-												}
+												sCompletionMessage = "NB: Metadata imported successfully";
+												LOG.info("Metadata import thread completed");
 											}
 										}
 										progress.markAsComplete(sCompletionMessage);
@@ -2117,8 +2161,16 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			}
 			
-			if (metadataFile != null)
-				metadataImportThread.start();
+			if (metadataFile != null) {
+				while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
+					Thread.sleep(2000);
+
+				if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
+					metadataImportProcessId.set(importMetaData(request, response, sModule, metadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens));
+//					IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, finalMetadataFile.toURI().toURL(), metadataType, null, auth.getName());
+				else
+					LOG.warn("Unable to process metadata during mixed import!");
+			}
 		}
 
 		return processId;
