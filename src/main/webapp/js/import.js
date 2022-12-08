@@ -93,10 +93,10 @@ $(document).ready(function () {
   	   	  self.options.autoProcessQueue = false;
   	   	  self.options.uploadMultiple = true;
   	      self.on("addedfile", function (file) {
-  	      	setTimeout('$("input#moduleToImport").change();', 1);
+  	      	setTimeout('$("input#runToImport").change();', 1);
   	      });
   	      self.on("removedfile", function (file) {
-  	      	setTimeout('$("input#moduleToImport").change();', 1);
+  	      	setTimeout('$("input#runToImport").change();', 1);
   	      });
   	      self.on("sending", function (file) {
   	        $('.meter').show();
@@ -138,50 +138,36 @@ $(document).ready(function () {
    	        $('.meter').show();
    	      });
    	      self.on("success", function(file, response) {
-	        if (importDropzoneMD.getActiveFiles().length > 0)
-		        return;	// don't do anything unless this was the last file
-
-			if (self.options.url == metadataValidationURL) {	// process validation response
-		        $(file).removeClass('dz-processing');
-		        $(file).removeClass('dz-success');
-		        $(file).removeClass('dz-complete');
-		        $(file).removeClass('dz-error');
-		        file.status = Dropzone.QUEUED;
-		        
-		        console.log(response);
-		        
-	        	distinctBrapiMetadataURLs = response;
-				if (distinctBrapiMetadataURLs.length > 0)
-					$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>This database contains " + $("#metadataType").val() + "s that are linked to a remote BrAPI datasource's " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records. You may directly click on SUBMIT to import their metadata</span>");
-				else
-					$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
-			        (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
-			        (2) Coming back to this form and submitting");
-			        
-					var isFormValid = isMetaDataFormValid(false);
-					//console.log(isFormValid);
-					$('span#mdFormValid').hide();
-					$('span#mdFormInvalid').hide();
-					if (isFormValid == null)
-						return;	// null means untouched
-			
-					if (isFormValid)
-						$('span#mdFormValid').show();
+	        if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything else unless this was the last file
+				if (self.options.url == metadataValidationURL) {	// process validation response
+		        	distinctBrapiMetadataURLs = response;
+					if (distinctBrapiMetadataURLs.length > 0)
+						$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>The current selection features " + $("#metadataType").val() + "s that are linked to " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records from one more remote BrAPI datasource(s). Clicking SUBMIT will attempt to import their metadata.</span>");
 					else
-						$('span#mdFormInvalid').show();		
-		    }
-			else { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
-            	importFinalMessage = null;
-            	displayProcessProgress(5, token, response, onImportSuccessMethod); // in this case the response contains the ID of the process we want to watch
-            	$("button#asyncWatch").on("click", function() {
-                	window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
-            	});
+						$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
+				        (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
+				        (2) Coming back to this form and submitting");
+				        
+					checkMetaDataForm(false);
+			    }
+				else { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
+	            	importFinalMessage = null;
+	            	displayProcessProgress(5, token, response, onImportSuccessMethod); // in this case the response contains the ID of the process we want to watch
+	            	$("button#asyncWatch").on("click", function() {
+	                	window.open('ProgressWatch.jsp?process=' + response + '&abortable=true&successURL=' + escape(webappUrl + '?module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));
+	            	});
+	            }
             }
+            
+            if (file.status = Dropzone.SUCCESS)
+		       	file.status = Dropzone.QUEUED;
           });
           self.on("error", function(file, msg) {
-			//untouchMdDropzoneFiles();
+			$('span#mdFormInvalid').show();
+			$('span#mdFormValid').hide();
 			$('div#brapiMetadataNotice').html("");
-            handleError(file.xhr, msg);
+			if ($('#mdTab').hasClass("active"))	// if user was working on the other tab we don't want to bother him
+            	handleError(file.xhr, msg);
           });
    	    }
    	  });
@@ -189,63 +175,10 @@ $(document).ready(function () {
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
 });
-/*
-function getIndividualsWithBrapiMappingURL() {
-    $.ajax({
-        url: individualsWithBrapiMappingURL + "?module=" + ($('#moduleExistingMD').is(":visible") ? $('#moduleExistingMD').val() : $('#moduleExistingG').val()),
-        type: "GET",
-        async: false,
-        dataType: "json",
-        contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
-        success: function (jsonResult) {
-            console.log(jsonResult);
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            handleError(xhr, thrownError);
-        }
-    });	
-}*/
-
-/*function untouchMdDropzoneFiles() {
-    $("form#importDropzoneMD .dz-file-preview").each(function() {
-        $(this).removeClass('dz-processing');
-        $(this).removeClass('dz-success');
-        $(this).removeClass('dz-complete');
-        $(this).removeClass('dz-error');
-    });
-
-    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue so they remain available for the actual import
-        file.status = Dropzone.QUEUED;
-    });
-}*/
 
 $(function () {
-    $('#moduleExistingG').on('change', function () {
-        clearFields();
-        if ($(this).val() !== '- new database -' && $(this).val() !== null) {
-            loadProjects($(this).val());
-            $('#newModuleDiv').hide();
-            $('#taxonDiv').hide();
-            $('#hostGrp').hide();
-        } else {
-            $('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
-            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
-            $('#newModuleDiv').show();
-            $('#taxonDiv').show();
-            $('#projectToImport').removeClass('hidden');
-            $('#runToImport').removeClass('hidden');
-            $('#hostGrp').show();
-        }
-        $('#projectExisting').change();
-        $("input#moduleToImport").change();
-    });
-    
     $(".mandatoryGtField").change(function() {
 		var isFormValid = isGenotypingDataFormValid(false);
-//		console.log(isFormValid);
 		$('span#gtFormValid').hide();
 		$('span#gtFormInvalid').hide();
 		if (isFormValid == null)
@@ -257,6 +190,30 @@ $(function () {
 			$('span#gtFormInvalid').show();			
 		$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
     });
+	
+    $('#moduleExistingG').on('change', function () {
+        clearFields();
+        if ($(this).val() !== '- new database -' && $(this).val() !== null) {
+            loadProjects($(this).val());
+            $('#newModuleDiv').hide();
+            $('#taxonDiv').hide();
+            $('#hostGrp').hide();
+        } else {
+			$("input#moduleToImport").val("");
+            $('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
+            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+            $('#newModuleDiv').show();
+            $('#taxonDiv').show();
+            $('#projectToImport').removeClass('hidden');
+            $('#runToImport').removeClass('hidden');
+            $('#hostGrp').show();
+        }
+        $("input#moduleToImport").change();
+    });
+    
+    $('input#moduleToImport').on('change', function () {
+        $('#projectExisting').change();
+	});
     
     $('#projectExisting').on('change', function () {
     	$('#emptyBeforeImportDiv').toggle();
@@ -287,6 +244,7 @@ $(function () {
             $('#runToImport').show();
         	$('#overwriteRunWarning').hide();
         }
+        $('#runToImport').change();
     });
 
     // check if entered char is valid 
@@ -307,15 +265,11 @@ $(function () {
             $('.importFormDiv input').prop('disabled', true);
             $('.importFormDiv button').prop('disabled', true);
             $('.importFormDiv textarea').prop('disabled', true);
-            var gtFormOK = $('span#gtFormValid').is(":visible"), mdFormOK = $('span#mdFormValid').is(":visible");
+            var gtFormOK = $('span#gtFormValid').is(":visible")/*, mdFormOK = $('span#mdFormValid').is(":visible")*/;
             $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>This data is now <a style="cursor:pointer;" href="' + webappUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + (gtFormOK ? "&project=" + $("#projectToImport").val() : "") + '">available here</a></p>');
             if (importFinalMessage != null)
             	$('#progressContents').append('<p class="bold panel" style="padding:10px;">' + importFinalMessage + '</p>');
            	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + $("#moduleToImport").val() + '&type=metadata">via this link</a></p>');
-            if (mdFormOK)
-            	importDropzoneMD.destroy();
-            if (gtFormOK)
-            	importDropzoneG.destroy();
             $('#progress').modal('show');
         }
         else {
@@ -365,42 +319,30 @@ $(function () {
 	 	else
 	 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
 	
-	//	if ($("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
-	//		return;	// nothing new to check
-
-	    importDropzoneMD.options.url = metadataValidationURL;
-	    if (importDropzoneMD.getQueuedFiles().length > 0)
-	    	importDropzoneMD.processQueue();
-	    else {
-	        var blob = new Blob();
-	        blob.upload = { name:"nofiles" };
-	        importDropzoneMD.uploadFile(blob);
-	    }
+		if ($('#mdTab').hasClass("active")) {
+		    $("form#importDropzoneMD .dz-file-preview").each(function() {
+		        $(this).removeClass('dz-processing');
+		        $(this).removeClass('dz-success');
+		        $(this).removeClass('dz-complete');
+		        $(this).removeClass('dz-error');
+		    });
+		
+		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue so they remain available for the actual import
+		        file.status = Dropzone.QUEUED;
+		    });
+		    importDropzoneMD.options.url = metadataValidationURL;
+		    if (importDropzoneMD.getQueuedFiles().length > 0)
+		    	importDropzoneMD.processQueue();
+		    else {
+		        var blob = new Blob();
+		        blob.upload = { name:"nofiles" };
+		        importDropzoneMD.uploadFile(blob);
+		    }
+		}
+		else
+			checkMetaDataForm(false);
     });
 });
-
-/*function checkBrapiMetadata() {
-	$("span.mdType").text($("#metadataType").val());
-
-	if (isAnonymous)
-		$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into a database is only visible to yourself and lasts as long as your web session.");
- 	else if (isAdmin || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
-		$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into a database is considered global and therefore visible to anyone allowed to work with it.");
- 	else
- 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
-
-//	if ($("#metadataFile1").val().trim() == "" && importDropzoneMD.getAcceptedFiles().length == 0)
-//		return;	// nothing new to check
-
-    importDropzoneMD.options.url = metadataValidationURL;
-    if (importDropzoneMD.getQueuedFiles().length > 0)
-    	importDropzoneMD.processQueue();
-    else {
-        var blob = new Blob();
-        blob.upload = { name:"nofiles" };
-        importDropzoneMD.uploadFile(blob);
-    }
-}*/
 
 function importDataIfValid() {
 	if ($('span#gtFormInvalid').is(":visible") && !isGenotypingDataFormValid(true)) {
@@ -408,7 +350,7 @@ function importDataIfValid() {
 		return;
 	}
 		
-	if ($('span#mdFormInvalid').is(":visible") && !isMetaDataFormValid(true)) {
+	if ($('span#mdFormInvalid').is(":visible") && !checkMetaDataForm(true)) {
 		$("#mdFormInvalid").parent().click();
 		return;
 	}
@@ -674,32 +616,41 @@ function importGenotypes(importMetadataToo) {
     }
 }
 
-function isMetaDataFormValid(showAlerts) {
-    if (importDropzoneMD.getRejectedFiles().length > 0) {
+function checkMetaDataForm(showAlerts) {
+	$('span#mdFormValid').hide();
+    $('span#mdFormInvalid').hide();
+    
+    var providedFileCount = importDropzoneMD.getAcceptedFiles().length + ($("#metadataFile1").val().trim() != "" ? 1 : 0) /*+ (dataFile2 != "" ? 1 : 0)*/;
+    if (providedFileCount == 0 && $("#brapiMetadataNotice span.metadataToPull-yes").length == 0)
+		return null;	// no file provided yet 
+		
+    if (!$('span#gtFormValid').is(":visible") && $('#moduleExistingMD').val() == "") {
+		$('span#mdFormInvalid').show();
+		if (showAlerts)
+    		alert("Please select a database!");
+		return false;
+    }
+    
+    if (importDropzoneMD.getRejectedFiles().length > 0 || importDropzoneMD.getFilesWithStatus(Dropzone.ERROR).length > 0) {
+		$('span#mdFormInvalid').show();
 		if (showAlerts)
 	        alert("Please remove any rejected files before submitting!");
         return false;
     }
     
-    var dataFile1 = $("#metadataFile1").val().trim();
-	//var dataFile2 = $("#metadataFile2").val().trim();
-
-    var providedFileCount = importDropzoneMD.getAcceptedFiles().length + (dataFile1 != "" ? 1 : 0) /*+ (dataFile2 != "" ? 1 : 0)*/;
-    if (providedFileCount == 0 && $("#brapiMetadataNotice span.metadataToPull-yes").length == 0)
-    	return null;
     if (providedFileCount > 1) {
+		$('span#mdFormInvalid').show();
         if (showAlerts)
         	alert("You may not provide more than 1 metadata source!");
         return false;
     }
 
-    if (!$('span#gtFormValid').is(":visible") && $('#moduleExistingMD').val() == "") {
-		if (showAlerts)
-    		alert("Please select a database!");
-    	return false;
-    }
+	$('span#mdFormValid').show();
+    return true;
+}
 
-    if (dataFile1 == "" && importDropzoneMD.getAcceptedFiles().length == 0 && distinctBrapiMetadataURLs.length > 0) {
+function importMetadata() {
+    if (distinctBrapiMetadataURLs.length > 0) {
         $('#brapiURLs').val("");
         $('#brapiTokens').val("");
         distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
@@ -711,17 +662,7 @@ function isMetaDataFormValid(showAlerts) {
             $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
         });
     }
-
-    /*if (providedFileCount + ($('#brapiURLs').val() == "" ? 0 : 1) < 1) {
-    	if (distinctBrapiMetadataURLs.size == 0 && showAlerts)
-        	alert("You must provide a metadata file!");
-        return false;
-    }*/
-
-    return true;
-}
-
-function importMetadata() {
+	
     importDropzoneMD.options.url = metadataImportURL;
 
     $('#progress').data('error', false);

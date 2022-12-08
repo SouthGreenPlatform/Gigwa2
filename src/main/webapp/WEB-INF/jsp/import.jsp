@@ -89,14 +89,14 @@
         	<div style="position:absolute; left:45%; margin-top:-20px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importButton" type="button">Submit</button></div>
             <ul class="nav nav-tabs" style="border-bottom:0;">
                 <li id="genotypesTab" class="text-nowrap<c:if test='${param.type ne "metadata"}'> active</c:if>">
-	                <a class="nav-link active" href="#tab1" data-toggle="tab" id="genotypeImportNavLink" style="width:140px;">
+	                <a class="nav-link active" href="#gtTab" data-toggle="tab" id="genotypeImportNavLink" style="width:140px;">
 		                Genotype import&nbsp;
 		                <span class="glyphicon glyphicon-ok" style="display:none;" id="gtFormValid"></span>
 		                <span class="glyphicon glyphicon-remove" style="display:none;" id="gtFormInvalid"></span>
 	                </a>
 	            </li>
                 <li id="metadataTab" class="text-nowrap<c:if test='${param.type eq "metadata"}'> active</c:if>">
-	                <a class="nav-link" href="#tab2" data-toggle="tab" id="metadataImportNavLink" style="width:140px;">
+	                <a class="nav-link" href="#mdTab" data-toggle="tab" id="metadataImportNavLink" style="width:140px;">
 		                Metadata import&nbsp;
 		                <span class="glyphicon glyphicon-ok" style="display:none;" id="mdFormValid"></span>
 		                <span class="glyphicon glyphicon-remove" style="display:none;" id="mdFormInvalid"></span>
@@ -104,7 +104,7 @@
                 </li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane<c:if test='${param.type ne "metadata"}'> active</c:if>" id="tab1">
+                <div class="tab-pane<c:if test='${param.type ne "metadata"}'> active</c:if>" id="gtTab">
             	<form autocomplete="off" class="dropzone" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.genotypeImportSubmissionURL %>' />" method="post">
 	            	<input type="hidden" name="brapiParameter_mapDbId" id="brapiParameter_mapDbId"/>
 	            	<input type="hidden" name="brapiParameter_studyDbId" id="brapiParameter_studyDbId"/>
@@ -138,7 +138,7 @@
                                             	<input id="ploidy" name="ploidy" class="form-control text-input input-sm" type='number' step="1" min="1" placeholder="ploidy" title="Specifying ploidy is recommended for HapMap and Flapjack formats (if left blank, guessing will be attempted and import will take longer)">
                                             </div>
                                             <div class="col-md-3" id="newModuleDiv">
-                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm mandatoryGtField" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
+                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
                                             </div>
                                         </div>
                                     </div>
@@ -268,7 +268,7 @@
 	                </form>
                 </div>
                 
-                <div class="tab-pane<c:if test='${param.type eq "metadata"}'> active</c:if>" id="tab2">
+                <div class="tab-pane<c:if test='${param.type eq "metadata"}'> active</c:if>" id="mdTab">
                    	<form autocomplete="off" class="dropzone" id="importDropzoneMD" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>' />" method="post">                
                     <input type="hidden" name="brapiURLs" id="brapiURLs"/>
                     <input type="hidden" name="brapiTokens" id="brapiTokens"/>

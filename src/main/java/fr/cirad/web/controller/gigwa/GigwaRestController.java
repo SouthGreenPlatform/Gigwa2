@@ -1207,8 +1207,6 @@ public class GigwaRestController extends ControllerInterface {
 		else
 			endpointByIndividualOrSample = new HashMap<>();	// working on a new database
 
-//		System.err.println(endpointByIndividualOrSample.keySet());
-
 		// Simulate what this would turn into after import
         Scanner scanner = null;
         HashMap<String, String> filesByExtension = null;
@@ -1283,12 +1281,13 @@ public class GigwaRestController extends ControllerInterface {
         finally {
         	if (scanner != null)
         		scanner.close();
-        	if (filesByExtension != null)
+        	if (filesByExtension != null) {
 	        	for (String uri : Arrays.asList(dataUri1, dataUri2))
 	        		if (uri != null && !uri.isBlank())
 	        			filesByExtension.remove(FilenameUtils.getExtension(uri));
-        	for (String uri : filesByExtension.values())
-        		new File(uri).delete();
+	        	for (String uri : filesByExtension.values())
+	        		new File(uri).delete();
+        	}
         }
         
 //		System.out.println(endpointByIndividualOrSample.keySet());
@@ -1417,7 +1416,7 @@ public class GigwaRestController extends ControllerInterface {
             return processId;
         }
 
-        String sFinalUsername = username;
+        String sFinalUsername = MongoTemplateManager.isModuleTemporary(sModule) ? null : username;	// any metadata is considered global for temp DBs
         new SessionAttributeAwareThread(session) {
 			public void run() {
 		        HashMap<String, String> filesByExtension = null;
@@ -1453,7 +1452,7 @@ public class GigwaRestController extends ControllerInterface {
 		                            if (HttpURLConnection.HTTP_OK != respCode)
 		                                throw new IOException("Response code " + respCode);
 		                        }
-		                        progress.addStep("Importing metadata for individuals");
+		                        progress.addStep("Importing metadata for " + metadataType + "s");
 		                        progress.moveToNextStep();
 		                        nModifiedRecords.set(IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, url, metadataType, null, sFinalUsername));
 		                    } catch (IOException ioe) {
@@ -1638,7 +1637,7 @@ public class GigwaRestController extends ControllerInterface {
             return null;
 		}
 		
-		File metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new File(metadataUri1) : null;
+		Object metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new File(metadataUri1) : null;
 		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
@@ -1662,6 +1661,11 @@ public class GigwaRestController extends ControllerInterface {
 				else if (filesByExtension.containsKey(fileExtension))
 					progress.setError("Each provided datasource entry must be of a different kind!");
 				else {
+					if (fIsMetadataFile) {	// this one will be passed on to the metadata import procedure
+						metadataFile = mpf;
+						continue;
+					}
+
 					File file = null;
 					if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
 						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
@@ -1674,14 +1678,10 @@ public class GigwaRestController extends ControllerInterface {
                         LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
 					}
 					mpf.transferTo(file);
-					if (fIsMetadataFile)
-						metadataFile = file;
-					else {
-						nTotalUploadSize += file.length();
-						nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
-						filesByExtension.put(fileExtension, file);
-						uploadedFiles.add(file);
-					}
+					nTotalUploadSize += file.length();
+					nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
+					filesByExtension.put(fileExtension, file);
+					uploadedFiles.add(file);
 				}
 			}
 
@@ -1826,7 +1826,7 @@ public class GigwaRestController extends ControllerInterface {
 				fileToDelete.delete();		
 		else {
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
-			final File finalMetadataFile = metadataFile;
+			final Object finalMetadataFile = metadataFile;
 			if (!fGotDataToImport)	{	// we're only updating a project description
 				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 				MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
@@ -2059,7 +2059,7 @@ public class GigwaRestController extends ControllerInterface {
 										if (metadataImportProcessId.get() != null) {
 											long delay = 1000 * 60, parallelProcessWaitStart = System.currentTimeMillis();
 											ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
-											while (!mdImportProgress.isComplete() && !mdImportProgress.isAborted() && mdImportProgress.getError() == null && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
+											while (mdImportProgress != null && !mdImportProgress.isComplete() && !mdImportProgress.isAborted() && mdImportProgress.getError() == null && System.currentTimeMillis() - parallelProcessWaitStart < delay) {
 												Thread.sleep(1000);
 												progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
 											}
@@ -2128,8 +2128,8 @@ public class GigwaRestController extends ControllerInterface {
 						}.start();
 					}
 				}
-				finally {	// An error was emitted before starting the import thread
-					if (progress.getError() != null) {
+				finally {
+					if (progress.getError() != null) {	// An error was emitted before starting the import thread
 						if (!fDatasourceAlreadyExisted.get()) {
 							if (MongoTemplateManager.removeDataSource(sNormalizedModule, true))
 								LOG.debug("Removed datasource " + sNormalizedModule + " subsequently to failed or unauthorized import attempt");
@@ -2141,12 +2141,12 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFile != null) {
-				while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || genotypeImporter.get().getImportedIndividualsAndSamples() == null))
+				while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
 					Thread.sleep(2000);
 
-				if (genotypeImporter.get().getImportedIndividualsAndSamples() != null)
-					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile.getPath(), null, false, null, null, metadataType, brapiURLs, brapiTokens));
-				else
+				if (genotypeImporter.get() != null && genotypeImporter.get().haveSamplesBeenPersisted())
+					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile instanceof File ? ((File) metadataFile).getPath() : null, null, false, metadataFile instanceof File ? null : (MultipartFile) metadataFile, null, metadataType, brapiURLs, brapiTokens));
+				else if (progress.getError() == null && !progress.isAborted())
 					LOG.warn("Unable to process metadata during mixed import!");
 			}
 		}
