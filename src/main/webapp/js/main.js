@@ -163,10 +163,10 @@ function handleError(xhr, thrownError) {
         return;
     }
 
-    if (xhr != null && xhr.status < 500) {
+    if (xhr != null && xhr.status /*DropZone returns 0 forclient side errors*/> 0 && xhr.status < 500) {
         //processAborted = true;
         $('div.modal').modal('hide');
-        alert((xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText);
+        alert((xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + (xhr.responseText == "" ? thrownError : xhr.responseText));
         return;
     }
         

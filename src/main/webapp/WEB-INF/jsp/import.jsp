@@ -71,7 +71,7 @@
         	var BRAPI_V1_URL_ENDPOINT;
         	var brapiParameters;
         	var projectDescriptions = [];
-   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs = new Set();
+   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%=BrapiService.BRAPI_FIELD_externalReferenceId%>";
    			var extRefSrcField = "<%=BrapiService.BRAPI_FIELD_externalReferenceSource%>";
 
@@ -249,11 +249,11 @@
 		       									</div>
 		      									</div>
 		                                   </div>
-                                        <div class="col-md-1"></div>
-                                        <div class="col-md-10">
-		                                   <div id="dropZonePreviewsG" style="height:55px;"></div>
-                                        </div>
-<!--                                         <div class="col-md-1" style="height:60px;"><button class="btn btn-primary btn-sm" style='margin-top:20px;' id="importGenotypesButton" type="button">Submit</button></div> -->
+		                                </div>
+		                                <div class="row">
+	                                        <div class="col-md-12">
+			                                   <div id="dropZonePreviewsG" style="height:55px;"></div>
+	                                        </div>
                                      </div>
 		                             
 								   </div>
@@ -340,12 +340,13 @@
     									</div>
    									</div>
                                 </div>
-                                <div class="col-md-3 align-text-bottom" id="dropZonePreviewsMD">
-                                	<div style='height:100px;'>
-			                        	<div id="brapiMetadataNotice"></div>
-			                        </div>
-<!-- 									<button class="btn btn-primary btn-sm" id="importMetadataButton" type="button">Submit</button><br/> -->
-                                </div>                                                                
+                                <div class="col-md-3 align-text-bottom" id="brapiMetadataNotice" style="padding:0;">
+                                </div>
+                       		</div>
+                            <div class ="row">
+                                <div class="col-md-4"></div>
+                                <div class="col-md-7 align-text-bottom" id="dropZonePreviewsMD" style="padding:0; text-align:right;">
+                                </div>
                             </div>
                         </div>
                     </div>

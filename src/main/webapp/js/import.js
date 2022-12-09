@@ -76,6 +76,8 @@ $(document).ready(function () {
 		importFinalMessage = finalMessage;
 	} 
     
+	var previewTemplateHTML = "<div class='dz-preview dz-file-preview'>\n <div class='dz-details' style='width:260px;'>\n  <div class='dz-filename' style='max-height:45px;'><span data-dz-name style='overflow-wrap:anywhere; text-align:left;'></span></div>\n  <div class='dz-size'><span data-dz-size></span></div>\n  <a style='float:right;' class='dz-remove' href='javascript:undefined;' data-dz-remove>Remove file</a>\n  </div>\n  <div class='dz-progress'><span class='dz-upload' data-dz-uploadprogress></span></div>\n  <div class='dz-error-message'><span data-dz-errormessage></span></div>\n  <div class='dz-success-mark'>\n  <svg width='54px' height='54px' viewBox='0 0 54 54' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:sketch='http://www.bohemiancoding.com/sketch/ns'>\n   <title>Check</title>\n   <defs></defs>\n   <g id='Page-1' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd' sketch:type='MSPage'>\n    <path d='M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z' id='Oval-2' stroke-opacity='0.198794158' stroke='#747474' fill-opacity='0.816519475' fill='#FFFFFF' sketch:type='MSShapeGroup'></path>\n   </g>\n  </svg>\n  </div>\n  <div class='dz-error-mark'>\n  <svg width='54px' height='54px' viewBox='0 0 54 54' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:sketch='http://www.bohemiancoding.com/sketch/ns'>\n   <title>Error</title>\n   <defs></defs>\n   <g id='Page-1' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd' sketch:type='MSPage'>\n    <g id='Check-+-Oval-2' sketch:type='MSLayerGroup' stroke='#747474' stroke-opacity='0.198794158' fill='#ff9999' fill-opacity='0.816519475'>\n     <path d='M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z' id='Oval-2' sketch:type='MSShapeGroup'></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>";
+
     $(function() {
   	  importDropzoneG = new Dropzone("#importDropzoneG", {
   		maxFiles: 3,
@@ -86,7 +88,7 @@ $(document).ready(function () {
   	  	headers: {
   	  		"Authorization": "Bearer " + token
   	  	},
-		previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>",
+		previewTemplate: previewTemplateHTML,
   	    init:function(){
   	      var self = this;
   	      self.options.maxFilesize = maxUploadSizeInMb;
@@ -96,6 +98,11 @@ $(document).ready(function () {
   	      	setTimeout('$("input#runToImport").change();', 1);
   	      });
   	      self.on("removedfile", function (file) {
+			self.files.forEach(function(f) {
+				self.removeFile(f);
+				f.accepted = null;
+				self.addFile(f);
+			});
   	      	setTimeout('$("input#runToImport").change();', 1);
   	      });
   	      self.on("sending", function (file) {
@@ -122,17 +129,25 @@ $(document).ready(function () {
    	  	headers: {
    	  		"Authorization": "Bearer " + token
    	  	},
-   	  	previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>",
+   	  	previewTemplate: previewTemplateHTML,
    	    init:function(){
    	      var self = this;
    	      self.options.maxFilesize = 5;
    	   	  self.options.autoProcessQueue = false;
    	   	  self.options.uploadMultiple = true;
   	      self.on("addedfile", function (file) {
-  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
+			if ((file.accepted && !$('span#mdFormValid').is(":visible")) || (!file.accepted && !$('span#mdFormInvalid').is(":visible")))
+  	      		setTimeout('$("select#moduleExistingMD").change();', 1);	
   	      });
   	      self.on("removedfile", function (file) {
-  	      	setTimeout('$("select#moduleExistingMD").change();', 1);
+			self.files.forEach(function(f) {
+				self.removeFile(f);
+//				f.status = Dropzone.ADDED;
+				f.accepted = null;
+				self.addFile(f);
+			});
+			if ((file.accepted && $("#metadataTab span:visible").length > 0) || (!file.accepted && $('span#mdFormInvalid').is(":visible")))
+  	      		setTimeout('$("select#moduleExistingMD").change();', 1);
   	      });
    	      self.on("sending", function (file) {
    	        $('.meter').show();
@@ -141,13 +156,7 @@ $(document).ready(function () {
 	        if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything else unless this was the last file
 				if (self.options.url == metadataValidationURL) {	// process validation response
 		        	distinctBrapiMetadataURLs = response;
-					if (distinctBrapiMetadataURLs.length > 0)
-						$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>The current selection features " + $("#metadataType").val() + "s that are linked to " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records from one more remote BrAPI datasource(s). Clicking SUBMIT will attempt to import their metadata.</span>");
-					else
-						$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/germplasm or /search/samples call is supported in a two-step procedure: <br> \n\
-				        (1) Uploading metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively <b>sampleDbId or germplasmDbId</b> and a <b>BrAPI base-URL</b>; <br> \n\
-				        (2) Coming back to this form and submitting");
-				        
+		        	updateBrapiMetadataNotice();
 					checkMetaDataForm(false);
 			    }
 				else { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
@@ -163,11 +172,15 @@ $(document).ready(function () {
 		       	file.status = Dropzone.QUEUED;
           });
           self.on("error", function(file, msg) {
-			$('span#mdFormInvalid').show();
-			$('span#mdFormValid').hide();
-			$('div#brapiMetadataNotice').html("");
-			if ($('#mdTab').hasClass("active"))	// if user was working on the other tab we don't want to bother him
-            	handleError(file.xhr, msg);
+			if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything else unless this was the last file
+				$('span#mdFormInvalid').show();
+				$('span#mdFormValid').hide();
+				distinctBrapiMetadataURLs = null;
+				updateBrapiMetadataNotice();
+//				$('div#brapiMetadataNotice').html("");
+//				if ($('#mdTab').hasClass("active"))	// if user was working on the other tab we don't want to bother him
+//	            	handleError(file.xhr, msg);
+	         }
           });
    	    }
    	  });
@@ -175,6 +188,14 @@ $(document).ready(function () {
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
 });
+
+function updateBrapiMetadataNotice() {
+	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0)
+		$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>The current selection features " + $("#metadataType").val() + "s that are linked to " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records from one or more remote BrAPI datasource(s). Clicking SUBMIT will attempt to import their metadata.</span>");
+	else
+		$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/" + ($("#metadataType").val() == "individual" ? "germplasm" : "samples") + " call is supported by importing metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively the remote <b>" + ($("#metadataType").val() == "individual" ? "germplasmDbId" : "sampleDbId") + "</b> and a <b>BrAPI base-URL</b>. When the system finds these if will automatically attempt to retrieve metadata via BrAPI, and, if successful, remove the two fields you provided.");
+
+}
 
 $(function () {
     $(".mandatoryGtField").change(function() {
@@ -586,7 +607,7 @@ function importGenotypes(importMetadataToo) {
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
         
-	    if (distinctBrapiMetadataURLs.length > 0) {
+	    if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
 	        $('#mixedImport_brapiURLs').val("");
 	        $('#mixedImport_brapiTokens').val("");
 	        distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
@@ -650,7 +671,7 @@ function checkMetaDataForm(showAlerts) {
 }
 
 function importMetadata() {
-    if (distinctBrapiMetadataURLs.length > 0) {
+    if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
         $('#brapiURLs').val("");
         $('#brapiTokens').val("");
         distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
@@ -784,6 +805,7 @@ function loadModules() {
                 $('#moduleExistingMD').val(passedModule).selectpicker('refresh');
 			}
 			$('#moduleExistingMD').change();
+			updateBrapiMetadataNotice();
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
