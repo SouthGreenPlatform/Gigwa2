@@ -2053,8 +2053,9 @@ public class GigwaRestController extends ControllerInterface {
 										while (finalMetadataFile != null && metadataImportProcessId.get() == null)
 											sleep(2000);
 										
-										String sCompletionMessage = "NB: Metadata imported successfully";
+										String sCompletionMessage = null;
 										if (metadataImportProcessId.get() != null) {
+											sCompletionMessage = "NB: Metadata imported successfully";
 											ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
 											if (mdImportProgress == null) { // already finished
 												if (metadataImportError.get() != null)
