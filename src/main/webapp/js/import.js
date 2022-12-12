@@ -17,6 +17,7 @@
 
 var importDropzoneG;
 var importDropzoneMD;
+var currentMetadataValidationStartTime = null;
 
 var onbeforeunloadCalled = false;
 window.onbeforeunload = function(e) {
@@ -158,6 +159,7 @@ $(document).ready(function () {
 		        	distinctBrapiMetadataURLs = response;
 		        	updateBrapiMetadataNotice();
 					checkMetaDataForm(false);
+	            	currentMetadataValidationStartTime = null;
 			    }
 				else { // this is a real import attempt: wait for the last file to be uploaded before checking for progress
 	            	importFinalMessage = null;
@@ -167,19 +169,17 @@ $(document).ready(function () {
 	            	});
 	            }
             }
-            
-            if (file.status = Dropzone.SUCCESS)
-		       	file.status = Dropzone.QUEUED;
+		    file.status = Dropzone.QUEUED;
           });
           self.on("error", function(file, msg) {
 			if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything else unless this was the last file
 				$('span#mdFormInvalid').show();
 				$('span#mdFormValid').hide();
 				distinctBrapiMetadataURLs = null;
+				currentMetadataValidationStartTime = null;
 				updateBrapiMetadataNotice();
-//				$('div#brapiMetadataNotice').html("");
-//				if ($('#mdTab').hasClass("active"))	// if user was working on the other tab we don't want to bother him
-//	            	handleError(file.xhr, msg);
+				if ($('#mdTab').hasClass("active") && importDropzoneMD.files.length == 0 /* otherwise the error message will appear on the Dropzone file preview*/)
+	            	handleError(file.xhr, msg);
 	         }
           });
    	    }
@@ -290,7 +290,7 @@ $(function () {
             $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>This data is now <a style="cursor:pointer;" href="' + webappUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + (gtFormOK ? "&project=" + $("#projectToImport").val() : "") + '">available here</a></p>');
             if (importFinalMessage != null)
             	$('#progressContents').append('<p class="bold panel" style="padding:10px;">' + importFinalMessage + '</p>');
-           	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + $("#moduleToImport").val() + '&type=metadata">via this link</a></p>');
+           	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + '&type=metadata">via this link</a></p>');
             $('#progress').modal('show');
         }
         else {
@@ -308,7 +308,6 @@ $(function () {
            	}
 			// re-add files to the queue
             $.each((gtImportAttempted ? importDropzoneG : importDropzoneMD).getAcceptedFiles(), function(i, file) {
-				//console.log("queuing " + file.name);
                 file.status = Dropzone.QUEUED;
             });
         }
@@ -329,7 +328,7 @@ $(function () {
     $('#brapiPwdDialog').on('shown.bs.modal', function () {
     	$('#brapiPassword').focus();
     });
-
+    
     $(".mandatoryMdField").change(function() {
 		$("span.mdType").text($("#metadataType").val());
 	
@@ -348,10 +347,14 @@ $(function () {
 		        $(this).removeClass('dz-error');
 		    });
 		
-		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue so they remain available for the actual import
+		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue
 		        file.status = Dropzone.QUEUED;
 		    });
+
 		    importDropzoneMD.options.url = metadataValidationURL;
+		    currentMetadataValidationStartTime = Date.now();
+			$('span#mdFormValid').hide();
+			$('span#mdFormInvalid').hide();
 		    if (importDropzoneMD.getQueuedFiles().length > 0)
 		    	importDropzoneMD.processQueue();
 		    else {
@@ -366,6 +369,14 @@ $(function () {
 });
 
 function importDataIfValid() {
+	if (currentMetadataValidationStartTime != null) {
+		if (Date.now() - currentMetadataValidationStartTime > 2000)
+			alert("Metadata validation seems to have failed (no response after 2s). Metadata tab must be marked as valid before you can submit");
+		else
+			setTimeout("importDataIfValid();", 500);
+		return;
+	}
+
 	if ($('span#gtFormInvalid').is(":visible") && !isGenotypingDataFormValid(true)) {
 		$("#gtFormInvalid").parent().click();
 		return;
@@ -536,7 +547,7 @@ function importGenotypes(importMetadataToo) {
 	var dataFile1Input = $("input[name=dataFile1]");
 	var dataFile1 = dataFile1Input.val().trim();//, dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
 	var source1Uri = dataFile1.toLowerCase();
-	if (source1Uri.startsWith("http") && source1Uri.toLowerCase().indexOf("brapi") != -1)
+	if (source1Uri.startsWith("http") && source1Uri.toLowerCase().indexOf("/brapi/v") != -1)
 	{
 		if (source1Uri.indexOf("/brapi/v1") > -1 && !(source1Uri.endsWith("/brapi/v1") || source1Uri.endsWith("/brapi/v1/")))
 		{

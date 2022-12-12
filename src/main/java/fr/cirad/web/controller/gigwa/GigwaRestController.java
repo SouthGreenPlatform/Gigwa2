@@ -1627,7 +1627,7 @@ public class GigwaRestController extends ControllerInterface {
             return null;
 		}
 		
-		Object metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new File(metadataUri1) : null;
+		Object metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
 		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
@@ -1941,7 +1941,7 @@ public class GigwaRestController extends ControllerInterface {
 						        return processId;
 						    }
 		
-							Scanner sampleMappingScanner = new Scanner(new File(sampleMappingFile.toString()));
+							Scanner sampleMappingScanner = fIsSampleMappingFileLocal ? new Scanner((File) sampleMappingFile) : new Scanner(((URL) sampleMappingFile).openStream());
 				        	if (!sampleMappingScanner.hasNextLine()) {
 						        progress.setError("Sample-mapping file is empty!");
 						        return processId;
@@ -2140,7 +2140,7 @@ public class GigwaRestController extends ControllerInterface {
 					Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
 
 				if (genotypeImporter.get() != null && genotypeImporter.get().haveSamplesBeenPersisted()) {
-					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile instanceof File ? ((File) metadataFile).getPath() : null, null, false, metadataFile instanceof File ? null : (MultipartFile) metadataFile, null, metadataType, brapiURLs, brapiTokens));
+					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile instanceof URL ? ((URL) metadataFile).toString() : null, null, false, metadataFile instanceof URL ? null : (MultipartFile) metadataFile, null, metadataType, brapiURLs, brapiTokens));
 					
 					// watch metadata import progress so we are aware of errors if any
 					Timer timer = new Timer();

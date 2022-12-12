@@ -103,7 +103,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                 }
                 else {
                     if (jsonResult['error'] != null) {
-                        alert("Error occured:\n\n" + jsonResult['error']);
+                        alert("Error occurred:\n\n" + jsonResult['error']);
                         $('#progress').data('error', true);
                         $('#progress').modal('hide');
                     } else {
@@ -163,23 +163,24 @@ function handleError(xhr, thrownError) {
         return;
     }
 
-    if (xhr != null && xhr.status /*DropZone returns 0 forclient side errors*/> 0 && xhr.status < 500) {
-        //processAborted = true;
-        $('div.modal').modal('hide');
-        alert((xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + (xhr.responseText == "" ? thrownError : xhr.responseText));
-        return;
+    var mainMsg = null, errorMsg = null;
+    if (xhr != null && xhr.status /*DropZone returns 0 for client side errors*/> 0 && xhr.status < 500) {
+		$('div.modal').modal('hide');
+        mainMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + (xhr.responseText == "" ? thrownError : xhr.responseText);
     }
-        
-    var errorMsg;
-    if (xhr != null && xhr.responseText != null) {
-        try {
-            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
-        }
-        catch (err) {
-            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText;
-        }
+    else {
+        mainMsg = xhr != null ? 'Request Status: ' + xhr.status  : '';
+	    if (xhr != null && xhr.responseText != null) {
+	        try {
+	            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
+	        }
+	        catch (err) {
+	            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText;
+	        }
+	    }
     }
-    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
+
+    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + mainMsg + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : "") + '</div></div>');
     window.setTimeout(function() {
         $(".alert").fadeTo(500, 0, function(){
             $(this).remove(); 

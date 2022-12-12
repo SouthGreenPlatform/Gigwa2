@@ -708,7 +708,7 @@ function checkChartLoadingProgress() {
                 dataBeingLoaded = true;	// still running
                 if (jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
-                    alert("Error occured:\n\n" + jsonResult['error']);
+                    alert("Error occurred:\n\n" + jsonResult['error']);
                     finishProcess();
                     $('#density').modal('hide');
                 }
