@@ -1211,6 +1211,7 @@ public class GigwaRestController extends ControllerInterface {
 			endpointByIndividualOrSample = new HashMap<>();	// working on a new database
 
 		// Simulate what this would turn into after import
+		String metadataFile = null;
         Scanner scanner = null;
         HashMap<String, String> filesByExtension = null;
         try {
@@ -1218,18 +1219,19 @@ public class GigwaRestController extends ControllerInterface {
 			String extensionLessFile = filesByExtension.get("");
 			if (extensionLessFile != null)
 				throw new Exception("File has no extension: " + extensionLessFile);
-				
-	        String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
+
+			metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
 	        if (metadataFile != null) {    // deal with individuals' metadata
 	            boolean fIsFtp = metadataFile.startsWith("ftp://");
 	            boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
-	            
+
                 URL url = fIsRemote ? new URL(metadataFile) : new File(metadataFile).toURI().toURL();
                 if (fIsRemote && !fIsFtp) {
                 	HttpURLConnection connection = ((HttpURLConnection) url.openConnection());
+                	connection.setConnectTimeout(2000);
                     int respCode = connection.getResponseCode();
                     if (respCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
-            			buildResponse(response, respCode, connection.getResponseMessage() != null ? connection.getResponseMessage() : metadataFile);
+            			buildResponse(response, respCode, metadataFile + " - " + (connection.getResponseMessage() != null ? connection.getResponseMessage() : ""));
             			return null;
             	    }
                 }
@@ -1263,7 +1265,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		                continue;
                     }
-                    
+
                     List<String> cells = Helper.split(sLine, "\t");
                     String entityId = cells.size() > idColumn ? cells.get(idColumn) : null;
                     if (entityId == null)
@@ -1278,7 +1280,7 @@ public class GigwaRestController extends ControllerInterface {
 	        }
 		}
 		catch (Exception e) {
-			build400Response(response, e.getMessage());
+			build400Response(response, metadataFile + " - " + e.getMessage());
 			return null;
 	    }
         finally {
@@ -1286,14 +1288,13 @@ public class GigwaRestController extends ControllerInterface {
         		scanner.close();
         	if (filesByExtension != null) {
 	        	for (String uri : Arrays.asList(dataUri1, dataUri2))
-	        		if (uri != null && !uri.isBlank())
+	        		if (uri != null && !uri.trim().isEmpty())
 	        			filesByExtension.remove(FilenameUtils.getExtension(uri));
 	        	for (String uri : filesByExtension.values())
 	        		new File(uri).delete();
         	}
         }
-        
-//		System.out.println(endpointByIndividualOrSample.keySet());
+
 		return new HashSet<>(endpointByIndividualOrSample.values());
 	}
 
@@ -1412,8 +1413,8 @@ public class GigwaRestController extends ControllerInterface {
             }
         }
 
-        List<String> brapiUrlList = brapiURLs.isBlank() ? new ArrayList<>() : Helper.split(brapiURLs, " ; ");
-        List<String> brapiTokenArray = brapiTokens.isBlank() ? (brapiUrlList.size() == 1 ? Arrays.asList("") : new ArrayList<>()) : Helper.split(brapiTokens, " ; ");
+        List<String> brapiUrlList = brapiURLs.trim().isEmpty() ? new ArrayList<>() : Helper.split(brapiURLs, " ; ");
+        List<String> brapiTokenArray = brapiTokens.trim().isEmpty() ? (brapiUrlList.size() == 1 ? Arrays.asList("") : new ArrayList<>()) : Helper.split(brapiTokens, " ; ");
         if (brapiUrlList.size() != brapiTokenArray.size()) {
             progress.setError("You must provide the same number of BrAPI URLs and tokens (empty tokens mean no token required)");
             return processId;
@@ -1558,7 +1559,7 @@ public class GigwaRestController extends ControllerInterface {
 		        } finally {
 		        	if (filesByExtension != null)
 			        	for (String uri : Arrays.asList(dataUri1, dataUri2))
-			        		if (uri != null && !uri.isBlank())
+			        		if (uri != null && !uri.trim().isEmpty())
 			        			filesByExtension.remove(FilenameUtils.getExtension(uri));
 		        	for (String uri : filesByExtension.values())
 		        		new File(uri).delete();
