@@ -544,6 +544,7 @@ function isGenotypingDataFormValid(showAlerts) {
 } 
             
 function importGenotypes(importMetadataToo) {
+	$("#gtFormInvalid").parent().click();
 	var dataFile1Input = $("input[name=dataFile1]");
 	var dataFile1 = dataFile1Input.val().trim();//, dataFile2 = $("input[name=dataFile2]").val().trim(), dataFile3 = $("input[name=dataFile3]").val().trim();
 	var source1Uri = dataFile1.toLowerCase();
@@ -682,6 +683,7 @@ function checkMetaDataForm(showAlerts) {
 }
 
 function importMetadata() {
+	$("#mdFormInvalid").parent().click();
     if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
         $('#brapiURLs').val("");
         $('#brapiTokens').val("");
