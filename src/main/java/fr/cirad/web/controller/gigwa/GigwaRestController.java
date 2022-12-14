@@ -1459,7 +1459,7 @@ public class GigwaRestController extends ControllerInterface {
 		                        progress.addStep("Importing metadata for " + metadataType + "s");
 		                        progress.moveToNextStep();
 		                        nModifiedRecords.set(IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, url, metadataType, null, sFinalUsername));
-		                    } catch (IOException ioe) {
+		                    } catch (Exception ioe) {
 		                        if (ioe instanceof FileNotFoundException)
 		                            progress.setError("File not found: " + metadataFile);
 		                        else
