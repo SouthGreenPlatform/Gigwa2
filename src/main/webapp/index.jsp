@@ -1703,7 +1703,7 @@
 				};
 			} else {
 				genome = {
-					fastaURL: fastaFile,
+					fastaURL: genomeFile,
 					indexed: false,
 				};
 			}
@@ -2133,7 +2133,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</c:otherwise>
 		</c:choose>
 	</div>
-	<div class="container-fluid">
+	<div class="container-fluid" style="padding:0 10px;">
 		<div class="row" id="searchPanel" hidden>
 			<div id="searchDiv" class="col-md-3" style="padding: 0px 0px 0px 15px;">
 				<div class="col-md-12">
@@ -2228,7 +2228,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">
-											<select class="selectpicker" data-style="btn-primary" id="genotypeInvestigationMode" onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
+											<select class="selectpicker form-control input-sm" data-width="92px" data-style="btn-primary" id="genotypeInvestigationMode" onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
 											  <option value="0" selected>disabled</option>
 											  <option value="1">on 1 group</option>
 											  <option value="2">on 2 groups</option>
@@ -2259,43 +2259,41 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  <div class="row" id="vcfFieldFilterGroup1"></div>
 									</div>
 									<small class="text-muted">(other data seen as missing)</small>
-							   </div>
-							   <div class="col margin-top-md">
+							   </div>						
+								<div class="margin-top-md">
 									<div class="container-fluid">
 									  <div class="row">
-									  	<div class="col-xl-6 half-width" style="float:left;">
-										   	<label for="missingdata1" class="custom-label">Max missing data</label>
-										   	<div class="input-group">
-											  <input id="missingdata1" class="form-control input-sm"
-												 name="missingdata1" value="100" type="number" step="0.1"
-											 	 maxlength="3" min="0" max="100"
-												 onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
-											  <span class="input-group-addon input-sm">%</span>
-										   	</div>
-									  	  </div>
-									  	 <div class="col-xl-6 half-width" style="float:left; margin-left:10px;">
-									  	 	<!-- space for extra filter -->
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minMissingData1" value="0" id="minMissingData1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 1, 0, 100);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
+										</div>
+										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
+											<label class="custom-label">Missing %</label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxMissingData1" value="100" id="maxMissingData1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 1, 0, 100);">
 										  </div>
 										</div>
+									  </div>
 									</div>
 								</div>
 								<div class="margin-top-md mafZone">
-									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
 									<div class="container-fluid">
 									  <div class="row">
-									  	<div class="col-xl-6 input-group half-width" style="float:left;">
-											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf1" value="0"
-													 id="minmaf1" class="form-control input-sm" type="number" step="0.1"
-													 maxlength="2" min="0" max="50"
-													 onblur="mafChanged(1);">
-											<span class="input-group-addon input-sm">%</span>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minMaf1" value="0" id="minMaf1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 1, 0, 50);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
 										</div>
-									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
-										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf1" value="50"
-											 id="maxmaf1" class="form-control input-sm" type="number" step="0.1"
-											 maxlength="2" min="0" max="50"
-											 onblur="mafChanged(1);">
-										  <span class="input-group-addon input-sm">%</span>
+										<div class="col-md-4" style="text-align:center; padding:0 2px; margin-top:-3px;">
+											<label class="custom-label">MAF %<small><br/>(for bi-allelic)</small></label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxMaf1" value="50" id="maxMaf1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 1, 0, 50);">
+										  </div>
 										</div>
 									  </div>
 									</div>
@@ -2350,42 +2348,40 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									</div>
 									<small class="text-muted">(other data seen as missing)</small>
 							   </div>
-							   <div class="col margin-top-md">
+								<div class="margin-top-md">
 									<div class="container-fluid">
 									  <div class="row">
-									  	<div class="col-xl-6 half-width" style="float:left;">
-										   	<label for="missingdata2" class="custom-label">Max missing data</label>
-										   	<div class="input-group">
-											  <input id="missingdata2" class="form-control input-sm"
-												 name="missingdata2" value="100" type="number" step="0.1"
-											 	 maxlength="3" min="0" max="100"
-												  onblur="$(this).val(($(this).val() === '' || $(this).val() > 100) ? 100 : $(this).val());">
-											  <span class="input-group-addon input-sm">%</span>
-										   	</div>
-									  	  </div>
-									  	 <div class="col-xl-6 half-width" style="float:left; margin-left:10px;">
-									  	 	<!-- space for extra filter -->
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minMissingData2" value="0" id="minMissingData2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 2, 0, 100);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
+										</div>
+										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
+											<label class="custom-label">Missing %</label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxMissingData2" value="100" id="maxMissingData2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 2, 0, 100);">
 										  </div>
 										</div>
+									  </div>
 									</div>
 								</div>
-								<div class="margin-top-md" mafZone>
-									<label for="minmaf" class="custom-label">Minor allele frequency (for bi-allelic)</label>
+								<div class="margin-top-md mafZone">
 									<div class="container-fluid">
 									  <div class="row">
-									  	<div class="col-xl-6 input-group half-width" style="float:left;">
-											<span class="input-group-addon input-sm">&ge;</span> <input name="minmaf2" value="0"
-													 id="minmaf2" class="form-control input-sm" type="number" step="0.1"
-													 maxlength="2" min="0" max="50"
-													 onblur="mafChanged(2);">
-											<span class="input-group-addon input-sm">%</span>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minMaf2" value="0" id="minMaf2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 2, 0, 50);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
 										</div>
-									   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
-										  <span class="input-group-addon input-sm">&le;</span> <input name="maxmaf2" value="50"
-											 id="maxmaf2" class="form-control input-sm" type="number" step="0.1"
-											 maxlength="2" min="0" max="50"
-											 onblur="mafChanged(2);">
-										  <span class="input-group-addon input-sm">%</span>
+										<div class="col-md-4" style="text-align:center; padding:0 2px; margin-top:-3px;">
+											<label class="custom-label">MAF %<small><br/>(for bi-allelic)</small></label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxMaf2" value="50" id="maxMaf2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 2, 0, 50);">
+										  </div>
 										</div>
 									  </div>
 									</div>

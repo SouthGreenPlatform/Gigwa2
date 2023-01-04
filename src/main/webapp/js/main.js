@@ -414,8 +414,8 @@ function resetMafWidgetsIfNecessary(nGroup) {
     var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
     var enableMaf = onlyBiAllelicInSelection && !$("#filterIDsCheckbox").is(":checked") && ploidy <= 2 && $('#Genotypes' + nGroup).val() != null && !$('#Genotypes' + nGroup).val().startsWith("All Homozygous");
     if (!enableMaf) {
-        $('#minmaf' + nGroup).val(0);
-        $('#maxmaf' + nGroup).val(50);
+        $('#minMaf' + nGroup).val(0);
+        $('#maxMaf' + nGroup).val(50);
     }
 }
 
@@ -499,17 +499,19 @@ function buildSearchQuery(searchMode, pageToken){
         "callSetIds": getSelectedIndividuals(1, true),
         "gtPattern": $('#Genotypes1').val(),
         "mostSameRatio": $('#mostSameRatio1').val(),
-        "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-        "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
+        "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
+        "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
+        "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
+        "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
         "annotationFieldThresholds": annotationFieldThresholds,
 
         "callSetIds2": getSelectedIndividuals(2, true),
         "gtPattern2": $('#Genotypes2').val(),
         "mostSameRatio2": $('#mostSameRatio2').val(),
-        "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-        "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-        "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
+        "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
+        "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
+        "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
+        "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
         "annotationFieldThresholds2": annotationFieldThresholds2,
         
         "discriminate": $('#discriminate').prop('checked'),
@@ -800,20 +802,22 @@ function setGenotypeInvestigationMode(mode) {
 		$('#discriminate').prop('checked', false);
 		$('#Individuals2').selectmultiple('deselectAll');
 		$('#Genotypes2').selectpicker('deselectAll');
-		$('#missingdata2').val("100");
+		$('#minMissingData2').val("0");
+		$('#maxMissingData2').val("100");
 		$('#vcfFieldFilterGroup2 input').val("0");
-		$('#minmaf2').val("0");
-		$('#maxmaf2').val("50");
+		$('#minMaf2').val("0");
+		$('#maxMaf2').val("50");
 		$('div#genotypeInvestigationDiv2').hide(300);
 		
 		if (mode == 0)
 		{
 			$('#Individuals1').selectmultiple('deselectAll');
 			$('#Genotypes1').selectpicker('deselectAll');
-			$('#missingdata1').val("100");
+			$('#minMissingData1').val("0");
+			$('#maxMissingData1').val("100");
 			$('#vcfFieldFilterGroup1 input').val("0");
-			$('#minmaf1').val("0");
-			$('#maxmaf1').val("50");
+			$('#minMaf1').val("0");
+			$('#maxMaf1').val("50");
 			$('div#genotypeInvestigationDiv1').hide(300);
 
             $("#igvGroupsAll input").prop("checked", true);
@@ -898,9 +902,10 @@ function groupHasFilters(jsonResult, grpNumber){
     if(jsonResult['callSetIds'+e].length != 0) return true;
     if(typeof jsonResult['annotationFieldThresholds'+e]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['DP'].length != 0) return true;
     if(typeof jsonResult['annotationFieldThresholds'+e]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['GQ'].length != 0) return true;
-    if(jsonResult['missingData'+e] != 100) return true;
-    if(jsonResult['minmaf'+e] != 0) return true;
-    if(jsonResult['maxmaf'+e] != 50) return true;
+    if(jsonResult['minMissingData'+e] != 0) return true;
+    if(jsonResult['maxMissingData'+e] != 100) return true;
+    if(jsonResult['minMaf'+e] != 0) return true;
+    if(jsonResult['maxMaf'+e] != 50) return true;
     if(jsonResult['gtPattern'+e] != 'Any') return true;
 }
 
@@ -1296,18 +1301,20 @@ function saveQuery() {
             "callSetIds": getSelectedIndividuals(1, true),
             "gtPattern": $('#Genotypes1').val(),
             "mostSameRatio": $('#mostSameRatio1').val(),
-            "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-            "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-            "missingData": $('#missingdata1').val() === null ? 100 : parseFloat($('#missingdata1').val()),
+            "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
+            "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
+            "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
+            "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
             "annotationFieldThresholds": annotationFieldThresholds,
 
             "callSetIds2": getSelectedIndividuals(2, true),
             "gtPattern2": $('#Genotypes2').val(),
             "mostSameRatio2": $('#mostSameRatio2').val(),
-            "minmaf2": $('#minmaf2').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-            "maxmaf2": $('#maxmaf2').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-            "missingData2": $('#missingdata2').val() === null ? 100 : parseFloat($('#missingdata2').val()),
-               "annotationFieldThresholds2": annotationFieldThresholds2,
+            "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
+            "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
+            "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
+            "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
+            "annotationFieldThresholds2": annotationFieldThresholds2,
             
             "discriminate": $('#discriminate').prop('checked'),
             "pageSize": 100,
@@ -1402,18 +1409,20 @@ function listQueries(){
                         "callSetIds":    jsonResult['callSetIds'],
                         "gtPattern": jsonResult['gtPattern'],
                         "mostSameRatio": jsonResult['mostSameRatio'],
-                        "minmaf": jsonResult['minmaf'],
-                        "maxmaf": jsonResult['maxmaf'],
-                        "missingData": jsonResult['missingData'],
+                        "minMaf": jsonResult['minMaf'],
+                        "maxMaf": jsonResult['maxMaf'],
+                        "minMissingData": jsonResult['minMissingData'],
+                        "maxMissingData": jsonResult['maxMissingData'],
                         "annotationFieldThresholds": jsonResult['annotationFieldThresholds'],
 
                         "callSetIds2": jsonResult['callSetIds2'],
                         "gtPattern2": jsonResult['gtPattern2'],
                         "mostSameRatio2": jsonResult['mostSameRatio2'],
-                        "minmaf2": jsonResult['minmaf2'],
-                        "maxmaf2": jsonResult['maxmaf2'],
-                        "missingData2": jsonResult['missingData2'],
-                           "annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
+                        "minMaf2": jsonResult['minMaf2'],
+                        "maxMaf2": jsonResult['maxMaf2'],
+                        "minMissingData2": jsonResult['minMissingData2'],
+                        "maxMissingData2": jsonResult['maxMissingData2'],
+                        "annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
                         
                         "discriminate": jsonResult['discriminate'],
                         "pageSize": jsonResult['pageSize'],
@@ -1501,9 +1510,10 @@ function listQueries(){
                           let groupThresholds = jsonResult['annotationFieldThresholds'+e];
                           for (var key in groupThresholds)
                               $('#vcfFieldFilterGroup'+i+' #' + key + '_threshold' + i).val(groupThresholds[key]);
-                          $('#missingdata'+i).val(jsonResult['missingData'+e]);
-                          $('#minmaf'+i).val(jsonResult['minmaf'+e]);
-                          $('#maxmaf'+i).val(jsonResult['maxmaf'+e]);
+                          $('#minMissingData'+i).val(jsonResult['minMissingData'+e]);
+                          $('#maxMissingData'+i).val(jsonResult['maxMissingData'+e]);
+                          $('#minMaf'+i).val(jsonResult['minMaf'+e]);
+                          $('#maxMaf'+i).val(jsonResult['maxMaf'+e]);
                           $('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
                           $('#mostSameRatio'+i).val(jsonResult['mostSameRatio'+e]);
                           $('#Genotypes'+i).trigger('change');
@@ -1569,11 +1579,12 @@ function onFilterByIds(checked) {
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
 		for (var nGroup=1; nGroup<=2; nGroup++) {
-	        $('#missingdata' + nGroup).val(100).prop('disabled', true);
+	        $('#minMissingData' + nGroup).val(0).prop('disabled', true);
+	        $('#maxMissingData' + nGroup).val(100).prop('disabled', true);
 	        $('#mostSameRatio' + nGroup).prop('disabled', true);
 	        $('#Genotypes' + nGroup).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
-		    $('#minmaf' + nGroup).prop('disabled', "disabled");
-		    $('#maxmaf' + nGroup).prop('disabled', "disabled");
+		    $('#minMaf' + nGroup).prop('disabled', "disabled");
+		    $('#maxMaf' + nGroup).prop('disabled', "disabled");
 		}
     } else {
 		selectedVariantIDsWhenTooManyToFitInSelect = null;
@@ -1594,22 +1605,24 @@ function onFilterByIds(checked) {
         $('#uploadVariantIds').prop('disabled', true);
                 
         for (var nGroup=1; nGroup<=2; nGroup++) {
-	        $('#missingdata' + nGroup).prop('disabled', false);
-	        $('#missingdata' + nGroup).val(100);
+	        $('#minMissingData' + nGroup).prop('disabled', false);
+	        $('#minMissingData' + nGroup).val(0);
+	        $('#maxMissingData' + nGroup).prop('disabled', false);
+	        $('#maxMissingData' + nGroup).val(100);
 	        $('#mostSameRatio' + nGroup).prop('disabled', false);
 	        $('#Genotypes' + nGroup).prop('disabled', false).selectpicker('refresh');        
-		    $('#minmaf' + nGroup).prop('disabled', false);
-		    $('#maxmaf' + nGroup).prop('disabled', false);
+		    $('#minMaf' + nGroup).prop('disabled', false);
+		    $('#maxMaf' + nGroup).prop('disabled', false);
 		}
     }
 }
 
-function mafChanged(nGroup) {
-	var minInput = $("input#minmaf" + nGroup), maxInput = $("input#maxmaf" + nGroup);
-	var minApplied = minInput.val() > 0, maxApplied = maxInput.val() < 50, mustBeReset = false;
-	var minInvalid = minInput.val() === '' || minInput.val() < 0 || minInput.val() > 50, maxInvalid = maxInput.val() === '' || maxInput.val() < 0 || maxInput.val() > 50;
+function rangeChanged(paramName, nGroup, minThreshold, maxThreshold) {
+	var minInput = $("input#min" + paramName + nGroup), maxInput = $("input#max" + paramName + nGroup);
+	var minApplied = minInput.val() > minThreshold, maxApplied = maxInput.val() < maxThreshold, mustBeReset = false;
+	var minInvalid = minInput.val() === '' || minInput.val() < minThreshold || minInput.val() > maxThreshold, maxInvalid = maxInput.val() === '' || maxInput.val() < minThreshold || maxInput.val() > maxThreshold;
 	
-	if ((minApplied || maxApplied) && !minInvalid && !maxInvalid) {
+	if (paramName == "Maf" && (minApplied || maxApplied) && !minInvalid && !maxInvalid) {
 		var gotMultipleAlleleCounts = $('#numberOfAlleles').children().length > 1;
 		var onlyBiAllelicInSelection = (!gotMultipleAlleleCounts && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
 		if (!onlyBiAllelicInSelection && gotMultipleAlleleCounts) {
@@ -1631,9 +1644,9 @@ function mafChanged(nGroup) {
 	}
 	
 	if (mustBeReset || minInvalid)
-		minInput.val(0);	
+		minInput.val(minThreshold);	
 	if (mustBeReset || maxInvalid)
-		maxInput.val(50);	
+		maxInput.val(maxThreshold);	
 }
 
 function onVariantIdsSelect() {
