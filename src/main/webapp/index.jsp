@@ -1774,8 +1774,11 @@
 					success: function(){
 						igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 					},
-					error: function(xhr, ajaxOptions, thrownError){
-						handleError(xhr, thrownError);
+					error: function(xhr, ajaxOptions, thrownError) {
+						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+							alert("Error accessing resource: " + genomeURL);
+						else
+							handleError(xhr, thrownError);
 					}
 				});
 			} else {

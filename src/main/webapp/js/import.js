@@ -614,7 +614,7 @@ function importGenotypes(importMetadataToo) {
 		    if (isPhenotypeFile)
 		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
 	    	else
-				file.upload.filename += ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+				file.upload.filename = file.name + ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
         }
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
