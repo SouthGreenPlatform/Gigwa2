@@ -24,6 +24,8 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaUnitTests {
+	
+	/* TODO: also use setMinMissingData() */
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
@@ -212,7 +214,7 @@ public class GigwaUnitTests {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
@@ -232,7 +234,7 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -253,9 +255,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(25f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(25f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -276,9 +278,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -300,9 +302,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Not all the same");
 
 		svr.setAlleleCount("2");
@@ -325,9 +327,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("All or mostly the same");
 		svr.setMostSameRatio(75);
 
@@ -351,7 +353,7 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 		svr.setGtPattern("All Homozygous Ref");
 		
 		svr.setAlleleCount("2");
@@ -374,9 +376,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Some Homozygous Ref");
 
 		svr.setAlleleCount("2");
@@ -399,7 +401,7 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 		svr.setGtPattern("All Homozygous Var");
 
 		svr.setAlleleCount("2");
@@ -422,9 +424,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Some Homozygous Var");
 
 		svr.setAlleleCount("2");
@@ -447,9 +449,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("All Heterozygous");
 
 		svr.setAlleleCount("2");
@@ -472,9 +474,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Some Heterozygous");
 
 		svr.setAlleleCount("2");
@@ -497,9 +499,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Without abnormal heterozygosity");
 
 		svr.setAlleleCount("2");
@@ -541,7 +543,7 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 5f);}});
-		svr.setMissingData(40f);
+		svr.setMaxMissingData(40f);
 		svr.setGtPattern("All different");
 
 		svr.setVariantSetId("testModule§1");
@@ -571,9 +573,9 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
-		svr.setMissingData(20f);
-		svr.setMinmaf(25f);
-		svr.setMaxmaf(50f);
+		svr.setMaxMissingData(20f);
+		svr.setMinMaf(25f);
+		svr.setMaxMaf(50f);
 		svr.setGtPattern("Some Heterozygous");
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
@@ -599,13 +601,13 @@ public class GigwaUnitTests {
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 		svr.setGtPattern("All or mostly the same");
 		svr.setMostSameRatio(75);
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
 		svr.setAnnotationFieldThresholds2(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
-		svr.setMissingData2(20f);
+		svr.setMaxMissingData2(20f);
 		svr.setGtPattern2("All or mostly the same");
 		svr.setMostSameRatio2(75);
 		
@@ -629,13 +631,13 @@ public class GigwaUnitTests {
 		
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
-		svr.setMissingData(20f);
+		svr.setMaxMissingData(20f);
 		svr.setGtPattern("All or mostly the same");
 		svr.setMostSameRatio(75);
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
 		svr.setAnnotationFieldThresholds2(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
-		svr.setMissingData2(20f);
+		svr.setMaxMissingData2(20f);
 		svr.setGtPattern2("All or mostly the same");
 		svr.setMostSameRatio2(75);
 		

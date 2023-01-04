@@ -256,7 +256,7 @@
           this.load(Math.min((lastSelected + this.options.size) - (lastSelected % this.options.size), this.length));
           this.$element.data('count', selectedCount);
           if (selectedCount != labelArray.length)
-          	alert((labelArray.length - selectedCount) + ' pasted individuals could not be found!');
+          	alert((labelArray.length - selectedCount) + ' pasted entries could not be found!');
           this.$element.data('value', selectedCount == labelArray.length ? labelArray : $(this.$select).find("option:selected").toArray().map(opt => opt.text));
           this.$buttonsearch.trigger('multiple_select_change');
         }
