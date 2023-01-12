@@ -319,7 +319,7 @@ $(function () {
     		$('div#brapiDataSelectionDiv').remove();
     	else
     	{
-			BRAPI_V1_URL_ENDPOINT = $("input[name=dataFile1]").val().trim();
+			BRAPI_V1_URL_ENDPOINT = $("input[name=dataFile1]").val().trim().replace(/:\/\/.*@/, ":\/\/");
 			if (!checkEndPoint())
 				return failAndHideBrapiDataSelectionDiv();
 			submitBrapiForm();
@@ -556,7 +556,7 @@ function importGenotypes(importMetadataToo) {
 			return;
 		}
 		
-		BRAPI_V1_URL_ENDPOINT = dataFile1Input.val().trim();
+		BRAPI_V1_URL_ENDPOINT = dataFile1Input.val().trim().replace(/:\/\/.*@/, ":\/\/");
 		if (!checkEndPoint())
 			return failAndHideBrapiDataSelectionDiv();
 		var brapiUserNameMatches = source1Uri.match(/https?:\/\/(.*)@.*/);
