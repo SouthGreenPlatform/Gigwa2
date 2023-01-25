@@ -5,7 +5,7 @@
 
 	<groupId>fr.cirad</groupId>
 	<artifactId>gigwa2</artifactId>
-	<version>2.5.2-snapshot</version>
+	<version>3.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>gigwa2</name>
