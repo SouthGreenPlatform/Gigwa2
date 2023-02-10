@@ -1657,3 +1657,12 @@ function onVariantIdsSelect() {
         $('#copyVariantIds').removeAttr('disabled').selectpicker('refresh');
     }
 }
+
+function buildHeader(token, assemblyId, individuals) {
+    var headers = { "Authorization": "Bearer " + token };
+	    if (assemblyId != null)
+	    	headers["assembly"] = assemblyId;
+	    if (individuals != null)
+	    	headers["ind"] = individuals;
+	    return headers;
+}

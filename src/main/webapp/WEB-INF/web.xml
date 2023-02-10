@@ -104,4 +104,8 @@
     <filter-name>assemblyFilter</filter-name>
     <url-pattern>*.json</url-pattern>
   </filter-mapping>
+  <filter-mapping>
+    <filter-name>assemblyFilter</filter-name>
+    <url-pattern>/rest/*</url-pattern>
+  </filter-mapping>
 </web-app>

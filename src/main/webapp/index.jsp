@@ -147,6 +147,35 @@
 				dropTempColl();
 
 			referenceset = $(this).val();
+			
+	        $.ajax({
+		        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS%>" />/' + referenceset,
+		        type: "GET",
+		        dataType: "json",
+		        async: false,
+		        headers: {
+		            "Authorization": "Bearer " + token
+		        },
+		        success: function(jsonResult) {
+		        	if (jsonResult.assemblyId == null) {
+		        		$('#assembly').html("").selectpicker('refresh');
+			    		$("#grpAsm").hide();
+		        		return;
+		        	}
+			        let moduleAssemblies = jsonResult.assemblyId.split(", "), assemblyOptions = "";
+			        for (var assembly in moduleAssemblies)
+			        	assemblyOptions += '<option value="' + moduleAssemblies[assembly] + '">' + (moduleAssemblies[assembly] == '' ? '(unnamed default)' : moduleAssemblies[assembly]) + '</option>';
+			    	$('#assembly').html(assemblyOptions).selectpicker('refresh');
+			    	if (moduleAssemblies == null || moduleAssemblies.length <= 1)
+			    		$("#grpAsm").hide();
+			    	else
+			    		$("#grpAsm").show();
+		        },
+		        error: function(xhr, ajaxOptions, thrownError) {
+		            handleError(xhr, thrownError);
+		        }
+		    });
+
 			if (!loadProjects(referenceset))
 				return;
 						
@@ -239,9 +268,7 @@
 				type: "GET",
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
+    	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
 					runList = [];
 					for (var run in jsonResult.runs)
@@ -442,10 +469,8 @@
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			data: JSON.stringify({
+	        headers: buildHeader(token, $('#assembly').val()),
+	        data: JSON.stringify({
 				"datasetId": module == null && passedModule != null ? passedModule : module,
 				"pageSize": null,
 				"pageToken": null
@@ -520,26 +545,24 @@
 	}
 
 	function loadVariantTypes() {                
-                    $.ajax({
-                            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
-                            type: "GET",
-                            dataType: "json",
-                            contentType: "application/json;charset=utf-8",
-                            headers: {
-                                    "Authorization": "Bearer " + token
-                            },
-                            success: function(jsonResult) {
-                                    variantTypesCount = jsonResult.length;
-                                    var option = "";
-                                    for (var key in jsonResult) {
-                                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-                                    }
-                                    $('#variantTypes').html(option).selectpicker('refresh');
-                            },
-                            error: function(xhr, ajaxOptions, thrownError) {
-                                    handleError(xhr, thrownError);
-                            }
-                    });
+	    $.ajax({
+	            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+	            type: "GET",
+	            dataType: "json",
+	            contentType: "application/json;charset=utf-8",
+    	        headers: buildHeader(token, $('#assembly').val()),
+	            success: function(jsonResult) {
+	                    variantTypesCount = jsonResult.length;
+	                    var option = "";
+	                    for (var key in jsonResult) {
+	                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
+	                    }
+	                    $('#variantTypes').html(option).selectpicker('refresh');
+	            },
+	            error: function(xhr, ajaxOptions, thrownError) {
+	                    handleError(xhr, thrownError);
+	            }
+	    });
 	}
 
 	function loadSequences() {
@@ -548,9 +571,7 @@
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			data: JSON.stringify({
 				"referenceSetId": $('#module').val(),
 				"variantSetId": getProjectId(),
@@ -746,9 +767,7 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				if (jsonResult.effectAnnotations.length > 0) {
 					var option = "";
@@ -778,9 +797,7 @@
 			dataType: "json",
 			async:false,
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				alleleCount = jsonResult.numberOfAllele.length;
 				var option = "";
@@ -914,9 +931,7 @@
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
                 timeout:0,
-                headers: {
-                        "Authorization": "Bearer " + token
-                },
+    	        headers: buildHeader(token, $('#assembly').val()),
                 data: JSON.stringify(query),
                 success: function(jsonResult) {
                         $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
@@ -1124,9 +1139,7 @@
 				async: false,
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
+    	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
 					if (addedRunCount == 0) {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
@@ -1174,9 +1187,7 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				var gotFunctAnn = jsonResult.info.ann_header != null && jsonResult.info.ann_header.length > 0
 				$('#toggleFunctionalAnn').css('display', gotFunctAnn ? 'inline' : 'none');
@@ -1280,11 +1291,11 @@
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 
-                var query = buildSearchQuery(3, currentPageToken);
-                query["keepExportOnServer"] =  keepExportOnServer;
-                query["exportFormat"] =  $('#exportFormat').val();
-                query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
-                query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
+        var query = buildSearchQuery(3, currentPageToken);
+        query["keepExportOnServer"] =  keepExportOnServer;
+        query["exportFormat"] =  $('#exportFormat').val();
+        query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
+        query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
@@ -1293,9 +1304,7 @@
                 url: url,
                 type: "POST",       
                 contentType: "application/json;charset=utf-8",
-                headers: {
-                        "Authorization": "Bearer " + token
-                },
+    	        headers: buildHeader(token, $('#assembly').val()),
                 data: JSON.stringify(query),
                 success: function(response) {
                         downloadURL = response;
@@ -1308,10 +1317,8 @@
                 }
             });
 		} else {
-            var headers = {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json;charset=utf-8" 
-            };
+			var headers = buildHeader(token, $('#assembly').val());
+            headers["Content-Type"] = "application/json;charset=utf-8"; 
 
             var request = {
                 method: "POST",
