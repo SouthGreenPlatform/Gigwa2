@@ -113,6 +113,7 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
@@ -848,7 +849,7 @@ public class GigwaRestController extends ControllerInterface {
 					StringBuffer sb = new StringBuffer();
 					try
 					{
-		                ReferencePosition rp = vrd.getReferencePosition();
+		                ReferencePosition rp = vrd.getReferencePosition(Assembly.getThreadAssembly());
 		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
@@ -933,7 +934,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 		};
 
-		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
+		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
@@ -1343,16 +1344,16 @@ public class GigwaRestController extends ControllerInterface {
                         	callSetsRequest.setVariantSetId(sModule + IGigwaService.ID_SEPARATOR + projId);
                         	callSetsRequest.setRequest(request);
                             for (CallSet ga4ghCallSet : ga4ghService.searchCallSets(callSetsRequest).getCallSets()) {
-                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+                                List<String> extRefIdValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
+                                List<String> extRefSrcValues = ga4ghCallSet.getInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
 
                                 if (extRefSrcValues == null || extRefSrcValues.isEmpty() || extRefIdValues == null || extRefIdValues.isEmpty())
                                     continue;
 
                                 if (extRefIdValues.size() != 1)
-                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceId + " expected for " + metadataType + " " + ga4ghCallSet.getId());
                                 if (extRefSrcValues.size() != 1)
-                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
+                                    LOG.warn("Only one " + BrapiService.BRAPI_FIELD_externalReferenceSource + " expected for " + metadataType + " " + ga4ghCallSet.getId());
 
                                 String[] splitId = ga4ghCallSet.getId().split(IGigwaService.ID_SEPARATOR);
 
@@ -1375,8 +1376,8 @@ public class GigwaRestController extends ControllerInterface {
                         	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, username, Arrays.asList(projId), null).values();
                             for (GenotypingSample sample : genotypingSamples)
                                 if (sample.getAdditionalInfo() != null) {
-                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceId);
-                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource);
+                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
+                                	String extRefSrcValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource);
                                     
                                     if (extRefSrcValue == null || extRefIdValue == null)
                                         continue;
@@ -1449,6 +1450,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sHost the host
 	 * @param sModule the module
 	 * @param ncbiTaxonIdNameAndSpecies the ncbi TaxonId, Taxon Name and Species Name
+	 * @param assemblyName name of the assembly on which provided positions are based
 	 * @param nPloidy the ploidy level
 	 * @param sProject the project
 	 * @param sRun the run
@@ -1473,6 +1475,7 @@ public class GigwaRestController extends ControllerInterface {
 	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
+			@RequestParam(value = "assemblyName", required = false) final String assemblyName,
 			@RequestParam(value = "ploidy", required = false) final Integer nPloidy,
 			@RequestParam("project") final String sProject, @RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
@@ -1815,7 +1818,7 @@ public class GigwaRestController extends ControllerInterface {
 						try {							
 							Integer newProjId = null;
 							if (fBrapiImport)
-								newProjId = new BrapiImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+								newProjId = new BrapiImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 							else {
 								HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
 								if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
@@ -1832,22 +1835,22 @@ public class GigwaRestController extends ControllerInterface {
 									if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsGenotypingFileLocal = mapFile instanceof File;
-										newProjId = new PlinkImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new PlinkImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 										Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 										boolean fIsGenotypingFileLocal = s instanceof File;
-										newProjId = new VcfImport(processId).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new VcfImport(processId).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
                                     else if (filesByExtension.containsKey("intertek")) {
                                         Serializable s = filesByExtension.get("intertek");                                                                               
                                         boolean fIsGenotypingFileLocal = s instanceof File;
-                                        newProjId = new IntertekImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+                                        newProjId = new IntertekImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
                                     }
 									else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 										Serializable mapFile = filesByExtension.get("map");
 										boolean fIsGenotypingFileLocal = mapFile instanceof File;
-										newProjId = new FlapjackImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = new FlapjackImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 
 									}
 									else {
@@ -1855,7 +1858,7 @@ public class GigwaRestController extends ControllerInterface {
 										boolean fIsGenotypingFileLocal = s instanceof File;
 										scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 										if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#"))
-											newProjId = new HapMapImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											newProjId = new HapMapImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										else
 											throw new Exception("Unsupported format or extension for genotyping data file: " + s);
 									}
@@ -1867,7 +1870,7 @@ public class GigwaRestController extends ControllerInterface {
 										BlockCompressedInputStream.assertNonDefectiveFile((File) s);
 									else
 										LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
-									newProjId = new VcfImport(processId).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+									newProjId = new VcfImport(processId).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 								}
 							}
 							

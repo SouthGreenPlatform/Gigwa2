@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.rest.BrapiRestController, fr.cirad.mgdb.service.GigwaGa4ghServiceImpl,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
+<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController, fr.cirad.mgdb.service.GigwaGa4ghServiceImpl,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
@@ -147,38 +147,10 @@
 				dropTempColl();
 
 			referenceset = $(this).val();
-			
-	        $.ajax({
-		        url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCESETS%>" />/' + referenceset,
-		        type: "GET",
-		        dataType: "json",
-		        async: false,
-		        headers: {
-		            "Authorization": "Bearer " + token
-		        },
-		        success: function(jsonResult) {
-		        	if (jsonResult.assemblyId == null) {
-		        		$('#assembly').html("").selectpicker('refresh');
-			    		$("#grpAsm").hide();
-		        		return;
-		        	}
-			        let moduleAssemblies = jsonResult.assemblyId.split(", "), assemblyOptions = "";
-			        for (var assembly in moduleAssemblies)
-			        	assemblyOptions += '<option value="' + moduleAssemblies[assembly] + '">' + (moduleAssemblies[assembly] == '' ? '(unnamed default)' : moduleAssemblies[assembly]) + '</option>';
-			    	$('#assembly').html(assemblyOptions).selectpicker('refresh');
-			    	if (moduleAssemblies == null || moduleAssemblies.length <= 1)
-			    		$("#grpAsm").hide();
-			    	else
-			    		$("#grpAsm").show();
-		        },
-		        error: function(xhr, ajaxOptions, thrownError) {
-		            handleError(xhr, thrownError);
-		        }
-		    });
 
 			if (!loadProjects(referenceset))
 				return;
-						
+
 			$("div#welcome").hide();
 
 			for (var groupNumber=1; groupNumber<=2; groupNumber++)
@@ -220,7 +192,7 @@
 
 			$.ajax({
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
-				async: false,// 			async: false,
+				async: false,
 				type: "GET",
 				contentType: "application/json;charset=utf-8",
 				success: function(labelsAndURLs) {
@@ -251,6 +223,33 @@
 			$("table#individualFilteringTable").html("");
 			$('#countResultPanel').hide();
 			$('#rightSidePanel').hide();
+			$("#grpAsm").hide();
+			
+			$.ajax({	// load assemblies
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
+				type: "POST",
+				dataType: "json",
+				async: false,
+				contentType: "application/json;charset=utf-8",
+		        headers: buildHeader(token, $('#assembly').val()),
+				data: JSON.stringify({
+					"studyDbIds": [getProjectId()]
+				}),
+				success: function(jsonResult) {
+					$('#assembly').html("");
+					jsonResult.result.data.forEach(refSet => {
+						var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
+						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
+						if (asmId != 0)
+							$("#grpAsm").show();
+					});
+					$('#assembly').selectpicker('refresh');
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
+				}
+			});
+
 			fillWidgets();
 			resetFilters();
 			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
@@ -564,24 +563,18 @@
 	            }
 	    });
 	}
-
 	function loadSequences() {
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCES_SEARCH%>" />',
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesApi.searchReferencesPost_url%>" />',
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 			data: JSON.stringify({
-				"referenceSetId": $('#module').val(),
-				"variantSetId": getProjectId(),
-				"md5checksum": null,
-				"accession": null,
-				"pageSize": null,
-				"pageToken": null
+				"referenceSetDbIds": [/* $('#module').val() + "${idSep}" +*/ getProjectId() + "${idSep}" + $('#assembly').val()]
 			}),
 			success: function(jsonResult) {
-				seqCount = jsonResult.references.length;
+				seqCount = jsonResult.result.data.length;
                 if (seqCount == 0) {
                     $('#sequenceFilter').hide();
                     $('#positions').hide();
@@ -594,17 +587,16 @@
                     onFilterByIds(false);
                 }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
-				var seqOpt = [];
-				for (var ref in jsonResult.references) {
-					seqOpt[ref] = jsonResult.references[ref].name;
-				}
+				referenceNames = [];
+				jsonResult.result.data.forEach(ref => {
+					referenceNames.push(ref["referenceName"]);
+				});
+
 				$('#Sequences').selectmultiple({
 					text: 'Sequences',
-					data: seqOpt,
+					data: referenceNames,
 					placeholder: 'sequence'
 				});
-				referenceNames = [];
-				jsonResult.references.forEach(ref => referenceNames.push(ref.name))
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
