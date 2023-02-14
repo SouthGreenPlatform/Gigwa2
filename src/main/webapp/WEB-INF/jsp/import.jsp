@@ -60,8 +60,8 @@
         	var brapiParameters;
         	var projectDescriptions = [];
    			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
-   			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceId %>";
-   			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_germplasmExternalReferenceSource %>";
+   			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_externalReferenceId %>";
+   			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_externalReferenceSource %>";
    			
    			var supervisedModules = [];
    			<c:if test="${!isAnonymous}">
