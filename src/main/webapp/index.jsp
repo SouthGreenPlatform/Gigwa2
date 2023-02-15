@@ -948,7 +948,7 @@
  		$('#serverExportBox').hide();
 		displayProcessProgress(2, token);
 	}
-        
+
     function loadVariantIds() {
         var options = {
                 ajax:{
@@ -1011,7 +1011,7 @@
             inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
         }
     }
-        	
+
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -1344,7 +1344,7 @@
 		}
 		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
 	}
-	
+
 	function showServerExportBox()
 	{
 		$("div#exportPanel").hide();
@@ -2111,12 +2111,12 @@
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
 			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
-		<div class="margin-top" style="padding:10px 0; text-align:center; text-align:center;" id="logoRow">	 
+		<div class="margin-top" style="margin:0 -30px; text-align:center; text-align:center;" id="logoRow">	 
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
 			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
 			<a href="http://www.inrae.fr/" target="_blank" class="margin-left"><img alt="inra" height="20" src="images/logo-inrae.png" /></a>
-			<a href="https://www.bioversityinternational.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="45" src="images/logo-bioversity.png" /></a>
+			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
