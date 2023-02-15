@@ -22,6 +22,7 @@
 var minimumProcessQueryIntervalUnit = 100;
 var maxUploadableVariantIdCount = 1000000, maxPastableVariantIdCount = 1000, maxSelectableVariantIdCount = 10000;
 var selectedVariantIDsWhenTooManyToFitInSelect = null;
+var emptyResponseCountsByProcess = [];
 
 function isHex(h) {
     var a = parseInt(h, 16);
@@ -87,11 +88,23 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                 "Authorization": "Bearer " + token
             },
             success: function (jsonResult, textStatus, jqXHR) {
-                if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
-                    displayProcessProgress(nbMin, token, processId, onSuccessMethod);
+                if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted)) {
+					var processKey = processId != null ? processId : token;
+					if (emptyResponseCountsByProcess[processKey] == null)
+						emptyResponseCountsByProcess[processKey] = 1;
+					else
+						emptyResponseCountsByProcess[processKey]++;
+					if (emptyResponseCountsByProcess[processKey] > 10) {
+						console.log("Giving up requesting progress for process " + processKey);
+						emptyResponseCountsByProcess[processKey] = null;
+					}
+					else
+                    	displayProcessProgress(nbMin, token, processId, onSuccessMethod);
+                }
                 else if (jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
                         onSuccessMethod();
+                   	emptyResponseCountsByProcess[processKey] = null;
                     $('#progress').modal('hide');
                 }
                 else if (jsonResult['aborted'] == true) {
@@ -99,6 +112,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                         markCurrentProcessAsAborted();
                     else
                         processAborted = true;
+                    emptyResponseCountsByProcess[processKey] = null;
                     $('#progress').modal('hide');
                 }
                 else {
@@ -106,6 +120,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                         alert("Error occured:\n\n" + jsonResult['error']);
                         $('#progress').data('error', true);
                         $('#progress').modal('hide');
+                        emptyResponseCountsByProcess[processKey] = null;
                     } else {
                         $('#progressText').html(jsonResult.progressDescription);
                         displayProcessProgress(nbMin, token, processId, onSuccessMethod);
