@@ -194,7 +194,7 @@ function initializeAndShowDensityChart(){
 
 function onManualIndividualSelection() {
 	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " selected)"));
-	$('.showHideSeriesBox').attr('checked', false);
+	$('.showHideSeriesBox').prop('checked', false);
 	$('.showHideSeriesBox').change();
 }
 

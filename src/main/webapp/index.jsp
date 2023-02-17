@@ -1165,7 +1165,7 @@
 
 	// create the annotation detail panel 
 	function loadVariantAnnotationData() {
-		$('#displayAllGt').attr('checked', false);
+		$('#displayAllGt').prop('checked', false);
 		loadGenotypes(false);
 		// get annotations 
 	   	$('#scrollingAnnotationDiv').html("");

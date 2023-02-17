@@ -464,10 +464,7 @@ function browsingBoxChanged()
 
 function checkBrowsingBoxAccordingToLocalVariable()
 {
-    if (localStorage.getItem('browsingAndExportingEnabled') == 1)
-        $('input#browsingAndExportingEnabled').attr('checked', 'checked');
-    else
-        $('input#browsingAndExportingEnabled').removeAttr('checked');
+	$('input#browsingAndExportingEnabled').prop("checked", localStorage.getItem('browsingAndExportingEnabled') == 1);
 }
 
 
