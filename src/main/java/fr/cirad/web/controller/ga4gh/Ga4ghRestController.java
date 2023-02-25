@@ -232,10 +232,11 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String[] info = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR);
+        	int projId = Integer.parseInt(info[1]);
+	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
 	            String indHeader = request.getHeader("ind");
 	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
-
 	            if (variant == null) {
 	                build404Response(response);
 	                return null;
@@ -271,8 +272,9 @@ public class Ga4ghRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
         try
         {
-            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-//                String indHeader = request.getHeader("ind");
+        	String[] info = id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR);
+        	int projId = Integer.parseInt(info[1]);
+	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
                 List<String> callSetIds = ((List<String>) body.get("callSetIds"));
                 Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
                 if (variant == null) {

@@ -94,7 +94,7 @@
   
   <filter>
     <filter-name>assemblyFilter</filter-name>
-    <filter-class>fr.cirad.web.filter.AssemblyFilter</filter-class>
+    <filter-class>fr.cirad.web.filter.GigwaAssemblyFilter</filter-class>
   </filter>
   <filter-mapping>
     <filter-name>assemblyFilter</filter-name>

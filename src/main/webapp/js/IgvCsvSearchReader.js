@@ -380,9 +380,7 @@ class GigwaSearchReader {
 				type: "POST",
 				dataType: "text",
 				contentType: "application/json;charset=utf-8",
-				headers: {
-					"Authorization": "Bearer " + self.token,
-				},
+				headers: buildHeader(token, $('#assembly').val()),
 				data: JSON.stringify(query),
 				error: function (xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);

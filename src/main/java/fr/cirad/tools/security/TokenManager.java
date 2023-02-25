@@ -279,7 +279,7 @@ public class TokenManager extends AbstractTokenManager {
 	}
     
 	@Override
-    public boolean canUserReadProject(String token, String module, int projectId)
+    public boolean canUserReadProject(String token, String module, int projectId) throws ObjectNotFoundException
     {
         Authentication authentication = getAuthenticationFromToken(token);
         boolean fResult = canUserReadProject(authentication == null ? null : userDao.getUserAuthorities(authentication), module, projectId);
@@ -289,8 +289,11 @@ public class TokenManager extends AbstractTokenManager {
     }
     
 	@Override
-	public boolean canUserReadProject(Collection<? extends GrantedAuthority> authorities, String sModule, int projectId)
+	public boolean canUserReadProject(Collection<? extends GrantedAuthority> authorities, String sModule, int projectId) throws ObjectNotFoundException
 	{
+    	if (MongoTemplateManager.get(sModule) == null)
+    		throw new ObjectNotFoundException("Database " + sModule + " does not exist");
+
         if (MongoTemplateManager.isModulePublic(sModule))
             return true;
         

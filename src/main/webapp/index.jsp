@@ -144,7 +144,7 @@
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
-				dropTempColl();
+				dropTempColl(false);
 
 			referenceset = $(this).val();
 
@@ -239,6 +239,7 @@
 					$('#assembly').html("");
 					jsonResult.result.data.forEach(refSet => {
 						var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
+						console.log(asmId);
 						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
 						if (asmId != 0)
 							$("#grpAsm").show();
@@ -900,7 +901,7 @@
 			keyboard: false,
 			show: true
 		}); // prevent the user from hiding progress modal when clicking outside
-		$('#showdensity').show();
+		$('#showCharts').show();
 		$('#showIGV').show();
 		$('#exportBoxToggleButton').show();
 		processAborted = false;
@@ -2463,7 +2464,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeAndShowDensityChart(); }">
+								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
