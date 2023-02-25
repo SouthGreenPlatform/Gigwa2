@@ -73,7 +73,7 @@
 
 <body style='background-color:#f0f0f0;' onload="$('button#abortButton').css('display', ${param.abortable eq 'true'} ? 'inline' : 'none'); watchProgress();">
 	<div style='background-color:white; width:100%; padding:5px;'><img src="<c:url value='/images/logo.png' />" height="25"></div>
-	<div id='progress' style='margin-top:50px; width:100%; display:block; text-align:center; display:none;'>
+	<div id='progress' style='margin-top:50px; margin-left:20%; width:60%; display:block; text-align:center; display:none;'>
 		<p>This process is running as a background task.</p>
 		<p>You may leave the main Gigwa page and either keep this one open or copy its URL to check again later.</p>
 		<h2 id="progressText" class="loading-message" style='margin-top:50px'>Please wait...</h2>

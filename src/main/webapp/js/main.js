@@ -82,7 +82,7 @@ function $_GET(param) {
 function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
     var functionToCall = function(onSuccessMethod) {
         $.ajax({
-            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),
+            url: progressUrl + (processId != null ? "?progressToken=" + processId : ""),	// if no processId provided, server code will use auth token instead
             type: "GET",
             headers: {
                 "Authorization": "Bearer " + token
@@ -101,13 +101,13 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
 					else
                     	displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                 }
-                else if (jsonResult['complete'] == true) {
+                else if (jsonResult != null && jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
-                        onSuccessMethod();
+                        onSuccessMethod(jsonResult['finalMessage']);
                    	emptyResponseCountsByProcess[processKey] = null;
                     $('#progress').modal('hide');
                 }
-                else if (jsonResult['aborted'] == true) {
+                else if (jsonResult != null && jsonResult['aborted'] == true) {
                     if (typeof markCurrentProcessAsAborted != "undefined")
                         markCurrentProcessAsAborted();
                     else
@@ -116,13 +116,14 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                     $('#progress').modal('hide');
                 }
                 else {
-                    if (jsonResult['error'] != null) {
-                        alert("Error occured:\n\n" + jsonResult['error']);
+                    if (jsonResult != null && jsonResult['error'] != null) {
+                        alert("Error occurred:\n\n" + jsonResult['error']);
                         $('#progress').data('error', true);
                         $('#progress').modal('hide');
                         emptyResponseCountsByProcess[processKey] = null;
                     } else {
-                        $('#progressText').html(jsonResult.progressDescription);
+						if (jsonResult != null)
+                        	$('#progressText').html(jsonResult.progressDescription);
                         displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                     }
                 }
@@ -137,7 +138,6 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
 
 function abort(token) {
     $('#progressText').html("Aborting...").fadeIn();
-    processAborted = true;
     $('#exportPanel').hide();
     $.ajax({
         url: abortUrl,
@@ -146,12 +146,13 @@ function abort(token) {
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-            $('#progress').data('error', true);
             if (jsonResult.processAborted === true) {
+				processAborted = true;
+	            $('#progress').data('error', true);
                 $('#progress').modal('hide');
             } else {
                 handleError(null, "unable to abort");
-                $('#progress').modal('hide');
+                //$('#progress').modal('hide');
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -173,35 +174,33 @@ function displayMessage(message, duration) {
 }
 
 function handleError(xhr, thrownError) {
-    if (xhr != null && xhr.status == 401)
-    {
+    if (xhr != null && xhr.status == 401) {
         location.href = 'login.do';
         return;
     }
 
-    if (xhr != null && xhr.status == 403)
-    {
-        processAborted = true;
-        $('div.modal').modal('hide');
-        alert(xhr.statusText + ": " + xhr.responseText);
-        return;
+    var mainMsg = null, errorMsg = null;
+    if (xhr != null && xhr.status /*DropZone returns 0 for client side errors*/> 0 && xhr.status < 500)
+        mainMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + (xhr.responseText == "" ? thrownError : xhr.responseText);
+    else {
+        mainMsg = xhr != null ? 'Request Status: ' + xhr.status  : (thrownError != null ? thrownError : '');
+	    if (xhr != null && xhr.responseText != null) {
+	        try {
+	            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
+	        }
+	        catch (err) {
+	            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + xhr.responseText;
+	        }
+	    }
     }
-        
-    var errorMsg;
-    if (xhr != null && xhr.responseText != null) {
-        try {
-            errorMsg = xhr.statusText + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
-        }
-        catch (err) {
-            errorMsg = xhr.statusText + ": " + xhr.responseText;
-        }
-    }
-    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + (xhr != null ? 'Request Status: ' + xhr.status  : '') + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : thrownError) + '</div></div>');
+
+    $(document.body).append('<div class="alert alert-warning alert-dismissable fade in" style="z-index:2000; position:absolute; top:53px; left:10%; min-width:400px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>An error occured!</strong><div id="msg">' + mainMsg + " " + (errorMsg != null ? "<button style='float:right; margin-top:-20px;' onclick='$(this).next().show(200); $(this).remove();'>Click for technical details</button><pre style='display:none; font-size:10px;'>" + errorMsg + "</pre>" : "") + '</div></div>');
     window.setTimeout(function() {
         $(".alert").fadeTo(500, 0, function(){
             $(this).remove(); 
         });
     }, 5000);
+	$('div.modal').modal('hide');
 }
 
 var arrayIntersection = function(){
@@ -480,10 +479,7 @@ function browsingBoxChanged()
 
 function checkBrowsingBoxAccordingToLocalVariable()
 {
-    if (localStorage.getItem('browsingAndExportingEnabled') == 1)
-        $('input#browsingAndExportingEnabled').attr('checked', 'checked');
-    else
-        $('input#browsingAndExportingEnabled').removeAttr('checked');
+	$('input#browsingAndExportingEnabled').prop("checked", localStorage.getItem('browsingAndExportingEnabled') == 1);
 }
 
 
@@ -519,6 +515,8 @@ function buildSearchQuery(searchMode, pageToken){
         "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
         "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
         "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
+        "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
+        "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
         "annotationFieldThresholds": annotationFieldThresholds,
 
         "callSetIds2": getSelectedIndividuals(2, true),
@@ -528,6 +526,8 @@ function buildSearchQuery(searchMode, pageToken){
         "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
         "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
         "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
+        "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
+        "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
         "annotationFieldThresholds2": annotationFieldThresholds2,
         
         "discriminate": $('#discriminate').prop('checked'),
@@ -610,7 +610,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
             if (count === 0) {
                 $('#currentPage').html("no results");
                 $('#next').prop('disabled', true);
-                $('#showdensity').hide();
+                $('#showCharts').hide();
                 $('#showIGV').hide();
                 $('#exportBoxToggleButton').hide();
             } else {
@@ -820,6 +820,8 @@ function setGenotypeInvestigationMode(mode) {
 		$('#Genotypes2').selectpicker('deselectAll');
 		$('#minMissingData2').val("0");
 		$('#maxMissingData2').val("100");
+		$('#minHeZ2').val("0");
+		$('#maxHeZ2').val("100");
 		$('#vcfFieldFilterGroup2 input').val("0");
 		$('#minMaf2').val("0");
 		$('#maxMaf2').val("50");
@@ -827,10 +829,14 @@ function setGenotypeInvestigationMode(mode) {
 		
 		if (mode == 0)
 		{
+			dropTempColl(false);
+
 			$('#Individuals1').selectmultiple('deselectAll');
 			$('#Genotypes1').selectpicker('deselectAll');
 			$('#minMissingData1').val("0");
 			$('#maxMissingData1').val("100");
+			$('#minHeZ1').val("0");
+			$('#maxHeZ1').val("100");
 			$('#vcfFieldFilterGroup1 input').val("0");
 			$('#minMaf1').val("0");
 			$('#maxMaf1').val("50");
@@ -920,6 +926,8 @@ function groupHasFilters(jsonResult, grpNumber){
     if(typeof jsonResult['annotationFieldThresholds'+e]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['GQ'].length != 0) return true;
     if(jsonResult['minMissingData'+e] != 0) return true;
     if(jsonResult['maxMissingData'+e] != 100) return true;
+    if(jsonResult['minHeZ'+e] != 0) return true;
+    if(jsonResult['maxHeZ'+e] != 100) return true;
     if(jsonResult['minMaf'+e] != 0) return true;
     if(jsonResult['maxMaf'+e] != 50) return true;
     if(jsonResult['gtPattern'+e] != 'Any') return true;
@@ -1321,6 +1329,8 @@ function saveQuery() {
             "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
             "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
             "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
+            "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
+            "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
             "annotationFieldThresholds": annotationFieldThresholds,
 
             "callSetIds2": getSelectedIndividuals(2, true),
@@ -1330,6 +1340,8 @@ function saveQuery() {
             "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
             "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
             "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
+            "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
+            "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
             "annotationFieldThresholds2": annotationFieldThresholds2,
             
             "discriminate": $('#discriminate').prop('checked'),
@@ -1429,6 +1441,8 @@ function listQueries(){
                         "maxMaf": jsonResult['maxMaf'],
                         "minMissingData": jsonResult['minMissingData'],
                         "maxMissingData": jsonResult['maxMissingData'],
+                        "minHeZ": jsonResult['minHeZ'],
+                        "maxHeZ": jsonResult['maxHeZ'],
                         "annotationFieldThresholds": jsonResult['annotationFieldThresholds'],
 
                         "callSetIds2": jsonResult['callSetIds2'],
@@ -1438,6 +1452,8 @@ function listQueries(){
                         "maxMaf2": jsonResult['maxMaf2'],
                         "minMissingData2": jsonResult['minMissingData2'],
                         "maxMissingData2": jsonResult['maxMissingData2'],
+                        "minHeZ2": jsonResult['minHeZ2'],
+                        "maxHeZ2": jsonResult['maxHeZ2'],
                         "annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
                         
                         "discriminate": jsonResult['discriminate'],
@@ -1528,6 +1544,8 @@ function listQueries(){
                               $('#vcfFieldFilterGroup'+i+' #' + key + '_threshold' + i).val(groupThresholds[key]);
                           $('#minMissingData'+i).val(jsonResult['minMissingData'+e]);
                           $('#maxMissingData'+i).val(jsonResult['maxMissingData'+e]);
+                          $('#minHeZ'+i).val(jsonResult['minHeZ'+e]);
+                          $('#maxHeZ'+i).val(jsonResult['maxHeZ'+e]);
                           $('#minMaf'+i).val(jsonResult['minMaf'+e]);
                           $('#maxMaf'+i).val(jsonResult['maxMaf'+e]);
                           $('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
@@ -1597,6 +1615,8 @@ function onFilterByIds(checked) {
 		for (var nGroup=1; nGroup<=2; nGroup++) {
 	        $('#minMissingData' + nGroup).val(0).prop('disabled', true);
 	        $('#maxMissingData' + nGroup).val(100).prop('disabled', true);
+	        $('#minHeZ' + nGroup).val(0).prop('disabled', true);
+	        $('#maxHeZ' + nGroup).val(100).prop('disabled', true);
 	        $('#mostSameRatio' + nGroup).prop('disabled', true);
 	        $('#Genotypes' + nGroup).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 		    $('#minMaf' + nGroup).prop('disabled', "disabled");
@@ -1625,6 +1645,8 @@ function onFilterByIds(checked) {
 	        $('#minMissingData' + nGroup).val(0);
 	        $('#maxMissingData' + nGroup).prop('disabled', false);
 	        $('#maxMissingData' + nGroup).val(100);
+	        $('#maxHeZ' + nGroup).prop('disabled', false);
+	        $('#maxHeZ' + nGroup).val(100);
 	        $('#mostSameRatio' + nGroup).prop('disabled', false);
 	        $('#Genotypes' + nGroup).prop('disabled', false).selectpicker('refresh');        
 		    $('#minMaf' + nGroup).prop('disabled', false);
@@ -1675,9 +1697,9 @@ function onVariantIdsSelect() {
 
 function buildHeader(token, assemblyId, individuals) {
     var headers = { "Authorization": "Bearer " + token };
-	    if (assemblyId != null)
-	    	headers["assembly"] = assemblyId;
-	    if (individuals != null)
-	    	headers["ind"] = individuals;
-	    return headers;
+    if (assemblyId != null)
+    	headers["assembly"] = assemblyId;
+    if (individuals != null)
+    	headers["ind"] = individuals;
+	return headers;
 }

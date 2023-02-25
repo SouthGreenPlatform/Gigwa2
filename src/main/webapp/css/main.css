@@ -47,8 +47,19 @@
  #loadedQueries {
  	display: block;
  }
+ 
  .glyphicon-ok {
  	color: green;
+ } 
+ .glyphicon-remove {
+ 	color: red;
+ }
+ 
+ .metadataToPull-no {
+ 	color: #ee8800;
+ }
+ .metadataToPull-yes {
+ 	color: #008800;
  }
  
  #menu1 {

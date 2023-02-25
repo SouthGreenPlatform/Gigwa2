@@ -1170,7 +1170,7 @@
 
 	// create the annotation detail panel 
 	function loadVariantAnnotationData() {
-		$('#displayAllGt').attr('checked', false);
+		$('#displayAllGt').prop('checked', false);
 		loadGenotypes(false);
 		// get annotations 
 	   	$('#scrollingAnnotationDiv').html("");
@@ -1773,8 +1773,11 @@
 					success: function(){
 						igvSwitchGenome(genome).then(igvCheckReferenceCounts);
 					},
-					error: function(xhr, ajaxOptions, thrownError){
-						handleError(xhr, thrownError);
+					error: function(xhr, ajaxOptions, thrownError) {
+						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+							alert("Error accessing resource: " + genomeURL);
+						else
+							handleError(xhr, thrownError);
 					}
 				});
 			} else {
@@ -2278,7 +2281,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  </div>
 									</div>
 								</div>
-								<div class="margin-top-md mafZone">
+								<div class="mafZone">
 									<div class="container-fluid">
 									  <div class="row">
 									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
@@ -2292,6 +2295,25 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
 										  <span class="input-group-addon input-sm">&le;</span>
 										  <input name="maxMaf1" value="50" id="maxMaf1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 1, 0, 50);">
+										  </div>
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div>
+									<div class="container-fluid">
+									  <div class="row">
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minHeZ1" value="0" id="minHeZ1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 1, 0, 100);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
+										</div>
+										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
+											<label class="custom-label">HeteroZ %</label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxHeZ1" value="100" id="maxHeZ1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 1, 0, 100);">
 										  </div>
 										</div>
 									  </div>
@@ -2366,7 +2388,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  </div>
 									</div>
 								</div>
-								<div class="margin-top-md mafZone">
+								<div class="mafZone">
 									<div class="container-fluid">
 									  <div class="row">
 									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
@@ -2380,6 +2402,25 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
 										  <span class="input-group-addon input-sm">&le;</span>
 										  <input name="maxMaf2" value="50" id="maxMaf2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 2, 0, 50);">
+										  </div>
+										</div>
+									  </div>
+									</div>
+								</div>
+								<div>
+									<div class="container-fluid">
+									  <div class="row">
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+											<input name="minHeZ2" value="0" id="minHeZ2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 2, 0, 100);">
+											<span class="input-group-addon input-sm">&le;</span>
+											</div>
+										</div>
+										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
+											<label class="custom-label">HeteroZ %</label>
+										</div>
+									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
+										  <span class="input-group-addon input-sm">&le;</span>
+										  <input name="maxHeZ2" value="100" id="maxHeZ2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 2, 0, 100);">
 										  </div>
 										</div>
 									  </div>

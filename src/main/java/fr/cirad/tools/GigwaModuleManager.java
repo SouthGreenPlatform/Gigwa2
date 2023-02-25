@@ -298,7 +298,7 @@ public class GigwaModuleManager implements IModuleManager {
     
     @Override public void cleanupDb(String sModule) {
     	if (!MongoTemplateManager.isModuleAvailableForWriting(sModule)) {
-    		LOG.warn("finalizeDbCleanup execution skipped because database " + sModule + " is locked for writing");
+    		LOG.warn("cleanupDb execution skipped because database " + sModule + " is locked for writing");
     		return;
     	}
     	
