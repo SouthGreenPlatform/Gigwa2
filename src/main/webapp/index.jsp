@@ -239,11 +239,10 @@
 					$('#assembly').html("");
 					jsonResult.result.data.forEach(refSet => {
 						var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
-						console.log(asmId);
 						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
-						if (asmId != 0)
-							$("#grpAsm").show();
 					});
+					if (jsonResult.result.data.length > 1)
+						$("#grpAsm").show();
 					$('#assembly').selectpicker('refresh');
 				},
 				error: function(xhr, ajaxOptions, thrownError) {
