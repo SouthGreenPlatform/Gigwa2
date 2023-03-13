@@ -36,6 +36,7 @@ $(document).ready(function () {
 	getToken();
     loadModules();
     loadHost();
+	$('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
     $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
     
     $.ajax({
@@ -247,6 +248,7 @@ $(function () {
             $('#projectDescDiv').show(100);
         } else {
             $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+            $('#projectToImport').val("");
             $('#projectToImport').removeClass('hidden');
             $('#emptyBeforeImportDiv').hide(100);
             if ($('#projectToImport').val() != '')
@@ -263,6 +265,7 @@ $(function () {
         	$('#overwriteRunWarning').show();
         } else {
             $('#runToImport').show();
+            $('#runToImport').val("");
         	$('#overwriteRunWarning').hide();
         }
         $('#runToImport').change();
