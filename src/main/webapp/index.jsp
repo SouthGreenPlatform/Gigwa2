@@ -74,8 +74,8 @@
 	var firstType;
 	var sortBy = "";
 	var sortDesc = false;
-	var seqPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_SEQUENCE %>";
-	var posPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_START_SITE %>";
+	var seqPath = "<%= ReferencePosition.FIELDNAME_SEQUENCE %>";
+	var posPath = "<%= ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
 	
