@@ -1299,7 +1299,9 @@ public class GigwaRestController extends ControllerInterface {
         	}
         }
 
-		return new HashSet<>(endpointByIndividualOrSample.values());
+        HashSet<String> result = new HashSet<>(endpointByIndividualOrSample.values());
+        result.remove("");
+        return result;
 	}
 
 //	@ApiIgnore
@@ -1999,22 +2001,26 @@ public class GigwaRestController extends ControllerInterface {
 											if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
-												newProjId = new PlinkImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												genotypeImporter.set(new PlinkImport(processId));
+												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 												Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 												boolean fIsGenotypingFileLocal = s instanceof File;
-												newProjId = new VcfImport(processId).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												genotypeImporter.set(new VcfImport(processId));
+												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 		                                    else if (filesByExtension.containsKey("intertek")) {
 		                                        Serializable s = filesByExtension.get("intertek");                                                                               
 		                                        boolean fIsGenotypingFileLocal = s instanceof File;
-		                                        newProjId = new IntertekImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+		                                        genotypeImporter.set(new IntertekImport(processId));
+		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 		                                    }
 											else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
-												newProjId = new FlapjackImport(processId).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												genotypeImporter.set(new FlapjackImport(processId));
+												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
