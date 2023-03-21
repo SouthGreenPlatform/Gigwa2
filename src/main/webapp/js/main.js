@@ -566,8 +566,9 @@ function handleSearchSuccess(jsonResult, pageToken) {
     headerContent += '</tr></thead>';
     for (var variant in jsonResult.variants) {
         var allele = '';
-        var knownAlleles = jsonResult.variants[variant].alternateBases
-        knownAlleles.unshift(jsonResult.variants[variant].referenceBases);
+        var knownAlleles = jsonResult.variants[variant].alternateBases;
+        if (knownAlleles.length > 0 || jsonResult.variants[variant].referenceBases != "")	// the DTO used here requires a reference allele to be provided: the chosen convention is to provide a single allele coded as an empty string when no allele is known for a variant
+        	knownAlleles.unshift(jsonResult.variants[variant].referenceBases);
         for (var all in jsonResult.variants[variant].alternateBases) {
             allele += '<div class="allele">' + (jsonResult.variants[variant].alternateBases[all] == "" ? "&nbsp;" : jsonResult.variants[variant].alternateBases[all]) + '</div>';
         }
