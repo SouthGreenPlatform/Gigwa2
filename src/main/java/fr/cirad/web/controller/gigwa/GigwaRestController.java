@@ -1284,7 +1284,7 @@ public class GigwaRestController extends ControllerInterface {
 	        }
 		}
 		catch (Exception e) {
-			build400Response(response, metadataFile + " - " + e.getMessage());
+			build400Response(response, e.getMessage() + " " + metadataFile);
 			return null;
 	    }
         finally {
