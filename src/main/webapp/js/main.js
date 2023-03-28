@@ -139,6 +139,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
 function abort(token) {
     $('#progressText').html("Aborting...").fadeIn();
     $('#exportPanel').hide();
+    $('#progress').data('error', true);
     $.ajax({
         url: abortUrl,
         type: "DELETE",
@@ -148,7 +149,6 @@ function abort(token) {
         success: function (jsonResult) {
             if (jsonResult.processAborted === true) {
 				processAborted = true;
-	            $('#progress').data('error', true);
                 $('#progress').modal('hide');
             } else {
                 handleError(null, "unable to abort");
@@ -890,11 +890,9 @@ function applyGroupMemorizing(groupNumber, rememberedSelection) {
     var variableName = "groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val();
     var groupMemorizer = $("button#groupMemorizer" + groupNumber);
     var active = groupMemorizer.hasClass('active');
-    if (active)
-    {
-        var variableValue = localStorage.getItem(variableName);
+    if (active) {
         if (rememberedSelection != null)
-            $('#Individuals' + groupNumber).selectmultiple('batchSelect', [rememberedSelection]);
+            $('#Individuals' + groupNumber).selectmultiple('batchSelect', [rememberedSelection, false]);
         else
             localStorage.setItem(variableName, JSON.stringify(getSelectedIndividuals(groupNumber)));
     }
@@ -1122,7 +1120,7 @@ function onPasteIndividuals(groupNumber, textarea) {
     textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
         cleanSelectionArray.push(ind);
     });
-    $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
+    $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray, true]);
     applyGroupMemorizing(groupNumber);
     checkGroupOverlap();
     $("button#pasteIndividuals" + groupNumber).click();
