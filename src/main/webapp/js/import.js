@@ -407,16 +407,9 @@ function submitBrapiForm() {
 	{
 		var dataFile1Input = $("input[name=dataFile1]");
 
-		if (brapiUserName == "")
-			brapiToken == null;
-		else
-		{
-		 	$("#importButton").attr('disabled', 'disabled');
-			$("<div id='brapiDataSelectionDiv'><img src='images/progress.gif' /> BrAPI authentication...</div>").insertBefore(dataFile1Input);
-			brapiToken = authenticateUser();
-			if (brapiToken == null)
-				return failAndHideBrapiDataSelectionDiv();
-	 	}
+        brapiGenotypesToken = prompt("Please enter token for genotyping data source\n" + BRAPI_V1_URL_ENDPOINT + "\n(leave blank if unneeded, cancel to abort import)");
+        if (brapiGenotypesToken == null)
+        	return failAndHideBrapiDataSelectionDiv();
 
 	 	$("#importButton").attr('disabled', 'disabled');
 		$("<div id='brapiDataSelectionDiv'><img src='images/progress.gif' /> Querying BrAPI service...</div>").insertBefore(dataFile1Input);
@@ -558,36 +551,22 @@ function importGenotypes(importMetadataToo) {
 			alert("BrAPI base-url should end with /brapi/v1");
 			return;
 		}
-		
+
 		BRAPI_V1_URL_ENDPOINT = dataFile1Input.val().trim().replace(/:\/\/.*@/, ":\/\/");
 		if (!checkEndPoint())
 			return failAndHideBrapiDataSelectionDiv();
-		var brapiUserNameMatches = source1Uri.match(/https?:\/\/(.*)@.*/);
-		brapiUserName = brapiUserNameMatches == null ? "" : brapiUserNameMatches[brapiUserNameMatches.length - 1];
-		if (brapiToken == null && brapiUserName.length > 0) {
-			if (!supportsAuthentication)
-			{
-				alert("This BrAPI service does not support authentication!");
-				return failAndHideBrapiDataSelectionDiv();
-			}
-			
-			$('#brapiPwdDialog').modal({backdrop: 'static', keyboard: false, show: true});
-			return;
-		}
-		else
-		{
-			submitBrapiForm();
-			if (typeof brapiParameters == 'undefined' || brapiParameters == null)
-				return;		// just displayed the selection div
-		}
+
+		submitBrapiForm();
+		if (typeof brapiParameters == 'undefined' || brapiParameters == null)
+			return;		// just displayed the selection div
 	}
 
 	if (typeof brapiParameters != 'undefined' && brapiParameters != null)
 	{
 		$('#brapiParameter_mapDbId').val(brapiParameters['mapDbId']);
 		$('#brapiParameter_studyDbId').val(brapiParameters['studyDbId']);
-		if (brapiToken != null)
-			$('#brapiParameter_token').val(brapiToken);
+		if (brapiGenotypesToken != null)
+			$('#brapiParameter_token').val(brapiGenotypesToken);
 	}
 
     $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
@@ -625,13 +604,21 @@ function importGenotypes(importMetadataToo) {
 	    if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
 	        $('#mixedImport_brapiURLs').val("");
 	        $('#mixedImport_brapiTokens').val("");
-	        distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
-	            var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
-	            if (brapiToken == null)
-	            	return false;
+	        distinctBrapiMetadataURLs.forEach(function(brapiMetadataUrl) {
+				if (!brapiMetadataUrl.endsWith("/"))
+					brapiMetadataUrl += "/";
+
+				var brapiMetadataToken = null;
+				if (brapiMetadataUrl == BRAPI_V1_URL_ENDPOINT && brapiGenotypesToken != null)
+					brapiMetadataToken = brapiGenotypesToken;	// we already have a token for this endpoint
+				else {
+		            brapiMetadataToken = prompt("Please enter token for metadata source\n" + brapiMetadataUrl + "\n(leave blank if unneeded, cancel to skip BrAPI metadata source)");
+		            if (brapiMetadataToken == null)
+		            	return false;
+		        }
 	            var fFirstEntry = $('#mixedImport_brapiURLs').val() == "";
-	            $('#mixedImport_brapiURLs').val($('#mixedImport_brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
-	            $('#mixedImport_brapiTokens').val($('#mixedImport_brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+	            $('#mixedImport_brapiURLs').val($('#mixedImport_brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataUrl);
+	            $('#mixedImport_brapiTokens').val($('#mixedImport_brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataToken);
 	        });
 	    }
 	}
@@ -690,13 +677,16 @@ function importMetadata() {
     if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
         $('#brapiURLs').val("");
         $('#brapiTokens').val("");
-        distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
-            var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
-            if (brapiToken == null)
+        distinctBrapiMetadataURLs.forEach(function(brapiMetadataUrl) {
+			if (!brapiMetadataUrl.endsWith("/"))
+				brapiMetadataUrl += "/";
+					
+            var brapiMetadataToken = prompt("Please enter token for metadata source\n" + brapiMetadataUrl + "\n(leave blank if unneeded, cancel to skip BrAPI metadata source)");
+            if (brapiMetadataToken == null)
             	return false;
             var fFirstEntry = $('#brapiURLs').val() == "";
-            $('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
-            $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+            $('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataUrl);
+            $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataToken);
         });
     }
 	
@@ -778,6 +768,8 @@ function loadModules() {
             $('#moduleExistingG').append(options).selectpicker('refresh');
     		var passedModule = $_GET("module");
     		if (passedModule != null) {
+				while (passedModule.endsWith('#'))
+					passedModule = passedModule.substring(0, passedModule.length - 1);
                 $('#moduleExistingG').val(passedModule).selectpicker('refresh');
                 $('#moduleExistingG').change();
 			}

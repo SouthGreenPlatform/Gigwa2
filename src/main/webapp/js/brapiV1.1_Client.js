@@ -25,8 +25,6 @@ const REQUIRED_CALLS = new Array(/*URL_TOKEN, */URL_MAPS, URL_STUDIES, URL_MARKE
 
 const TIMEOUT = 10000;
 
-var supportsAuthentication = false;
-
 function checkEndPoint()
 {
 	if (typeof BRAPI_V1_URL_ENDPOINT == 'undefined')
@@ -50,19 +48,12 @@ function checkEndPoint()
 	    timeout:TIMEOUT,
 	    success:function(jsonResponse) {
 	    	var dataList = getDataList(jsonResponse);
-	    	mainLoop: for (var i=0; i<REQUIRED_CALLS.length; i++)
-	    	{
+	    	mainLoop: for (var i=0; i<REQUIRED_CALLS.length; i++) {
 		    	for (var j=0; j<dataList.length; j++)
 		    		if (dataList[j] != null && REQUIRED_CALLS[i] == dataList[j]['call'])
 		    			continue mainLoop;
 		    	unimplementedCalls.push(REQUIRED_CALLS[i]);
 	    	}
-	    	
-	    	for (var j=0; j<dataList.length; j++)
-	    		if (dataList[j] != null && URL_TOKEN == dataList[j]['call']) {
-	    			supportsAuthentication = true;
-	    			break;
-	    		}
 	    },
 	    error:function(xhr, ajaxOptions, thrownError) {
 	    	errorMsg = "No BrAPI source found at " + BRAPI_V1_URL_ENDPOINT + " (error code " + xhr.status + ")"
@@ -93,28 +84,6 @@ function getDataList(jsonResponse)
 	return jsonResponse['result']['data'];
 }
 
-
-function authenticateUser()
-{
-	var token = null;
-	$.ajax({
-	    type:"POST",
-		crossDomain:true,
-	    url:BRAPI_V1_URL_ENDPOINT + URL_TOKEN,
-	    async:false,
-	    contentType:'application/json',
-	    data:JSON.stringify({username:brapiUserName, password:brapiUserPassword}),
-	    timeout:TIMEOUT,
-	    success:function(jsonResponse) {
-	    	token = jsonResponse['access_token'];
-	    },
-	    error:function(xhr, ajaxOptions, thrownError) {
-	    	alert("BrAPI authentication failed");
-	    }
-	});
-	return token;
-}
-
 function readMapList()
 {
 	var dataList;
@@ -125,7 +94,7 @@ function readMapList()
 	    async:false,
 	    data: {pageSize:1000},
 	    timeout:TIMEOUT,
-	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
+	    headers: { Authorization:brapiGenotypesToken == null ? null : brapiGenotypesToken },
 	    success:function(jsonResponse) {
 	    	dataList = getDataList(jsonResponse);
 	    },
@@ -147,7 +116,7 @@ function readStudyList(studyType)
 	    data: {pageSize:1000},
 	    data: {pageSize:1000, studyType:(studyType == null ? null : studyType)},
 	    timeout:TIMEOUT,
-	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
+	    headers: { Authorization:brapiGenotypesToken == null ? null : brapiGenotypesToken },
 	    success:function(jsonResponse) {
 	    	var dataList = getDataList(jsonResponse);
 	    	for (var j=0; j<dataList.length; j++)
@@ -173,7 +142,7 @@ function readMarkerProfiles(studyDbId)
 	    async:false,
 	    data:parameters,
 	    timeout:TIMEOUT,
-	    headers: { Authorization:brapiToken == null ? null : ('Bearer ' + brapiToken) },
+	    headers: { Authorization:brapiGenotypesToken == null ? null : brapiGenotypesToken },
 	    success:function(jsonResponse) {
 	    	var dataList = getDataList(jsonResponse);
 	    	for (var j=0; j<dataList.length; j++)
