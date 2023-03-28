@@ -1489,8 +1489,8 @@ public class GigwaRestController extends ControllerInterface {
 		                                    continue;
 
 		                                String endPointUrl = extRefSrcValue;
-		                                if (endPointUrl.endsWith("/"))
-		                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+	                                    if (!endPointUrl.endsWith("/"))
+		                                    endPointUrl += "/";
 		
 		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
@@ -1515,8 +1515,8 @@ public class GigwaRestController extends ControllerInterface {
 	                                        continue;
 	
 	                                    String endPointUrl = extRefSrcValue;
-	                                    if (endPointUrl.endsWith("/"))
-		                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+	                                    if (!endPointUrl.endsWith("/"))
+		                                    endPointUrl += "/";
 	
 	                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
@@ -1889,7 +1889,7 @@ public class GigwaRestController extends ControllerInterface {
 				if (!fDatasourceExists) {
 					progress.addStep("Creating datasource");
 					progress.moveToNextStep();
-	
+
 					try { // create it
 						if (!fAdminImporter) {	// only administrators may create permanent databases
 							expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
@@ -2047,8 +2047,8 @@ public class GigwaRestController extends ControllerInterface {
 										}
 									}
 
+									createdProjectId.set(newProjId != null ? newProjId : -1);
 									if (progress.getError() == null && !progress.isAborted()) {	// looks like a successful import
-										createdProjectId.set(newProjId != null ? newProjId : -1);
 										
 										if (fGotProjectDesc)
 											finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
@@ -2094,9 +2094,10 @@ public class GigwaRestController extends ControllerInterface {
 									if (progress.getError() != null || progress.isAborted()) {	// failed or aborted: do some cleanup
 										String sCleanupReason = !progress.isAborted() ? "error: " + progress.getError() : "user abort";
 										if (fDatasourceAlreadyExisted.get()) {
-											if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
+											int nRunProjectId = project == null ? createdProjectId.get() : project.getId();
+											if (nRunProjectId > 0)
 												try {
-													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));	// remove run
+													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(nRunProjectId, sRun));	// remove run
 												} catch (Exception e1) {
 													LOG.error("Error cleaning up run data subsequently to " + sCleanupReason, e1);
 												}
@@ -2149,11 +2150,13 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFile != null) {
-				while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
+				while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
 					Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
 
-				if (genotypeImporter.get() != null && genotypeImporter.get().haveSamplesBeenPersisted()) {
-					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile instanceof URL ? ((URL) metadataFile).toString() : null, null, false, metadataFile instanceof URL ? null : (MultipartFile) metadataFile, null, metadataType, brapiURLs, brapiTokens));
+				if (progress.getError() != null || progress.isAborted())
+					LOG.warn("Unable to process metadata during mixed import!");
+				else {
+					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, finalMetadataFile instanceof URL ? ((URL) finalMetadataFile).toString() : null, null, false, finalMetadataFile instanceof URL ? null : (MultipartFile) finalMetadataFile, null, metadataType, brapiURLs, brapiTokens));
 					
 					// watch metadata import progress so we are aware of errors if any
 					Timer timer = new Timer();
@@ -2175,8 +2178,6 @@ public class GigwaRestController extends ControllerInterface {
 					    }
 					}, 0, 1000); 
 				}
-				else if (progress.getError() == null && !progress.isAborted())
-					LOG.warn("Unable to process metadata during mixed import!");
 			}
 		}
 
