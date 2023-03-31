@@ -7,7 +7,7 @@ services:
   tomcat:
     depends_on:
       - mongo
-    image: guilhemsempere/gigwa:2.5.2-snapshot
+    image: guilhemsempere/gigwa:2.6-beta
     ports:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
@@ -29,7 +29,7 @@ services:
 #        source: /tmp/gigwaDockerDumps   # Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you wish to use as source)
 #        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine (must match the dumpFolder attribute's value in config.properties)
   mongo:
-    image: mongo:4.2.21
+    image: mongo:4.2.24
     restart: always
     command: --profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet
     ports:
