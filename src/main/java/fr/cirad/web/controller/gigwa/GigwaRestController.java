@@ -1851,18 +1851,13 @@ public class GigwaRestController extends ControllerInterface {
 				}
 
 				if (progress.getError() == null) {	// check if client is allowed to import
-					String referer = request.getHeader("referer");					
-					String remoteAddr = referer != null ? new URI(referer).getHost() /* we give priority to the referer */ : request.getHeader("X-Forwarded-Server") /* in case the app is running behind a proxy */;
-					if (remoteAddr == null || remoteAddr.equals("localhost") || remoteAddr.equals("127.0.0.1"))
-						remoteAddr = request.getRemoteAddr();
-					
-					boolean fIsCalledFromInterface = referer != null && referer.contains(remoteAddr + request.getContextPath());
-					if (!fIsCalledFromInterface) {	// not being called from default UI: see if we should allow import
+					if (request.getSession().isNew()) {	// not being called from default UI: see if we should allow import
+						String remoteAddr = request.getRemoteAddr();
 						String serversAllowedToImport = appConfig.get("serversAllowedToImport");
 						if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
 							progress.setError("Remote client not allowed to import: " + remoteAddr);
 					}
-	
+
 					Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
 					boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
 					if (progress.getError() == null && fDatasourceExists) {
@@ -1874,16 +1869,16 @@ public class GigwaRestController extends ControllerInterface {
 
 					if (progress.getError() != null)
 						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
-							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") + ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", fIsCalledFromInterface:" + fIsCalledFromInterface);
+							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() /*+ ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
+							+ request.getHeader("referer") */+ ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew());
 				}
-			
+
 				if (progress.getError() != null) {
 					for (File fileToDelete : uploadedFiles)
 						fileToDelete.delete();
 					return processId;
 				}
-	
+
 				Long expiryDate = null;
 				fDatasourceAlreadyExisted.set(fDatasourceExists);
 				if (!fDatasourceExists) {
