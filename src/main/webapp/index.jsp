@@ -153,26 +153,6 @@
 
 			$("div#welcome").hide();
 
-			for (var groupNumber=1; groupNumber<=2; groupNumber++)
-			{
-				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
-				if (localValue == null)
-					localValue = [];
-				else
-					localValue = JSON.parse(localValue);
-				if (localValue.length > 0)
-				{
-					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
-					$("button#groupMemorizer" + groupNumber).addClass("active");
-					$("#genotypeInvestigationMode").val(groupNumber);
-					$('#genotypeInvestigationMode').selectpicker('refresh');
-					setGenotypeInvestigationMode(groupNumber);
-				}
-				else
-					$("button#groupMemorizer" + groupNumber).removeClass("active");
-				applyGroupMemorizing(groupNumber, localValue);
-			}
-
 			$.ajax({
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DEFAULT_GENOME_BROWSER_URL%>" />?module=' + referenceset,
 				async: false,
@@ -252,6 +232,26 @@
 
 			fillWidgets();
 			resetFilters();
+			
+			for (var groupNumber=1; groupNumber<=2; groupNumber++) {
+				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
+				if (localValue == null)
+					localValue = [];
+				else
+					localValue = JSON.parse(localValue);
+				if (localValue.length > 0)
+				{
+					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
+					$("button#groupMemorizer" + groupNumber).addClass("active");
+					$("#genotypeInvestigationMode").val(groupNumber);
+					$('#genotypeInvestigationMode').selectpicker('refresh');
+					setGenotypeInvestigationMode(groupNumber);
+				}
+				else
+					$("button#groupMemorizer" + groupNumber).removeClass("active");
+				applyGroupMemorizing(groupNumber, localValue);
+			}
+
 			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
 			var projectDesc = projectDescriptions[$(this).val()];
 			if (projectDesc != null)
@@ -735,10 +735,10 @@
 				$('#individualsLabel2').html("Individuals (" + indCount + "/" + indCount + ")");
 				
 				updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
-				if (indCount === 0) {
+				$("#genotypeInvestigationMode").prop('disabled', indCount == 0);
+				if (indCount == 0)
 					setGenotypeInvestigationMode(0);
-					$("#genotypeInvestigationMode").prop('disabled', true);
-				} else {
+				else {
 					$('#individualsLabel1').show();
 					$('#Individuals1').show();
 					$('#Individuals1').next().show();
@@ -1365,16 +1365,20 @@
 			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
 		
 		if (onlineOutputTools != null)
-			for (var toolName in onlineOutputTools)
-			{
+			for (var toolName in onlineOutputTools) {
 				var toolConfig = getOutputToolConfig(toolName);
-				var buttonsForThisTool = "";
-				for (var key in archivedDataFiles)
-					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
-						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
-				
-				if (buttonsForThisTool != "");
-					$('#serverExportBox').append('<br/><br/>' + buttonsForThisTool)
+				if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {
+					var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
+					for (var key in archivedDataFiles) {
+						var skipMetadataFile = (("FLAPJACK" == exportedFormat && key == "phenotype") || key == "tsv") && !$('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked');
+						if (!skipMetadataFile)
+							formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + "." + key;
+						urlForThisButton = urlForThisButton.replace(new RegExp("=" + key + "(&|$)"), "=" + (skipMetadataFile ? "" : encodeURI(archivedDataFiles[key])) + "&");
+					}
+					
+					if (formatsForThisButton != "");
+						$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
+				}
 			}
 	}
 	
