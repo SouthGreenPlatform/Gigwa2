@@ -1212,10 +1212,71 @@ function checkGroupOverlap() {
 	$('#overlapWarning').toggle($("#discriminate").prop('checked') && areGroupsOverlapping());
 }
 
+function sendToGalaxy(archivedDataFiles) {
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim(), apiKey = sessionStorage.getItem("galaxyApiKey::" + galaxyInstanceUrl);
+	if (apiKey == null)
+		apiKey = prompt("Enter the API key tied to your account on " + galaxyInstanceUrl);
+	if (apiKey != null && apiKey.trim() != "") {
+		sessionStorage.setItem("galaxyApiKey::" + galaxyInstanceUrl, apiKey);
+		$('#progressText').html("Pushing files to " + galaxyInstanceUrl + " ...");
+		$('#asyncProgressButton').hide();
+		$('button#abort').hide();
+		$('#progress').modal({
+			backdrop: 'static',
+			keyboard: false,
+			show: true
+		});
+		setTimeout(function() {
+			var n = 0;
+			for (var fileUrl in archivedDataFiles)
+				$.ajax({
+					async: false,
+					url: galaxyPushURL + "?galaxyUrl=" + galaxyInstanceUrl + "&galaxyApiKey=" + apiKey + "&fileUrl=" + archivedDataFiles[fileUrl],
+					type: "GET",
+					success: function(respString) {
+	//					alert(respString);
+						n++;
+					},
+					error: function(xhr, ajaxOptions, thrownError) {
+						$('#progress').modal('hide');
+						
+						if (xhr.status == 403) {
+							console.log("Removing invalid Galaxy API key: " + apiKey);
+							sessionStorage.removeItem("galaxyApiKey::" + galaxyInstanceUrl);
+						}
+						
+						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+							alert("Error accessing resource: " + genomeURL);
+						else
+							handleError(xhr, thrownError);
+					}
+				});
+			if (n > 0)
+				alert(n + " files were sent to Galaxy instance " + galaxyInstanceUrl);
+			$('#progress').modal('hide');
+		}, 1);
+	}
+}
+
 function getOutputToolConfig(toolName)
 {
     var storedToolConfig = localStorage.getItem("outputTool_" + toolName);
     return storedToolConfig != null ? JSON.parse(storedToolConfig) : onlineOutputTools[toolName];
+}
+
+function applyOutputToolConfig(t) {
+	if ($("input#outputToolURL").val().trim() == "") {
+		localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val());
+		configureSelectedExternalTool();
+	} else
+		localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()}));
+
+	if ($("input#galaxyInstanceURL").val().trim() == "")
+		localStorage.removeItem("galaxyInstanceURL");
+	else
+		localStorage.setItem("galaxyInstanceURL", $("input#galaxyInstanceURL").val());
+
+	$("#applyOutputToolConfig").prop("disabled", "disabled");
 }
 
 function configureSelectedExternalTool() {

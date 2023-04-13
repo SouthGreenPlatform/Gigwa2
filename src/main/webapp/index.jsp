@@ -125,6 +125,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
+	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
 	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
@@ -183,6 +184,7 @@
 					$("#onlineOutputTools").html(options);
 					onlineOutputTools["Custom tool"] = {"url" : "", "formats" : ""};
 					configureSelectedExternalTool();
+				    $('#galaxyInstanceURL').val(localStorage.getItem("galaxyInstanceURL"));
 				},
 				error: function(xhr, thrownError) {
 					handleError(xhr, thrownError);
@@ -1359,11 +1361,21 @@
 			addIgvExportIfRunning();
 		else if ("FLAPJACK" == exportedFormat)
 			addFjBytesExport();
-		
+
 		var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
 		for (var key in exportFormatExtensions)
 			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
 		
+		var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+		if (galaxyInstanceUrl.startsWith("http")) {
+			var fileURLs = "";
+			for (key in archivedDataFiles)
+				fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+			if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != exportedFormat)
+				fileURLs += (fileURLs == "" ? "" : " ,") + "'" + location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.tsv') + "'";
+			$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
+		}
+
 		if (onlineOutputTools != null)
 			for (var toolName in onlineOutputTools) {
 				var toolConfig = getOutputToolConfig(toolName);
@@ -2684,14 +2696,21 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
-			<b>Configure this to be able to push exported data into external online tools</b><br />
-			(feature available when the 'Keep files on server' box is ticked)<br /><br />
+			<div style="font-weight:bold; padding:10px; background-color:#eeeeee; border-top-left-radius:6px; border-top-right-radius:6px;">Configure this to be able to push exported data into external online tools<br />
+			(feature available when the 'Keep files on server' box is ticked)<br />
+			</div>
+			<hr />
+			<span class='bold'>Favourite <span style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</span> instance URL</span>
+			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
+			<br/>
+			(You will need to provide an API key to be able to push exported files there)
+			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
 			<br />Online tool URL (any * will be replaced with exported file location)<br />
 			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
 			<p>
-				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='if ($("input#outputToolURL").val().trim() == "") { localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val()); configureSelectedExternalTool(); } else localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()})); $(this).prop("disabled", "disabled");' />
+				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
 				<br/>
 				(Set URL blank to revert to default)
 			</p>
