@@ -1347,53 +1347,6 @@
 		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
 	}
 
-	function showServerExportBox()
-	{
-		$("div#exportPanel").hide();
-		$("a#exportBoxToggleButton").removeClass("active");
-		if (processAborted || downloadURL == null)
-			return;
-
-		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
-		var exportedFormat = $('#exportFormat').val().toUpperCase();
-		if ("VCF" == exportedFormat)
-			addIgvExportIfRunning();
-		else if ("FLAPJACK" == exportedFormat)
-			addFjBytesExport();
-
-		var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
-		for (var key in exportFormatExtensions)
-			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-		
-		var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-		if (galaxyInstanceUrl.startsWith("http")) {
-			var fileURLs = "";
-			for (key in archivedDataFiles)
-				fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-			if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != exportedFormat)
-				fileURLs += (fileURLs == "" ? "" : " ,") + "'" + location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.tsv') + "'";
-			$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
-		}
-
-		if (onlineOutputTools != null)
-			for (var toolName in onlineOutputTools) {
-				var toolConfig = getOutputToolConfig(toolName);
-				if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {
-					var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
-					for (var key in archivedDataFiles) {
-						var skipMetadataFile = (("FLAPJACK" == exportedFormat && key == "phenotype") || key == "tsv") && !$('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked');
-						if (!skipMetadataFile)
-							formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + "." + key;
-						urlForThisButton = urlForThisButton.replace(new RegExp("=" + key + "(&|$)"), "=" + (skipMetadataFile ? "" : encodeURI(archivedDataFiles[key])) + "&");
-					}
-					
-					if (formatsForThisButton != "");
-						$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
-				}
-			}
-	}
-	
 	function postDataToIFrame(frameName, url, params)
 	{
 		 var form = document.createElement("form");
@@ -2518,7 +2471,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 													<div style="width:100%; text-align:center;">
 														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
+															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
 														</label>
 														<div>
 															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
@@ -2700,7 +2653,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			(feature available when the 'Keep files on server' box is ticked)<br />
 			</div>
 			<hr />
-			<span class='bold'>Favourite <span style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</span> instance URL</span>
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
 			(You will need to provide an API key to be able to push exported files there)

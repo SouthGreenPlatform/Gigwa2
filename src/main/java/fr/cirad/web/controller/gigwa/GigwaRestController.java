@@ -1203,6 +1203,8 @@ public class GigwaRestController extends ControllerInterface {
 
 	      	HistoryUrlFeeder huf = new HistoryUrlFeeder(gi);
 	      	ClientResponse resp = huf.historyUrlFeedRequest(new HistoryUrlFeeder.UrlFileUploadRequest(targetHist.getId(), fileUrl));
+	      	if (resp.getStatus() >= HttpServletResponse.SC_TEMPORARY_REDIRECT + 3)	// "Too many Redirects" or 4xx / 5xx error
+				throw new Exception("Remote error - " + resp.toString());
 	    }
 	    catch (Exception e) {
 	    	exp = e;
@@ -1212,7 +1214,7 @@ public class GigwaRestController extends ControllerInterface {
       		String msg;
       		if (exp == null) {
       			httpCode = HttpServletResponse.SC_ACCEPTED;
-      			msg = "File sent to history '" + targetHistName + "' on Galaxy instance " + galaxyInstanceUrl;
+      			msg = "sent to history '" + targetHistName + "' on Galaxy instance " + galaxyInstanceUrl;
       		}
       		else if (exp instanceof GalaxyResponseException) {
       			httpCode = HttpServletResponse.SC_FORBIDDEN;

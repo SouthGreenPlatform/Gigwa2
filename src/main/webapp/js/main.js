@@ -1215,7 +1215,7 @@ function checkGroupOverlap() {
 function sendToGalaxy(archivedDataFiles) {
 	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim(), apiKey = sessionStorage.getItem("galaxyApiKey::" + galaxyInstanceUrl);
 	if (apiKey == null)
-		apiKey = prompt("Enter the API key tied to your account on " + galaxyInstanceUrl);
+		apiKey = prompt("Enter the API key tied to your account on\n" + galaxyInstanceUrl);
 	if (apiKey != null && apiKey.trim() != "") {
 		sessionStorage.setItem("galaxyApiKey::" + galaxyInstanceUrl, apiKey);
 		$('#progressText').html("Pushing files to " + galaxyInstanceUrl + " ...");
@@ -1227,14 +1227,14 @@ function sendToGalaxy(archivedDataFiles) {
 			show: true
 		});
 		setTimeout(function() {
-			var n = 0;
+			var n = 0, responseMsg = null;
 			for (var fileUrl in archivedDataFiles)
 				$.ajax({
 					async: false,
 					url: galaxyPushURL + "?galaxyUrl=" + galaxyInstanceUrl + "&galaxyApiKey=" + apiKey + "&fileUrl=" + archivedDataFiles[fileUrl],
 					type: "GET",
 					success: function(respString) {
-	//					alert(respString);
+						responseMsg = respString;
 						n++;
 					},
 					error: function(xhr, ajaxOptions, thrownError) {
@@ -1252,7 +1252,8 @@ function sendToGalaxy(archivedDataFiles) {
 					}
 				});
 			if (n > 0)
-				alert(n + " files were sent to Galaxy instance " + galaxyInstanceUrl);
+				if (confirm(n + " file(s) " + responseMsg + "\nOpen a window pointing to that Galaxy instance?"))
+					window.open(galaxyInstanceUrl);
 			$('#progress').modal('hide');
 		}, 1);
 	}
@@ -1289,6 +1290,71 @@ function configureSelectedExternalTool() {
 function checkIfOuputToolConfigChanged() {
     var changed = $('#outputToolFormats').val() != $('#outputToolFormats').prop('previousVal') || $('#outputToolURL').val() != $('#outputToolURL').prop('previousVal');
     $("#applyOutputToolConfig").prop('disabled', changed ? false : 'disabled');
+}
+
+function showServerExportBox()
+{
+	$("div#exportPanel").hide();
+	$("a#exportBoxToggleButton").removeClass("active");
+	if (processAborted || downloadURL == null)
+		return;
+
+	var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
+	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
+	var exportedFormat = $('#exportFormat').val().toUpperCase();
+	if ("VCF" == exportedFormat)
+		addIgvExportIfRunning();
+	else if ("FLAPJACK" == exportedFormat)
+		addFjBytesExport();
+
+	var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
+	if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != exportedFormat)
+		exportFormatExtensions.push("tsv");
+	for (var key in exportFormatExtensions)
+		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
+	
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+	if (galaxyInstanceUrl.startsWith("http")) {
+		var fileURLs = "";
+		for (key in archivedDataFiles)
+			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+		$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
+	}
+
+	if (onlineOutputTools != null)
+		for (var toolName in onlineOutputTools) {
+			var toolConfig = getOutputToolConfig(toolName);
+			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {		
+
+				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
+				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
+				if (matchResult != null) {
+					var placeHolders = matchResult.map(res => res.replace(/{|}/g , ''));
+					phLoop: for (var i in placeHolders) {
+						var phFormats = placeHolders[i].split("\|");
+						for (var j in phFormats) {
+							for (var key in archivedDataFiles) {
+								if (key == phFormats[j]) {
+									formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + key;
+									urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", archivedDataFiles[key]);
+									continue phLoop;
+								}
+							}
+						}
+						console.log("unused param: " + placeHolders[i]);
+						urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", "");
+					}
+				}
+				
+				if (urlForThisButton == toolConfig['url'] && urlForThisButton.indexOf("*") != -1) {
+					urlForThisButton = urlForThisButton.replace("\*", Object.values(archivedDataFiles).join(","));
+					formatsForThisButton = Object.keys(archivedDataFiles).join(", ");
+				}
+
+				if (formatsForThisButton != "")
+					$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
+			}
+		}
 }
 
 var StringBuffer = function() {
