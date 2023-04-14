@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,9 +99,16 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.github.jmchilton.blend4j.galaxy.GalaxyInstance;
+import com.github.jmchilton.blend4j.galaxy.GalaxyInstanceFactory;
+import com.github.jmchilton.blend4j.galaxy.GalaxyResponseException;
+import com.github.jmchilton.blend4j.galaxy.HistoriesClient;
+import com.github.jmchilton.blend4j.galaxy.HistoryUrlFeeder;
+import com.github.jmchilton.blend4j.galaxy.beans.History;
 import com.mongodb.BasicDBList;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
+import com.sun.jersey.api.client.ClientResponse;
 
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
@@ -126,7 +134,6 @@ import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
-import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
@@ -238,6 +245,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 		
 	/**
 	 * get a unique processID
@@ -1169,6 +1177,61 @@ public class GigwaRestController extends ControllerInterface {
 		}
 		return viewControllers;
 	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + GALAXY_HISTORY_PUSH, method = RequestMethod.GET, produces = "application/json")
+	public void pushFileToGalaxyHistory(HttpServletRequest request, HttpServletResponse response, @RequestParam("galaxyUrl") String galaxyInstanceUrl, @RequestParam("galaxyApiKey") String galaxyApiKey, @RequestParam("fileUrl") String fileUrl)
+	{
+      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, false);
+      	HistoriesClient hc = gi.getHistoriesClient();
+      	String targetHistName = "GIGWA-" + request.getServerName();
+      	History targetHist = null;
+      	
+      	Exception exp = null;
+      	try {
+	      	for (History h : hc.getHistories())
+	      		if (targetHistName.equals(h.getName())) {
+	          		LOG.debug("Found existing history '" + targetHistName + "' on " + galaxyInstanceUrl);
+	      			targetHist = h;
+	      			break;
+	      		}
+	      	
+	      	if (targetHist == null) {
+	      		targetHist = hc.create(new History(targetHistName));
+	      		LOG.debug("History '" + targetHistName + "' created on " + galaxyInstanceUrl);
+	      	}
+
+	      	HistoryUrlFeeder huf = new HistoryUrlFeeder(gi);
+	      	ClientResponse resp = huf.historyUrlFeedRequest(new HistoryUrlFeeder.UrlFileUploadRequest(targetHist.getId(), fileUrl));
+	      	if (resp.getStatus() >= HttpServletResponse.SC_TEMPORARY_REDIRECT + 3)	// "Too many Redirects" or 4xx / 5xx error
+				throw new Exception("Remote error - " + resp.toString());
+	    }
+	    catch (Exception e) {
+	    	exp = e;
+	    }
+      	finally {
+      		int httpCode;      	
+      		String msg;
+      		if (exp == null) {
+      			httpCode = HttpServletResponse.SC_ACCEPTED;
+      			msg = "sent to history '" + targetHistName + "' on Galaxy instance " + galaxyInstanceUrl;
+      		}
+      		else if (exp instanceof GalaxyResponseException) {
+      			httpCode = HttpServletResponse.SC_FORBIDDEN;
+      			msg = ((GalaxyResponseException) exp).getResponseBody();
+      		}
+      		else {
+      			exp.printStackTrace();
+      			httpCode = exp instanceof UnknownHostException || (exp.getCause() != null && exp.getCause().getClass().equals(UnknownHostException.class))? HttpServletResponse.SC_NOT_FOUND : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+      			msg = exp.getMessage();
+      		}
+	    	try {
+	    		buildResponse(response, httpCode, msg);
+	    	}
+	    	catch (IOException ignored)
+	    	{}
+      	}
+	}
 	
 	@ApiIgnore
 	@RequestMapping(value = IMPORT_PAGE_URL)
@@ -1179,6 +1242,7 @@ public class GigwaRestController extends ControllerInterface {
 //		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
 //		if (userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).size() == 0 && managedEntitiesByModuleAndType.size() == 0 && !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
 //			mav.addObject("limitToTempData", true);
+
 		return mav;
 	}
 
@@ -2252,6 +2316,7 @@ public class GigwaRestController extends ControllerInterface {
 		resp.setStatus(httpCode);
 		if (message != null)
 			resp.getWriter().write(message);
+		//	resp.sendError(httpCode, message);
 	}
 
 	public void build400Response(HttpServletResponse resp, String message) throws IOException {
