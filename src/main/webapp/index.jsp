@@ -2315,7 +2315,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<div class="panel-body">
 								<div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand;" title="Some individuals are selected in both groups"><img align="left" src="images/warning.png" height="15" width="18" />&nbsp;Overlap</div>
 								<label class="label-checkbox">
-									<input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
+									<input type="checkbox" id="discriminate" class="input-checkbox" title="Check this box to limit search to variants for which the major genotype differs between both groups" onchange="checkGroupOverlap();">
 									&nbsp;Discriminate groups
 								</label>
 							</div>
