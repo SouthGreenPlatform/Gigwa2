@@ -15,7 +15,7 @@
           if (results==null) {
              return null;
           }
-          return decodeURI(results[1]) || 0;
+          return decodeURI(results[1]) || "";
       }
 
       $.urlExists = function(url)  {

@@ -125,6 +125,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
+	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
 	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
@@ -152,26 +153,6 @@
 				return;
 
 			$("div#welcome").hide();
-
-			for (var groupNumber=1; groupNumber<=2; groupNumber++)
-			{
-				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
-				if (localValue == null)
-					localValue = [];
-				else
-					localValue = JSON.parse(localValue);
-				if (localValue.length > 0)
-				{
-					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
-					$("button#groupMemorizer" + groupNumber).addClass("active");
-					$("#genotypeInvestigationMode").val(groupNumber);
-					$('#genotypeInvestigationMode').selectpicker('refresh');
-					setGenotypeInvestigationMode(groupNumber);
-				}
-				else
-					$("button#groupMemorizer" + groupNumber).removeClass("active");
-				applyGroupMemorizing(groupNumber, localValue);
-			}
 
 			$.ajax({
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DEFAULT_GENOME_BROWSER_URL%>" />?module=' + referenceset,
@@ -203,6 +184,7 @@
 					$("#onlineOutputTools").html(options);
 					onlineOutputTools["Custom tool"] = {"url" : "", "formats" : ""};
 					configureSelectedExternalTool();
+				    $('#galaxyInstanceURL').val(localStorage.getItem("galaxyInstanceURL"));
 				},
 				error: function(xhr, thrownError) {
 					handleError(xhr, thrownError);
@@ -252,6 +234,26 @@
 
 			fillWidgets();
 			resetFilters();
+			
+			for (var groupNumber=1; groupNumber<=2; groupNumber++) {
+				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
+				if (localValue == null)
+					localValue = [];
+				else
+					localValue = JSON.parse(localValue);
+				if (localValue.length > 0)
+				{
+					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
+					$("button#groupMemorizer" + groupNumber).addClass("active");
+					$("#genotypeInvestigationMode").val(groupNumber);
+					$('#genotypeInvestigationMode').selectpicker('refresh');
+					setGenotypeInvestigationMode(groupNumber);
+				}
+				else
+					$("button#groupMemorizer" + groupNumber).removeClass("active");
+				applyGroupMemorizing(groupNumber, localValue);
+			}
+
 			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
 			var projectDesc = projectDescriptions[$(this).val()];
 			if (projectDesc != null)
@@ -735,10 +737,10 @@
 				$('#individualsLabel2').html("Individuals (" + indCount + "/" + indCount + ")");
 				
 				updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
-				if (indCount === 0) {
+				$("#genotypeInvestigationMode").prop('disabled', indCount == 0);
+				if (indCount == 0)
 					setGenotypeInvestigationMode(0);
-					$("#genotypeInvestigationMode").prop('disabled', true);
-				} else {
+				else {
 					$('#individualsLabel1').show();
 					$('#Individuals1').show();
 					$('#Individuals1').next().show();
@@ -1346,39 +1348,6 @@
 		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
 	}
 
-	function showServerExportBox()
-	{
-		$("div#exportPanel").hide();
-		$("a#exportBoxToggleButton").removeClass("active");
-		if (processAborted || downloadURL == null)
-			return;
-
-		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
-		var exportedFormat = $('#exportFormat').val().toUpperCase();
-		if ("VCF" == exportedFormat)
-			addIgvExportIfRunning();
-		else if ("FLAPJACK" == exportedFormat)
-			addFjBytesExport();
-		
-		var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
-		for (var key in exportFormatExtensions)
-			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-		
-		if (onlineOutputTools != null)
-			for (var toolName in onlineOutputTools)
-			{
-				var toolConfig = getOutputToolConfig(toolName);
-				var buttonsForThisTool = "";
-				for (var key in archivedDataFiles)
-					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
-						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
-				
-				if (buttonsForThisTool != "");
-					$('#serverExportBox').append('<br/><br/>' + buttonsForThisTool)
-			}
-	}
-	
 	function postDataToIFrame(frameName, url, params)
 	{
 		 var form = document.createElement("form");
@@ -2506,7 +2475,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 													<div style="width:100%; text-align:center;">
 														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
+															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
 														</label>
 														<div>
 															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
@@ -2684,14 +2653,21 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
-			<b>Configure this to be able to push exported data into external online tools</b><br />
-			(feature available when the 'Keep files on server' box is ticked)<br /><br />
+			<div style="font-weight:bold; padding:10px; background-color:#eeeeee; border-top-left-radius:6px; border-top-right-radius:6px;">Configure this to be able to push exported data into external online tools<br />
+			(feature available when the 'Keep files on server' box is ticked)<br />
+			</div>
+			<hr />
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
+			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
+			<br/>
+			(You will need to provide an API key to be able to push exported files there)
+			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
 			<br />Online tool URL (any * will be replaced with exported file location)<br />
 			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
 			<p>
-				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='if ($("input#outputToolURL").val().trim() == "") { localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val()); configureSelectedExternalTool(); } else localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()})); $(this).prop("disabled", "disabled");' />
+				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
 				<br/>
 				(Set URL blank to revert to default)
 			</p>
