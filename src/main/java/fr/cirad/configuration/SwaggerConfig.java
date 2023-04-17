@@ -131,7 +131,7 @@ public class SwaggerConfig implements WebMvcConfigurer, ServletContextAware {
 					+ "# Workflow\n"
 					+ "In order to use the REST APIs on private databases, you want to get a token at first. This Bearer token will be used by the system to identifiy you as a user so it can apply your privileges when searching for data. A token can be obtained using one of the following calls:"
 					+ "<pre>" + rootPath + "/gigwa/generateToken ; " + rootPath + "/{database}/brapi/v1/token</pre>\n\n"
-					+ "This token then needs to be passed in each subsequent request header via the 'Authorization' parameter, its value always being preceded by the 'Bearer' keyword. To use a token via the API, you will need to enter by clicking the 'Authorize' button.\n\n"
+					+ "This token then needs to be passed in each subsequent request header via the 'Authorization' parameter, its value always being preceded by the 'Bearer' keyword. To use a token via the API, you will need to enter it by clicking the 'Authorize' button.\n\n"
 					+ "**Concerning BrAPI V1, there is a different base-url for each database.**\n\nYou may find a list of available databases using one of the following calls:"
 					+ "<pre>" + rootPath + "/ga4gh/referencesets/search ; " + rootPath + "/brapi/v2/trials ; " + rootPath + "/brapi/v2/programs</pre>\n"
 					+ "# Terminology correspondence table\n"
