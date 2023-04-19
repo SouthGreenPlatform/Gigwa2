@@ -529,8 +529,10 @@ public class GigwaModuleManager implements IModuleManager {
                 Node node = clients.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element client = (Element) node;
+                    if (!sHost.equals(client.getAttribute("id")))
+                    	continue;
                     String credentialString = client.getAttribute("credential");
-                    if (credentialString.length() == 0) {
+                    if (credentialString != null && credentialString.isEmpty()) {
                         return null;
                     } else
                         return accountForEnvVariables(credentialString);
