@@ -12,11 +12,11 @@
    <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
       STYLE="border: none; padding: 0in; max-width:1240px;">
       <BR>
-     <a href="javascript:window.print();" alt="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
+     <a href="javascript:window.print();" title="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.5.x &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.6.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -610,7 +610,7 @@
                <P STYLE="margin-bottom: 0.14in">Declaring MongoDB hosts is done
                   via the WEB-INF/classes/applicationContext-data.xml file following
                   provided examples. For hosts running with authentication enabled
-                  (refer to MongoDB documentation if needed) a "credential" parameter must be supplied for the corresponding mongo:mongoclient tag.
+                  (refer to MongoDB documentation if needed) a "credentials" parameter must be supplied for the corresponding mongo:mongoclient tag.
                   Those credentials must be provided for a user declared in MongoDB's
                   admin collection, who has readWriteAnyDatabase and
                   dbAdminAnyDatabase roles. The web-application needs to be reloaded
@@ -813,5 +813,8 @@
             <P STYLE="margin-bottom: 0.14in">We did not take the responsibility to enforce this as a default value in our bundles or Docker images because 10 Gb would be far too high on small servers with a total of, say 16 Gb of RAM. This really has to be thought of according to the overall "platform" sizing. Checking the size occupied by indexes on your largest DB's variantRunData collection is probably a good starting point. Multiplying that by 3 or 5 is probably safe enough, although a more thorough benchmarking would be worth doing...
             </P>
       </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
    </BODY>
 </HTML>
