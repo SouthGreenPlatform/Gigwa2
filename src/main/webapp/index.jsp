@@ -2762,10 +2762,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><h4>Load genome from URL</h4></div>
-					<button type="button" class="close" data-dismiss="modal">
-						<span>×</span>
-					</button>
+					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from URL</h4></div>
 				</div>
 				
 				<div class="modal-body">
@@ -2788,10 +2785,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><h4>Load genome from local file</h4></div>
-					<button type="button" class="close" data-dismiss="modal">
-						<span>×</span>
-					</button>
+					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from local file</h4></div>
 				</div>
 				
 				<div class="modal-body">
@@ -2814,10 +2808,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><h4>Load track from URL</h4></div>
-					<button type="button" class="close" data-dismiss="modal">
-						<span>×</span>
-					</button>
+					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load track from URL</h4></div>
 				</div>
 				
 				<div class="modal-body">
@@ -2840,10 +2831,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><h4>Load genome from local file</h4></div>
-					<button type="button" class="close" data-dismiss="modal">
-						<span>×</span>
-					</button>
+					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from local file</h4></div>
 				</div>
 				
 				<div class="modal-body">
