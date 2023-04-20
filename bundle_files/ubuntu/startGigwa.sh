@@ -17,7 +17,7 @@ cd "${BASEDIR}"
 
 export LC_ALL=C
 
-mongodb/bin/mongod --profile 0 --pidfilepath mongoPID --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet --dbpath data --logpath logs/mongo.log 2>errFile &
+setsid mongodb/bin/mongod --profile 0 --pidfilepath mongoPID --port 59393 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet --dbpath data --logpath logs/mongo.log 2>errFile &
 sleep 3
 errors="$(cat errFile)"
 rm errFile
