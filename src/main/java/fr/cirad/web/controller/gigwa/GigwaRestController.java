@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,10 +99,16 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.github.jmchilton.blend4j.galaxy.GalaxyInstance;
+import com.github.jmchilton.blend4j.galaxy.GalaxyInstanceFactory;
+import com.github.jmchilton.blend4j.galaxy.GalaxyResponseException;
+import com.github.jmchilton.blend4j.galaxy.HistoriesClient;
+import com.github.jmchilton.blend4j.galaxy.HistoryUrlFeeder;
+import com.github.jmchilton.blend4j.galaxy.beans.History;
 import com.mongodb.BasicDBList;
-import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
+import com.sun.jersey.api.client.ClientResponse;
 
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
@@ -116,6 +123,7 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
@@ -126,7 +134,6 @@ import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
-import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaIgvRequest;
@@ -238,6 +245,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 		
 	/**
 	 * get a unique processID
@@ -307,7 +315,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VARIANT_TYPES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -328,7 +336,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<String>> getRunList(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
 		try {
@@ -379,7 +387,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + NUMBER_ALLELE_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
@@ -411,7 +419,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, List<String>> response = new HashMap<>();
 		try {
@@ -441,7 +449,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + EFFECT_ANNOTATION_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, TreeSet<String>> response = new HashMap<>();
 		try {
@@ -473,7 +481,7 @@ public class GigwaRestController extends ControllerInterface {
 			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> listSearchableAnnotationFields(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -500,7 +508,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -648,7 +656,7 @@ public class GigwaRestController extends ControllerInterface {
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				ga4ghService.onInterfaceUnload(referenceSetId, token);
+				ga4ghService.dropTempColl(referenceSetId, token);
 				if (Boolean.parseBoolean(request.getParameter("clearToken")))
 				    clearToken(request, resp);
 				success = true;
@@ -681,7 +689,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -716,7 +724,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -751,7 +759,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
 			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -785,7 +793,7 @@ public class GigwaRestController extends ControllerInterface {
 		long before = System.currentTimeMillis();
 
 		String token = tokenManager.readToken(request);
-        String info[] = GigwaSearchVariantsRequest.getInfoFromId(gir.getVariantSetId(), 2);
+        String info[] = Helper.getInfoFromId(gir.getVariantSetId(), 2);
         if (!tokenManager.canUserReadDB(token, info[0])) {
 			build404Response(resp);
 			return;
@@ -800,7 +808,7 @@ public class GigwaRestController extends ControllerInterface {
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
-		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
+		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
 		
 		Map<String, Integer> individualPositions = new LinkedHashMap<>();
 		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
@@ -824,9 +832,13 @@ public class GigwaRestController extends ControllerInterface {
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
+		
+		final Integer nAssembly = Assembly.getThreadBoundAssembly();	// will need to be passed on to child thread
 
 		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
-			public void run() {				
+			public void run() {
+				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
+				
                 HashMap<Object, Integer> genotypeCounts = new HashMap<Object, Integer>();	// will help us to keep track of missing genotypes
                 markerRunsToWrite.forEach(runsToWrite -> {
                     if (progress.isAborted() || progress.getError() != null || runsToWrite == null || runsToWrite.isEmpty())
@@ -837,7 +849,7 @@ public class GigwaRestController extends ControllerInterface {
 					StringBuffer sb = new StringBuffer();
 					try
 					{
-		                ReferencePosition rp = vrd.getReferencePosition();
+		                ReferencePosition rp = vrd.getReferencePosition(Assembly.getThreadBoundAssembly());
 		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
 		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
@@ -855,8 +867,8 @@ public class GigwaRestController extends ControllerInterface {
                                     continue;   // skip genotype
 
 	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
-    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList());
-    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList());
+    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
     								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
     									continue;	// skip genotype
 	                            }
@@ -922,7 +934,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 		};
 
-		ExportManager exportManager = new ExportManager(mongoTemplate, collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
+		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
@@ -968,7 +980,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -995,7 +1007,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -1059,7 +1071,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ANNOTATION_HEADERS_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(IGigwaService.ID_SEPARATOR);
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		Map<String, Map<String, String>> response = new HashMap<>();
 		try {
@@ -1109,7 +1121,7 @@ public class GigwaRestController extends ControllerInterface {
         }
         try
         {
-            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+            if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
                 gsver.setRequest(request);		
                 Authentication authentication = tokenManager.getAuthenticationFromToken(token);
                 gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
@@ -1165,6 +1177,61 @@ public class GigwaRestController extends ControllerInterface {
 		}
 		return viewControllers;
 	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + GALAXY_HISTORY_PUSH, method = RequestMethod.GET, produces = "application/json")
+	public void pushFileToGalaxyHistory(HttpServletRequest request, HttpServletResponse response, @RequestParam("galaxyUrl") String galaxyInstanceUrl, @RequestParam("galaxyApiKey") String galaxyApiKey, @RequestParam("fileUrl") String fileUrl)
+	{
+      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, false);
+      	HistoriesClient hc = gi.getHistoriesClient();
+      	String targetHistName = "GIGWA-" + request.getServerName();
+      	History targetHist = null;
+      	
+      	Exception exp = null;
+      	try {
+	      	for (History h : hc.getHistories())
+	      		if (targetHistName.equals(h.getName())) {
+	          		LOG.debug("Found existing history '" + targetHistName + "' on " + galaxyInstanceUrl);
+	      			targetHist = h;
+	      			break;
+	      		}
+	      	
+	      	if (targetHist == null) {
+	      		targetHist = hc.create(new History(targetHistName));
+	      		LOG.debug("History '" + targetHistName + "' created on " + galaxyInstanceUrl);
+	      	}
+
+	      	HistoryUrlFeeder huf = new HistoryUrlFeeder(gi);
+	      	ClientResponse resp = huf.historyUrlFeedRequest(new HistoryUrlFeeder.UrlFileUploadRequest(targetHist.getId(), fileUrl));
+	      	if (resp.getStatus() >= HttpServletResponse.SC_TEMPORARY_REDIRECT + 3)	// "Too many Redirects" or 4xx / 5xx error
+				throw new Exception("Remote error - " + resp.toString());
+	    }
+	    catch (Exception e) {
+	    	exp = e;
+	    }
+      	finally {
+      		int httpCode;      	
+      		String msg;
+      		if (exp == null) {
+      			httpCode = HttpServletResponse.SC_ACCEPTED;
+      			msg = "sent to history '" + targetHistName + "' on Galaxy instance " + galaxyInstanceUrl;
+      		}
+      		else if (exp instanceof GalaxyResponseException) {
+      			httpCode = HttpServletResponse.SC_FORBIDDEN;
+      			msg = ((GalaxyResponseException) exp).getResponseBody();
+      		}
+      		else {
+      			exp.printStackTrace();
+      			httpCode = exp instanceof UnknownHostException || (exp.getCause() != null && exp.getCause().getClass().equals(UnknownHostException.class))? HttpServletResponse.SC_NOT_FOUND : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+      			msg = exp.getMessage();
+      		}
+	    	try {
+	    		buildResponse(response, httpCode, msg);
+	    	}
+	    	catch (IOException ignored)
+	    	{}
+      	}
+	}
 	
 	@ApiIgnore
 	@RequestMapping(value = IMPORT_PAGE_URL)
@@ -1175,6 +1242,7 @@ public class GigwaRestController extends ControllerInterface {
 //		Map<String, Map<String, Collection<Comparable>>> managedEntitiesByModuleAndType = userDao.getManagedEntitiesByModuleAndType(authentication.getAuthorities());
 //		if (userDao.getWritableEntityTypesByModule(authentication.getAuthorities()).size() == 0 && managedEntitiesByModuleAndType.size() == 0 && !authentication.getAuthorities().contains(new GrantedAuthorityImpl(IRoleDefinition.ROLE_ADMIN)))
 //			mav.addObject("limitToTempData", true);
+
 		return mav;
 	}
 
@@ -1280,7 +1348,7 @@ public class GigwaRestController extends ControllerInterface {
 	        }
 		}
 		catch (Exception e) {
-			build400Response(response, metadataFile + " - " + e.getMessage());
+			build400Response(response, e.getMessage() + " " + metadataFile);
 			return null;
 	    }
         finally {
@@ -1295,7 +1363,9 @@ public class GigwaRestController extends ControllerInterface {
         	}
         }
 
-		return new HashSet<>(endpointByIndividualOrSample.values());
+        HashSet<String> result = new HashSet<>(endpointByIndividualOrSample.values());
+        result.remove("");
+        return result;
 	}
 
 //	@ApiIgnore
@@ -1305,7 +1375,7 @@ public class GigwaRestController extends ControllerInterface {
 //        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
 //    		.values().stream()
 //    		.filter(ind -> ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-//    		.map(ind -> sModule + IGigwaService.ID_SEPARATOR + ind.getId()).toList();
+//    		.map(ind -> sModule + Helper.ID_SEPARATOR + ind.getId()).toList();
 //	}
 //	
 //	@ApiIgnore
@@ -1315,7 +1385,7 @@ public class GigwaRestController extends ControllerInterface {
 //        return MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
 //    		.values().stream()
 //    		.filter(sp -> sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-//    		.map(sp -> sModule + IGigwaService.ID_SEPARATOR + sp.getId()).toList();
+//    		.map(sp -> sModule + Helper.ID_SEPARATOR + sp.getId()).toList();
 //	}
 //	
 	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> importFiles, Collection<String> filesSpecifiedByURI) throws Exception{
@@ -1483,8 +1553,8 @@ public class GigwaRestController extends ControllerInterface {
 		                                    continue;
 
 		                                String endPointUrl = extRefSrcValue;
-		                                if (endPointUrl.endsWith("/"))
-		                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+	                                    if (!endPointUrl.endsWith("/"))
+		                                    endPointUrl += "/";
 		
 		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
@@ -1509,8 +1579,8 @@ public class GigwaRestController extends ControllerInterface {
 	                                        continue;
 	
 	                                    String endPointUrl = extRefSrcValue;
-	                                    if (endPointUrl.endsWith("/"))
-		                                    endPointUrl = endPointUrl.substring(0, endPointUrl.length() - 1);
+	                                    if (!endPointUrl.endsWith("/"))
+		                                    endPointUrl += "/";
 	
 	                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
@@ -1578,6 +1648,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sHost the host
 	 * @param sModule the module
 	 * @param ncbiTaxonIdNameAndSpecies the ncbi TaxonId, Taxon Name and Species Name
+	 * @param assemblyName name of the assembly on which provided positions are based
 	 * @param nPloidy the ploidy level
 	 * @param sProject the project
 	 * @param sRun the run
@@ -1602,6 +1673,7 @@ public class GigwaRestController extends ControllerInterface {
 	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
 			@RequestParam(value = "ncbiTaxonIdNameAndSpecies", required = false) final String ncbiTaxonIdNameAndSpecies,
+			@RequestParam(value = "assemblyName", required = false) final String assemblyName,
 			@RequestParam(value = "ploidy", required = false) final Integer nPloidy,
 			@RequestParam("project") final String sProject, @RequestParam("run") final String sRun, @RequestParam(value="projectDesc", required = false) final String sProjectDescription,
 			@RequestParam(value = "technology", required = false) final String sTechnology,
@@ -1843,18 +1915,13 @@ public class GigwaRestController extends ControllerInterface {
 				}
 
 				if (progress.getError() == null) {	// check if client is allowed to import
-					String referer = request.getHeader("referer");					
-					String remoteAddr = referer != null ? new URI(referer).getHost() /* we give priority to the referer */ : request.getHeader("X-Forwarded-Server") /* in case the app is running behind a proxy */;
-					if (remoteAddr == null || remoteAddr.equals("localhost") || remoteAddr.equals("127.0.0.1"))
-						remoteAddr = request.getRemoteAddr();
-					
-					boolean fIsCalledFromInterface = referer != null && referer.contains(remoteAddr + request.getContextPath());
-					if (!fIsCalledFromInterface) {	// not being called from default UI: see if we should allow import
+					if (request.getSession().isNew()) {	// not being called from default UI: see if we should allow import
+						String remoteAddr = request.getRemoteAddr();
 						String serversAllowedToImport = appConfig.get("serversAllowedToImport");
 						if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
 							progress.setError("Remote client not allowed to import: " + remoteAddr);
 					}
-	
+
 					Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
 					boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
 					if (progress.getError() == null && fDatasourceExists) {
@@ -1866,22 +1933,22 @@ public class GigwaRestController extends ControllerInterface {
 
 					if (progress.getError() != null)
 						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
-							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") + ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", fIsCalledFromInterface:" + fIsCalledFromInterface);
+							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() /*+ ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
+							+ request.getHeader("referer") */+ ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew());
 				}
-			
+
 				if (progress.getError() != null) {
 					for (File fileToDelete : uploadedFiles)
 						fileToDelete.delete();
 					return processId;
 				}
-	
+
 				Long expiryDate = null;
 				fDatasourceAlreadyExisted.set(fDatasourceExists);
 				if (!fDatasourceExists) {
 					progress.addStep("Creating datasource");
 					progress.moveToNextStep();
-	
+
 					try { // create it
 						if (!fAdminImporter) {	// only administrators may create permanent databases
 							expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
@@ -1916,8 +1983,6 @@ public class GigwaRestController extends ControllerInterface {
 						return processId;
 					}
 				}
-	
-
 				
 				try {
 					if (fDatasourceExists) {
@@ -1958,6 +2023,7 @@ public class GigwaRestController extends ControllerInterface {
 							        progress.setError("Sample-mapping file has a wrong structure (2 columns expected)!");
 							        return processId;
 							    }
+
 				        		if (!splitLine.contains("individual") || !splitLine.contains("sample")) {
 							        progress.setError("Sample-mapping header must contain 2 columns named sample and individual!");
 							        return processId;
@@ -1976,7 +2042,7 @@ public class GigwaRestController extends ControllerInterface {
 									Integer newProjId = null;
 									if (fBrapiImport) {
 										genotypeImporter.set(new BrapiImport(processId));
-										newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken,  Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+										newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
@@ -1995,26 +2061,25 @@ public class GigwaRestController extends ControllerInterface {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new PlinkImport(processId));
-												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 												Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 												boolean fIsGenotypingFileLocal = s instanceof File;
 												genotypeImporter.set(new VcfImport(processId));
-												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 		                                    else if (filesByExtension.containsKey("intertek")) {
 		                                        Serializable s = filesByExtension.get("intertek");                                                                               
 		                                        boolean fIsGenotypingFileLocal = s instanceof File;
 		                                        genotypeImporter.set(new IntertekImport(processId));
-		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 		                                    }
 											else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new FlapjackImport(processId));
-												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-		
+												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
@@ -2022,7 +2087,7 @@ public class GigwaRestController extends ControllerInterface {
 												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
 													genotypeImporter.set(new HapMapImport(processId));
-													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 												}
 												else
 													throw new Exception("Unsupported format or extension for genotyping data file: " + s);
@@ -2037,12 +2102,12 @@ public class GigwaRestController extends ControllerInterface {
 												LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
 											
 											genotypeImporter.set(new VcfImport(processId));
-											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										}
 									}
 
+									createdProjectId.set(newProjId != null ? newProjId : -1);
 									if (progress.getError() == null && !progress.isAborted()) {	// looks like a successful import
-										createdProjectId.set(newProjId != null ? newProjId : -1);
 										
 										if (fGotProjectDesc)
 											finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
@@ -2088,9 +2153,10 @@ public class GigwaRestController extends ControllerInterface {
 									if (progress.getError() != null || progress.isAborted()) {	// failed or aborted: do some cleanup
 										String sCleanupReason = !progress.isAborted() ? "error: " + progress.getError() : "user abort";
 										if (fDatasourceAlreadyExisted.get()) {
-											if (mongoTemplate.count(new Query(), GenotypingProject.class) > 0)
+											int nRunProjectId = project == null ? createdProjectId.get() : project.getId();
+											if (nRunProjectId > 0)
 												try {
-													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(project == null ? createdProjectId.get() : project.getId(), sRun));	// remove run
+													moduleManager.removeManagedEntity(sModule, AbstractTokenManager.ENTITY_RUN, Arrays.<Comparable>asList(nRunProjectId, sRun));	// remove run
 												} catch (Exception e1) {
 													LOG.error("Error cleaning up run data subsequently to " + sCleanupReason, e1);
 												}
@@ -2143,11 +2209,13 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFile != null) {
-				while (progress.getError() == null && !progress.isAborted() && !progress.isComplete() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
+				while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
 					Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
 
-				if (genotypeImporter.get() != null && genotypeImporter.get().haveSamplesBeenPersisted()) {
-					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, metadataFile instanceof URL ? ((URL) metadataFile).toString() : null, null, false, metadataFile instanceof URL ? null : (MultipartFile) metadataFile, null, metadataType, brapiURLs, brapiTokens));
+				if (progress.getError() != null || progress.isAborted())
+					LOG.warn("Unable to process metadata during mixed import!");
+				else {
+					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, finalMetadataFile instanceof URL ? ((URL) finalMetadataFile).toString() : null, null, false, finalMetadataFile instanceof URL ? null : (MultipartFile) finalMetadataFile, null, metadataType, brapiURLs, brapiTokens));
 					
 					// watch metadata import progress so we are aware of errors if any
 					Timer timer = new Timer();
@@ -2169,8 +2237,6 @@ public class GigwaRestController extends ControllerInterface {
 					    }
 					}, 0, 1000); 
 				}
-				else if (progress.getError() == null && !progress.isAborted())
-					LOG.warn("Unable to process metadata during mixed import!");
 			}
 		}
 
@@ -2250,6 +2316,7 @@ public class GigwaRestController extends ControllerInterface {
 		resp.setStatus(httpCode);
 		if (message != null)
 			resp.getWriter().write(message);
+		//	resp.sendError(httpCode, message);
 	}
 
 	public void build400Response(HttpServletResponse resp, String message) throws IOException {
@@ -2290,7 +2357,7 @@ public class GigwaRestController extends ControllerInterface {
     		return;
     	}
 
-    	String info[] = GigwaSearchVariantsRequest.getInfoFromId(gsvr.getVariantSetId(), 2);
+    	String info[] = Helper.getInfoFromId(gsvr.getVariantSetId(), 2);
         String sModule = info[0];
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);        
 
@@ -2398,7 +2465,7 @@ public class GigwaRestController extends ControllerInterface {
         String token = tokenManager.readToken(request);
 
         try {
-            String[] info = URLDecoder.decode(projectId, "UTF-8").split(IGigwaService.ID_SEPARATOR);
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
             int project = Integer.parseInt(info[1]);
             if (tokenManager.canUserReadDB(token, info[0])) {            
                 return ga4ghService.searchVariantsLookup(info[0], project, lookupText);

@@ -23,6 +23,8 @@ let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 let progressTimeoutId = null;
+var emptyResponseCountsByProcess = [];
+
 const chartTypes = new Map([
     ["density", {
         displayName: "Density",
@@ -133,7 +135,7 @@ const chartTypes = new Map([
     }]
 ]);
 
-function initializeAndShowDensityChart(){
+function initializeChartDisplay(){
     if (distinctSequencesInSelectionURL == null)
     {
         alert("distinctSequencesInSelectionURL is not defined!");
@@ -176,9 +178,7 @@ function initializeAndShowDensityChart(){
     $.ajax({
         url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
         type: "GET",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
         	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
         		selectedSequences = jsonResult;
@@ -460,9 +460,7 @@ function displayChart(minPos, maxPos) {
         url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
@@ -627,7 +625,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
                 color: colorTab[colorIndex],
                 yAxis: fieldName,
 				marker: {
-		                enabled: false
+		        	enabled: false
 		        },
                 data: jsonValues
             });
@@ -685,11 +683,11 @@ function abortOngoingOperation() {
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-            if (!jsonResult.processAborted) {
+            if (!jsonResult.processAborted)
                 console.log("Unable to abort!");
-            } else {
-                finishProcess();
-            }
+            else
+				processAborted = true;
+            finishProcess();
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -702,24 +700,44 @@ function checkChartLoadingProgress() {
         url: progressUrl,
         type: "GET",
         contentType: "application/json;charset=utf-8",
+        //buildHeader(token, $('#assembly').val())
         headers: {
             "Authorization": "Bearer " + token
         },
-        success: function(jsonResult) {
-            if (jsonResult == null) {
+        success: function (jsonResult, textStatus, jqXHR) {
+            if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted)) {
+				if (emptyResponseCountsByProcess[token] == null)
+					emptyResponseCountsByProcess[token] = 1;
+				else
+					emptyResponseCountsByProcess[token]++;
+				if (emptyResponseCountsByProcess[token] > 10) {
+					console.log("Giving up requesting progress for process " + token);
+					emptyResponseCountsByProcess[token] = null;
+				}
+				else
+                	setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+            }
+            else if (jsonResult != null && jsonResult['complete'] == true) {
+               	emptyResponseCountsByProcess[token] = null;
+                $('#progress').modal('hide');
                 finishProcess();
             }
-            else
-            {
-                dataBeingLoaded = true;	// still running
-                if (jsonResult['error'] != null) {
+            else if (jsonResult != null && jsonResult['aborted'] == true) {
+                processAborted = true;
+                emptyResponseCountsByProcess[token] = null;
+                $('#progress').modal('hide');
+                finishProcess();
+            }
+            else {
+                if (jsonResult != null && jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
                     alert("Error occurred:\n\n" + jsonResult['error']);
                     finishProcess();
                     $('#density').modal('hide');
-                }
-                else {
-                    $('div#densityLoadProgress').html(jsonResult['progressDescription']);
+                    emptyResponseCountsByProcess[token] = null;
+                } else {
+					if (jsonResult != null)
+                    	$('div#densityLoadProgress').html(jsonResult['progressDescription']);
                     setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
                 }
             }

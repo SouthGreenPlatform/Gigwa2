@@ -239,7 +239,7 @@
             this.selectAll(false);
         },
         // select multiple items at once 
-        batchSelect: function (labelArray) {
+        batchSelect: function (labelArray, alertOnIssues) {
           var selectedCount = 0, lastSelected = 0;
           for (var i=0; i<this.length; i++)
             for (var j=0; j<labelArray.length; j++) {
@@ -255,8 +255,13 @@
           }
           this.load(Math.min((lastSelected + this.options.size) - (lastSelected % this.options.size), this.length));
           this.$element.data('count', selectedCount);
-          if (selectedCount != labelArray.length)
-          	alert((labelArray.length - selectedCount) + ' pasted entries could not be found!');
+          if (selectedCount != labelArray.length) {
+          	var msg = (labelArray.length - selectedCount) + ' pasted entries could not be found!';
+          	if (alertOnIssues)
+          		alert(msg);
+          	else
+          		console.log(msg);
+          }
           this.$element.data('value', selectedCount == labelArray.length ? labelArray : $(this.$select).find("option:selected").toArray().map(opt => opt.text));
           this.$buttonsearch.trigger('multiple_select_change');
         }

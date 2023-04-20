@@ -1,4 +1,4 @@
-FROM tomcat:8.5.81-jre8-openjdk-slim-bullseye
+FROM tomcat:9.0.58-jdk17-openjdk-slim
 
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8

@@ -67,7 +67,7 @@ import com.mongodb.BasicDBObject;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
-import fr.cirad.manager.dump.DumpValidity;
+import fr.cirad.manager.dump.DumpStatus;
 import fr.cirad.manager.dump.IBackgroundProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
@@ -79,8 +79,6 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
-import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
-import fr.cirad.mgdb.service.IGigwaService;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
@@ -179,7 +177,7 @@ public class GigwaModuleManager implements IModuleManager {
 
         File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
         if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-        	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR)))
+        	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR)))
         		if (exportFile.delete())
         			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
 
@@ -248,7 +246,7 @@ public class GigwaModuleManager implements IModuleManager {
 
             File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
             if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + nProjectIdToRemove + IGigwaService.ID_SEPARATOR)))
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectIdToRemove + Helper.ID_SEPARATOR)))
             		if (exportFile.delete())
             			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
             
@@ -285,7 +283,7 @@ public class GigwaModuleManager implements IModuleManager {
 
             File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
             if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + IGigwaService.ID_SEPARATOR + nProjectId + IGigwaService.ID_SEPARATOR)))
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectId + Helper.ID_SEPARATOR)))
             		if (exportFile.delete())
             			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
             
@@ -416,19 +414,19 @@ public class GigwaModuleManager implements IModuleManager {
                         } catch (IOException ignored) {}
                     }
 
-                    DumpValidity validity;
+                    DumpStatus validity;
 
                     // No last modification date set : default to valid ?
                     if (dbInfo == null) {
-                        validity = (!isModuleAvailableForDump(sModule) && fRecentlyModified) ? DumpValidity.BUSY : DumpValidity.VALID;
+                        validity = (!isModuleAvailableForDump(sModule) && fRecentlyModified) ? DumpStatus.BUSY : DumpStatus.VALID;
                         // creationDate < lastModification : outdated
                     } else if (creationDate.compareTo(dbInfo.getLastModification()) < 0) {
-                        validity = DumpValidity.OUTDATED;
+                        validity = DumpStatus.OUTDATED;
                         // The last modification was a dump restore, and this dump is more recent than the restored dump
                     } else if (creationDate.compareTo(dbInfo.getLastModification()) > 0 && dbInfo.getRestoreDate() != null && creationDate.compareTo(dbInfo.getRestoreDate()) < 0) {
-                        validity = DumpValidity.DIVERGED;
+                        validity = DumpStatus.DIVERGED;
                     } else {
-                        validity = DumpValidity.VALID;
+                        validity = DumpStatus.VALID;
                     }
 
                     result.add(new DumpMetadata(extensionLessFilename, extensionLessFilename.split("__")[1], creationDate, fileSizeMb, description == null ? "" : description, validity));
@@ -441,11 +439,14 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public DumpValidity getDumpStatus(String sModule) {
-        if (!isModuleAvailableForDump(sModule))
-            return DumpValidity.BUSY;
+    public DumpStatus getDumpStatus(String sModule) {
+    	if (MongoTemplateManager.isModuleTemporary(sModule))
+    		return DumpStatus.UNSUPPORTED;
 
-        DumpValidity result = DumpValidity.NONE;
+        if (!isModuleAvailableForDump(sModule))
+            return DumpStatus.BUSY;
+
+        DumpStatus result = DumpStatus.NONE;
         for (DumpMetadata metadata : getDumps(sModule, false)) {
             if (metadata.getValidity().validity > result.validity)
                 result = metadata.getValidity();
@@ -528,8 +529,10 @@ public class GigwaModuleManager implements IModuleManager {
                 Node node = clients.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element client = (Element) node;
+                    if (!sHost.equals(client.getAttribute("id")))
+                    	continue;
                     String credentialString = client.getAttribute("credential");
-                    if (credentialString.length() == 0) {
+                    if (credentialString != null && credentialString.isEmpty()) {
                         return null;
                     } else
                         return accountForEnvVariables(credentialString);
@@ -630,7 +633,7 @@ public class GigwaModuleManager implements IModuleManager {
         	int nProjId = Integer.valueOf(entityIDs.iterator().next().toString());
     	    String sRun = !fIsRunEntityType ? null : (String) entityIDs.toArray(new Comparable[2])[1];
         	MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-        	VariantSet variantSet = mongoTemplate.findById(GigwaGa4ghServiceImpl.createId(sModule, nProjId, sRun), VariantSet.class, MongoBrapiCache.BRAPI_CACHE_COLL_VARIANTSET);
+        	VariantSet variantSet = mongoTemplate.findById(Helper.createId(sModule, nProjId, sRun), VariantSet.class, MongoBrapiCache.BRAPI_CACHE_COLL_VARIANTSET);
         	if (variantSet != null)
         		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
         	else {

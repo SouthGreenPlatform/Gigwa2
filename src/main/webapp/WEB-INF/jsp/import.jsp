@@ -71,10 +71,9 @@
         	var BRAPI_V1_URL_ENDPOINT;
         	var brapiParameters;
         	var projectDescriptions = [];
-   			var brapiUserName, brapiUserPassword, brapiToken, distinctBrapiMetadataURLs;
-   			var extRefIdField = "<%=BrapiService.BRAPI_FIELD_externalReferenceId%>";
-   			var extRefSrcField = "<%=BrapiService.BRAPI_FIELD_externalReferenceSource%>";
-
+   			var brapiGenotypesToken, distinctBrapiMetadataURLs;
+   			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_externalReferenceId %>";
+   			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_externalReferenceSource %>";
    			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin};
    			var supervisedModules = [];
    			<c:if test="${!isAnonymous}">
@@ -215,9 +214,7 @@
                                            <label for="dataFile1">Data source <span class="text-red">*</span></label>
                                       </div>
                                      	<div class="col-md-10">
-                                     		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint
-											<img src="images/lightbulb.gif" title="If you need to authenticate on the BrAPI server please specify username@ before domain name or IP to be prompted for a password"/>,
-                                     		or an absolute webserver fs-path</small>
+                                     		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint</small>
                                      		<div class="text-red" style='float:right;'>You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
                                       </div>
                                      </div>
@@ -274,7 +271,7 @@
                     <input type="hidden" name="brapiTokens" id="brapiTokens"/>
                     <div class="panel panel-default importFormDiv">
                         <div class="panel-body panel-grey text-center">
-                            <h4>Adding metadata to existing database</h4>
+                            <h4>Adding metadata to a database's individuals or samples</h4>
                             <div class="row">
                             	<div class="col-md-1"></div>
                                 <div class="col-md-4">

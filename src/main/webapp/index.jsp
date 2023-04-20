@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.rest.BrapiRestController, fr.cirad.mgdb.service.GigwaGa4ghServiceImpl,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
+<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
@@ -30,7 +30,7 @@
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
-<c:set var="idSep" value='<%= GigwaGa4ghServiceImpl.ID_SEPARATOR %>' />
+<c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
 
 <html>
 <head>
@@ -74,8 +74,8 @@
 	var firstType;
 	var sortBy = "";
 	var sortDesc = false;
-	var seqPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_SEQUENCE %>";
-	var posPath = "<%= VariantData.FIELDNAME_REFERENCE_POSITION + "." + ReferencePosition.FIELDNAME_START_SITE %>";
+	var seqPath = "<%= ReferencePosition.FIELDNAME_SEQUENCE %>";
+	var posPath = "<%= ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
 	
@@ -125,6 +125,7 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
+	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
 	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
@@ -144,33 +145,14 @@
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
-				dropTempColl();
+				dropTempColl(false);
 
 			referenceset = $(this).val();
+
 			if (!loadProjects(referenceset))
 				return;
-						
-			$("div#welcome").hide();
 
-			for (var groupNumber=1; groupNumber<=2; groupNumber++)
-			{
-				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
-				if (localValue == null)
-					localValue = [];
-				else
-					localValue = JSON.parse(localValue);
-				if (localValue.length > 0)
-				{
-					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
-					$("button#groupMemorizer" + groupNumber).addClass("active");
-					$("#genotypeInvestigationMode").val(groupNumber);
-					$('#genotypeInvestigationMode').selectpicker('refresh');
-					setGenotypeInvestigationMode(groupNumber);
-				}
-				else
-					$("button#groupMemorizer" + groupNumber).removeClass("active");
-				applyGroupMemorizing(groupNumber, localValue);
-			}
+			$("div#welcome").hide();
 
 			$.ajax({
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DEFAULT_GENOME_BROWSER_URL%>" />?module=' + referenceset,
@@ -191,7 +173,7 @@
 
 			$.ajax({
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
-				async: false,// 			async: false,
+				async: false,
 				type: "GET",
 				contentType: "application/json;charset=utf-8",
 				success: function(labelsAndURLs) {
@@ -202,6 +184,7 @@
 					$("#onlineOutputTools").html(options);
 					onlineOutputTools["Custom tool"] = {"url" : "", "formats" : ""};
 					configureSelectedExternalTool();
+				    $('#galaxyInstanceURL').val(localStorage.getItem("galaxyInstanceURL"));
 				},
 				error: function(xhr, thrownError) {
 					handleError(xhr, thrownError);
@@ -222,8 +205,55 @@
 			$("table#individualFilteringTable").html("");
 			$('#countResultPanel').hide();
 			$('#rightSidePanel').hide();
+			$("#grpAsm").hide();
+			
+			$.ajax({	// load assemblies
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
+				type: "POST",
+				dataType: "json",
+				async: false,
+				contentType: "application/json;charset=utf-8",
+		        headers: buildHeader(token, $('#assembly').val()),
+				data: JSON.stringify({
+					"studyDbIds": [getProjectId()]
+				}),
+				success: function(jsonResult) {
+					$('#assembly').html("");
+					jsonResult.result.data.forEach(refSet => {
+						var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
+						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
+					});
+					if (jsonResult.result.data.length > 1)
+						$("#grpAsm").show();
+					$('#assembly').selectpicker('refresh');
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
+				}
+			});
+
 			fillWidgets();
 			resetFilters();
+			
+			for (var groupNumber=1; groupNumber<=2; groupNumber++) {
+				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
+				if (localValue == null)
+					localValue = [];
+				else
+					localValue = JSON.parse(localValue);
+				if (localValue.length > 0)
+				{
+					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
+					$("button#groupMemorizer" + groupNumber).addClass("active");
+					$("#genotypeInvestigationMode").val(groupNumber);
+					$('#genotypeInvestigationMode').selectpicker('refresh');
+					setGenotypeInvestigationMode(groupNumber);
+				}
+				else
+					$("button#groupMemorizer" + groupNumber).removeClass("active");
+				applyGroupMemorizing(groupNumber, localValue);
+			}
+
 			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
 			var projectDesc = projectDescriptions[$(this).val()];
 			if (projectDesc != null)
@@ -239,9 +269,7 @@
 				type: "GET",
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
+    	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
 					runList = [];
 					for (var run in jsonResult.runs)
@@ -442,10 +470,8 @@
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			data: JSON.stringify({
+	        headers: buildHeader(token, $('#assembly').val()),
+	        data: JSON.stringify({
 				"datasetId": module == null && passedModule != null ? passedModule : module,
 				"pageSize": null,
 				"pageToken": null
@@ -520,47 +546,37 @@
 	}
 
 	function loadVariantTypes() {                
-                    $.ajax({
-                            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
-                            type: "GET",
-                            dataType: "json",
-                            contentType: "application/json;charset=utf-8",
-                            headers: {
-                                    "Authorization": "Bearer " + token
-                            },
-                            success: function(jsonResult) {
-                                    variantTypesCount = jsonResult.length;
-                                    var option = "";
-                                    for (var key in jsonResult) {
-                                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-                                    }
-                                    $('#variantTypes').html(option).selectpicker('refresh');
-                            },
-                            error: function(xhr, ajaxOptions, thrownError) {
-                                    handleError(xhr, thrownError);
-                            }
-                    });
+	    $.ajax({
+	            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+	            type: "GET",
+	            dataType: "json",
+	            contentType: "application/json;charset=utf-8",
+    	        headers: buildHeader(token, $('#assembly').val()),
+	            success: function(jsonResult) {
+	                    variantTypesCount = jsonResult.length;
+	                    var option = "";
+	                    for (var key in jsonResult) {
+	                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
+	                    }
+	                    $('#variantTypes').html(option).selectpicker('refresh');
+	            },
+	            error: function(xhr, ajaxOptions, thrownError) {
+	                    handleError(xhr, thrownError);
+	            }
+	    });
 	}
-
 	function loadSequences() {
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.REFERENCES_SEARCH%>" />',
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesApi.searchReferencesPost_url%>" />',
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			data: JSON.stringify({
-				"referenceSetId": $('#module').val(),
-				"variantSetId": getProjectId(),
-				"md5checksum": null,
-				"accession": null,
-				"pageSize": null,
-				"pageToken": null
+				"referenceSetDbIds": [/* $('#module').val() + "${idSep}" +*/ getProjectId() + "${idSep}" + $('#assembly').val()]
 			}),
 			success: function(jsonResult) {
-				seqCount = jsonResult.references.length;
+				seqCount = jsonResult.result.data.length;
                 if (seqCount == 0) {
                     $('#sequenceFilter').hide();
                     $('#positions').hide();
@@ -573,17 +589,16 @@
                     onFilterByIds(false);
                 }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
-				var seqOpt = [];
-				for (var ref in jsonResult.references) {
-					seqOpt[ref] = jsonResult.references[ref].name;
-				}
+				referenceNames = [];
+				jsonResult.result.data.forEach(ref => {
+					referenceNames.push(ref["referenceName"]);
+				});
+
 				$('#Sequences').selectmultiple({
 					text: 'Sequences',
-					data: seqOpt,
+					data: referenceNames,
 					placeholder: 'sequence'
 				});
-				referenceNames = [];
-				jsonResult.references.forEach(ref => referenceNames.push(ref.name))
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -722,16 +737,17 @@
 				$('#individualsLabel2').html("Individuals (" + indCount + "/" + indCount + ")");
 				
 				updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
-				if (indCount === 0) {
+				$("#genotypeInvestigationMode").prop('disabled', indCount == 0);
+				if (indCount == 0)
 					setGenotypeInvestigationMode(0);
-					$("#genotypeInvestigationMode").prop('disabled', true);
-				} else {
+				else {
 					$('#individualsLabel1').show();
 					$('#Individuals1').show();
 					$('#Individuals1').next().show();
 					$('#individualsLabel2').show();
 					$('#Individuals2').show();
 					$('#Individuals2').next().show();
+					$("#genotypeInvestigationMode").prop('disabled', false);
 				}
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -746,9 +762,7 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				if (jsonResult.effectAnnotations.length > 0) {
 					var option = "";
@@ -778,9 +792,7 @@
 			dataType: "json",
 			async:false,
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				alleleCount = jsonResult.numberOfAllele.length;
 				var option = "";
@@ -891,7 +903,7 @@
 			keyboard: false,
 			show: true
 		}); // prevent the user from hiding progress modal when clicking outside
-		$('#showdensity').show();
+		$('#showCharts').show();
 		$('#showIGV').show();
 		$('#exportBoxToggleButton').show();
 		processAborted = false;
@@ -914,9 +926,7 @@
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
                 timeout:0,
-                headers: {
-                        "Authorization": "Bearer " + token
-                },
+    	        headers: buildHeader(token, $('#assembly').val()),
                 data: JSON.stringify(query),
                 success: function(jsonResult) {
                         $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');
@@ -941,7 +951,7 @@
  		$('#serverExportBox').hide();
 		displayProcessProgress(2, token);
 	}
-        
+
     function loadVariantIds() {
         var options = {
                 ajax:{
@@ -1004,7 +1014,7 @@
             inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
         }
     }
-        	
+
 	function buildGenotypeTableContents(jsonResult)
 	{
 		var before = new Date().getTime();
@@ -1124,9 +1134,7 @@
 				async: false,
 				dataType: "json",
 				contentType: "application/json;charset=utf-8",
-				headers: {
-					"Authorization": "Bearer " + token
-				},
+    	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
 					if (addedRunCount == 0) {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
@@ -1174,9 +1182,7 @@
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
+	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
 				var gotFunctAnn = jsonResult.info.ann_header != null && jsonResult.info.ann_header.length > 0
 				$('#toggleFunctionalAnn').css('display', gotFunctAnn ? 'inline' : 'none');
@@ -1280,11 +1286,11 @@
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 
-                var query = buildSearchQuery(3, currentPageToken);
-                query["keepExportOnServer"] =  keepExportOnServer;
-                query["exportFormat"] =  $('#exportFormat').val();
-                query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
-                query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
+        var query = buildSearchQuery(3, currentPageToken);
+        query["keepExportOnServer"] =  keepExportOnServer;
+        query["exportFormat"] =  $('#exportFormat').val();
+        query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
+        query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
@@ -1293,9 +1299,7 @@
                 url: url,
                 type: "POST",       
                 contentType: "application/json;charset=utf-8",
-                headers: {
-                        "Authorization": "Bearer " + token
-                },
+    	        headers: buildHeader(token, $('#assembly').val()),
                 data: JSON.stringify(query),
                 success: function(response) {
                         downloadURL = response;
@@ -1308,10 +1312,8 @@
                 }
             });
 		} else {
-            var headers = {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json;charset=utf-8" 
-            };
+			var headers = buildHeader(token, $('#assembly').val());
+            headers["Content-Type"] = "application/json;charset=utf-8"; 
 
             var request = {
                 method: "POST",
@@ -1345,40 +1347,7 @@
 		}
 		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
 	}
-	
-	function showServerExportBox()
-	{
-		$("div#exportPanel").hide();
-		$("a#exportBoxToggleButton").removeClass("active");
-		if (processAborted || downloadURL == null)
-			return;
 
-		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-		$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">×&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
-		var exportedFormat = $('#exportFormat').val().toUpperCase();
-		if ("VCF" == exportedFormat)
-			addIgvExportIfRunning();
-		else if ("FLAPJACK" == exportedFormat)
-			addFjBytesExport();
-		
-		var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
-		for (var key in exportFormatExtensions)
-			archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-		
-		if (onlineOutputTools != null)
-			for (var toolName in onlineOutputTools)
-			{
-				var toolConfig = getOutputToolConfig(toolName);
-				var buttonsForThisTool = "";
-				for (var key in archivedDataFiles)
-					if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase())))
-						buttonsForThisTool += '&nbsp;<input type="button" value="Send ' + key.toUpperCase() + ' file to ' + toolName + '" onclick="window.open(\'' + toolConfig['url'].replace(/\*/g, escape(archivedDataFiles[key])) + '\');" />&nbsp;';
-				
-				if (buttonsForThisTool != "");
-					$('#serverExportBox').append('<br/><br/>' + buttonsForThisTool)
-			}
-	}
-	
 	function postDataToIFrame(frameName, url, params)
 	{
 		 var form = document.createElement("form");
@@ -2104,7 +2073,10 @@
 	<div id="welcome">
 		<h3>Welcome to Gigwa</h3>
 		<p>
-		The Gigwa application, which stands for “Genotype Investigator for Genome-Wide Analyses”, provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database with VCF, PLINK or HapMap files containing up to tens of billions of genotypes, and provides a user-friendly interface to filter data in real time. Gigwa provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
+		Gigwa, which stands for “Genotype Investigator for Genome-Wide Analyses”, is an application that provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database from various data formats with up to tens of billions of genotypes, and provides a user-friendly interface to filter data in real time.
+		</p>
+		<p>
+		The system embeds various online visualization features that are easy to operate. Gigwa also provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
 		<p class="margin-top bold">
 			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
@@ -2115,12 +2087,12 @@
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
 			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
-		<div class="margin-top" style="padding:10px 0; text-align:center; text-align:center;" id="logoRow">	 
+		<div class="margin-top" style="margin:0 -30px; text-align:center; text-align:center;" id="logoRow">	 
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
 			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
 			<a href="http://www.inrae.fr/" target="_blank" class="margin-left"><img alt="inra" height="20" src="images/logo-inrae.png" /></a>
-			<a href="https://www.bioversityinternational.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="45" src="images/logo-bioversity.png" /></a>
+			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
@@ -2343,7 +2315,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<div class="panel-body">
 								<div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand;" title="Some individuals are selected in both groups"><img align="left" src="images/warning.png" height="15" width="18" />&nbsp;Overlap</div>
 								<label class="label-checkbox">
-									<input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
+									<input type="checkbox" id="discriminate" class="input-checkbox" title="Check this box to limit search to variants for which the major genotype differs between both groups" onchange="checkGroupOverlap();">
 									&nbsp;Discriminate groups
 								</label>
 							</div>
@@ -2464,7 +2436,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px; width:340px;" class="row">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Visualization charts" id="showdensity" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeAndShowDensityChart(); }">
+								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
@@ -2503,7 +2475,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 													<div style="width:100%; text-align:center;">
 														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
+															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
 														</label>
 														<div>
 															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
@@ -2681,14 +2653,21 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
-			<b>Configure this to be able to push exported data into external online tools</b><br />
-			(feature available when the 'Keep files on server' box is ticked)<br /><br />
+			<div style="font-weight:bold; padding:10px; background-color:#eeeeee; border-top-left-radius:6px; border-top-right-radius:6px;">Configure this to be able to push exported data into external online tools<br />
+			(feature available when the 'Keep files on server' box is ticked)<br />
+			</div>
+			<hr />
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
+			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
+			<br/>
+			(You will need to provide an API key to be able to push exported files there)
+			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
 			<br />Online tool URL (any * will be replaced with exported file location)<br />
 			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
 			<p>
-				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='if ($("input#outputToolURL").val().trim() == "") { localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val()); configureSelectedExternalTool(); } else localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()})); $(this).prop("disabled", "disabled");' />
+				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
 				<br/>
 				(Set URL blank to revert to default)
 			</p>
