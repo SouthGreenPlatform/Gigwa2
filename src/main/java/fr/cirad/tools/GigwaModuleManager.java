@@ -377,13 +377,13 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     public List<DumpMetadata> getDumps(String sModule, boolean withDescription) {
-        DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
         String dumpPath = this.getDumpPath(sModule);
 
         // List files in the database's dump directory, filter out subdirectories and logs
         File[] fileList = new File(dumpPath).listFiles();
+        ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
         if (fileList != null) {
-            ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
+            DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
             for (File file : fileList) {
                 String filename = file.getName();
                 if (filename.endsWith(".gz") && !filename.endsWith(".log.gz")) {
@@ -432,10 +432,8 @@ public class GigwaModuleManager implements IModuleManager {
                     result.add(new DumpMetadata(extensionLessFilename, extensionLessFilename.split("__")[1], creationDate, fileSizeMb, description == null ? "" : description, validity));
                 }
             }
-            return result;
-        } else { // The database dump directory does not exist
-            return new ArrayList<DumpMetadata>();
         }
+        return result;
     }
 
     @Override
