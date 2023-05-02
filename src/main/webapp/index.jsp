@@ -36,15 +36,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-cache" />
-<c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
-<script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${googleAnalyticsId}');
-</script>
-</c:if>
+
 <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
@@ -2066,6 +2058,18 @@
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
 </head>
+
+<c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '${googleAnalyticsId}');
+</script>
+</c:if>
+
 <body>
 	<%@include file="navbar.jsp"%>
 	<iframe style='display:none;' id='outputFrame' name='outputFrame'></iframe>
