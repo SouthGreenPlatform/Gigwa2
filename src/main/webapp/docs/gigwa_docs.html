@@ -785,7 +785,7 @@
                   <B>variantIdLookupMaxSize</B> - Defines the limit number of variant IDs that are returned by the text lookup functionality of the "Variant IDs" widget. Default: 50
                </P>
             <LI>
-               <P STYLE="margin-bottom: 0in; line-height: 100%">
+               <P>
                   <B>igvGenomeConfig_N</B> - Properties named igvGenomeConfig_N with N being an integer >= 1
                   provide sets of online genomes to be displayed as default genome lists for the embedded
                   IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
@@ -795,6 +795,17 @@
                   <B>dumpFolder</B> - Enables the dump management functionality by defining the location where dumps will be stored on the application-server's filesystem
                   <font color="red">(Requires installing MongoDB Command Line Database Tools on the machine running Tomcat)</font>
                </P>
+            <LI>
+	            <P>
+	            <B>allowedOrigins_&lt;PATH&gt;</B> - Properties with prefix "allowedOrigins_" allow tuning CORS behaviour using Ant-style path patterns. The default
+	            <span style='padding:2px; background-color:lightgrey; font-size:10pt; font-family:Courier'>allowedOrigins_/**=*</span>
+	            entry enables CORS from any origin for all URLs starting with [context-path]/rest/
+	            </P>
+				Other examples overriding the default for more specific path patterns:
+				<ul>
+					<li>allowedOrigins_/*/brapi/v1/*=http://domain1:59397, http://domain2:8080
+					<li>allowedOrigins_/brapi/v2/**=http://domain1:59397, http://domain2:8080
+				</ul>
          </UL>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
