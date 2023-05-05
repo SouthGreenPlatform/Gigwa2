@@ -890,6 +890,10 @@ div#countResultPanel {
     text-align:center;
 }
 
+input:focus::placeholder {
+  color: transparent;
+}
+
 @keyframes spin-a {
     0%   { transform:rotate(90deg); }
     0%  { transform:rotate(90deg); }
