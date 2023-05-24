@@ -1916,7 +1916,9 @@ public class GigwaRestController extends ControllerInterface {
 
 				if (progress.getError() == null) {	// check if client is allowed to import
 					if (request.getSession().isNew()) {	// not being called from default UI: see if we should allow import
-						String remoteAddr = request.getRemoteAddr();
+						String remoteAddr = request.getHeader("X-Forwarded-For");
+						if (remoteAddr == null)
+							remoteAddr = request.getRemoteAddr();
 						String serversAllowedToImport = appConfig.get("serversAllowedToImport");
 						if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
 							progress.setError("Remote client not allowed to import: " + remoteAddr);
