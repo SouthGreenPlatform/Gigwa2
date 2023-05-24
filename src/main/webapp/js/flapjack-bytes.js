@@ -5763,7 +5763,7 @@
         var settings = {
           colorReference: colorReference,
           sortReference: sortReference,
-          displayTraits: displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";"),
+          displayTraits: displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";").filter(x => this.dataSet.traitNames == null || this.dataSet.traitNames.includes(x)),
           lineSort: new ImportingOrderLineSort(),
           lineSortId: "importing",
           colorScheme: new NucleotideColorScheme(this.dataSet),
