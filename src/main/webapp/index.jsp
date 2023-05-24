@@ -36,6 +36,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-cache" />
+<meta name="google" content="notranslate">
 
 <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
