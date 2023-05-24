@@ -46,8 +46,8 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
-            enableMarker: true,
-            lineWidth: 2
+//            lineWidth: 2,
+            enableMarker: true
         }],
         enableCondition: function (){
             if (genotypeInvestigationMode != 2 && !gotMetaData){
@@ -116,13 +116,13 @@ const chartTypes = new Map([
         series: [
             {
                 name: "Tajima's D",
-                enableMarker: true,
-                lineWidth: 2
+//            	lineWidth: 2,
+            	enableMarker: true
             },
             {
                 name: "Segregating sites",
-                enableMarker: false,
-                lineWidth: 1
+//            	lineWidth: 1,
+            	enableMarker: true
             },
         ],
         enableCondition: function (){
