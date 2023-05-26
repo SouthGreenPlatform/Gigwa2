@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
+<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
@@ -71,6 +71,7 @@
 	var posPath = "<%= ReferencePosition.FIELDNAME_START_SITE %>";
 	var currentPageToken;
 	var graph;
+	var idSep ="${idSep}";
 	
 	// plot graph option 
 	var options = {
@@ -489,10 +490,17 @@
 					for (var set in jsonResult.variantSets) {
 						var project = jsonResult.variantSets[set];
 						for (var mdObjKey in project.metadata)
-							if ("description" == project.metadata[mdObjKey].key)
-							{
-								projectDescriptions[project.name] = project.metadata[mdObjKey].value;
-								break;
+							if ("<%= AbstractVariantData.VCF_CONSTANT_DESCRIPTION %>" == project.metadata[mdObjKey].key) {
+								if (projectDescriptions[project.name] == null)
+									projectDescriptions[project.name] = project.metadata[mdObjKey].value;
+								else
+									projectDescriptions[project.name] = project.metadata[mdObjKey].value + "\n\n" + projectDescriptions[project.name];
+							}
+							else if ("<%= Constants.GENOTYPING_TECHNOLOGY %>" == project.metadata[mdObjKey].key) {
+								if (projectDescriptions[project.name] == null)
+									projectDescriptions[project.name] = project.metadata[mdObjKey].value;
+								else
+									projectDescriptions[project.name] += "\n\n<u><%= Constants.GENOTYPING_TECHNOLOGY %>:</u> " + project.metadata[mdObjKey].value;
 							}
 						option += '<option data-id="' + jsonResult.variantSets[set].id + '">' + jsonResult.variantSets[set].name + '</option>';
 						projNames.push(jsonResult.variantSets[set].name);
@@ -2630,7 +2638,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays project information -->
-	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header" id="projectInfoContainer"></div>

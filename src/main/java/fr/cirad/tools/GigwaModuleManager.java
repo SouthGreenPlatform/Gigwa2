@@ -55,6 +55,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -79,7 +80,9 @@ import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
+import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
+import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 
 @Component
@@ -94,6 +97,8 @@ public class GigwaModuleManager implements IModuleManager {
     @Autowired private AppConfig appConfig;
     @Autowired private ApplicationContext appContext;
     @Autowired private ServletContext servletContext;
+    @Autowired private ReloadableInMemoryDaoImpl userDao;
+	@Autowired private TokenManager tokenManager;
 
     @Override
     public String getModuleHost(String sModule) {
@@ -110,23 +115,30 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public Map<String, Map<Comparable, String>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny, Collection<String> modules) throws Exception {
-        Map<String, Map<Comparable, String>> entitiesByModule = new LinkedHashMap<String, Map<Comparable, String>>();
+    public Map<String, Map<Comparable, String[]>> getEntitiesByModule(String entityType, Boolean fTrueIfPublicFalseIfPrivateNullIfAny, Collection<String> modules, boolean fIncludeEntityDescriptions) throws Exception {
+        Map<String, Map<Comparable, String[]>> entitiesByModule = new LinkedHashMap<>();
         if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
             Query q = new Query();
             q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
             q.fields().include(GenotypingProject.FIELDNAME_NAME);
+            if (fIncludeEntityDescriptions)
+            	q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
 
             for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
                 if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny)) {
-                    Map<Comparable, String> moduleEntities = entitiesByModule.get(sModule);
+                    Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
                     if (moduleEntities == null) {
-                        moduleEntities = new LinkedHashMap<Comparable, String>();
+                        moduleEntities = new LinkedHashMap<>();
                         entitiesByModule.put(sModule, moduleEntities);
                     }
 
-                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class))
-                        moduleEntities.put(project.getId(), project.getName());
+                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
+                    	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
+                    	projectInfo[0] = project.getName();
+                    	if (fIncludeEntityDescriptions)
+                    		projectInfo[1] = project.getDescription();
+                        moduleEntities.put(project.getId(), projectInfo);
+                    }
                 }
         }
         else
@@ -331,8 +343,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic)
-            throws Exception {
+    public boolean setManagedEntityVisibility(String sModule, String sEntityType, Comparable entityId, boolean fPublic) throws Exception {
         return false;
     }
 
@@ -619,7 +630,6 @@ public class GigwaModuleManager implements IModuleManager {
     	if (fIsRunEntityType && entityIDs.size() != 2)
     		throw new Exception("entityIDs should contain 2 elements: project ID and run ID");
 
-		
         if (AbstractTokenManager.ENTITY_PROJECT.equals(entityType)) {
             Query q = new Query(Criteria.where("_id").is(Integer.valueOf(entityIDs.iterator().next().toString())));
             q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
@@ -644,5 +654,28 @@ public class GigwaModuleManager implements IModuleManager {
         }
         else
         	throw new Exception("Not managing entities of type " + entityType);
+	}
+	
+	@Override
+	public boolean doesEntityTypeSupportDescription(String sModule, String sEntityType) {
+		return true;
+	}
+
+	@Override
+	public boolean setManagedEntityDescription(String sModule, String sEntityType, String entityId, String desc) throws Exception {
+		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
+		{
+			final int projectIdToModify = Integer.parseInt(entityId);
+			if (!tokenManager.canUserWriteToProject(userDao.getUserAuthorities(SecurityContextHolder.getContext().getAuthentication()), sModule, projectIdToModify))
+				throw new Exception("You are not allowed to modify this project");
+
+			MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+			if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(projectIdToModify)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, desc), GenotypingProject.class).getModifiedCount() > 0)
+				LOG.debug("Updated description for project " + projectIdToModify + " from module " + sModule);
+
+			return true;
+		}
+
+		throw new Exception("Not managing entities of type " + sEntityType);
 	}
 }

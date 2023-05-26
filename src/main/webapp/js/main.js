@@ -726,7 +726,7 @@ function markAsMissingData(individual) {
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
 	const selectedIndividuals = new Set();
 	const groups = groupNumber == null ? [1, 2] : [groupNumber];
-	const ga4ghId = getProjectId() + "§";
+	const ga4ghId = getProjectId() + idSep;
 	for (let groupKey in groups)
 	{
 	    const groupIndex = groups[groupKey];
@@ -1660,7 +1660,7 @@ function listQueries(){
                           var tabIds = jsonResult['callSetIds'+e];
                           if(tabIds.length != 0) {
                             $('#Individuals'+i+' div select').val(tabIds.map(function(x) {
-                                return x.split("§")[2];
+                                return x.split(idSep)[2];
                             }));
                             $('#Individuals'+i+' div select').trigger('change');
                           }
