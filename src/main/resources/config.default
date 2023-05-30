@@ -100,3 +100,11 @@ allowedOrigins_/**=*
 #allowedOrigins_/brapi/v2/**=http://domain1:59397, http://domain2:8080
 #allowedOrigins_/ga4gh/**=http://domain1:59397, http://domain2:8080
 #allowedOrigins_/gigwa/**=http://domain1:59397, http://domain2:8080
+
+
+# Enables the dump management functionality by defining the location where dumps will be stored on the application-server's filesystem (Requires installing MongoDB Command Line Database Tools on the machine running Tomcat)
+#dumpFolder = /path/to/gigwaDumps
+
+
+# Gigwa caches count values for submitted queries (makes subsequent calls respond faster); this property allows emptying this cache on webapp startup. Default: false
+#clearCachedCountsOnStartup = true
