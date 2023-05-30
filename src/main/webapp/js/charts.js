@@ -16,7 +16,7 @@
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
-var displayedRangeIntervalCount = 150;
+var displayedRangeIntervalCount = 200;
 var dataBeingLoaded = false;
 let localmin, localmax;
 let chartJsonKeys;
@@ -254,7 +254,7 @@ function buildCustomisationDiv(chartInfo) {
     
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
@@ -441,9 +441,9 @@ function displayChart(minPos, maxPos) {
     // Set the interval count until the next chart reload
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        displayedRangeIntervalCount = 150;
-    else if (tempValue > 300)
-        displayedRangeIntervalCount = 300;
+        displayedRangeIntervalCount = 200;
+    else if (tempValue > 500)
+        displayedRangeIntervalCount = 500;
     else if (tempValue < 50)
         displayedRangeIntervalCount = 50;
     else
@@ -798,9 +798,9 @@ function displayOrHideThreshold(isChecked) {
 function changeIntervalCount() {
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        $("#intervalCount").val(150);
-    else if (tempValue > 300)
-        $("#intervalCount").val(300);
+        $("#intervalCount").val(200);
+    else if (tempValue > 500)
+        $("#intervalCount").val(500);
     else if (tempValue < 50)
         $("#intervalCount").val(50);
 }
