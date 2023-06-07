@@ -489,6 +489,7 @@
 					var projNames = [];
 					for (var set in jsonResult.variantSets) {
 						var project = jsonResult.variantSets[set];
+						projectDescriptions[project.name] = null;
 						for (var mdObjKey in project.metadata)
 							if ("<%= AbstractVariantData.VCF_CONSTANT_DESCRIPTION %>" == project.metadata[mdObjKey].key) {
 								if (projectDescriptions[project.name] == null)
