@@ -1,17 +1,17 @@
 [
  {
-   "id": "oryza_sativa_japonica_nipponbare",
+   "id": "Oryza_sativa_japonica_Nipponbare",
    "name": "Oryza sativa Nipponbare (v7.0)",
-   "fastaURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/seq/Oryza_sativa_Nipponbare_7.0.assembly.fasta",
-   "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/seq/Oryza_sativa_Nipponbare_7.0.assembly.fasta.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/seq/Oryza_sativa_japonica_Nipponbare.assembly.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/seq/Oryza_sativa_japonica_Nipponbare.assembly.fna.fai",
    "tracks": [
      {
        "name": "Genes (RAPDB)",
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/RAPDB_20201202.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/RAPDB_20201202.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/Oryza_sativa_japonica_Nipponbare.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/Oryza_sativa_japonica_Nipponbare.gff3.gz.tbi",
        "order": 0
      },
      {
@@ -19,8 +19,8 @@
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/MSU.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/MSU.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/MSU.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/MSU.gff3.gz.tbi",
        "order": 0
      },
      {
@@ -28,25 +28,25 @@
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/LRR_Nipponbare.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare/gff3/LRR_Nipponbare.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/LRR_Nipponbare.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/Oryza_sativa_japonica_Nipponbare/gff3/LRR_Nipponbare.gff3.gz.tbi",
        "order": 0
      }
    ]
  },
   {
-   "id": "oryza_glaberrima",
+   "id": "Oryza_glaberrima_AGI1",
    "name": "Oryza glaberrima",
-   "fastaURL": "https://jbrowse.southgreen.fr/oryza_glaberrima/seq/Oryza_glaberrima.AGI1.1.39.assembly.fa",
-   "indexURL": "https://jbrowse.southgreen.fr/oryza_glaberrima/seq/Oryza_glaberrima.AGI1.1.39.assembly.fa.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/Oryza_glaberrima_AGI1/seq/Oryza_glaberrima.AGI1.1.39.assembly.fa",
+   "indexURL": "https://jbrowse.southgreen.fr/Oryza_glaberrima_AGI1/seq/Oryza_glaberrima.AGI1.1.39.assembly.fa.fai",
    "tracks": [
      {
        "name": "Locus",
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/oryza_glaberrima/gff3/Oryza_glaberrima.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_glaberrima/gff3/Oryza_glaberrima.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/Oryza_glaberrima_AGI1/gff3/Oryza_glaberrima.AGI1.1.39.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/Oryza_glaberrima_AGI1/gff3/Oryza_glaberrima.AGI1.1.39.gff3.gz.tbi",
        "order": 0
      }
     ]
@@ -88,16 +88,16 @@
   {
    "id": "musa_balbisiana_dhpkw_v1.1",
    "name": "Musa balbisiana DH PKW (v1.3)",
-   "fastaURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/seq/Musba_assembly.fna",
-   "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/seq/Musba_assembly.fna.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/seq/Musa_balbisiana_assembly.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/seq/Musa_balbisiana_assembly.fna.fai",
    "tracks": [
      {
        "name": "Locus",
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/gff3/Musba.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/gff3/Musba.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/gff3/Musa_balbisiana.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1.1/gff3/Musa_balbisiana.gff3.gz.tbi",
        "order": 0
      }
     ]
@@ -122,16 +122,16 @@
   {
    "id": "ensete_glaucum_v1",
    "name": "Ensete Glaucum (v1)",
-   "fastaURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/seq/ensete_glaucum.assembly.fna",
-   "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/seq/ensete_glaucum.assembly.fna.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/seq/Ensete_glaucum.assembly.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/seq/Ensete_glaucum.assembly.fna.fai",
    "tracks": [
      {
        "name": "Locus",
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/ensete_glaucum.evm.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/ensete_glaucum.evm.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/Ensete_glaucum.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/Ensete_glaucum.gff3.gz.tbi",
        "order": 0
      }
     ]
