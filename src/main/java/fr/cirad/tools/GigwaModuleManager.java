@@ -670,8 +670,10 @@ public class GigwaModuleManager implements IModuleManager {
 				throw new Exception("You are not allowed to modify this project");
 
 			MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-			if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(projectIdToModify)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, desc), GenotypingProject.class).getModifiedCount() > 0)
+			if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(projectIdToModify)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, desc), GenotypingProject.class).getModifiedCount() > 0) {
+				MongoTemplateManager.updateDatabaseLastModification(sModule);
 				LOG.debug("Updated description for project " + projectIdToModify + " from module " + sModule);
+			}
 
 			return true;
 		}
