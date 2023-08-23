@@ -45,8 +45,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.brapi.v2.api.VariantsetsApiController;
-import org.brapi.v2.api.cache.MongoBrapiCache;
 import org.brapi.v2.model.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -187,9 +185,9 @@ public class GigwaModuleManager implements IModuleManager {
                 LOG.warn("Error removing dumps while deleting database " + sModule, e);
             }
 
-        File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+        File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantSet.TMP_OUTPUT_FOLDER));
         if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-        	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR)))
+        	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantSet.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR)))
         		if (exportFile.delete())
         			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
 
@@ -256,9 +254,9 @@ public class GigwaModuleManager implements IModuleManager {
             }.start();
             LOG.info("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
 
-            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantSet.TMP_OUTPUT_FOLDER));
             if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectIdToRemove + Helper.ID_SEPARATOR)))
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantSet.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectIdToRemove + Helper.ID_SEPARATOR)))
             		if (exportFile.delete())
             			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
             
@@ -293,9 +291,9 @@ public class GigwaModuleManager implements IModuleManager {
             }.start();
             LOG.info("Launched async VRD cleanup for run " + sRun + " in project " + nProjectId + " of module " + sModule);
 
-            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantsetsApiController.TMP_OUTPUT_FOLDER));
+            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantSet.TMP_OUTPUT_FOLDER));
             if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantsetsApiController.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectId + Helper.ID_SEPARATOR)))
+            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantSet.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectId + Helper.ID_SEPARATOR)))
             		if (exportFile.delete())
             			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
             
@@ -641,7 +639,7 @@ public class GigwaModuleManager implements IModuleManager {
         	int nProjId = Integer.valueOf(entityIDs.iterator().next().toString());
     	    String sRun = !fIsRunEntityType ? null : (String) entityIDs.toArray(new Comparable[2])[1];
         	MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-        	VariantSet variantSet = mongoTemplate.findById(Helper.createId(sModule, nProjId, sRun), VariantSet.class, MongoBrapiCache.BRAPI_CACHE_COLL_VARIANTSET);
+        	VariantSet variantSet = mongoTemplate.findById(Helper.createId(sModule, nProjId, sRun), VariantSet.class, VariantSet.BRAPI_CACHE_COLL_VARIANTSET);
         	if (variantSet != null)
         		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
         	else {
