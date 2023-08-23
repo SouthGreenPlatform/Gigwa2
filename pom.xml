@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<properties>
-        <project.version>2.6.1-RELEASE</project.version>
+        <project.version>2.6.2-snapshot</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<Gigwa2ServiceImpl.version>2.6.1-RELEASE</Gigwa2ServiceImpl.version>
@@ -42,13 +42,13 @@
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2BrapiImpl</artifactId>
-			<version>1.1.4-RELEASE</version>
+			<version>1.1.5-RELEASE</version>
 		</dependency>
 		
    		<dependency>
 		    <groupId>fr.cirad</groupId>
 		    <artifactId>Mgdb2BrapiV2Impl</artifactId>
-		    <version>2.0.3-RELEASE</version>
+		    <version>2.0.5-RELEASE</version>
 		    <exclusions>
 		    	<exclusion>
 				    <groupId>org.slf4j</groupId>
