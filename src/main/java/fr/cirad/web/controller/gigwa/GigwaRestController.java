@@ -113,6 +113,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
+import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
@@ -839,7 +840,6 @@ public class GigwaRestController extends ControllerInterface {
 			public void run() {
 				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
 				
-                HashMap<Object, Integer> genotypeCounts = new HashMap<Object, Integer>();	// will help us to keep track of missing genotypes
                 markerRunsToWrite.forEach(runsToWrite -> {
                     if (progress.isAborted() || progress.getError() != null || runsToWrite == null || runsToWrite.isEmpty())
                         return;
@@ -852,7 +852,7 @@ public class GigwaRestController extends ControllerInterface {
 		                ReferencePosition rp = vrd.getReferencePosition(Assembly.getThreadBoundAssembly());
 		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
 	
-		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
+		                List<String>[] individualGenotypes = new ArrayList[individualPositions.size()];
 
 		                runsToWrite.forEach( run -> {
 	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
@@ -874,7 +874,7 @@ public class GigwaRestController extends ControllerInterface {
 	                            }
 
 								if (individualGenotypes[individualIndex] == null)
-									individualGenotypes[individualIndex] = new LinkedHashSet<String>();
+									individualGenotypes[individualIndex] = new ArrayList<String>();
 								individualGenotypes[individualIndex].add(gtCode);
 	                        }
 	                    });
@@ -889,32 +889,15 @@ public class GigwaRestController extends ControllerInterface {
 		                        writtenGenotypeCount++;
 		                    }
 
-		                    genotypeCounts.clear();
-		                    int highestGenotypeCount = 0;
-		                    String mostFrequentGenotype = null;
-		                    if (individualGenotypes[individualIndex] != null) {
-		                        for (String genotype : individualGenotypes[individualIndex]) {
-		                            if (genotype == null)
-		                                continue;	/* skip missing genotypes */
-	
-		                            int gtCount = 1 + Helper.getCountForKey(genotypeCounts, genotype);
-		                            if (gtCount > highestGenotypeCount) {
-		                                highestGenotypeCount = gtCount;
-		                                mostFrequentGenotype = genotype;
-		                            }
-		                            genotypeCounts.put(genotype, gtCount);
-		                        }
-		                    }
+		                	String mostFrequentGenotype = null;
+		                    LinkedHashMap<Object, Integer> genotypeCounts = AbstractMarkerOrientedExportHandler.sortGenotypesFromMostFound(individualGenotypes[individualPositions.get(individual)]);
+                            if (genotypeCounts.size() == 1 || genotypeCounts.values().stream().limit(2).distinct().count() == 2)
+                            	mostFrequentGenotype = genotypeCounts.keySet().iterator().next().toString();
+		                    if (genotypeCounts.size() > 1)
+		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". " + (mostFrequentGenotype == null ? "Exporting as missing data" : "Exporting most frequent: " + mostFrequentGenotype) + "\n");
 
 		                    sb.append("\t" + (mostFrequentGenotype == null ? missingGenotype : mostFrequentGenotype));
 		                    writtenGenotypeCount++;
-	
-		                    if (genotypeCounts.size() > 1) {
-		                        List<Integer> reverseSortedGtCounts = genotypeCounts.values().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
-		                        if (reverseSortedGtCounts.get(0) == reverseSortedGtCounts.get(1))
-		                            mostFrequentGenotype = null;
-		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". " + (mostFrequentGenotype == null ? "Exporting as missing data" : "Exporting most frequent: " + mostFrequentGenotype) + "\n");
-                            }
 		                }
 	
 		                while (writtenGenotypeCount < individualPositions.size()) {
@@ -2037,7 +2020,7 @@ public class GigwaRestController extends ControllerInterface {
 		
 						final AtomicInteger createdProjectId = new AtomicInteger(-1);
 						final SecurityContext securityContext = SecurityContextHolder.getContext();
-						new Thread() {
+						new SessionAttributeAwareThread(request.getSession()) {
 							public void run() {
 								Scanner scanner = null;
 								try {
@@ -2057,7 +2040,7 @@ public class GigwaRestController extends ControllerInterface {
 										        return;
 											}
 									    }
-		
+
 										if (!filesByExtension.containsKey("gz")) {
 											if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
 												Serializable mapFile = filesByExtension.get("map");
