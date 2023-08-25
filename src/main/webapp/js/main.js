@@ -687,41 +687,58 @@ function applyGenomeBrowserURL() {
 }
 
 function markInconsistentGenotypesAsMissing() {
-    var nRunCount = $("table.genotypeTable").length;
-    if (nRunCount < 2)
-        return; // nothing to compare
-
-    var indivGenotypes = new Array();
-    var tableCounter = 0;
-    $("table.genotypeTable").each(function() {
-        $(this).find("tr:gt(0)").each(function() {
-            var individual = $(this).find("th").text();
-            var genotypes = indivGenotypes[individual];
-            if (genotypes == null)
-                genotypes = new Array();
-
-			var genotype = $(this).find("td:eq(0)").html().trim();
-			if (genotype != '' && !genotypes.includes(genotype))
-				genotypes.push(genotype);
-			indivGenotypes[individual] = genotypes;
-
-            if (tableCounter == nRunCount - 1 && Object.keys(genotypes).length > 1)
-                markAsMissingData(individual);
-        });
-        tableCounter++;
+	var foundMultiSampleIndividuals = false;
+	var firstColumnValues = new Set();
+	$('table.genotypeTable tr th:first-child').map(function() {
+	    var firstColumnValue = $(this).text();
+	    if (firstColumnValues.has(firstColumnValue)) {
+	    	foundMultiSampleIndividuals = true;
+	    	return false;
+	    }
+	    firstColumnValues.add(firstColumnValue);
+	});
+	
+	if (!foundMultiSampleIndividuals)
+		return; // no multi-sample individuals displayed
+		
+	new Set($("table.genotypeTable:eq(0) tr:gt(0) th").map(function() {
+	    return $(this).text();
+	})).forEach(function(ind) {
+		var indGTs = $("table.genotypeTable tr.ind_" + ind).map(function() {
+			return $(this).find("td:eq(0)").text();
+		}).get();
+		var correctIndGT = mostFrequentString(indGTs);
+		$("table.genotypeTable tr.ind_" + ind).each(function() {
+			var gtCell = $(this).find("td:eq(0)");
+			if (gtCell.text() != "" && gtCell.text() != correctIndGT) {
+	            gtCell.addClass("missingData");
+			}
+		});
     });
 }
 
-function markAsMissingData(individual) {
-    $("table.genotypeTable").each(function() {
-        $(this).find("tr:gt(0)").each(function() {
-            if ($.trim($(this).find("th").text()) == individual) {
-                $(this).find("td:eq(0)").addClass("missingData");
-                $("div#missingDataLegend").show();
-            }
-        });
-    });
-}
+const mostFrequentString = strings => {
+  const validStrings = strings.filter(str => str.trim() !== '');
+
+  if (validStrings.length === 0)
+    return '';
+
+  const stringCount = {};
+  let mostRepresented = null, maxCount = 0, multipleMaxCount = false;
+
+  validStrings.forEach(str => {
+    stringCount[str] = (stringCount[str] || 0) + 1;
+    if (stringCount[str] > maxCount) {
+      mostRepresented = str;
+      maxCount = stringCount[str];
+      multipleMaxCount = false;
+    } else if (stringCount[str] === maxCount)
+      multipleMaxCount = true;
+  });
+
+  return multipleMaxCount ? null : mostRepresented;
+};
+
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
 	const selectedIndividuals = new Set();

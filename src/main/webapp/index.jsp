@@ -1072,7 +1072,7 @@
 		for (var row in gtTable)
 		{
 			var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
-			htmlTableContents.append('<tr>');
+			htmlTableContents.append('<tr class="ind_' + gtTable[row][0] + '">');
 			var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
 			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
 			for (var i=0; i<tableHeader.length; i++)
@@ -1165,8 +1165,7 @@
 		
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
-			if (runList.length > 1)
-				markInconsistentGenotypesAsMissing();
+			markInconsistentGenotypesAsMissing();
 
 			if (!errorEncountered)
 				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
@@ -2617,7 +2616,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="col-md-4">
 							<label class="label-checkbox" id="displayAllGtOption">display all genotypes <input type="checkbox" id="displayAllGt" class="input-checkbox" /></label>
 						</div>
-						<div class="col-md-4 missingDataLegend">
+						<div class="col-md-4">
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
