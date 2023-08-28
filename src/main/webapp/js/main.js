@@ -687,26 +687,28 @@ function applyGenomeBrowserURL() {
 }
 
 function markInconsistentGenotypesAsMissing() {
-	var foundMultiSampleIndividuals = false;
-	var firstColumnValues = new Set();
+	var multiSampleIndividuals = new Set();
+	var displayedIndividuals = new Set();
 	$('table.genotypeTable tr th:first-child').map(function() {
-	    var firstColumnValue = $(this).text();
-	    if (firstColumnValues.has(firstColumnValue)) {
-	    	foundMultiSampleIndividuals = true;
-	    	return false;
-	    }
-	    firstColumnValues.add(firstColumnValue);
+	    var indName = $(this).text();
+	    if (indName != "Individual") {
+		    if (displayedIndividuals.has(indName))
+		    	multiSampleIndividuals.add(indName);
+		    displayedIndividuals.add(indName);
+		}
 	});
 	
-	if (!foundMultiSampleIndividuals)
+	if (multiSampleIndividuals.size == 0)
 		return; // no multi-sample individuals displayed
-		
-	new Set($("table.genotypeTable:eq(0) tr:gt(0) th").map(function() {
-	    return $(this).text();
-	})).forEach(function(ind) {
+
+	multiSampleIndividuals.forEach(function(ind) {
 		var indGTs = $("table.genotypeTable tr.ind_" + ind).map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();
+
+		if (indGTs.size < 2)
+			return;
+
 		var correctIndGT = mostFrequentString(indGTs);
 		$("table.genotypeTable tr.ind_" + ind).each(function() {
 			var gtCell = $(this).find("td:eq(0)");
