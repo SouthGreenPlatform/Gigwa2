@@ -1503,7 +1503,7 @@
 	}
 	
 	// Open the IGV modal, initialise the browser if a default genome is set
-	function igvOpenDialog(){            
+	function igvOpenDialog() {
             if (seqCount === 0) {
                 alert("No sequence to display");
             } else {                
@@ -1757,7 +1757,7 @@
 			
 		}
 	}
-	
+
 	// Change the current genome, create the browser if it doesn't exist
 	function igvSwitchGenome(genome){
 		let moduleName = getModuleName();
@@ -1938,15 +1938,22 @@
 				if (igvBrowser){
 					// Check whether it bugged (negative range)
 					let posString = igvBrowser.currentLoci()[0].split(":").pop().replace(/,/g, "").split(/\-(.+)/);
-					if (posString.length >= 2 && parseInt(posString[0]) >= parseInt(posString[1])){
+					if (posString.length >= 2 && parseInt(posString[0]) >= parseInt(posString[1]))
 						igvBrowser.resize();
-					}					
+
+					setIgvLocusIfApplicable();
 				}
 			});
 		}).catch(function (reason){
 			displayMessage("Error during the creation of the IGV browser : " + reason);
 			igv.removeAllBrowsers();  // Delete the parasite browser
 		});
+	}
+	
+	function setIgvLocusIfApplicable() {
+		var minPos = getSearchMinPosition(), maxPos = getSearchMaxPosition();
+	    if (minPos > -1 && minPos < maxPos && $('#Sequences').selectmultiple('count') == 1)
+	    	igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);
 	}
 	
 	// Called when the individuals groups have been changed
