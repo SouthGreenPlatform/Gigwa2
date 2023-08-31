@@ -214,7 +214,7 @@
                                            <label for="dataFile1">Data source <span class="text-red">*</span></label>
                                       </div>
                                      	<div class="col-md-10">
-                                     		<small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint</small>
+                                            <small class="text-info">Text fields may be used to pass an http URL, a <a title="Breeding API, what's this?" href="https://brapi.org/" target="_blank">BrAPI</a> v1.1 endpoint, or an absolute path on webserver filesystem.</small>
                                      		<div class="text-red" style='float:right;'>You may upload up to <span id="maxUploadSize" class="text-bold"></span> Mb. <span id="maxImportSizeSpan"></span></div>
                                       </div>
                                      </div>
@@ -241,7 +241,7 @@
 														<div><u>PLINK format:</u> .ped + .map</div>
 			                                            <div><u>Intertek format:</u> .intertek</div>
 														<div><u>Flapjack format:</u> .genotype + .map</div>
-														<div><u>Sample file:</u> .tsv or .csv</div>
+														<div><u>Sample file:</u> .tsv or .csv (tab-separated)</div>
 													</div>
 		       									</div>
 		      									</div>
