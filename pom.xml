@@ -277,6 +277,7 @@
 					</compilerArguments>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
@@ -291,6 +292,7 @@
 					</archive>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -357,6 +359,24 @@
 							</arguments>
 						</configuration>
 					</execution>
+					
+					<execution>
+						<id>update-manifest-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/Implementation-version:.*/Implementation-version: ${project.version}/g</argument>
+								<argument>${project.basedir}/src/main/webapp/META-INF/MANIFEST.MF</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					
 				</executions>
 			</plugin>
 			
