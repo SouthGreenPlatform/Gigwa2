@@ -579,17 +579,6 @@
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.result.data.length;
-                if (seqCount == 0) {
-                    $('#sequenceFilter').hide();
-                    $('#positions').hide();
-                    $('#filterIDsCheckbox').prop('checked', true);
-                    onFilterByIds(true);
-                } else {
-                    $('#sequenceFilter').show();
-                    $('#positions').show();
-                    $('#filterIDsCheckbox').prop('checked', false);
-                    onFilterByIds(false);
-                }                                
 				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
 				referenceNames = [];
 				jsonResult.result.data.forEach(ref => {
@@ -601,6 +590,21 @@
 					data: referenceNames,
 					placeholder: 'sequence'
 				});
+                if (seqCount == 0 || localStorage.getItem($('#module').val() + "${idSep}" + $('#project').val() + '_filterByIds')) {
+                	if (seqCount == 0) {
+	                    $('#sequenceFilter').hide();
+	                    $('#positions').hide();
+	                }
+                    $('#filterIDsCheckbox').prop('checked', true);
+                    onFilterByIds(true);
+                } else {
+                	if (seqCount > 0) {
+	                    $('#sequenceFilter').show();
+	                    $('#positions').show();
+	                }
+                    $('#filterIDsCheckbox').prop('checked', false);
+                    onFilterByIds(false);
+                }
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1072,7 +1076,7 @@
 		for (var row in gtTable)
 		{
 			var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
-			htmlTableContents.append('<tr class="ind_' + gtTable[row][0] + '">');
+			htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
 			var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
 			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
 			for (var i=0; i<tableHeader.length; i++)
@@ -1955,7 +1959,7 @@
 	    if (minPos > -1 && minPos < maxPos && $('#Sequences').selectmultiple('count') == 1)
 	    	igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);
 	}
-	
+
 	// Called when the individuals groups have been changed
 	// Update the browser's variant track if necessary
 	function igvUpdateIndividuals(){
@@ -2245,7 +2249,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							   <div style="margin-top:-25px; text-align:right;">
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer1" onclick="setTimeout('applyGroupMemorizing(1);', 100);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector1" onclick="selectGroupUsingMetadata(1);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(1); var infoDiv=$('<div style=\'margin-top:2px; margin-left:75%; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(1); var infoDiv=$('<div style=\'margin-top:-40px; right:55px; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals1" onclick="toggleIndividualPasteBox(1);"></button>
 							   </div>
 							   <div class="col margin-top-md vcfFieldFilters">
@@ -2352,7 +2356,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							   <div style="margin-top:-25px; float:right;">
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer2" onclick="setTimeout('applyGroupMemorizing(2);', 100);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector2" onclick="selectGroupUsingMetadata(2);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(2); var infoDiv=$('<div style=\'margin-top:2px; margin-left:45px; position:absolute\'>Copied!</div>'); infoDiv.insertBefore($(this)); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
+								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(2); var infoDiv=$('<div style=\'margin-top:-40px; right:55px; position:absolute\'>Copied!</div>'); infoDiv.insertBefore($(this)); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
 								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals2" onclick="toggleIndividualPasteBox(2);"></button>
 							   </div>
 							   <div class="col margin-top-md vcfFieldFilters">

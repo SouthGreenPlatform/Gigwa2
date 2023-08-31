@@ -702,7 +702,7 @@ function markInconsistentGenotypesAsMissing() {
 		return; // no multi-sample individuals displayed
 
 	multiSampleIndividuals.forEach(function(ind) {
-		var indGTs = $("table.genotypeTable tr.ind_" + ind).map(function() {
+		var indGTs = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();
 
@@ -710,7 +710,7 @@ function markInconsistentGenotypesAsMissing() {
 			return;
 
 		var correctIndGT = mostFrequentString(indGTs);
-		$("table.genotypeTable tr.ind_" + ind).each(function() {
+		$("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).each(function() {
 			var gtCell = $(this).find("td:eq(0)");
 			if (gtCell.text() != "" && gtCell.text() != correctIndGT) {
 	            gtCell.addClass("missingData");
@@ -1740,12 +1740,13 @@ function listQueries(){
 
 function onFilterByIds(checked) {
     if (checked) {
+        localStorage.setItem($('#module').val() + idSep + $('#project').val() + '_filterByIds', true);
         $('#variantTypes').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
         
         $('#numberOfAlleles').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
         $('#Sequences').selectmultiple('selectAll');
-        $('#Sequences').find('.btn').prop('disabled', true);
+        $('#Sequences').find('.btn').prop('disabled', true).selectpicker('refresh');
         
         $('#minposition').val("").prop('disabled', true); 
         $('#maxposition').val("").prop('disabled', true);
@@ -1768,6 +1769,7 @@ function onFilterByIds(checked) {
 		    $('#maxMaf' + nGroup).prop('disabled', "disabled");
 		}
     } else {
+        localStorage.removeItem($('#module').val() + idSep + $('#project').val() + '_filterByIds');
 		selectedVariantIDsWhenTooManyToFitInSelect = null;
 	
         $('#variantTypes').prop('disabled', false).selectpicker('refresh');
