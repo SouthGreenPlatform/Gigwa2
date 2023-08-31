@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2BrapiImpl</artifactId>
-			<version>1.1.5-RELEASE</version>
+			<version>1.1.6-RELEASE</version>
 		</dependency>
 		
    		<dependency>
