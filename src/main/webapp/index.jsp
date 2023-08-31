@@ -1957,7 +1957,7 @@
 	function setIgvLocusIfApplicable() {
 		var minPos = getSearchMinPosition(), maxPos = getSearchMaxPosition();
 	    if (minPos > -1 && minPos < maxPos && $('#Sequences').selectmultiple('count') == 1)
-	    	igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);
+	    	setTimeout(function() {igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);}, 0);
 	}
 
 	// Called when the individuals groups have been changed
