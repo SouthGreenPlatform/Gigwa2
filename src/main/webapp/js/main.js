@@ -1765,8 +1765,8 @@ function onFilterByIds(checked) {
 	        $('#maxHeZ' + nGroup).val(100).prop('disabled', true);
 	        $('#mostSameRatio' + nGroup).prop('disabled', true);
 	        $('#Genotypes' + nGroup).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
-		    $('#minMaf' + nGroup).prop('disabled', "disabled");
-		    $('#maxMaf' + nGroup).prop('disabled', "disabled");
+		    $('#minMaf' + nGroup).val(0).prop('disabled', true);
+		    $('#maxMaf' + nGroup).val(50).prop('disabled', true);
 		}
     } else {
         localStorage.removeItem($('#module').val() + idSep + $('#project').val() + '_filterByIds');
@@ -1789,11 +1789,9 @@ function onFilterByIds(checked) {
                 
         for (var nGroup=1; nGroup<=2; nGroup++) {
 	        $('#minMissingData' + nGroup).prop('disabled', false);
-	        $('#minMissingData' + nGroup).val(0);
 	        $('#maxMissingData' + nGroup).prop('disabled', false);
-	        $('#maxMissingData' + nGroup).val(100);
+	        $('#minHeZ' + nGroup).prop('disabled', false);
 	        $('#maxHeZ' + nGroup).prop('disabled', false);
-	        $('#maxHeZ' + nGroup).val(100);
 	        $('#mostSameRatio' + nGroup).prop('disabled', false);
 	        $('#Genotypes' + nGroup).prop('disabled', false).selectpicker('refresh');        
 		    $('#minMaf' + nGroup).prop('disabled', false);
