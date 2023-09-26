@@ -2462,5 +2462,21 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getDatabaseInfo")
+	@RequestMapping(value = BASE_URL + "/{database:.+}", method = RequestMethod.GET, produces = "application/json")
+	public Map<String, Object> getDatabaseInfo(HttpServletResponse response, @PathVariable String database) {
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(database);
+		if (mongoTemplate == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return null;
+		}
+
+		Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
+		resultObject.put("database", database);
+		resultObject.put("germplasms", Helper.estimDocCount(mongoTemplate, Individual.class));
+		resultObject.put("markers", Helper.estimDocCount(mongoTemplate, VariantData.class));
+		return resultObject;
+	}
     
 }
