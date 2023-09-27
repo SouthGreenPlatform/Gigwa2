@@ -8,7 +8,7 @@
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<Gigwa2ServiceImpl.version>2.6.2-RELEASE</Gigwa2ServiceImpl.version>
-		<bundle.dir>target/bundles</bundle.dir>
+		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
 		<bundle.dir.windows>${bundle.dir}/Gigwa_V${project.version}-Windows</bundle.dir.windows>
@@ -26,11 +26,10 @@
 	</properties>
 
 	<groupId>fr.cirad</groupId>
-	<artifactId>gigwa2</artifactId>
+	<artifactId>Gigwa2</artifactId>
 	<version>${project.version}</version>
 	<packaging>war</packaging>
-
-	<name>gigwa2</name>
+	<name>Gigwa</name>
 
 	<dependencies>		
 		<dependency>
