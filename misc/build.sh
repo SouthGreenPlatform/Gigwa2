@@ -2,7 +2,7 @@
 
 # Builds Gigwa from scratch, by, for each project:
 # - git-cloning the master branch
-# - checking out the tag which named after the value found in POM.xml's <project.version>
+# - checking out the tag which named after the value found in pom.xml's <project.version>
 # - clearing each Maven artifact's folder in the local Maven repo (to be sure versions are in sync)
 # - launching mvn install (forwarding script arguments) on Gigwa/bom/pom.xml which refers to all sub-projects as modules
 #
