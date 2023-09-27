@@ -23,6 +23,8 @@ The source code is available in this repository. It uses Maven for dependency ma
 ##### https://github.com/GuilhemSempere/Gigwa2ServiceInterface
 ##### https://github.com/GuilhemSempere/Gigwa2ServiceImpl
 
+Gigwa2 project now contains **bom/pom.xml** which can be used as a parent project that **treats all subprojects as Maven modules**, and thus **allows to build them all with a single mvn install** (all projects, including Gigwa2 have to sit at the same level though)
+
 A quick and convenient way to **build the latest version of Gigwa at once** is to use the following script misc/build.sh:
 - ideally not from within the Gigwa2 source hierarchy, otherwise it will create duplicate source files
 - assuming that for each referenced project, a git tag exists, named after the value found in pom.xml's <project.version>
