@@ -3651,16 +3651,6 @@
           this.mouseOverText = undefined;
           this.mouseOverPosition = undefined;
           if (this.lineIndexUnderMouse !== undefined) {
-            /*if (this.dataSet.hasTraits() && x > 0 && x < this.traitCanvasWidth){
-              const germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
-              const traitIndex = Math.floor(x / this.traitBoxWidth);
-              const trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
-              const traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
-              if (traitValue !== undefined){
-                this.mouseOverText = trait.name + " : " + traitValue.toString();
-                this.mouseOverPosition = [x, y];
-              }
-            } else */
             // Individual's name tooltip
             if (!this.dataSet.hasTraits() && x <= this.nameCanvasWidth || this.dataSet.hasTraits() && x <= this.nameCanvasWidth + this.traitValuesCanvasWidth) {
               var _germplasm = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
@@ -3674,63 +3664,7 @@
               var marker = this.dataSet.markerOn(this.selectedChromosome, markerIndex);
               this.markerUnderMouse = marker.marker;
               if (marker.marker !== undefined) {
-                this.mouseOverText = "Line: ".concat(_germplasm.name) + ";\r\nPosition: ".concat(marker.marker.position) + ";\r\nMarker: ".concat(marker.marker.name);
-                /*//TODO : do this switch in a new function
-                var geno = 'A';
-                switch (this.dataSet.genotypeFor(this.lineIndexUnderMouse, this.selectedChromosome, markerIndex)) {
-                  case 0:
-                    geno = 'N/A';
-                    break;
-                  case 1:
-                    geno = 'A/T';
-                    break;
-                  case 2:
-                    geno = 'A';
-                    break;
-                  case 3:
-                    geno = 'T';
-                    break;
-                  case 4:
-                    geno = 'C/T';
-                    break;
-                  case 5:
-                    geno = 'C';
-                    break;
-                  case 6:
-                    geno = 'C/G';
-                    break;
-                  case 7:
-                    geno = 'T/A';
-                    break;
-                  case 8:
-                    geno = 'T/C';
-                    break;
-                  case 9:
-                    geno = 'G/T';
-                    break;
-                  case 10:
-                    geno = 'G';
-                    break;
-                  case 11:
-                    geno = 'A/G';
-                    break;
-                  case 12:
-                    geno = 'C/A';
-                    break;
-                  case 13:
-                    geno = 'T/G';
-                    break;
-                  case 14:
-                    geno = 'A/C';
-                    break;
-                  case 15:
-                    geno = 'G/A';
-                    break;
-                  case 16:
-                    geno = 'G/C';
-                    break;
-                }
-                this.mouseOverText += `\r\nGenotype: ${geno}`;*/
+                this.mouseOverText = "Line: ".concat(_germplasm.name) + "; Position: ".concat(marker.marker.position) + "; Marker: ".concat(marker.marker.name);
                 this.mouseOverPosition = [x, y];
               }
             }
@@ -5364,34 +5298,16 @@
 
           // Other events
           window.addEventListener("resize", function (event) {
-            //var canvasholder = document.getElementById("canvasholder");
             var settings = document.getElementById("settings");
             var resizehandle = document.getElementById("resizeHandle");
-            /*var range = document.getElementById("zoom-control");
-            var findLine = document.getElementById("lineInput");
-            var chromosomeSelect = document.getElementById("chromosomeSelect");
-            var chromosomeContainer = document.getElementById("chromosomeContainer");
-            var zoomContainer = document.getElementById("zoom-container");
-            var findContainer = document.getElementById("findContainer");*/
             var windowHeight = window.innerHeight;
-            /*const ratioh = windowHeight / 980;*/
-            var windowWidth = window.innerWidth; /*
-                                                 const ratiow = windowWidth / 1920;
-                                                 canvasholder.style.fontSize = (14 * ratioh) + "px";
-                                                 canvasholder.style.width = '100%';
-                                                 settings.style.width = '100%';
-                                                 resizehandle.style.width = '100%';*/
-            // _this.genotypeCanvas.canvas.style.width = '100%';
-            // _this.overviewCanvas.canvas.style.width = '100%';
+            var windowWidth = window.innerWidth;
             _this.genotypeCanvas.width = windowWidth;
             _this.overviewCanvas.width = windowWidth;
             _this.genotypeCanvas.backBuffer.width = windowWidth;
             _this.overviewCanvas.backBuffer.width = windowWidth;
             _this.genotypeCanvas.canvas.width = windowWidth;
             _this.overviewCanvas.canvas.width = windowWidth;
-            /*canvasholder.style.height = windowHeight + "px";
-            settings.style.height = '5%';
-            resizehandle.style.height = '3px';*/
             _this.genotypeCanvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) * 2 / 3;
             _this.overviewCanvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) / 3;
             _this.genotypeCanvas.backBuffer.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) * 2 / 3;
@@ -5400,17 +5316,6 @@
             _this.overviewCanvas.canvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) / 3;
             _this.genotypeCanvas.verticalScrollbar = new ScrollBar(windowWidth - 20, _this.genotypeCanvas.alleleCanvasHeight() + _this.genotypeCanvas.scrollbarHeight, _this.genotypeCanvas.scrollbarWidth, _this.genotypeCanvas.alleleCanvasHeight(), true);
             _this.genotypeCanvas.horizontalScrollbar = new ScrollBar(_this.genotypeCanvas.alleleCanvasWidth(), _this.genotypeCanvas.canvas.height, _this.genotypeCanvas.alleleCanvasWidth(), _this.genotypeCanvas.scrollbarHeight, false);
-            /*range.style.width = (300 * ratiow) + "px";
-            range.style.height = (20backBuffer * ratioh) + "%";
-            findLine.style.width = (59 * ratiow) + "%";
-            findLine.style.height = (40 * ratioh) + "%";
-            findLine.style.fontSize =  (findLine.style.height - 4) + "px";
-            chromosomeSelect.style.height = (19 * ratioh) + "px";
-            chromosomeSelect.style.width = (126 * ratiow) + "px";
-            chromosomeSelect.style.fontSize = (13 * ratioh) + "px";
-            findContainer.style.marginLeft = (50 * ratiow) + "px";
-            zoomContainer.style.marginLeft = (50 * ratiow) + "px";
-            chromosomeContainer.style.marginLeft = (50 * ratiow) + "px";*/
             _this.genotypeCanvas.prerender(true);
             _this.overviewCanvas.prerender(true);
           });
@@ -7387,31 +7292,6 @@
           return button;
         }
       }
-
-      /* closeSettingsTab(name) {
-          return function (event) {
-            var _iterator = _createForOfIteratorHelper(settingsTabs.keys()),
-              _step;
-            try {
-              for (_iterator.s(); !(_step = _iterator.n()).done;) {
-                var key = _step.value;
-                var _settingsTabs$get = settingsTabs.get(key),
-                  _settingsTabs$get2 = _slicedToArray(_settingsTabs$get, 2),
-                  button = _settingsTabs$get2[0],
-                  tab = _settingsTabs$get2[1];
-                if (key == name /*&& !button.classList.contains('bytes-tabtoggle-active'))
-                {
-                  button.classList.remove('bytes-tabtoggle-active');
-                  tab.style.display = 'none';
-                }
-              }
-            } catch (err) {
-              _iterator.e(err);
-            } finally {
-              _iterator.f();
-            }
-          };
-        }*/
       function openSettingsTab(name) {
         return function (event) {
           var _iterator = _createForOfIteratorHelper(settingsTabs.keys()),
@@ -7569,21 +7449,6 @@
             zoom(range.value);
           }
         });
-
-        /*// Namefilter
-        var filterLabel = document.createElement('label');
-        filterLabel.innerHTML = 'Line\'s Filter: ';
-        filterLabel.setAttribute('for', 'filterInput');
-        var nameFilter = document.createElement('input');
-        nameFilter.type = "text";
-        nameFilter.id = "filterInput";
-        nameFilter.placeholder = "Enter a name";
-        var filterContainer = document.createElement('div');
-        filterContainer.append(filterLabel);
-        filterContainer.append(nameFilter);
-        nameFilter.addEventListener('input', function (event) {
-          setFilter(nameFilter.value.toLowerCase());
-        });*/
 
         // Ctrl+F
         var findLine = document.createElement('input');
