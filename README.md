@@ -18,7 +18,11 @@ The source code is available in this repository. It uses Maven for dependency ma
 ##### https://github.com/GuilhemSempere/Mgdb2
 ##### https://github.com/GuilhemSempere/Mgdb2Export
 ##### https://github.com/GuilhemSempere/role_manager
-##### https://github.com/GuilhemSempere/Gigwa2ServiceInterface
-##### https://github.com/GuilhemSempere/Gigwa2ServiceImpl
 ##### https://github.com/GuilhemSempere/Mgdb2BrapiImpl
 ##### https://github.com/GuilhemSempere/Mgdb2BrapiV2Impl
+##### https://github.com/GuilhemSempere/Gigwa2ServiceInterface
+##### https://github.com/GuilhemSempere/Gigwa2ServiceImpl
+
+A quick and convenient way to **build the latest version of Gigwa at once** is to use the following script misc/build.sh:
+- ideally not from within the Gigwa2 source hierarchy, otherwise it will create duplicate source files
+- assuming that for each referenced project, a git tag exists, named after the value found in pom.xml's <project.version>
