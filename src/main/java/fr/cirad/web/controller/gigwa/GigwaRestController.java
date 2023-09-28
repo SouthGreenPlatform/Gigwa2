@@ -2480,7 +2480,7 @@ public class GigwaRestController extends ControllerInterface {
 		resultObject.put("database", database);
 		resultObject.put("individuals", Helper.estimDocCount(mongoTemplate, Individual.class));
 		resultObject.put("markers", Helper.estimDocCount(mongoTemplate, VariantData.class));
-//			resultObject.put("runs", Helper.estimDocCount(mongoTemplate, .class));
+		resultObject.put("samples", Helper.estimDocCount(mongoTemplate, GenotypingSample.class));
 
 		Query query = new Query();
 		query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
@@ -2521,7 +2521,6 @@ public class GigwaRestController extends ControllerInterface {
 			resultObject.put("individuals", Helper.estimDocCount(mongoTemplate, Individual.class));
 			resultObject.put("markers", Helper.estimDocCount(mongoTemplate, VariantData.class));
 			resultObject.put("samples", Helper.estimDocCount(mongoTemplate, GenotypingSample.class));
-			resultObjects.put("Database" + i, resultObject);
 
 			Query query = new Query();
         	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
@@ -2542,10 +2541,10 @@ public class GigwaRestController extends ControllerInterface {
 				resultObject.put("Project" + j, pj);
 				j++;
 			}
+			resultObjects.put("Database" + i, resultObject);
 
 			i++;
 		}
-//		resultObjects.put("databases", mongoTemplates);
 		return resultObjects;
 	}
 }

@@ -466,11 +466,12 @@
 				"Authorization": "Bearer " + token
 			},
 			success: function(jsonResult) {
+				var welcome = document.getElementById("welcome");
 				var logorow = document.getElementById("logoRow");
 				var jsonTable = document.createElement("table");
 				jsonTable.style.borderCollapse = 'collapse';
-				jsonTable.style.marginLeft = "50px"
-				jsonTable.style.marginTop = "20px"
+				jsonTable.style.margin = "20px"
+				jsonTable.style.marginLeft = "100px"
 				var style = document.createElement('style');
 				style.type = 'text/css';
 				style.innerHTML = '.cellStyle { \
@@ -480,6 +481,10 @@
 				}';
 				document.head.appendChild(style);
 				var currentrow = jsonTable.insertRow();
+				currentrow.style.color = '#ffffff';
+    			currentrow.style.backgroundColor = '#2fa4e7';
+    			currentrow.style.borderColor = '#2fa4e7';
+				currentrow.style.fontStyle = 'bold';
 				var currentcell = currentrow.insertCell();
 				currentcell.textContent = "Databases";
 				currentcell.className = "cellStyle";
@@ -496,17 +501,6 @@
 				currentcell.textContent = "Projects";
 				currentcell.className = "cellStyle";
 				currentrow = jsonTable.insertRow();
-				/*var res = 0;
-				var i = 1
-				for (var key in jsonResult) {
-					if (arrayContains(dbNames, jsonResult[key]["database"])) {
-						var db = jsonResult["Database" + i];
-						var keys = Object.keys(db)
-						res += (keys.length - 3) * 5 + 2;
-						i++;
-					}
-				}
-				currentcell.rowSpan = res;*/
 				i = 1
 				for (var key in jsonResult) {
 					if (arrayContains(dbNames, jsonResult[key]["database"])) {
@@ -515,7 +509,10 @@
 						var keys = Object.keys(db)
 						currentcell.rowSpan = keys.length - 4;
 						currentcell.textContent = db["database"];
+						currentcell.style.fontWeight = 'bold';
 						currentcell.className = "cellStyle";
+						currentcell.id = db["database"] + "cellid";
+						currentcell.addEventListener('click', clickDB);
 						currentcell = currentrow.insertCell();
 						currentcell.rowSpan = keys.length - 4;
 						currentcell.textContent = db["markers"];
@@ -532,7 +529,10 @@
 						for (var j = 1; j <= keys.length - 4; j++) {
 							var projects = Object.keys(db["Project" + j])
 							currentcell = currentrow.insertCell();
-							currentcell.appendChild(document.createTextNode(db["Project" + j]["name"]));
+							var projectName = document.createTextNode(db["Project" + j]["name"]);
+							var strongElement = document.createElement("strong");
+							strongElement.appendChild(projectName);
+							currentcell.appendChild(strongElement);
 							if (arrayContains(projects, "description")) {
 								var span = document.createElement("span");
 								span.role = "button";
@@ -543,7 +543,7 @@
 								currentcell.appendChild(span);
 							}
 							currentcell.appendChild(document.createElement('br'));
-							currentcell.appendChild(document.createTextNode("Variant type: " + db["Project" + j]["variantType"]));
+							currentcell.appendChild(document.createTextNode("Variant type: " + db["Project" + j]["variantType"].toString().split(',').join(', ')));
 							currentcell.appendChild(document.createElement('br'));
 							currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
 							currentcell.appendChild(document.createElement('br'));
@@ -554,12 +554,18 @@
 						i++;
 					}
 				}
-				logorow.appendChild(jsonTable);
+				welcome.insertBefore(jsonTable, logorow);
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
 			}
 		});
+	}
+
+	function clickDB(event) {
+		var cell = event.target;
+		$('#module').selectpicker('val', cell.textContent);
+		$('#module').trigger('change');
 	}
 
 	function loadProjects(module) {
