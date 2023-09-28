@@ -434,9 +434,12 @@
 			}),
 			success: function(jsonResult) {
 				var option = "";
+				var dbnames = [];
 				for (var set in jsonResult.referenceSets) {
 					option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+					dbnames.push(jsonResult.referenceSets[set].name);
 				}
+				buildSummaryTable(dbnames);
 				$('#module').html(option).selectpicker('refresh');
 				var module = $_GET("module"); // get module from url
 				if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp			   
@@ -446,6 +449,112 @@
 					$('#module').selectpicker('val', module);
 					$('#module').trigger('change');
 				}
+			},
+			error: function(xhr, ajaxOptions, thrownError) {
+				handleError(xhr, thrownError);
+			}
+		});
+	}
+
+	function buildSummaryTable(dbNames){
+		$.ajax({
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.INSTANCE_CONTENT_SUMMARY%>" />',
+			type: "GET",
+			dataType: "json",
+			contentType: "application/json;charset=utf-8",
+			headers: {
+				"Authorization": "Bearer " + token
+			},
+			success: function(jsonResult) {
+				var logorow = document.getElementById("logoRow");
+				var jsonTable = document.createElement("table");
+				jsonTable.style.borderCollapse = 'collapse';
+				jsonTable.style.marginLeft = "50px"
+				jsonTable.style.marginTop = "20px"
+				var style = document.createElement('style');
+				style.type = 'text/css';
+				style.innerHTML = '.cellStyle { \
+				  border: 1px solid #dddddd; \
+				  text-align: left; \
+				  padding: 8px; \
+				}';
+				document.head.appendChild(style);
+				var currentrow = jsonTable.insertRow();
+				var currentcell = currentrow.insertCell();
+				currentcell.textContent = "Databases";
+				currentcell.className = "cellStyle";
+				currentcell = currentrow.insertCell();
+				currentcell.textContent = "# Variants";
+				currentcell.className = "cellStyle";
+				currentcell = currentrow.insertCell();
+				currentcell.textContent = "# Individuals";
+				currentcell.className = "cellStyle";
+				currentcell = currentrow.insertCell();
+				currentcell.textContent = "# Samples";
+				currentcell.className = "cellStyle";
+				currentcell = currentrow.insertCell();
+				currentcell.textContent = "Projects";
+				currentcell.className = "cellStyle";
+				currentrow = jsonTable.insertRow();
+				/*var res = 0;
+				var i = 1
+				for (var key in jsonResult) {
+					if (arrayContains(dbNames, jsonResult[key]["database"])) {
+						var db = jsonResult["Database" + i];
+						var keys = Object.keys(db)
+						res += (keys.length - 3) * 5 + 2;
+						i++;
+					}
+				}
+				currentcell.rowSpan = res;*/
+				i = 1
+				for (var key in jsonResult) {
+					if (arrayContains(dbNames, jsonResult[key]["database"])) {
+						currentcell = currentrow.insertCell();
+						var db = jsonResult["Database" + i];
+						var keys = Object.keys(db)
+						currentcell.rowSpan = keys.length - 4;
+						currentcell.textContent = db["database"];
+						currentcell.className = "cellStyle";
+						currentcell = currentrow.insertCell();
+						currentcell.rowSpan = keys.length - 4;
+						currentcell.textContent = db["markers"];
+						currentcell.className = "cellStyle";
+						currentcell = currentrow.insertCell();
+						currentcell.rowSpan = keys.length - 4;
+						currentcell.textContent = db["individuals"];
+						currentcell.className = "cellStyle";
+						currentcell = currentrow.insertCell();
+						currentcell.rowSpan = keys.length - 4;
+						currentcell.textContent = db["samples"];
+						currentcell.className = "cellStyle";
+
+						for (var j = 1; j <= keys.length - 4; j++) {
+							var projects = Object.keys(db["Project" + j])
+							currentcell = currentrow.insertCell();
+							currentcell.appendChild(document.createTextNode(db["Project" + j]["name"]));
+							if (arrayContains(projects, "description")) {
+								var span = document.createElement("span");
+								span.role = "button";
+								span.title = db["Project" + j]["description"];
+								span.className = "glyphicon glyphicon-info-sign";
+								span.style.color = 'blue';
+								span.style.marginLeft = '5px';
+								currentcell.appendChild(span);
+							}
+							currentcell.appendChild(document.createElement('br'));
+							currentcell.appendChild(document.createTextNode("Variant type: " + db["Project" + j]["variantType"]));
+							currentcell.appendChild(document.createElement('br'));
+							currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
+							currentcell.appendChild(document.createElement('br'));
+							currentcell.appendChild(document.createTextNode("# Runs: " + db["Project" + j]["runNumber"]));
+							currentcell.className = "cellStyle";
+							currentrow = jsonTable.insertRow();
+						}
+						i++;
+					}
+				}
+				logorow.appendChild(jsonTable);
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -2111,6 +2220,10 @@
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
 			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
+		<c:set var="customizeHomePage" value="<%= appConfig.get(\"customizeHomePage\") %>"></c:set>
+		<c:if test='${!fn:startsWith(customizeHomePage, "??") && !empty customizeHomePage}'>
+			<p class="margin-top"> ${customizeHomePage} </p>
+		</c:if>
 		<div class="margin-top" style="margin:0 -30px; text-align:center; text-align:center;" id="logoRow">	 
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
@@ -2119,6 +2232,7 @@
 			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
+
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
 		<c:choose>
 			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>

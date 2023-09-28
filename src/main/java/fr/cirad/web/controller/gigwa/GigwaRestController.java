@@ -53,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
@@ -247,6 +248,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
+
+	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
 	 * get a unique processID
@@ -2463,7 +2466,7 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getDatabaseInfo")
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "/getDatabaseInfo")
 	@RequestMapping(value = BASE_URL + "/{database:.+}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, Object> getDatabaseInfo(HttpServletResponse response, @PathVariable String database) {
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(database);
@@ -2473,10 +2476,76 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
 		Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
+
 		resultObject.put("database", database);
-		resultObject.put("germplasms", Helper.estimDocCount(mongoTemplate, Individual.class));
+		resultObject.put("individuals", Helper.estimDocCount(mongoTemplate, Individual.class));
 		resultObject.put("markers", Helper.estimDocCount(mongoTemplate, VariantData.class));
+//			resultObject.put("runs", Helper.estimDocCount(mongoTemplate, .class));
+
+		Query query = new Query();
+		query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
+				.include(GenotypingProject.FIELDNAME_NAME)
+				.include(GenotypingProject.FIELDNAME_DESCRIPTION)
+				.include(GenotypingProject.FIELDNAME_RUNS)
+				.include(GenotypingProject.FIELDNAME_VARIANT_TYPES);
+		List<GenotypingProject> projects = mongoTemplate.find(query, GenotypingProject.class);
+		int j = 1;
+		for (GenotypingProject project : projects) {
+			Map<String, Object> pj = new LinkedHashMap<String, Object>();
+			pj.put("name", project.getName());
+			pj.put("description", project.getDescription());
+			pj.put("variantType", project.getVariantTypes());
+			pj.put("ploidy", project.getPloidyLevel());
+			pj.put("runNumber", project.getRuns().size());
+			resultObject.put("Project" + j, pj);
+			j++;
+		}
 		return resultObject;
 	}
-    
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "/getAllDatabaseInfo")
+	@RequestMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletResponse response) {
+		Collection<String> mongoTemplates = MongoTemplateManager.getPublicDatabases();
+		Map<String, Object> resultObjects = new LinkedHashMap<String, Object>();
+		int i = 1;
+		for (String mongoTemplate : mongoTemplates) {
+			if (mongoTemplate == null) {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+				return null;
+			}
+
+			Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
+
+			resultObject.put("database", mongoTemplate);
+			resultObject.put("individuals", Helper.estimDocCount(mongoTemplate, Individual.class));
+			resultObject.put("markers", Helper.estimDocCount(mongoTemplate, VariantData.class));
+			resultObject.put("samples", Helper.estimDocCount(mongoTemplate, GenotypingSample.class));
+			resultObjects.put("Database" + i, resultObject);
+
+			Query query = new Query();
+        	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
+					.include(GenotypingProject.FIELDNAME_NAME)
+					.include(GenotypingProject.FIELDNAME_DESCRIPTION)
+					.include(GenotypingProject.FIELDNAME_RUNS)
+					.include(GenotypingProject.FIELDNAME_VARIANT_TYPES);
+			MongoTemplate mt = MongoTemplateManager.get(mongoTemplate);
+			List<GenotypingProject> projects = mt.find(query, GenotypingProject.class);
+			int j = 1;
+			for (GenotypingProject project : projects) {
+				Map<String, Object> pj = new LinkedHashMap<String, Object>();
+				pj.put("name", project.getName());
+				pj.put("description", project.getDescription());
+				pj.put("variantType", project.getVariantTypes());
+				pj.put("ploidy", project.getPloidyLevel());
+				pj.put("runNumber", project.getRuns().size());
+				resultObject.put("Project" + j, pj);
+				j++;
+			}
+
+			i++;
+		}
+//		resultObjects.put("databases", mongoTemplates);
+		return resultObjects;
+	}
 }
