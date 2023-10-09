@@ -29,6 +29,12 @@ jobs:
     - name : see outputs
       run : |
         ls -l Gigwa2/target
+    - name: Convert Release ID from Hex to Decimal
+      run: |
+        release_id_hex="124233799"
+        release_id_decimal=$((16#$release_id_hex))
+        echo "::set-output name=release_id::${release_id_decimal}"
+      id: convert_release_id
     - name: Upload Release Asset
       run: |
-        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/124233799/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
+        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.convert_release_id.outputs.release_id }}/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
