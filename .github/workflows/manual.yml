@@ -23,12 +23,20 @@ jobs:
       run: |
         response=$(curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d '{"tag_name": "2.6.2-RELEASE", "draft": false}' "https://api.github.com/repos/${{ github.repository }}/releases")
         echo "::set-output name=upload_url::$(echo "$response" | jq -r '.upload_url')"
-        release_id=$(echo "$response" | jq -r '.id')
-        echo "::set-output name=release_id::${release_id}"
-        echo ${release_id}
       shell: bash
       env:
         RELEASE_API_RESPONSE: ${{ steps.create_release.outputs.response }}
+    # - name: Upload Release Asset
+    #   run: |
+    #     curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
+
     - name: Upload Release Asset
-      run: |
-        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip
+        asset_name: Gigwa_V2.6.2-RELEASE_Webapp.zip
+        asset_content_type: application/zip
