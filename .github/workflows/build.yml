@@ -17,4 +17,3 @@ jobs:
         wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/master/misc/build.sh
         chmod +x build.sh
         ./build.sh -P prod
-    - name: Create Release
