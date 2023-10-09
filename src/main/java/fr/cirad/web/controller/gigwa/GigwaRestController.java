@@ -43,6 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -2132,7 +2133,7 @@ public class GigwaRestController extends ControllerInterface {
 								catch (Exception e) {
 									String fileExtensions = StringUtils.join(filesByExtension.keySet(), " + ");
 									LOG.error("Error importing data from " + fileExtensions + (e instanceof SocketTimeoutException ? " (server-side needs maxParameterCount set to -1 in server.xml)" : ""), e);
-									progress.setError("Error importing from " + fileExtensions + ": " + ExceptionUtils.getStackTrace(e));
+						        	progress.setError((fSkipMonomorphic && e instanceof NoSuchElementException ? ("Are you trying to import only monomorphic variants?" ) : "") + "Error importing from " + fileExtensions + ": " + ExceptionUtils.getStackTrace(e));
 								}
 								finally {
 									if (progress.getError() != null || progress.isAborted()) {	// failed or aborted: do some cleanup
