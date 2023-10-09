@@ -18,15 +18,20 @@ on:
         # The data type of the input
         type: string
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
-  greet:
-    # The type of runner that the job will run on
+  build:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    
     steps:
-    # Runs a single command using the runners shell
-    - name: Send greeting
-      run: echo "Hello ${{ inputs.name }}"
+    - name: Run build script
+      run: |
+        wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/build/misc/build.sh
+        chmod +x build.sh
+        ./build.sh -P prod
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@2.6.2-RELEASE
+      with:
+        files: |
+          Gigwa_V2.6.2-RELEASE_Webapp.zip  # Specify the files you want to include in the release
+        token: ${{ secrets.GITHUB_TOKEN }}
