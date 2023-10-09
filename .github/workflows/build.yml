@@ -22,19 +22,15 @@ jobs:
       run: |
         RESULT=$(grep -m 1 project\\\.version Gigwa2/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
         echo "::set-output name=release_version::$RESULT"
-        echo "version1:" $release_version
       shell: bash
-    - name: Print the version
-      run: |
-        echo "version2: ${{ steps.grep_release_version.outputs.release_version }}"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "2.6.2-RELEASE"
-        release_name: "2.6.2-RELEASE"
+        tag_name: "${{ steps.grep_release_version.outputs.release_version }}"
+        release_name: "${{ steps.grep_release_version.outputs.release_version }}"
         draft: false
         prerelease: false
     - name: Upload Release Asset
@@ -44,6 +40,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip
-        asset_name: Gigwa_V2.6.2-RELEASE_Webapp.zip
+        asset_path: Gigwa2/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
         asset_content_type: application/zip
