@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug Secrets
+      run: |
+        echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
     - name: Set up Java
       uses: actions/setup-java@v1
       with:
