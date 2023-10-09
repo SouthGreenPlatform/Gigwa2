@@ -21,13 +21,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Set up Java
       uses: actions/setup-java@v1
       with:
         java-version: 17
-        
     - name: Run build script
       run: |
         wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/master/misc/build.sh
@@ -36,6 +34,5 @@ jobs:
     - name: Create Release
       id: create_release
       run: echo "::set-output name=upload_url::$(curl -XPOST -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' -d '{\"tag_name\":\"v1.0.0\",\"draft\":false}' https://api.github.com/repos/${{ github.repository }}/releases | jq -r '.upload_url')"
-
     - name: Upload Release Asset
       run: curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa_V2.6.2-RELEASE_Webapp.zip" "${{ steps.create_release.outputs.upload_url }}?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
