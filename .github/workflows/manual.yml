@@ -25,9 +25,10 @@ jobs:
         echo "::set-output name=upload_url::$(echo "$response" | jq -r '.upload_url')"
         release_id=$(echo "$response" | jq -r '.id')
         echo "::set-output name=release_id::${release_id}"
+        echo ${release_id}
       shell: bash
       env:
         RELEASE_API_RESPONSE: ${{ steps.create_release.outputs.response }}
     - name: Upload Release Asset
       run: |
-        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.convert_release_id.outputs.release_id }}/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
+        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
