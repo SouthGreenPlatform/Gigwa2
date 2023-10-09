@@ -23,6 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Set up Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
     - name: Run build script
       run: |
         wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/master/misc/build.sh
