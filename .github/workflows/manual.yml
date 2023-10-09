@@ -25,7 +25,7 @@ jobs:
     steps:
     - name: Run build script
       run: |
-        wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/build/misc/build.sh
+        wget https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/master/misc/build.sh
         chmod +x build.sh
         ./build.sh -P prod
     - name: Create Release
