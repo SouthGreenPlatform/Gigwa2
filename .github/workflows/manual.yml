@@ -36,8 +36,8 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           Gigwa_V2.6.2-RELEASE_Webapp.zip  # Specify the files you want to include in the release
-        token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: 2.6.2-RELEASE
         release_name: 2.6.2-RELEASE
