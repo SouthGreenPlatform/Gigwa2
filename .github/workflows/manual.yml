@@ -43,4 +43,4 @@ jobs:
         ls -l Gigwa2/target
     - name: Upload Release Asset
       run: |
-        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa2/target/Gigwa_V2.6.2-RELEASE_Webapp.zip" "${{ steps.create_release.outputs.upload_url }}?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
+        curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa_V2.6.2-RELEASE_Webapp.zip" "https://uploads.github.com/repos/${{ github.repository }}/releases/124233799/assets?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
