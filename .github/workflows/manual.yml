@@ -34,6 +34,9 @@ jobs:
       id: create_release
       run: |
         echo "::set-output name=upload_url::$(curl -XPOST -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' -d '{\"tag_name\":\"v1.0.0\",\"draft\":false}' https://api.github.com/repos/${{ github.repository }}/releases | jq -r '.upload_url')"
+    - name : see outputs
+      run : |
+        ls -l
     - name: Upload Release Asset
       run: |
         curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @"Gigwa_V2.6.2-RELEASE_Webapp.zip" "${{ steps.create_release.outputs.upload_url }}?name=Gigwa_V2.6.2-RELEASE_Webapp.zip"
