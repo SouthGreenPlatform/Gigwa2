@@ -21,7 +21,7 @@ jobs:
       id: grep_release_version
       run: |
         RESULT=$(grep -m 1 project\\\.version Gigwa2/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
-        echo "::set-output name=release_version::$RESULT"
+        echo "release_version=$RESULT" >>$GITHUB_OUTPUT
       shell: bash
     - name: Create Release
       id: create_release
