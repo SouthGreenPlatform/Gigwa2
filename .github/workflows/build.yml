@@ -20,10 +20,13 @@ jobs:
     - name: Grep release version
       id: grep_release_version
       run: |
-        # RESULT=$(grep -m 1 project\\\.version Gigwa2/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
-        echo "::set-output name=release_version::$(grep -m 1 project\\\.version Gigwa2/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')"
-        echo "version:" $release_version
+        RESULT=$(grep -m 1 project\\\.version Gigwa2/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+        echo "::set-output name=release_version::$RESULT"
+        echo "version1:" $release_version
       shell: bash
+    - name: Print the version
+      run: |
+        echo "version2: ${{ steps.grep_release_version.outputs.release_version }}"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
