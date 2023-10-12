@@ -17,6 +17,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import fr.cirad.mgdb.importing.VcfImport;
+import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchVariantsRequest;
@@ -34,6 +35,7 @@ public class GigwaUnitTests {
 		p.load(datasources);
 		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
 		new VcfImport().importToMongo(false, "testModule", "testProject", "testRun", "testTechnology", new File("test/sample.vcf").toURI().toURL(), null, null, false, 0);
+		Assembly.setThreadAssembly(0);
 	}
 
 	@AfterClass
@@ -60,6 +62,7 @@ public class GigwaUnitTests {
 		svr.setCallSetIds2(new ArrayList<>());
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
+				
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 

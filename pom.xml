@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-        <project.version>2.6.2-RELEASE</project.version>
+        <project.version>2.6.2-beta</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<Gigwa2ServiceImpl.version>2.6.2-RELEASE</Gigwa2ServiceImpl.version>
