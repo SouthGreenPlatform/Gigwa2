@@ -64,7 +64,7 @@ const chartTypes = new Map([
             return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
                      + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
                      + '<div id="plotMetadata" style="display: none" class="col-md-3">'
-                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="5" style="min-width:150px;"></select>'
+                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
                      + '</div>');
         },
         buildRequestPayload: function (payload){
@@ -202,6 +202,8 @@ function getGroupingOptions() {
     let options = ""
     if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
         options += '<option value="__">Investigated groups</option>';
+    else if (getGenotypeInvestigationMode() == 2)
+    	alert("Investigated groups are overlapping, you may not use them for Fst calculation!"); 
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -830,9 +832,11 @@ function setFstGroupingOption() {
             selectOptions += '<option value="' + value + '">' + value + '</option>';
         });
         $("#plotGroupingMetadataValues").html(selectOptions);
+        $("#plotGroupingMetadataValues").change();
         $("#plotMetadata").css("display", "block");
     } else {
         $("#plotMetadata").css("display", "none");
+        $('#showChartButton').prop('disabled', false);
     }
 }
 
