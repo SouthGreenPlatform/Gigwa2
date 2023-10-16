@@ -2102,16 +2102,23 @@
 		<p>
 		The system embeds various online visualization features that are easy to operate. Gigwa also provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
-		<p class="margin-top bold">
+		<p class="margin-top bold" style="float: left">
 			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
+		<div id="summaryTable" class='bold' style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px;">
+			<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary of instance contents
+		</div>
 		<c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
-			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
+			<p class="margin-top text-center">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
-		<div class="margin-top" style="margin:0 -30px; text-align:center; text-align:center;" id="logoRow">	 
+		<c:set var="customHomepageParagraph" value="<%= appConfig.get(\"customHomepageParagraph\") %>"></c:set>
+		<c:if test='${!fn:startsWith(customHomepageParagraph, "??") && !empty customHomepageParagraph}'>
+			<p class="margin-top text-justify" style='border-radius:5px; padding:7px; border:1px solid darkblue;'> ${customHomepageParagraph} </p>
+		</c:if>
+		<div class="margin-top" style="margin-left:-20px; margin-right:-20px; text-align:center; text-align:center;" id="logoRow">	 
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
 			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
@@ -2119,13 +2126,14 @@
 			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
+
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
 		<c:choose>
 			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
 				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
 			</c:when>
 			<c:otherwise>
-<pre class="margin-top" style="font-size:10px; position:absolute;">Please cite Gigwa as follows:
+<pre class="margin-top" style="margin-left:15px; font-size:10px; position:absolute;">Please cite Gigwa as follows:
 Guilhem Sempéré, Adrien Pétel, Mathieu Rouard, Julien Frouin, Yann Hueber, Fabien De Bellis, Pierre Larmande,
 Gigwa v2—Extended and improved genotype investigator, GigaScience, Volume 8, Issue 5, May 2019, giz051,
 https://doi.org/10.1093/gigascience/giz051</pre>

@@ -36,11 +36,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -60,6 +59,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -70,6 +70,9 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.ga4gh.methods.SearchReferenceSetsRequest;
+import org.ga4gh.methods.SearchReferenceSetsResponse;
+import org.ga4gh.models.ReferenceSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -88,6 +91,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -156,6 +160,7 @@ import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.utils.Constants;
+import fr.cirad.web.controller.ga4gh.Ga4ghRestController;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import fr.cirad.web.controller.security.UserPermissionController;
@@ -184,6 +189,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private AppConfig appConfig;
 	
 	@Autowired private GigwaGa4ghServiceImpl ga4ghService;
+	
+	@Autowired private Ga4ghRestController ga4ghController;
 	
 	@Autowired private VisualizationService vizService;
 
@@ -248,6 +255,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
+
+	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
 	 * get a unique processID
@@ -2463,5 +2472,48 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
-    
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
+	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
+		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
+
+		Map<String, Object> resultObjects = new LinkedHashMap<String, Object>();
+		int i = 1;
+		while (dbIterator.hasNext()) {
+			String dbName = dbIterator.next().getName();
+
+			Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
+
+			resultObject.put("database", dbName);
+			resultObject.put("individuals", Helper.estimDocCount(dbName, Individual.class));
+			resultObject.put("markers", Helper.estimDocCount(dbName, VariantData.class));
+			resultObject.put("samples", Helper.estimDocCount(dbName, GenotypingSample.class));
+
+			Query query = new Query();
+        	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
+					.include(GenotypingProject.FIELDNAME_NAME)
+					.include(GenotypingProject.FIELDNAME_DESCRIPTION)
+					.include(GenotypingProject.FIELDNAME_RUNS)
+					.include(GenotypingProject.FIELDNAME_VARIANT_TYPES);
+			MongoTemplate mt = MongoTemplateManager.get(dbName);
+			List<GenotypingProject> projects = mt.find(query, GenotypingProject.class);
+			int j = 1;
+			for (GenotypingProject project : projects) {
+				Map<String, Object> pj = new LinkedHashMap<String, Object>();
+				pj.put("name", project.getName());
+				pj.put("description", project.getDescription());
+				pj.put("variantType", project.getVariantTypes());
+				pj.put("ploidy", project.getPloidyLevel());
+				pj.put("runNumber", project.getRuns().size());
+				resultObject.put("Project" + j, pj);
+				j++;
+			}
+			resultObjects.put("Database" + i, resultObject);
+
+			i++;
+		}
+		return resultObjects;
+	}
 }
