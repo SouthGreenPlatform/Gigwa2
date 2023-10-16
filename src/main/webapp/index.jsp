@@ -2114,8 +2114,8 @@
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
-		<div id="summaryTable" style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px">
-			<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary table of all databases
+		<div id="summaryTable" class='bold' style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px;">
+			<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary of instance contents
 		</div>
 		<c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>

@@ -26,6 +26,11 @@
     <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
     <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
     <link type="text/css" rel="stylesheet" href="css/main.css">
+	<style type="text/css">
+	    #moduleProjectNavbar {
+	    	display:none;
+		}
+	</style>
     <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
@@ -55,8 +60,11 @@
                 for (var set in jsonResult.referenceSets) {
                     dbNames.push(jsonResult.referenceSets[set].name);
                 }
-                buildSummaryTable(dbNames)
-            },
+                if (dbNames.Length > 0)
+                	buildSummaryTable(dbNames);
+                else
+                	$("body").append("<center style='font-size:14px; margin-top:30px;'>No data is currently available to you on this instance</center>");
+		    },
             error: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
             }
@@ -85,7 +93,7 @@
                 style.innerHTML = '.cellStyle { \
 				  border: 1px solid #dddddd; \
 				  text-align: left; \
-				  padding: 8px; \
+				  padding: 5px; \
 				}';
                 document.head.appendChild(style);
                 var currentrow = jsonTable.insertRow();
@@ -115,7 +123,8 @@
                         currentcell = currentrow.insertCell();
                         var db = jsonResult["Database" + i];
                         var keys = Object.keys(db)
-                        currentcell.rowSpan = keys.length - 4;
+                        var rowSpan = Math.max(1, keys.length - 4);
+                        currentcell.rowSpan = rowSpan;
                         var a = document.createElement("a");
                         var url = window.location.href;
                         var lastSlashIndex = url.lastIndexOf('/');
@@ -127,22 +136,22 @@
                         currentcell.className = "cellStyle";
                         currentcell.id = db["database"] + "cellid";
                         currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = keys.length - 4;
+                        currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["markers"];
                         currentcell.className = "cellStyle";
                         currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = keys.length - 4;
+                        currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["individuals"];
                         currentcell.className = "cellStyle";
                         currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = keys.length - 4;
+                        currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["samples"];
                         currentcell.className = "cellStyle";
 
                         if (keys.length - 4 < 1)
                         {
                             currentcell = currentrow.insertCell();
-                            currentcell.textContent = "Empty Database";
+                            currentcell.textContent = "(empty database)";
                             currentcell.className = "cellStyle";
                             currentrow = jsonTable.insertRow();
                         }
@@ -177,12 +186,15 @@
                     }
                 }
             },
-            error: function(xhr, ajaxOptions, thrownError) {
+            erlistModulesror: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
             }
         });
     }
-    listModules();
+    
+	$(document).ready(function() {
+	    listModules();		
+	});
 </script>
 </head>
 <body>
