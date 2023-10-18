@@ -268,11 +268,10 @@ form#importDropzone .form-group {
     white-space: nowrap;
 }
 
-div#Sequences, div#Individuals1, div#Individuals2 {
+div#Sequences, .divOpenDropdown {
 	padding-right:110px;
 	width:100%;
 }
-
 .dropdown-toggle {
     padding:3px 15px;
     width:100%;
@@ -677,7 +676,39 @@ div#variantDetailPanel thead th {
 }
 
 .group2 {
-    background-color:#efecb1;
+    background-color: #efecb1;
+}
+
+.group3 {
+    background-color: #d9d480;
+}
+
+.group4 {
+    background-color: #a2d980;
+}
+
+.group5 {
+    background-color: #80d9a7;
+}
+
+.group6 {
+    background-color: #76d6c6;
+}
+
+.group7 {
+    background-color: #90b1e0;
+}
+
+.group8 {
+    background-color: #9b7dd1;
+}
+
+.group9 {
+    background-color: #d699e8;
+}
+
+.group10 {
+    background-color: #e88ed6;
 }
 
 .groups1and2 {

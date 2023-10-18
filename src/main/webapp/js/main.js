@@ -435,29 +435,20 @@ function resetMafWidgetsIfNecessary(nGroup) {
 }
 
 function updateGtPatterns() {
-    for (var i=1; i<=2; i++)
-    {
+    for (var i = 1; i <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; i++) {
         var selectedIndivCount = $('#Individuals' + i).selectmultiple('count');
         var option = "";
         var previousVal = $('#Genotypes' + i).val();
         var gtPatternIndex = 0;
         for (var gtPattern in gtTable) {
-            var fAddToSelect = true;
-            if (selectedIndivCount == 1 && gtPatternIndex >= 1 && gtPattern.toLowerCase().indexOf("all ") > -1)
-                fAddToSelect = false;
-            else if (gtPatternIndex == 11)
-            {
-                var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2; 
-                fAddToSelect = ploidy == 2 && onlyBiAllelicInSelection && selectedIndivCount >= 3;
-            }
-            if (fAddToSelect)
+            if ( !(selectedIndivCount == 1 && gtPatternIndex >= 1 && gtPattern.toLowerCase().indexOf("all ") > -1) )
                 option += '<option' + (previousVal == gtPattern ? ' selected' : '') + '>' + gtPattern + '</option>';
             gtPatternIndex++;
         }
         $('#Genotypes' + i).html(option).val(previousVal).selectpicker('refresh');
         $('#Genotypes' + i).change();
     }
-    
+
     igvUpdateIndividuals();
 }
 
@@ -483,7 +474,7 @@ function checkBrowsingBoxAccordingToLocalVariable()
 }
 
 
-function buildSearchQuery(searchMode, pageToken){
+function buildSearchQuery(searchMode, pageToken) {
 
     let annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
     $('#vcfFieldFilterGroup1 input').each(function() {
@@ -494,7 +485,9 @@ function buildSearchQuery(searchMode, pageToken){
         if (parseFloat($(this).val()) > 0)
             annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
     });
-    
+
+    let activeGroups = getElementsWithClassOrId(".genotypeInvestigationDiv").length;
+
     let query = {
         "variantSetId": getProjectId(),
         "searchMode": searchMode,
@@ -508,35 +501,60 @@ function buildSearchQuery(searchMode, pageToken){
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
-        "callSetIds": getSelectedIndividuals(1, true),
-        "gtPattern": $('#Genotypes1').val(),
-        "mostSameRatio": $('#mostSameRatio1').val(),
-        "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
-        "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
-        "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
-        "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
-        "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
-        "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
-        "annotationFieldThresholds": annotationFieldThresholds,
-
-        "callSetIds2": getSelectedIndividuals(2, true),
-        "gtPattern2": $('#Genotypes2').val(),
-        "mostSameRatio2": $('#mostSameRatio2').val(),
-        "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
-        "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
-        "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
-        "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
-        "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
-        "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
-        "annotationFieldThresholds2": annotationFieldThresholds2,
-        
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
         "pageToken": pageToken,
         "sortBy": sortBy,
         "sortDir": sortDesc === true ? 'desc' : 'asc',
-        "selectedVariantIds": getSelectedVariantIds()
+        "selectedVariantIds": getSelectedVariantIds(),
     };
+
+    if (activeGroups < 2){
+        query[`callSetIds2`] = [];
+        query[`gtPattern2`] = 'Any';
+        query[`mostSameRatio2`] = 0;
+        query[`minMaf2`] = 0;
+        query[`maxMaf2`] = 50;
+        query[`minMissingData2`] = 0;
+        query[`maxMissingData2`] = 100;
+        query[`minHeZ2`] = 0;
+        query[`maxHeZ2`] = 100;
+        query['annotationFieldThresholds2'] = {};
+        if (activeGroups < 1){
+            query[`callSetIds`] = [];
+            query[`gtPattern`] = 'Any';
+            query[`mostSameRatio`] = 0;
+            query[`minMaf`] = 0;
+            query[`maxMaf`] = 50;
+            query[`minMissingData`] = 0;
+            query[`maxMissingData`] = 100;
+            query[`minHeZ`] = 0;
+            query[`maxHeZ`] = 100;
+            query['annotationFieldThresholds'] = {};
+        }
+    }
+    for (let j = 1; j <= activeGroups ; j++) {
+        var i = j === 1 ? "" : j;
+        const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
+        const annotationFieldThresholdsValue = {};
+        $(`#vcfFieldFilterGroup${i} input`).each(function () {
+            if (parseFloat($(this).val()) > 0) {
+                annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+            }
+        });
+
+        query[`callSetIds${i}`] = getSelectedIndividuals(j, true);
+        query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
+        query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
+        query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
+        query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
+        query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
+        query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
+        query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
+        query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
+        query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
+    }
+
     return query;
 }
 
@@ -649,7 +667,7 @@ function toggleExportPanel() {
 function updateExportToServerCheckBox() {
     if (!$('#keepExportOnServ').is(':visible'))
     {
-        var forbidDirectDownload = indCount*count > 1000000000;
+        var forbidDirectDownload =  indOpt.length*count > 1000000000;
         if (!forbidDirectDownload)
             $('#keepExportOnServ').attr("disabled", false);
 
@@ -743,42 +761,31 @@ const mostFrequentString = strings => {
 
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
-	const selectedIndividuals = new Set();
-	const groups = groupNumber == null ? [1, 2] : [groupNumber];
-	const ga4ghId = getProjectId() + idSep;
-	for (let groupKey in groups)
-	{
-	    const groupIndex = groups[groupKey];
-		let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
-		if (groupIndividuals == null)
-			groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
-		// All individuals are selected in a single group, no need to look further
-		if (groupIndividuals.length == indCount)
-		    return [];
-		
-		for (let indKey in groupIndividuals)
-			selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
-	}
-	return selectedIndividuals.size == indCount ? [] : Array.from(selectedIndividuals);
+    const selectedIndividuals = new Set();
+    const idNumberList = [];
+    for (let j = 1; j <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; j++) {
+        idNumberList.push(j);
+    }
+    const groups = groupNumber == null ? idNumberList : [groupNumber];
+    const ga4ghId = getProjectId() + idSep;
+    for (let groupKey in groups) {
+        const groupIndex = groups[groupKey];
+        let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
+        if (groupIndividuals == null)
+            groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
+        // All individuals are selected in a single group, no need to look further
+        if (groupIndividuals.length ===  indOpt.length)
+            return [];
+
+        for (let indKey in groupIndividuals)
+            selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+    }
+    return selectedIndividuals.size ===  indOpt.length ? [] : Array.from(selectedIndividuals);
 }
 
+
 function getAllSelectedIndividuals(provideGa4ghId){
-    let individuals;
-    let investigationMode = getGenotypeInvestigationMode();
-    if (investigationMode == 0){
-        individuals = [];
-    } else {
-        individuals = getSelectedIndividuals(1, provideGa4ghId);
-        if (investigationMode >= 2){
-            let group2 = getSelectedIndividuals(2, provideGa4ghId);
-            if (group2.length == 0){
-                individuals = [];
-            } else {
-                individuals = individuals.concat(group2);
-            }
-        }
-    }
-    return individuals;
+    return getSelectedIndividuals(null, provideGa4ghId);
 }
 
 function getAnnotationThresholds(individual, indArray1, indArray2)
@@ -830,65 +837,106 @@ function isNumberKey(evt) {
     return true;
 }
 
+function getElementsWithClassOrId(selector) {
+    var elements = $(selector);
+    return elements;
+}
+
 function setGenotypeInvestigationMode(mode) {
-    genotypeInvestigationMode = mode;
-	if (mode <= 1)
-	{
-		$('#discriminationDiv').hide(300);
-		$('#discriminate').prop('checked', false);
-		$('#Individuals2').selectmultiple('deselectAll');
-		$('#Genotypes2').selectpicker('deselectAll');
-		$('#minMissingData2').val("0");
-		$('#maxMissingData2').val("100");
-		$('#minHeZ2').val("0");
-		$('#maxHeZ2').val("100");
-		$('#vcfFieldFilterGroup2 input').val("0");
-		$('#minMaf2').val("0");
-		$('#maxMaf2').val("50");
-		$('div#genotypeInvestigationDiv2').hide(300);
-		
-		if (mode == 0)
-		{
-			dropTempColl(false);
+    var container = $("#searchDiv");
+    var childContainer = container.children().first();
 
-			$('#Individuals1').selectmultiple('deselectAll');
-			$('#Genotypes1').selectpicker('deselectAll');
-			$('#minMissingData1').val("0");
-			$('#maxMissingData1').val("100");
-			$('#minHeZ1').val("0");
-			$('#maxHeZ1').val("100");
-			$('#vcfFieldFilterGroup1 input').val("0");
-			$('#minMaf1').val("0");
-			$('#maxMaf1').val("50");
-			$('div#genotypeInvestigationDiv1').hide(300);
+    // Compter le nombre d'éléments enfants actuels dans childContainer
+    var elements = getElementsWithClassOrId(".genotypeInvestigationDiv");
+    var count = elements.length;
 
-            $("#igvGroupsAll input").prop("checked", true);
-            $("#igvGroupsMenu").hide();
-        }
-        else {
-            $('div#genotypeInvestigationDiv1').show(300);
-
-            $("#igvGroupsMenu").show();
-            $("#igvGroups1").hide();
-            $("#igvGroups2").hide();
-            $("#igvGroupsSeparate").hide();
-            $("#igvGroupsSelected input").prop("checked", true);
-        }
+    var multipleSelectOpts = {
+        text: 'Individuals',
+        data: indOpt,
+        placeholder: 'Lookup'
     }
-    else {
-         $('#discriminationDiv').show(300);
-        $('div.genotypeInvestigationDiv').show(300);
-        
-        $("#igvGroupsMenu").show();
-        $("#igvGroups1").show();
-        $("#igvGroups2").show();
-        $("#igvGroupsSeparate").show();
-        $("#igvGroupsSelected input").prop("checked", true);
+
+    if (mode <= 1) {
+        $('#discriminationDiv').hide(300);
+        $('#discriminate').prop('checked', false);
+    } else {
+        $('#discriminationDiv').show(300);
     }
     
-    $('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
-    $('#exportedIndividuals').parent().parent().find('div.individualSelectionDiv').remove();
-    $('#exportedIndividuals').selectpicker('refresh');
+    if (mode > 1) {
+    	$("#igvGroupsMenu ul").html('<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();" checked="checked" /> All groups</label></a></li>');
+    	$("#igvGroupsMenu ul").append('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
+    }
+    else
+	    $("#igvGroupsMenu ul").html('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();" checked="checked" /> All individuals</label></a></li>');
+
+    if (mode < count) {
+        // Supprime les éléments en trop
+        elements.slice(mode).remove();
+    } else if (mode > count) {
+        // Ajoute les éléments
+        loadGenotypePatterns();
+        for (var i = count + 1; i <= mode; i++) {
+            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="divOpenDropdown"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\'margin-top:-40px; right:55px; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"></span><br/><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="100%" data-live-search="true" name="Genotypes${i}"></select></div></form></div></div></div>`;
+            childContainer.append(htmlContent);
+
+            if (gotMetaData)
+                $("button#groupSelector" + i).removeClass("hidden");
+            else {
+                $("button#groupSelector" + i).addClass("hidden");
+                $("table#loadIndividualsindividualFilteringTable").html("");
+            }
+
+            if (individualSubSet != null)
+                multipleSelectOpts['size'] = individualSubSet.length;
+
+            var individualsElement = $('#Individuals' + i);
+            individualsElement.selectmultiple(multipleSelectOpts);
+            individualsElement.on('change', function (e) {
+                applyGroupMemorizing(this.id.replace("Individuals", ""));
+                checkGroupOverlap();
+            });
+
+            $('#individualsLabel' + i).html("Individuals (" +  indOpt.length + "/" +  indOpt.length + ")");
+
+            var individualsLabelElement = $('#individualsLabel' + i);
+//            var individualsElement = $('#Individuals' + i);
+            individualsLabelElement.show();
+            individualsElement.show();
+            individualsElement.next().show();
+
+            $("#genotypeInvestigationMode").prop('disabled', false);
+
+	        $('select#Genotypes' + i).on('change', function () {
+	            var id = this.id.replace("Genotypes", "");
+	            $('span#genotypeHelp' + id).attr('title', gtTable[$('#Genotypes' + id).val()]);
+	            var fMostSameSelected = $('#Genotypes' + id).val().indexOf("ostly the same") != -1;
+	            $('#mostSameRatioSpan' + id).toggle(fMostSameSelected);
+	            resetMafWidgetsIfNecessary(id);
+	        });
+	        
+	        $("#genotypeInvestigationDiv" + i).show(300);
+	        
+	        $("#igvGroupsMenu ul").append('<li id="igvGroups' + i + '"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group' + i + '" onchange="igvSelectGroup();" /> Group ' + i + '</label></a></li>');
+	        
+//	        						<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>
+//									<li id="igvGroups1"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group1" onchange="igvSelectGroup();" /> Group 1</label></a></li>
+//									<li id="igvGroups2"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group2" onchange="igvSelectGroup();" /> Group 2</label></a></li>
+//									<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();" /> Separate groups</label></a></li>
+//									<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();" checked="checked" /> All individuals</label></a></li>
+        }
+
+        $('.divOpenDropdown').on('multiple_select_change', function () {
+            var i = this.id.replace("Individuals", "");
+            var nCount = $('#Individuals' + i).selectmultiple('count');
+            $('#individualsLabel' + i).html("Individuals (" + (nCount == 0 ?  indOpt.length : nCount) + "/" +  indOpt.length + ")");
+            updateGtPatterns();
+        });
+
+        updateGtPatterns();
+    }
+
+    loadSearchableVcfFields();
 }
 
 function getExportIndividualSelectionModeOptions() {
@@ -996,7 +1044,7 @@ var filtersToColumns = new Array();
 
 function updateFilteredIndividualCount()
 {
-    $("span#filteredIndCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
+    $("span#filtered indCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
 }
 
 function addSelectionDropDownsToHeaders(tableObj)
@@ -1438,70 +1486,99 @@ function saveQuery() {
         if ((queryName = prompt("Enter query name")) == null)
             return;
     var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-        $('#vcfFieldFilterGroup1 input').each(function() {
-            if (parseFloat($(this).val()) > 0)
-                annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    $('#vcfFieldFilterGroup1 input').each(function () {
+        if (parseFloat($(this).val()) > 0)
+            annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    });
+    $('#vcfFieldFilterGroup2 input').each(function () {
+        if (parseFloat($(this).val()) > 0)
+            annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    });
+
+    let activeGroups = getElementsWithClassOrId(".genotypeInvestigationDiv").length;
+
+    var query = {
+        "variantSetId": getProjectId(),
+        "getGT": false,
+        "queryLabel": queryName,
+
+        "referenceName": getSelectedSequences(),
+        "selectedVariantTypes": getSelectedTypes(),
+        "alleleCount": getSelectedNumberOfAlleles(),
+        "start": getSearchMinPosition(),
+        "end": getSearchMaxPosition(),
+        "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
+        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+
+        "discriminate": $('#discriminate').prop('checked'),
+        "pageSize": 100,
+        "sortBy": sortBy,
+        "sortDir": sortDesc === true ? 'desc' : 'asc'
+    };
+
+    if (activeGroups < 2){
+        query[`callSetIds2`] = [];
+        query[`gtPattern2`] = 'Any';
+        query[`mostSameRatio2`] = 0;
+        query[`minMaf2`] = 0;
+        query[`maxMaf2`] = 50;
+        query[`minMissingData2`] = 0;
+        query[`maxMissingData2`] = 100;
+        query[`minHeZ2`] = 0;
+        query[`maxHeZ2`] = 100;
+        query['annotationFieldThresholds2'] = {};
+        if (activeGroups < 1){
+            query[`callSetIds`] = [];
+            query[`gtPattern`] = 'Any';
+            query[`mostSameRatio`] = 0;
+            query[`minMaf`] = 0;
+            query[`maxMaf`] = 50;
+            query[`minMissingData`] = 0;
+            query[`maxMissingData`] = 100;
+            query[`minHeZ`] = 0;
+            query[`maxHeZ`] = 100;
+            query['annotationFieldThresholds'] = {};
+        }
+    }
+
+    for (let j = 1; j <= activeGroups ; j++) {
+        var i = j === 1 ? "" : j;
+        const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
+        const annotationFieldThresholdsValue = {};
+        $(`#vcfFieldFilterGroup${i} input`).each(function () {
+            if (parseFloat($(this).val()) > 0) {
+                annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+            }
         });
-        $('#vcfFieldFilterGroup2 input').each(function() {
-            if (parseFloat($(this).val()) > 0)
-                annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-        });
+
+        query[`callSetIds${i}`] = getSelectedIndividuals(j, true);
+        query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
+        query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
+        query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
+        query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
+        query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
+        query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
+        query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
+        query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
+        query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
+    }
+
     $.ajax({
         url: 'rest/gigwa/saveQuery',
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        timeout:0,
+        timeout: 0,
         headers: {
             "Authorization": "Bearer " + token,
         },
-        data: JSON.stringify({
-            "variantSetId": getProjectId(),
-            "getGT": false,
-            "queryLabel": queryName,
-            
-            "referenceName": getSelectedSequences(),
-            "selectedVariantTypes": getSelectedTypes(),
-            "alleleCount": getSelectedNumberOfAlleles(),
-            "start": getSearchMinPosition(),
-            "end": getSearchMaxPosition(),
-            "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-            "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-
-            "callSetIds": getSelectedIndividuals(1, true),
-            "gtPattern": $('#Genotypes1').val(),
-            "mostSameRatio": $('#mostSameRatio1').val(),
-            "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
-            "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
-            "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
-            "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
-            "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
-            "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
-            "annotationFieldThresholds": annotationFieldThresholds,
-
-            "callSetIds2": getSelectedIndividuals(2, true),
-            "gtPattern2": $('#Genotypes2').val(),
-            "mostSameRatio2": $('#mostSameRatio2').val(),
-            "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
-            "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
-            "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
-            "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
-            "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
-            "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
-            "annotationFieldThresholds2": annotationFieldThresholds2,
-            
-            "discriminate": $('#discriminate').prop('checked'),
-            "pageSize": 100,
-            "sortBy": sortBy,
-            "sortDir": sortDesc === true ? 'desc' : 'asc'
-        }),
-        
-        success: function(jsonResult) {
-                $('#savequery').append('<span id="okIcon" class="glyphicon glyphicon-ok" aria-hidden="true"> </span>');
-                setTimeout(function(){ 
-                    $('#okIcon').remove();
-                }, 1000);
+        data: JSON.stringify(query),
+        success: function (jsonResult) {
+            $('#savequery').append('<span id="okIcon" class="glyphicon glyphicon-ok" aria-hidden="true"> </span>');
+            setTimeout(function () {
+                $('#okIcon').remove();
+            }, 1000);
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             alert(xhr.responseText);
             if (xhr.status == 400)
                 saveQuery();
@@ -1509,7 +1586,7 @@ function saveQuery() {
                 handleError(xhr, thrownError);
         }
     });
-    
+
 }
 
 //This function allows the user to list previously saved queries
@@ -1541,87 +1618,83 @@ function listQueries(){
     });    
     
     //When the pencil icon is clicked
-    $('#loadedQueries p .glyphicon-pencil').click(function(){
+    $('#loadedQueries p .glyphicon-pencil').click(function () {
         var queryId = $(this).parent('p').attr('id');
         queryName = "";
         while (queryName.trim() == "")
-            if ((queryName = prompt("Enter query name",$(this).parent('p').text())) == null)
+            if ((queryName = prompt("Enter query name", $(this).parent('p').text())) == null)
                 return;
         $.ajax({    // load queries 
-            url: 'rest/gigwa/loadQuery?module=' + referenceset 
-            + '&queryId='+ queryId,
+            url: 'rest/gigwa/loadQuery?module=' + referenceset
+                + '&queryId=' + queryId,
             type: "GET",
             dataType: "json",
             async: false,
             contentType: "application/json;charset=utf-8",
             headers: {
                 "Authorization": "Bearer " + token
-            }, 
-            success: function(jsonResult) {
+            },
+            success: function (jsonResult) {
+                var requestData = {
+                    "variantSetId": getProjectId(),
+                    "getGT": false,
+                    "queryLabel": queryName,
+
+                    "referenceName": jsonResult['referenceName'],
+                    "selectedVariantTypes": jsonResult['selectedVariantTypes'],
+                    "alleleCount": jsonResult['alleleCount'],
+                    "start": jsonResult['start'],
+                    "end": jsonResult['end'],
+                    "variantEffect": jsonResult['variantEffect'],
+                    "geneName": jsonResult['geneName'],
+
+                    "discriminate": jsonResult['discriminate'],
+                    "pageSize": jsonResult['pageSize'],
+                    "sortBy": jsonResult['sortBy'],
+                    "sortDir": jsonResult['sortDir']
+                };
+
+                for (var j = 1; j <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; i++) {
+                    var i = j === 1 ? "" : i;
+
+                    requestData["callSetIds" + i] = jsonResult["callSetIds" + i];
+                    requestData["gtPattern" + i] = jsonResult["gtPattern" + i];
+                    requestData["mostSameRatio" + i] = jsonResult["mostSameRatio" + prefix];
+                    requestData["minMaf" + i] = jsonResult["minMaf" + i];
+                    requestData["maxMaf" + i] = jsonResult["maxMaf" + i];
+                    requestData["minMissingData" + i] = jsonResult["minMissingData" + i];
+                    requestData["maxMissingData" + i] = jsonResult["maxMissingData" + i];
+                    requestData["minHeZ" + i] = jsonResult["minHeZ" + i];
+                    requestData["maxHeZ" + i] = jsonResult["maxHeZ" + i];
+                    requestData["annotationFieldThresholds" + i] = jsonResult["annotationFieldThresholds" + i];
+                }
+
                 $.ajax({
                     url: 'rest/gigwa/saveQuery',
                     type: "POST",
                     contentType: "application/json;charset=utf-8",
-                    timeout:0,
+                    timeout: 0,
                     headers: {
                         "Authorization": "Bearer " + token,
                     },
-                    data: JSON.stringify({
-                        "variantSetId": getProjectId(),
-                        "getGT": false,
-                        "queryLabel": queryName,
-
-                        "referenceName": jsonResult['referenceName'],
-                        "selectedVariantTypes": jsonResult['selectedVariantTypes'],
-                        "alleleCount": jsonResult['alleleCount'],
-                        "start": jsonResult['start'],
-                        "end": jsonResult['end'],
-                        "variantEffect": jsonResult['variantEffect'],
-                        "geneName": jsonResult['geneName'],
-
-                        "callSetIds":    jsonResult['callSetIds'],
-                        "gtPattern": jsonResult['gtPattern'],
-                        "mostSameRatio": jsonResult['mostSameRatio'],
-                        "minMaf": jsonResult['minMaf'],
-                        "maxMaf": jsonResult['maxMaf'],
-                        "minMissingData": jsonResult['minMissingData'],
-                        "maxMissingData": jsonResult['maxMissingData'],
-                        "minHeZ": jsonResult['minHeZ'],
-                        "maxHeZ": jsonResult['maxHeZ'],
-                        "annotationFieldThresholds": jsonResult['annotationFieldThresholds'],
-
-                        "callSetIds2": jsonResult['callSetIds2'],
-                        "gtPattern2": jsonResult['gtPattern2'],
-                        "mostSameRatio2": jsonResult['mostSameRatio2'],
-                        "minMaf2": jsonResult['minMaf2'],
-                        "maxMaf2": jsonResult['maxMaf2'],
-                        "minMissingData2": jsonResult['minMissingData2'],
-                        "maxMissingData2": jsonResult['maxMissingData2'],
-                        "minHeZ2": jsonResult['minHeZ2'],
-                        "maxHeZ2": jsonResult['maxHeZ2'],
-                        "annotationFieldThresholds2": jsonResult['annotationFieldThresholds2'],
-                        
-                        "discriminate": jsonResult['discriminate'],
-                        "pageSize": jsonResult['pageSize'],
-                        "sortBy": jsonResult['sortBy'],
-                        "sortDir": jsonResult['sortDir']
-                    }),
+                    data: JSON.stringify(requestData),
                     success: function(jsonResult) {
-                           $('#'+queryId+' .NameQuery').html(queryName);
+                        $('#' + queryId + ' .NameQuery').html(queryName);
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
                         alert(xhr.responseText);
                         listQueries();
                         handleError(xhr, thrownError);
                     }
-                });            
+                });
             },
-            
-            error: function(xhr, ajaxOptions, thrownError) {
+
+            error: function (xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
             }
         });
     });
+
 
     //When the open icon is clicked
     $('#loadedQueries p .glyphicon-folder-open').click(function(){
