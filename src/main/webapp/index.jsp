@@ -21,7 +21,7 @@
 
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <c:set var="googleAnalyticsId" value="<%= appConfig.get(\"googleAnalyticsId\") %>"></c:set>
-<c:set var="nMaxGroups" value="5"></c:set>
+<c:set var="nMaxGroups" value="2"></c:set>
 
 <%
 	java.util.Properties prop = new java.util.Properties();
@@ -121,7 +121,6 @@
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
-	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
@@ -1013,30 +1012,33 @@
                     annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
             });
 
-        var checkThresholds = Object.keys(annotationFieldThresholds).length > 0;
-        //var indArray1 = getSelectedIndividuals(1);
-        //var indArray2 = getSelectedIndividuals(2);
-        for (var i = 1; i <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; i++) {
-            for (var row in gtTable) {
-                var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
-                htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
-                //var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
-                //var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
-                for (var i = 0; i < tableHeader.length; i++) {
-                    //var indivClass = inGroup1 ? (inGroup2 ? "groups1and2" : "group1") : (inGroup2 ? "group2" : "");
-                    var indivClass = "";
-                    var missingData = false;
-                    if (checkThresholds && i >= 2)
-                        for (var annotation in annotationThresholds)
-                            if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                                missingData = true;
-                                break;
-                            }
-                    htmlTableContents.append((i == 0 ? "<th class='" + indivClass + "'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-                }
-                htmlTableContents.append('</tr>');
+        var activeGroups = $(".genotypeInvestigationDiv").length;
+        var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
+        var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
+        for (var row in gtTable) {
+            var indivColors = [];
+        	for (var i=0; i<individualsByGroup.length; i++) {
+        		var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
+        		if (inGroup)
+        			indivColors.push(groupColors[i]);
+        	}
+        	
+            var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
+            htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
+            for (var i = 0; i < tableHeader.length; i++) {
+                var missingData = false;
+                if (applyThresholds && i >= 2)
+                    for (var annotation in annotationThresholds)
+                        if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
+                            missingData = true;
+                            break;
+                        }
+                
+                htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
             }
+            htmlTableContents.append('</tr>');
         }
+
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
@@ -1047,28 +1049,12 @@
 		// get genotypes for a variant 
 		var modalContent = '';
 		var ind;
-		if (individualSubSet == null)
-		{
-			if ($("#displayAllGt").prop('checked'))
-				ind = [];
-			else
-			{
-   				ind = getSelectedIndividuals($('#genotypeInvestigationDiv2').is(':visible') ? null : 1);
-   				if (ind.length == indOpt.length)
-   					ind = [];
-			}
-		}
+		var activeGroups = $(".genotypeInvestigationDiv").length;
+		if (activeGroups == 0 || $("#displayAllGt").prop('checked'))
+			ind = individualSubSet == null ? [] : individualSubSet;
 		else
-		{	// not all individuals are shown in the interface
-			if ($("#displayAllGt").prop('checked'))
-				ind = ($('#Individuals1 select option').map(function() { return $(this).text(); })).get();
-			else
-			{
-				var	selectedInGroup1 = ($('#Individuals1 select option:selected').map(function() { return $(this).text(); })).get();
-				var	selectedInGroup2 = ($('#Individuals2 select option:selected').map(function() { return $(this).text(); })).get();
-				ind = selectedInGroup1.concat(selectedInGroup2);
-			}
-		}
+			ind = getSelectedIndividuals(Array.from({ length: activeGroups }, (_, index) => index + 1));
+		
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
 		$("#runButtons").html("");
@@ -1175,7 +1161,7 @@
 
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
+		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals([1]) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals([2]) : null)));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
 			if (exportedIndividualCount * count > 1000000000) {
@@ -2006,18 +1992,18 @@
         let trackIndividuals;
         switch (group) {
             case "selected":
-                trackIndividuals = [getAllSelectedIndividuals(false)];
+                trackIndividuals = [getSelectedIndividuals(null, false)];
                 break;
             case "separate":
                 trackIndividuals = [];
-                for (var i = 1; i <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; i++)
-                    trackIndividuals.push(getSelectedIndividuals(i, false));
+                for (var i = 1; i <= $(".genotypeInvestigationDiv").length; i++)
+                    trackIndividuals.push(getSelectedIndividuals([i], false));
                 break;
             case "all":
                 trackIndividuals = [[]];
                 break;
             default:
-                trackIndividuals = [getSelectedIndividuals(group.replace("group", ""), false)];
+                trackIndividuals = [getSelectedIndividuals([group.replace("group", "")], false)];
             	break;
         }
         return trackIndividuals;
