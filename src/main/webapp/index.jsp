@@ -2008,36 +2008,6 @@
             case "selected":
                 trackIndividuals = [getAllSelectedIndividuals(false)];
                 break;
-//             case "group1":
-//                 trackIndividuals = [getSelectedIndividuals(1, false)];
-//                 break;
-//             case "group2":
-//                 trackIndividuals = [getSelectedIndividuals(2, false)];
-//                 break;
-//             case "group3":
-//                 trackIndividuals = [getSelectedIndividuals(3, false)];
-//                 break;
-//             case "group4":
-//                 trackIndividuals = [getSelectedIndividuals(4, false)];
-//                 break;
-//             case "group5":
-//                 trackIndividuals = [getSelectedIndividuals(5, false)];
-//                 break;
-//             case "group6":
-//                 trackIndividuals = [getSelectedIndividuals(6, false)];
-//                 break;
-//             case "group7":
-//                 trackIndividuals = [getSelectedIndividuals(7, false)];
-//                 break;
-//             case "group8":
-//                 trackIndividuals = [getSelectedIndividuals(8, false)];
-//                 break;
-//             case "group9":
-//                 trackIndividuals = [getSelectedIndividuals(9, false)];
-//                 break;
-//             case "group10":
-//                 trackIndividuals = [getSelectedIndividuals(10, false)];
-//                 break;
             case "separate":
                 trackIndividuals = [];
                 for (var i = 1; i <= getElementsWithClassOrId(".genotypeInvestigationDiv").length; i++)
