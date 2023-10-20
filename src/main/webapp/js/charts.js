@@ -281,6 +281,12 @@ function createCustomSelect(sequences) {
     inputs.forEach(function (input) {
         input.addEventListener('change', function () {
             var selectedCount = selectOptions.querySelectorAll('input:checked').length;
+            if (selectedCount !== 0) {
+                document.getElementById('showChartButton').removeAttribute('disabled');
+            }
+            else {
+                document.getElementById('showChartButton').setAttribute('disabled', 'true');
+            }
             if (selectedCount > maxSelections) {
                 this.checked = false;
             }
@@ -396,7 +402,7 @@ function buildCustomisationDiv(chartInfo) {
     const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
     
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
-    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; margin-top:40px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; margin-top:40px; margin-left:-60px;" disabled>Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
@@ -577,12 +583,17 @@ function clearGraphs() {
     }
 }
 
-async function displayAllChart(minPos, maxPos, chartIndex) {
-    clearGraphs();
+async function displayAllChart(minPos, maxPos, index) {
+    if (index == null) {
+        clearGraphs();
+    }
     var displayedSequences = getSelectedItems();
     function processChart(i) {
         if (i < displayedSequences.length) {
-            displayChart(minPos, maxPos, chartIndex, i)
+            if (index != null) {
+                i = index;
+            }
+            displayChart(minPos, maxPos, i)
                 .then((result) => {
                     for (let seriesIndex in result.chartInfo.series) {
                         const series = result.chartInfo.series[seriesIndex];
@@ -617,6 +628,9 @@ async function displayAllChart(minPos, maxPos, chartIndex) {
 
                     if (result.chartInfo.onDisplay !== undefined)
                         result.chartInfo.onDisplay();
+                    if (index != null) {
+                        return
+                    }
                     processChart(i + 1); // Appeler récursivement pour le prochain graphique
                 });
         }
@@ -625,7 +639,7 @@ async function displayAllChart(minPos, maxPos, chartIndex) {
     startProcess();
 }
 
-async function displayChart(minPos, maxPos, chartIndex, i) {
+async function displayChart(minPos, maxPos, i) {
     return new Promise(async (resolve, reject) => {
         localmin = minPos;
         localmax = maxPos;
@@ -641,7 +655,7 @@ async function displayChart(minPos, maxPos, chartIndex, i) {
 
         if (chart.length === displayedSequences.length) {
             if (zoomApplied) {
-                chart[chartIndex].showLoading("Zooming in...");
+                chart[i].showLoading("Zooming in...");
             } else if (!dataBeingLoaded) {
                 chart.forEach(x => x.destroy());
                 chart = [];
@@ -694,7 +708,11 @@ async function displayChart(minPos, maxPos, chartIndex, i) {
                         totalVariantCount += jsonResult[key];
                 }
 
-                chart.push(Highcharts.chart(`densityChartArea${i + 1}`, {
+                if (zoomApplied) {
+                    chart[i].destroy();
+                }
+
+                var highchart = Highcharts.chart(`densityChartArea${i + 1}`, {
                     chart: {
                         type: 'spline',
                         zoomType: 'x'
@@ -716,7 +734,7 @@ async function displayChart(minPos, maxPos, chartIndex, i) {
                                     var xAxisDataArray = this.chart.series[0].data;
                                     var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
                                     var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
-                                    displayChart(xMin, xMax, i, i);
+                                    displayAllChart(xMin, xMax, i);
                                     e.preventDefault();
                                 }
                             }
@@ -750,7 +768,13 @@ async function displayChart(minPos, maxPos, chartIndex, i) {
                             }
                         }
                     }
-                }));
+                });
+                if (zoomApplied) {
+                    chart[i] = highchart;
+                }
+                else {
+                    chart.push(highchart);
+                }
 
                 resolve({jsonResult, chartInfo, i, keys, intervalSize});
             },
@@ -758,7 +782,6 @@ async function displayChart(minPos, maxPos, chartIndex, i) {
                 handleError(xhr, thrownError);
             }
         });
-        //startProcess();
     })
 }
 
@@ -786,9 +809,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function (jsonResult) {
             if (jsonResult.length == 0)
@@ -962,7 +983,8 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
     else {
         chart.forEach(x => x.series.forEach(function (element) {
             if(element.name==fieldName){
-                x.series.splice(x.series.findIndex(function(s) {return s.name === fieldName}), 1);
+                //x.series.splice(x.series.findIndex(function(s) {return s.name === fieldName}), 1);
+                x.get(fieldName).remove();
             }
         }));
         $('.showHideSeriesBox').prop('disabled', false);
