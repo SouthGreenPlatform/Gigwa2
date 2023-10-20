@@ -49,6 +49,8 @@
 <script type="text/javascript" src="js/jquery.flot.min.js"></script>
 <script type="text/javascript" src="js/jquery.flot.selection.js" async></script>
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/highcharts/exporting.js"></script>
@@ -2642,11 +2644,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	<!-- modal which displays density data -->
 	<div class="modal fade" role="dialog" id="density" aria-hidden="true">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header" id="chartContainer"></div>
-			</div>
-		</div>
+<%--		<div class="modal-dialog modal-lg">--%>
+<%--			<div class="modal-content">--%>
+				<div id="chartContainer" style="background-color:white; height:95%; overflow-y: auto"></div>
+<%--			</div>--%>
+<%--		</div>--%>
 	</div>
 	<!-- modal which displays project information -->
 	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">

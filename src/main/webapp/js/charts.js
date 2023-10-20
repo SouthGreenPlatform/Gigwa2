@@ -15,11 +15,11 @@
  * Public License V3.
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
-var chart = null;
+var chart = [];
 var displayedRangeIntervalCount = 200;
 var dataBeingLoaded = false;
 let localmin, localmax;
-let chartJsonKeys;
+let chartJsonKeys = []
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 let progressTimeoutId = null;
@@ -172,7 +172,7 @@ function initializeChartDisplay(){
         return;
     }
 
-    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
+    $('div#chartContainer').html('<div id="additionalCharts" style="display:none; margin-top:10px"></div><div id="densityChartArea1" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div>');
     var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
     var selectedTypes = getSelectedTypes().split(";");
     $.ajax({
@@ -210,15 +210,127 @@ function getGroupingOptions() {
     return options;
 }
 
+function createCustomSelect(sequences) {
+    var maxSelections = 5;
+    var maxVisibleOptions = 10;
+
+    // Création de l'élément div avec la classe "custom-select"
+    var customSelect = document.createElement("div");
+    customSelect.classList.add("custom-select");
+    customSelect.id = "chartSequenceList";
+
+    // Création de l'élément div avec la classe "select-trigger"
+    var selectTrigger = document.createElement("div");
+    selectTrigger.classList.add("select-trigger");
+    selectTrigger.innerHTML = "Sequences &#9660;";
+
+
+    // Création de l'élément div avec la classe "select-options"
+    var selectOptions = document.createElement("div");
+    selectOptions.id = "selectOptions";
+    selectOptions.classList.add("select-options");
+    selectOptions.style.display = "none";
+    selectOptions.style.maxHeight = "auto";
+
+    const totalOptions = Object.keys(sequences).length;
+
+    if (totalOptions > maxVisibleOptions) {
+        selectOptions.style.maxHeight = (maxVisibleOptions * 27.5) + "px";
+        selectOptions.style.overflowY = "auto";
+    }
+
+    for (let key in sequences) {
+        // $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
+        var input = document.createElement("input");
+        input.type = "checkbox";
+        input.id = sequences[key];
+
+        var label = document.createElement("label");
+        label.setAttribute("for", sequences[key]);
+        label.textContent = sequences[key];
+        label.style.marginLeft = "2px";
+
+        selectOptions.appendChild(input);
+        selectOptions.appendChild(label);
+        selectOptions.appendChild(document.createElement("br"));
+    }
+
+    // Ajout des éléments au DOM
+    customSelect.appendChild(selectTrigger);
+    customSelect.appendChild(selectOptions);
+
+    // Gestion des événements
+    selectTrigger.addEventListener('click', function (event) {
+        if (selectOptions.style.display === 'block') {
+            selectOptions.style.display = 'none';
+        } else {
+            selectOptions.style.display = 'block';
+        }
+        event.stopPropagation();
+    });
+
+    selectOptions.addEventListener('click', function (event) {
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function () {
+        selectOptions.style.display = 'none';
+    });
+
+    var inputs = selectOptions.querySelectorAll('input');
+    inputs.forEach(function (input) {
+        input.addEventListener('change', function () {
+            var selectedCount = selectOptions.querySelectorAll('input:checked').length;
+            if (selectedCount > maxSelections) {
+                this.checked = false;
+            }
+        });
+    });
+
+    selectTrigger.style.cursor = 'pointer';
+    customSelect.style.border = '1px solid rgb(118, 118, 118)';
+    customSelect.style.display = 'inline-block';
+    customSelect.style.backgroundColor = "white";
+    customSelect.style.borderRadius = "2px";
+    customSelect.style.padding = "2px";
+    selectOptions.style.zIndex = "999";
+    selectOptions.style.position = "absolute";
+    selectOptions.style.border = '1px solid rgb(118, 118, 118)';
+    selectOptions.style.backgroundColor = "white";
+    selectOptions.style.padding = "5px";
+    selectOptions.style.borderRadius = "2px";
+
+
+    return customSelect;
+}
+
+function getSelectedItems() {
+    var selectOptions = document.getElementById("selectOptions");
+    var selectedItems = [];
+    var inputs = selectOptions.querySelectorAll('input');
+    inputs.forEach(function (input) {
+        if (input.checked) {
+            selectedItems.push(input.id);
+        }
+    });
+    return selectedItems;
+}
+
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayChart();">' +
+    var customSelect = createCustomSelect(sequences);
+    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayAllChart();">' +
                         '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
-                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadChart();"></select>' + 
+                            'Choose sequences: <div id="customSelectContainer"></div>' +
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
+                            '<button id="exportButton" style="float: right;" onclick="captureCharts()" type="button">Export</button>' +
                         '</div></form>');
-    $(headerHtml).insertBefore('div#densityChartArea');
+    $(headerHtml).insertBefore('div#additionalCharts');
+    var container = document.getElementById("customSelectContainer");
+    container.style.display = "inline";
+    container.style.marginRight = "20px";
+    container.appendChild(customSelect);
 
     let allowedCharts = [];
     for (const [key, info] of chartTypes){
@@ -235,9 +347,7 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     }
     $("#chartTypeList").val(currentChartType);
     const chartInfo = chartTypes.get(currentChartType);
-    
-    for (let key in sequences)
-        $("#chartSequenceList").append("<option value='" + sequences[key] + "'>" + sequences[key] + "</option>");
+
     for (let key in types)
         $("#chartVariantTypeList").append("<option value='" + types[key] + "'>" + types[key] + "</option>");
 	
@@ -249,11 +359,44 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     loadChart();
 }
 
+// Function to capture charts as PNG images
+function captureCharts() {
+    var imageUrls = [];
+    chart.forEach(function(sampleChart, index) {
+        domtoimage.toPng(sampleChart.renderTo).then(function(dataUrl) {
+            imageUrls[index] = dataUrl;
+
+            // Check if all charts have been captured
+            if (imageUrls.filter(Boolean).length === chart.length) {
+                createZip(imageUrls);
+            }
+        });
+    });
+}
+
+// Function to create and download the zip file
+function createZip(imageUrls) {
+    var zip = new JSZip();
+
+    imageUrls.forEach(function(dataUrl, index) {
+        zip.file('chart_' + index + '.png', dataUrl.substr(dataUrl.indexOf(',') + 1), { base64: true });
+    });
+
+    // Generate the zip file asynchronously
+    zip.generateAsync({ type: 'blob' }).then(function(content) {
+        var blobUrl = URL.createObjectURL(content);
+        var downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = 'charts.zip';
+        downloadLink.click();
+    });
+}
+
 function buildCustomisationDiv(chartInfo) {
     const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
     
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
-    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
+    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; margin-top:40px; margin-left:-60px;">Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
@@ -294,7 +437,7 @@ function displayOrAbort() {
     if (dataBeingLoaded) {
         abortOngoingOperation();
     } else {
-        displayChart();
+        displayAllChart();
     }
 }
 
@@ -304,19 +447,22 @@ function setChartType(typeSelect) {
     
     if (chartInfo.enableCondition !== undefined){
         const failMessage = chartInfo.enableCondition();
-        if (failMessage !== null){
-            $("#additionalCharts").hide();
-            $("#densityChartArea").html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
-            return;
-        } else {
-            $("#densityChartArea").empty();
+        var displayedSequences = getSelectedItems();
+        for (var i = 0; i < displayedSequences.length; i++) {
+            if (failMessage !== null) {
+                $("#additionalCharts").hide();
+                $("#densityChartArea" + (i + 1)).html("<h3>Chart type unavailable</h3><p>" + failMessage + "</p></h3>");
+                return;
+            } else {
+                $("#densityChartArea" + (i + 1)).empty();
+            }
         }
     }
     $("#additionalCharts").show();
     
-    if (chart != null){
-        chart.destroy();
-        chart = null;
+    if (chart.length !== 0){
+        chart.forEach(x => x.destroy());
+        chart = [];
     }
     
     buildCustomisationDiv(chartInfo);
@@ -413,180 +559,229 @@ function loadChart(minPos, maxPos) {
     
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
-        displayChart(minPos, maxPos);
+        displayAllChart(minPos, maxPos, null);
     else
         $("div#chartContainer div#additionalCharts").show();
 }
 
-function displayChart(minPos, maxPos) {
-    localmin = minPos;
-    localmax = maxPos;
-    const chartInfo = chartTypes.get(currentChartType);
-    
-    var zoomApplied = minPos != null && maxPos != null;
-    $("input#resetZoom").toggle(zoomApplied);
-    
-    if (dataBeingLoaded)
-        abortOngoingOperation();
-    
-    if (chart != null) {
-        if (zoomApplied) {
-            chart.showLoading("Zooming in...");
-        } else if (!dataBeingLoaded) {
-            chart.destroy();
-            chart = null;
+function clearGraphs() {
+    chartJsonKeys = [];
+    chart.forEach(x => x.destroy());
+    chart = [];
+    var i = 2;
+    var div = document.getElementById(`densityChartArea${i}`)
+    while (div) {
+        div.remove();
+        i++;
+        div = document.getElementById(`densityChartArea${i}`)
+    }
+}
+
+async function displayAllChart(minPos, maxPos, chartIndex) {
+    clearGraphs();
+    var displayedSequences = getSelectedItems();
+    function processChart(i) {
+        if (i < displayedSequences.length) {
+            displayChart(minPos, maxPos, chartIndex, i)
+                .then((result) => {
+                    for (let seriesIndex in result.chartInfo.series) {
+                        const series = result.chartInfo.series[seriesIndex];
+                        const seriesData = (result.chartInfo.series.length == 1) ? result.jsonResult : result.jsonResult[seriesIndex];
+                        const seriesValues = new Array();
+                        for (let key of result.keys)
+                            seriesValues.push(seriesData[key]);
+
+                        chart[result.i].addAxis({
+                            id: series.name,
+                            title: {
+                                text: undefined,  //series.yAxisTitle,
+                            },
+                            lineWidth: 3,
+                            lineColor: colorTab[seriesIndex],
+                        });
+
+                        chart[result.i].addSeries({
+                            name: series.name,
+                            marker: {
+                                enabled: series.enableMarker,
+                            },
+                            lineWidth: series.lineWidth,
+                            color: colorTab[seriesIndex],
+                            data: seriesValues,
+                            yAxis: series.name,
+                        });
+                    }
+                    $("div#chartContainer div#additionalCharts").toggle(!isNaN(result.intervalSize));
+                    if (!isNaN(result.intervalSize))
+                        $('.showHideSeriesBox').change();
+
+                    if (result.chartInfo.onDisplay !== undefined)
+                        result.chartInfo.onDisplay();
+                    processChart(i + 1); // Appeler récursivement pour le prochain graphique
+                });
         }
     }
-    
-    // Set the interval count until the next chart reload
-    let tempValue = parseInt($('#intervalCount').val());
-    if (isNaN(tempValue))
-        displayedRangeIntervalCount = 200;
-    else if (tempValue > 500)
-        displayedRangeIntervalCount = 500;
-    else if (tempValue < 50)
-        displayedRangeIntervalCount = 50;
-    else
-        displayedRangeIntervalCount = tempValue;
-    
-    var displayedSequence = $("select#chartSequenceList").val();
-    var displayedVariantType = $("select#chartVariantTypeList").val();
-    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
-    if (chartInfo.buildRequestPayload !== undefined)
-        dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
-        if (dataPayLoad === null) return;
-
-    $.ajax({
-        url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
-        type: "POST",
-        contentType: "application/json;charset=utf-8",
-        headers: buildHeader(token, $('#assembly').val()),
-        data: JSON.stringify(dataPayLoad),
-        success: function(jsonResult) {
-            if (jsonResult.length == 0)
-                return; // probably aborted
-            
-            // TODO : Key to the middle of the interval ?
-            chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
-            var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
-            
-            let totalVariantCount = 0;
-            if (currentChartType == "density"){
-                for (let key of chartJsonKeys)
-                    totalVariantCount += jsonResult[key];
-            }
-            
-            chart = Highcharts.chart('densityChartArea', {
-                chart: {
-                    type: 'spline',
-                    zoomType: 'x'
-                },
-                title: {
-                    text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
-                },
-                subtitle: {
-                    text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
-                },
-                xAxis: {
-                    categories: chartJsonKeys,
-                    title: {
-                        text: chartInfo.xAxisTitle,
-                    },
-                    events: {
-                        afterSetExtremes: function(e) {
-                            if ("zoom" == e.trigger)
-                            {   // reload for best resolution
-                                var xAxisDataArray = this.chart.series[0].data;
-                                var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
-                                var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
-                                displayChart(xMin, xMax);
-                                e.preventDefault();
-                            }
-                        }
-                    }
-                },
-                yAxis: {
-                    text: undefined,
-                    visible: false,
-                },
-                tooltip: {
-                    shared: true,
-                    crosshairs: true
-                },
-                plotOptions: {
-                    line: {
-                        dataLabels: {
-                            enabled: false
-                        },
-                        enableMouseTracking: true
-			        }
-                },
-                exporting: {
-                    enabled: true,
-					buttons: {
-					      contextButton: {
-					        menuItems: ["viewFullscreen", "printChart",
-					                    "separator",
-					                    "downloadPNG", "downloadPDF", "downloadSVG",
-					                    "separator",
-					                    "downloadCSV", "downloadXLS"]
-					      }
-				    }
-                }
-            });
-            
-            for (let seriesIndex in chartInfo.series) {
-                const series = chartInfo.series[seriesIndex];
-                const seriesData = (chartInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
-                const seriesValues = new Array();
-                for (let key of chartJsonKeys)
-                    seriesValues.push(seriesData[key]);
-                
-                chart.addAxis({
-                    id: series.name,
-                    title: {
-                        text: undefined,  //series.yAxisTitle,
-                    },
-                    lineWidth: 3,
-                    lineColor: colorTab[seriesIndex],
-                });
-                
-                chart.addSeries({
-                    name: series.name,
-                    marker: {
-                        enabled: series.enableMarker,
-                    },
-                    lineWidth: series.lineWidth,
-                    color: colorTab[seriesIndex],
-                    data: seriesValues,
-                    yAxis: series.name,
-                });
-            }
-            
-            $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
-            if (!isNaN(intervalSize))
-                $('.showHideSeriesBox').change();
-            
-            if (chartInfo.onDisplay !== undefined)
-                chartInfo.onDisplay();
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-            handleError(xhr, thrownError);
-        }
-    });
+    processChart(0);
     startProcess();
 }
 
-function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
+async function displayChart(minPos, maxPos, chartIndex, i) {
+    return new Promise(async (resolve, reject) => {
+        localmin = minPos;
+        localmax = maxPos;
+        const chartInfo = chartTypes.get(currentChartType);
+
+        var zoomApplied = minPos != null && maxPos != null;
+        $("input#resetZoom").toggle(zoomApplied);
+
+        if (dataBeingLoaded)
+            abortOngoingOperation();
+
+        var displayedSequences = getSelectedItems();
+
+        if (chart.length === displayedSequences.length) {
+            if (zoomApplied) {
+                chart[chartIndex].showLoading("Zooming in...");
+            } else if (!dataBeingLoaded) {
+                chart.forEach(x => x.destroy());
+                chart = [];
+            }
+        }
+
+        // Set the interval count until the next chart reload
+        let tempValue = parseInt($('#intervalCount').val());
+        if (isNaN(tempValue))
+            displayedRangeIntervalCount = 200;
+        else if (tempValue > 500)
+            displayedRangeIntervalCount = 500;
+        else if (tempValue < 50)
+            displayedRangeIntervalCount = 50;
+        else
+            displayedRangeIntervalCount = tempValue;
+
+        if (i > 0 && document.getElementById(`densityChartArea${i + 1}`) === null) {
+            var densityChartArea = `<div id="densityChartArea${i + 1}" data-sequence="${displayedSequences[i]}" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div>`;
+            $(densityChartArea).insertAfter(`div#densityChartArea${i}`)
+        }
+        else if (i === 0) {
+            $('#densityChartArea1').data('sequence', displayedSequences[i]);
+        }
+        var displayedSequence = displayedSequences[i];
+        var displayedVariantType = $("select#chartVariantTypeList").val();
+        var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+        if (chartInfo.buildRequestPayload !== undefined)
+            dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
+        if (dataPayLoad === null) return;
+
+        $.ajax({
+            url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            headers: buildHeader(token, $('#assembly').val()),
+            data: JSON.stringify(dataPayLoad),
+            success: function (jsonResult) {
+                if (jsonResult.length == 0)
+                    return; // probably aborted
+
+                // TODO : Key to the middle of the interval ?
+                const keys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+                var intervalSize = parseInt(keys[1]) - parseInt(keys[0]);
+                chartJsonKeys.push(keys);
+
+                let totalVariantCount = 0;
+                if (currentChartType == "density") {
+                    for (let key of keys)
+                        totalVariantCount += jsonResult[key];
+                }
+
+                chart.push(Highcharts.chart(`densityChartArea${i + 1}`, {
+                    chart: {
+                        type: 'spline',
+                        zoomType: 'x'
+                    },
+                    title: {
+                        text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", $(`#densityChartArea${i + 1}`).data('sequence')),
+                    },
+                    subtitle: {
+                        text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+                    },
+                    xAxis: {
+                        categories: keys,
+                        title: {
+                            text: chartInfo.xAxisTitle,
+                        },
+                        events: {
+                            afterSetExtremes: function (e) {
+                                if ("zoom" == e.trigger) {   // reload for best resolution
+                                    var xAxisDataArray = this.chart.series[0].data;
+                                    var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
+                                    var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
+                                    displayChart(xMin, xMax, i, i);
+                                    e.preventDefault();
+                                }
+                            }
+                        }
+                    },
+                    yAxis: {
+                        text: undefined,
+                        visible: false,
+                    },
+                    tooltip: {
+                        shared: true,
+                        crosshairs: true
+                    },
+                    plotOptions: {
+                        line: {
+                            dataLabels: {
+                                enabled: false
+                            },
+                            enableMouseTracking: true
+                        }
+                    },
+                    exporting: {
+                        enabled: true,
+                        buttons: {
+                            contextButton: {
+                                menuItems: ["viewFullscreen", "printChart",
+                                    "separator",
+                                    "downloadPNG", "downloadPDF", "downloadSVG",
+                                    "separator",
+                                    "downloadCSV", "downloadXLS"]
+                            }
+                        }
+                    }
+                }));
+
+                resolve({jsonResult, chartInfo, i, keys, intervalSize});
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                handleError(xhr, thrownError);
+            }
+        });
+        //startProcess();
+    })
+}
+
+function addAllMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
+    //var displayedSequences = getSelectedItems();
+    for (var i = 0; i < chart.length; i++) {
+        addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i)
+    }
+}
+
+function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
+    if (chart[i].get(fieldName)) {
+        return;
+    }
     localmin = minPos;
     localmax = maxPos;
-    
-    var displayedSequence = $("select#chartSequenceList").val();
-    var displayedVariantType = $("select#chartVariantTypeList").val();   
+    var displayedSequences = getSelectedItems();
+    var displayedSequence = displayedSequences[i];
+    var displayedVariantType = $("select#chartVariantTypeList").val();
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
     dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
-    
+
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
@@ -595,7 +790,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
             "Authorization": "Bearer " + token
         },
         data: JSON.stringify(dataPayLoad),
-        success: function(jsonResult) {
+        success: function (jsonResult) {
             if (jsonResult.length == 0)
                 return;	// probably aborted
 
@@ -604,12 +799,12 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
 
             var jsonValues = new Array();
             var totalVariantCount = 0;
-            for (var i=0; i<jsonKeys.length; i++){
-                jsonValues.push(jsonResult[jsonKeys[i]]);
-                totalVariantCount += jsonResult[jsonKeys[i]];
-                jsonKeys[i] = parseInt(parseInt(jsonKeys[i]) + intervalSize/2);
+            for (var j = 0; j < jsonKeys.length; j++) {
+                jsonValues.push(jsonResult[jsonKeys[j]]);
+                totalVariantCount += jsonResult[jsonKeys[j]];
+                jsonKeys[j] = parseInt(parseInt(jsonKeys[j]) + intervalSize / 2);
             }
-            chart.addAxis({ // Secondary yAxis
+            chart[i].addAxis({ // Secondary yAxis
                 id: fieldName,
                 title: {
                     text: "Cumulated " + fieldName
@@ -618,27 +813,28 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
                 lineColor: colorTab[colorIndex],
                 opposite: true,
             });
-            chart.addSeries({
+            chart[i].addSeries({
                 name: fieldName,
                 type: 'spline',
                 lineWidth: 1,
                 color: colorTab[colorIndex],
                 yAxis: fieldName,
-				marker: {
-		        	enabled: false
-		        },
+                marker: {
+                    enabled: false
+                },
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
             finishProcess();
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
             finishProcess();
         }
     });
     startProcess();
+
 }
 
 function startProcess() {
@@ -648,7 +844,7 @@ function startProcess() {
     dataBeingLoaded = true;
     
     $("#chartTypeList").prop("disabled", true);
-    $("#chartSequenceList").prop("disabled", true);
+    //$("#chartSequenceList").prop("disabled", true);
     $("#chartVariantTypeList").prop("disabled", true);
     
     $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
@@ -749,49 +945,52 @@ function checkChartLoadingProgress() {
 }
 
 function displayOrHideSeries(fieldName, isChecked, colorIndex) {
-    if (chart === null)
+    if (chart.length === 0)
         return;
     
     $('.showHideSeriesBox').prop('disabled', true);
     if (isChecked) {
-        addMetadataSeries(localmin, localmax, fieldName, colorIndex);
-        chart.series.forEach(function (element) {
+        addAllMetadataSeries(localmin, localmax, fieldName, colorIndex);
+        chart.forEach(x => x.series.forEach(function (element) {
             if(element.name==fieldName){
                 element.yAxis.update({
                     visible:true
                 });
             }
-        })
+        }))
     }
     else {
-        chart.series.forEach(function (element) {
+        chart.forEach(x => x.series.forEach(function (element) {
             if(element.name==fieldName){
-                chart.get(fieldName).remove();
+                x.series.splice(x.series.findIndex(function(s) {return s.name === fieldName}), 1);
             }
-        });
+        }));
         $('.showHideSeriesBox').prop('disabled', false);
     }
 }
 
 function displayOrHideThreshold(isChecked) {
-    if (chart === null)
+    if (chart.length === 0)
         return;
     
     const chartInfo = chartTypes.get(currentChartType);
     if (isChecked) {
         const threshold = parseFloat($("#fstThreshold").val());
-        chart.addSeries({
-            id: "threshold",
-            name: "Threshold",
-            marker: {enabled: false},
-            lineWidth: 0.5,
-            color: "#CC0000",
-            data: chartJsonKeys.map(val => threshold),
-            yAxis: chartInfo.series[0].name,
-        }, true);
+        for (let i = 0; i < chart.length; i++) {
+            chart[i].addSeries({
+                id: "threshold",
+                name: "Threshold",
+                marker: {enabled: false},
+                lineWidth: 0.5,
+                color: "#CC0000",
+                data: chartJsonKeys[i].map(val => threshold),
+                yAxis: chartInfo.series[0].name,
+            }, true);
+        }
     } else {
-        const series = chart.get("threshold");
-        if (series !== undefined) series.remove();
+        const series = [];
+        chart.forEach(x => series.push(x.get("threshold")));
+        series.forEach(x => x !== undefined ? x.remove() : x);
     }
 }
 
@@ -807,9 +1006,12 @@ function changeIntervalCount() {
 
 function setFstThreshold(){
     const threshold = parseFloat($("#fstThreshold").val());
-    const series = chart.get("threshold");
-    if (series !== undefined){
-        series.setData(chartJsonKeys.map(val => threshold), true, true);
+    const series = [];
+    chart.forEach(x => series.push(x.get("threshold")));
+    for (let i = 0; i < series.length; i++) {
+        if (series[i] !== undefined) {
+            series.setData(chartJsonKeys[i].map(val => threshold), true, true)
+        }
     }
 }
 
