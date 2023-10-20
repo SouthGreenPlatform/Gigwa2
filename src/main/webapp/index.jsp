@@ -127,20 +127,30 @@
 	var referenceNames;
 	var exportedIndividualCount = 0;
     var indOpt = [];
-	
+
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-        
     var stringVariantIdsFromUploadFile = null;
+    const groupColors = ["#bcd4f2", "#efecb1"/*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
+		for (var i=0; i<groupColors.length; i++) {
+	    	const className = "group" + (i + 1);
+	    	const color = groupColors[i];
+	    	const styleTag = document.createElement('style');
+	    	styleTag.textContent = "." + className + " { background-color: " + color + "; }";
+	    	document.head.appendChild(styleTag);
+	    	if (i > 0)
+				$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' groups</option>');
+    	}
+		
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
 				dropTempColl(false);
-
+			
 			referenceset = $(this).val();
 
 			if (!loadProjects(referenceset))
@@ -229,7 +239,7 @@
 			fillWidgets();
 			resetFilters();
 			
-			for (var groupNumber=${nMaxGroups}; groupNumber>=1; groupNumber--) {
+			for (var groupNumber=groupColors.length; groupNumber>=1; groupNumber--) {
 				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
 				if (localValue == null)
 					localValue = [];
@@ -277,7 +287,7 @@
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
 			var hideMaf = $('#numberOfAlleles option[value=2]').length == 0;
-	        for (var nGroup=1; nGroup<=${nMaxGroups}; nGroup++) {
+	        for (var nGroup=1; nGroup<=groupColors.length; nGroup++) {
 			    $('.mafZone').css('display', hideMaf ? "none" : "block");
 	        }
 		});
@@ -2173,9 +2183,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                     onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
                                                 <option value="0" selected>disabled</option>
                                                 <option value="1">on 1 group</option>
-										        <c:forEach var="i" begin="2" end="${nMaxGroups}">
-										        	<option value="${i}">on ${i} groups</option>
-										        </c:forEach>
 											</select>
 										</div>
 									</div>
@@ -2184,17 +2191,19 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 					</div>
 
-					<div class="row" id="discriminationDiv" hidden>
-						<div class="panel panel-default panel-pink shadowed-panel">
-							<div class="panel-body">
-								<div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand;" title="Some individuals are selected in both groups"><img align="left" src="images/warning.png" height="15" width="18" />&nbsp;Overlap</div>
-								<label class="label-checkbox">
-									<input type="checkbox" id="discriminate" class="input-checkbox" title="Check this box to limit search to variants for which the major genotype differs between both groups" onchange="checkGroupOverlap();">
-									&nbsp;Discriminate groups
-								</label>
-							</div>
-						</div>
-					</div>
+                    <div class="row" id="discriminationDiv" hidden>
+                        <div class="panel panel-default panel-pink shadowed-panel">
+                            <div class="panel-body">
+                                <div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/>
+                                </div>
+                                <label class="label-checkbox">
+                                    <input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
+                                </label>
+                                <b>Discriminate groups </b>
+                                <span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
+                            </div>
+                        </div>
+                    </div>
 				</div>
 			</div>
 			

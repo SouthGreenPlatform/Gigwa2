@@ -24,16 +24,6 @@ var maxUploadableVariantIdCount = 1000000, maxPastableVariantIdCount = 1000, max
 var selectedVariantIDsWhenTooManyToFitInSelect = null;
 var emptyResponseCountsByProcess = [];
 
-const groupColors = ["#bcd4f2", "#efecb1", "#d9d480", "#a2d980", "#80d9a7", "#76d6c6", "#90b1e0", "#9b7dd1", "#d699e8", "#e88ed6"];
-
-for (let i = 0; i < groupColors.length; i++) {
-  const className = `group${i + 1}`;
-  const color = groupColors[i];
-  const styleTag = document.createElement('style');
-  styleTag.textContent = `.${className} { background-color: ${color}; }`;
-  document.head.appendChild(styleTag);
-}
-
 function isHex(h) {
     var a = parseInt(h, 16);
     return (a.toString(16) === h.toLowerCase())
