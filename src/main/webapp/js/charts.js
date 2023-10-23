@@ -50,8 +50,8 @@ const chartTypes = new Map([
             enableMarker: true
         }],
         enableCondition: function (){
-            if (genotypeInvestigationMode != 2 && !gotMetaData){
-                return "Fst is only defined with at least two groups. You need to define investigation groups or upload metadata.";
+            if (getGenotypeInvestigationMode() < 2 && !gotMetaData){
+                return "Fst can only be calculated with several groups of individuals. You need to define investigation groups or upload metadata.";
             } else if (areGroupsOverlapping() && !gotMetaData){
                 return "Investigation groups are overlapping";
             } else if (ploidy != 2){
@@ -200,9 +200,9 @@ function onManualIndividualSelection() {
 
 function getGroupingOptions() {
     let options = ""
-    if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
+    if (getGenotypeInvestigationMode() > 1 && !areGroupsOverlapping())
         options += '<option value="__">Investigated groups</option>';
-    else if (getGenotypeInvestigationMode() == 2)
+    else if (areGroupsOverlapping())
     	alert("Investigated groups are overlapping, you may not use them for Fst calculation!"); 
     const fields = callSetMetadataFields.slice();
     fields.sort();
@@ -285,10 +285,10 @@ function showSelectedIndCount(selectionObj, selectionLabelObj) {
 	if (chooseMode)
 		selectionLabelObj.text("");
 	else if (selectedOption.val() == "")
-		selectionLabelObj.text(" (" + indCount + " selected)");
+		selectionLabelObj.text(" (" + indOpt.length + " selected)");
 	else {
-		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length;
-		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indCount : selectedIndCount) + " selected)");
+		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : [parseInt(selectedOption.val())])).length;
+		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indOpt.length : selectedIndCount) + " selected)");
 	}
 }
 
@@ -352,10 +352,10 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	            plotIndividuals = getSelectedIndividuals();
 	            break;
 	        case "1":
-	            plotIndividuals = getSelectedIndividuals(1);
+	            plotIndividuals = getSelectedIndividuals([1]);
 	            break;
 	        case "2":
-	            plotIndividuals = getSelectedIndividuals(2);
+	            plotIndividuals = getSelectedIndividuals([2]);
 	            break;
 	        default:
 	            plotIndividuals = [];
@@ -376,7 +376,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
-        "callSetIds": getSelectedIndividuals(1, true),
+        "callSetIds": getSelectedIndividuals([1], true),
         "gtPattern": $('#Genotypes1').val(),
         "mostSameRatio": $('#mostSameRatio1').val(),
         "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
@@ -387,7 +387,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
 		"annotationFieldThresholds": annotationFieldThresholds,
 
-        "callSetIds2": getSelectedIndividuals(2, true),
+        "callSetIds2": getSelectedIndividuals([2], true),
         "gtPattern2": $('#Genotypes2').val(),
         "mostSameRatio2": $('#mostSameRatio2').val(),
         "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
@@ -587,7 +587,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     var displayedVariantType = $("select#chartVariantTypeList").val();   
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
-    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals([1]) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals([2]) : null)))
     
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
