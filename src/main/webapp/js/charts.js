@@ -280,12 +280,20 @@ function createCustomSelect(sequences) {
     var inputs = selectOptions.querySelectorAll('input');
     inputs.forEach(function (input) {
         input.addEventListener('change', function () {
+            const loadDiv =  `<div id="densityLoadProgress_${input.id}" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
+            $(loadDiv).insertBefore('#exportButton');
             var selectedCount = selectOptions.querySelectorAll('input:checked').length;
             if (selectedCount !== 0) {
                 document.getElementById('showChartButton').removeAttribute('disabled');
             }
             else {
                 document.getElementById('showChartButton').setAttribute('disabled', 'true');
+            }
+            if (selectedCount > 1) {
+                document.getElementById('exportButton').style.display = "block";
+            }
+            else {
+                document.getElementById('exportButton').style.display = "none";
             }
             if (selectedCount > maxSelections) {
                 this.checked = false;
@@ -324,13 +332,11 @@ function getSelectedItems() {
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     var customSelect = createCustomSelect(sequences);
-    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayAllChart();">' +
-                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
-                        '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
+    const headerHtml = ('<form><div id="headerGraphPage" style="padding:3px; width:100%; background-color:#f0f0f0;">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
                             'Choose sequences: <div id="customSelectContainer"></div>' +
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
-                            '<button id="exportButton" style="float: right;" onclick="captureCharts()" type="button">Export</button>' +
+                            '<button id="exportButton" style="float: right; display: none" onclick="captureCharts()" type="button">Export all graphs</button>' +
                         '</div></form>');
     $(headerHtml).insertBefore('div#additionalCharts');
     var container = document.getElementById("customSelectContainer");
@@ -385,7 +391,7 @@ function createZip(imageUrls) {
     var zip = new JSZip();
 
     imageUrls.forEach(function(dataUrl, index) {
-        zip.file('chart_' + index + '.png', dataUrl.substr(dataUrl.indexOf(',') + 1), { base64: true });
+        zip.file('chart_' + currentChartType + '_' + $(`#densityChartArea${index + 1}`).data('sequence') + '.png', dataUrl.substr(dataUrl.indexOf(',') + 1), { base64: true });
     });
 
     // Generate the zip file asynchronously
@@ -584,16 +590,16 @@ function clearGraphs() {
 }
 
 async function displayAllChart(minPos, maxPos, index) {
-    if (index == null) {
+    if (index === undefined) {
         clearGraphs();
     }
     var displayedSequences = getSelectedItems();
     function processChart(i) {
         if (i < displayedSequences.length) {
-            if (index != null) {
+            if (index !== undefined) {
                 i = index;
             }
-            displayChart(minPos, maxPos, i)
+            displayChart(minPos, maxPos, i, index !== undefined)
                 .then((result) => {
                     for (let seriesIndex in result.chartInfo.series) {
                         const series = result.chartInfo.series[seriesIndex];
@@ -628,32 +634,36 @@ async function displayAllChart(minPos, maxPos, index) {
 
                     if (result.chartInfo.onDisplay !== undefined)
                         result.chartInfo.onDisplay();
-                    if (index != null) {
+                    if (index !== undefined) {
                         return
                     }
+                    startProcess(i);
                     processChart(i + 1); // Appeler récursivement pour le prochain graphique
                 });
         }
     }
     processChart(0);
-    startProcess();
 }
 
-async function displayChart(minPos, maxPos, i) {
+async function displayChart(minPos, maxPos, i, alreadyCreated) {
     return new Promise(async (resolve, reject) => {
         localmin = minPos;
         localmax = maxPos;
         const chartInfo = chartTypes.get(currentChartType);
 
         var zoomApplied = minPos != null && maxPos != null;
-        $("input#resetZoom").toggle(zoomApplied);
+        if (document.getElementById(`resetZoom${i + 1}`) === null) {
+            const zoomButton = `<input type="button" id="resetZoom${i + 1}" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayAllChart(null, null, ${i});">`;
+            $(zoomButton).insertBefore(document.getElementById(`densityChartArea${i + 1}`));
+        }
+        $(`input#resetZoom${i + 1}`).toggle(zoomApplied);
 
-        if (dataBeingLoaded)
-            abortOngoingOperation();
+        /*if (dataBeingLoaded)
+            abortOngoingOperation();*/
 
         var displayedSequences = getSelectedItems();
 
-        if (chart.length === displayedSequences.length) {
+        if (chart.length === displayedSequences.length && i === null) {
             if (zoomApplied) {
                 chart[i].showLoading("Zooming in...");
             } else if (!dataBeingLoaded) {
@@ -688,7 +698,7 @@ async function displayChart(minPos, maxPos, i) {
         if (dataPayLoad === null) return;
 
         $.ajax({
-            url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+            url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
             type: "POST",
             contentType: "application/json;charset=utf-8",
             headers: buildHeader(token, $('#assembly').val()),
@@ -708,7 +718,7 @@ async function displayChart(minPos, maxPos, i) {
                         totalVariantCount += jsonResult[key];
                 }
 
-                if (zoomApplied) {
+                if (alreadyCreated) {
                     chart[i].destroy();
                 }
 
@@ -769,7 +779,7 @@ async function displayChart(minPos, maxPos, i) {
                         }
                     }
                 });
-                if (zoomApplied) {
+                if (alreadyCreated) {
                     chart[i] = highchart;
                 }
                 else {
@@ -788,6 +798,7 @@ async function displayChart(minPos, maxPos, i) {
 function addAllMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     //var displayedSequences = getSelectedItems();
     for (var i = 0; i < chart.length; i++) {
+        startProcess(i);
         addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i)
     }
 }
@@ -806,7 +817,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
 
     $.ajax({
-        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
+        url: selectionVCFPlotDataURL + "/" + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
@@ -846,19 +857,17 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
-            finishProcess();
+            //finishProcess(i);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
-            finishProcess();
+            finishProcess(i);
         }
     });
-    startProcess();
-
 }
 
-function startProcess() {
+function startProcess(i) {
     // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
     if (progressTimeoutId != null)
         clearTimeout(progressTimeoutId);
@@ -870,14 +879,14 @@ function startProcess() {
     
     $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
     
-    progressTimeoutId = setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+    progressTimeoutId = setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
 }
 
-function finishProcess() {
+function finishProcess(i) {
     if (dataBeingLoaded) {
         dataBeingLoaded = false;
         
-        $("div#densityLoadProgress").html("");
+        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`).html("");
         
         $("#chartTypeList").prop("disabled", false);
         $("#chartSequenceList").prop("disabled", false);
@@ -904,7 +913,7 @@ function abortOngoingOperation() {
                 console.log("Unable to abort!");
             else
 				processAborted = true;
-            finishProcess();
+            finishProcess(0);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -912,9 +921,9 @@ function abortOngoingOperation() {
     });
 }
 
-function checkChartLoadingProgress() {
+function checkChartLoadingProgress(i) {
     $.ajax({
-        url: progressUrl,
+        url: progressUrl + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "GET",
         contentType: "application/json;charset=utf-8",
         //buildHeader(token, $('#assembly').val())
@@ -932,30 +941,30 @@ function checkChartLoadingProgress() {
 					emptyResponseCountsByProcess[token] = null;
 				}
 				else
-                	setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+                	setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
             }
             else if (jsonResult != null && jsonResult['complete'] == true) {
                	emptyResponseCountsByProcess[token] = null;
                 $('#progress').modal('hide');
-                finishProcess();
+                finishProcess(i);
             }
             else if (jsonResult != null && jsonResult['aborted'] == true) {
                 processAborted = true;
                 emptyResponseCountsByProcess[token] = null;
                 $('#progress').modal('hide');
-                finishProcess();
+                finishProcess(i);
             }
             else {
                 if (jsonResult != null && jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
                     alert("Error occurred:\n\n" + jsonResult['error']);
-                    finishProcess();
+                    finishProcess(i);
                     $('#density').modal('hide');
                     emptyResponseCountsByProcess[token] = null;
                 } else {
 					if (jsonResult != null)
-                    	$('div#densityLoadProgress').html(jsonResult['progressDescription']);
-                    setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+                        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`).html(jsonResult['progressDescription']);
+                    setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
                 }
             }
         },

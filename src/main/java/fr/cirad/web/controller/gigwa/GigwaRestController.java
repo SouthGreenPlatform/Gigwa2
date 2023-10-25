@@ -690,13 +690,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionDensity(gdr);
+				return vizService.selectionDensity(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -725,13 +725,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionFst(gdr);
+				return vizService.selectionFst(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -760,13 +760,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionTajimaD(gdr);
+				return vizService.selectionTajimaD(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -963,13 +963,13 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
+	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
-				return vizService.selectionVcfFieldPlotData(gvfpr);
+				return vizService.selectionVcfFieldPlotData(gvfpr, token);
 			} else {
 				build403Response(resp);
 				return null;
