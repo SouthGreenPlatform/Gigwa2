@@ -139,7 +139,7 @@
                         var url = window.location.href;
                         var lastSlashIndex = url.lastIndexOf('/');
                         var urlGigwa = url.substring(0, lastSlashIndex);
-                        a.href = urlGigwa + "?module=" + db["database"];
+                        a.href = urlGigwa + "/?module=" + db["database"];
                         a.textContent = db["database"];
                         currentcell.appendChild(a);
                         currentcell.style.fontWeight = 'bold';
