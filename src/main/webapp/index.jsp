@@ -635,7 +635,8 @@
             success: function (jsonResult) {
                 callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 
-                gotMetaData = false;
+                indOpt = [];
+		gotMetaData = false;
 
                 // first pass to compile an exhaustive field list
                 var headers = new Array();
