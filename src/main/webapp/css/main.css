@@ -268,11 +268,10 @@ form#importDropzone .form-group {
     white-space: nowrap;
 }
 
-div#Sequences, div#Individuals1, div#Individuals2 {
+div#Sequences, .indListBox {
 	padding-right:110px;
 	width:100%;
 }
-
 .dropdown-toggle {
     padding:3px 15px;
     width:100%;
@@ -670,18 +669,6 @@ div#variantDetailPanel thead th {
 
 .shadowed-panel {
     box-shadow:2px 2px 3px #000; 
-}
-
-.group1 {
-    background-color:#bcd4f2;
-}
-
-.group2 {
-    background-color:#efecb1;
-}
-
-.groups1and2 {
-	background: repeating-linear-gradient(to right, #bcd4f2, #bcd4f2 10px, #efecb1 10px, #efecb1 20px);
 }
 
 table#individualFilteringTable th {

@@ -22,12 +22,11 @@ import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
+import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaUnitTests {
 	
-	/* TODO: also use setMinMissingData() */
-
 	@BeforeClass
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
@@ -66,7 +65,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 807);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 1000);
 	}
 	
 	/*test 1/ types : INDEL et MIXED, séquences : 29 et MT*/
@@ -123,7 +122,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 26);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 31);
 	}
 
 	/*test 4/ position <= 9000000 et effect = (missense_variant ou 3_prime_UTR_variant)*/
@@ -142,7 +141,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 6);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 8);
 	}
 	
 	/*test 5/ gène impacté = ENSBTAG00000008482 ou ENSBTAG00000012899 ou ENSBTAG00000009899*/
@@ -160,7 +159,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 13);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 14);
 	}
 	
 	/*test 6/ séquence = 1 et position <= 4000000 et gène impacté = aucun*/
@@ -180,7 +179,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 6);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 9);
 	}
 	
 	/*test 7/ nb d'allèles = 3 ou 4 et un au moins gène impacté
@@ -226,7 +225,7 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 695);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 862);
 	}
 	
 	/*test 9/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50*/
@@ -308,7 +307,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Not all the same");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_NOT_ALL_SAME);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -333,7 +332,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("All or mostly the same");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setMostSameRatio(75);
 
 		svr.setAlleleCount("2");
@@ -357,7 +356,7 @@ public class GigwaUnitTests {
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
 		svr.setMaxMissingData(20f);
-		svr.setGtPattern("All Homozygous Ref");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_ALL_HOMOZYGOUS_REF);
 		
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -382,7 +381,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Some Homozygous Ref");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_ATL_ONE_HOMOZYGOUS_REF);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -405,7 +404,7 @@ public class GigwaUnitTests {
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}});
 		svr.setMaxMissingData(20f);
-		svr.setGtPattern("All Homozygous Var");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_ALL_HOMOZYGOUS_VAR);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -430,7 +429,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Some Homozygous Var");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_ATL_ONE_HOMOZYGOUS_VAR);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -455,7 +454,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("All Heterozygous");
+		svr.setMinHeZ(100f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -480,7 +479,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Some Heterozygous");
+		svr.setMinHeZ(.01f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -494,7 +493,7 @@ public class GigwaUnitTests {
 	}
 	
 	/*test 20/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
-	 * et pattern=without abnormal heterozigosity*/
+	 * et pattern=50 % heterozygous*/
 	@SuppressWarnings("serial")
 	@Test
 	public void test20() throws GAException, AvroRemoteException {
@@ -505,7 +504,8 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Without abnormal heterozygosity");
+		svr.setMinHeZ(50f);
+		svr.setMaxHeZ(50f);
 
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
@@ -524,7 +524,7 @@ public class GigwaUnitTests {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
 
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
-		svr.setGtPattern("All Heterozygous");
+		svr.setMinHeZ(100f);
 
 		svr.setAlleleCount("3;4");
 		svr.setVariantSetId("testModule§1");
@@ -547,7 +547,7 @@ public class GigwaUnitTests {
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 5f);}});
 		svr.setMaxMissingData(40f);
-		svr.setGtPattern("All different");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_ALL_DIFFERENT);
 
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds2(new ArrayList<>());
@@ -568,7 +568,7 @@ public class GigwaUnitTests {
 	/*test 23/ nb d'allèles = 2
 	 * et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50% 
 	 * et pattern=some heterozygous
-	 * et sur groupe 2 : pattern=without abnormal heterozigosity*/
+	 * et sur groupe 2 : pattern=not all the same*/
 	@SuppressWarnings("serial")
 	@Test
 	public void test23() throws GAException, AvroRemoteException {
@@ -579,19 +579,19 @@ public class GigwaUnitTests {
 		svr.setMaxMissingData(20f);
 		svr.setMinMaf(25f);
 		svr.setMaxMaf(50f);
-		svr.setGtPattern("Some Heterozygous");
+		svr.setMinHeZ(.01f);
+		svr.setAlleleCount("2");
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
-		svr.setGtPattern2("Without abnormal heterozygosity");
+		svr.setGtPattern2(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_NOT_ALL_SAME);
 		
-		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 15);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 45);
 	}
 	
 	/*test 24/ nb d'allèles = 2
@@ -605,13 +605,13 @@ public class GigwaUnitTests {
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
 		svr.setMaxMissingData(20f);
-		svr.setGtPattern("All or mostly the same");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setMostSameRatio(75);
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
 		svr.setAnnotationFieldThresholds2(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
 		svr.setMaxMissingData2(20f);
-		svr.setGtPattern2("All or mostly the same");
+		svr.setGtPattern2(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setMostSameRatio2(75);
 		
 		svr.setAlleleCount("2");
@@ -635,13 +635,13 @@ public class GigwaUnitTests {
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO1", "testModule§1§BO2", "testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6")));
 		svr.setAnnotationFieldThresholds(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
 		svr.setMaxMissingData(20f);
-		svr.setGtPattern("All or mostly the same");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setMostSameRatio(75);
 		
 		svr.setCallSetIds2(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
 		svr.setAnnotationFieldThresholds2(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 15f);}});
 		svr.setMaxMissingData2(20f);
-		svr.setGtPattern2("All or mostly the same");
+		svr.setGtPattern2(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setMostSameRatio2(75);
 		
 		svr.setDiscriminate(true);
@@ -663,13 +663,13 @@ public class GigwaUnitTests {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
 		
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6", "testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4")));
-		svr.setGtPattern("All or mostly the same");
+		svr.setGtPattern(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME);
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 139);
+		assertTrue(gigwaSearchVariantsResponse.getCount() == 332);
 	}
 }
