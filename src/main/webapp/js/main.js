@@ -850,6 +850,7 @@ function setGenotypeInvestigationMode(mode) {
     if (mode < count) {	// remove unwanted groups
     	let toDitch = elements.slice(mode);
 		for (let i=0; i<toDitch.length; i++) {
+			$("button#groupMemorizer" + (i+1)).removeClass('active');
 			$(toDitch[i]).find(".indListBox").selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
 			toDitch[i].remove();
 		}
