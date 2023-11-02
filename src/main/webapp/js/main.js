@@ -1726,7 +1726,7 @@ function listQueries(){
                     $('#numberOfAlleles').selectpicker('val', tabAlleles);
                 }
 
-                for (var i=1 ; i<=2 ; i++) {
+                for (var i=1 ; i <= 10 ; i++) {
                     var e = i==1 ? "" : i;
 
                     if(groupHasFilters(jsonResult, i)){
