@@ -132,7 +132,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1"/*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
+    const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -1009,7 +1009,7 @@
             tableHeader[headerPositions[header] + 2] = header;
 
         var htmlTableContents = new StringBuffer();
-        htmlTableContents.append('<thead><tr><th>Individual</th><th>Genotype</th>');
+        htmlTableContents.append('<thead><tr><th style="width: 90vh;">Individual</th><th style="width: 20vh;">Genotype</th>');
         for (var headerPos in tableHeader) {
             var header = tableHeader[headerPos];
             htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>' + header + '</th>');
@@ -1053,6 +1053,17 @@
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
+    
+    function extractUniqueAlleles(jsonResult) {
+    	  var knownAlleles = jsonResult.alternateBases;
+    	  knownAlleles.unshift(jsonResult.referenceBases);
+    	  var uniqueAlleles = knownAlleles.join(''); // Utilisez la méthode join pour concaténer les éléments
+    	  var allelesWithDivs = uniqueAlleles.split('').map(allele => '<div class="allele" style="background-color:transparent">' + allele + '</div>').join('');
+
+    	  return allelesWithDivs;
+    	}
+
+
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
@@ -1082,21 +1093,27 @@
 				contentType: "application/json;charset=utf-8",
     	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
+					var uniqueAlleles = extractUniqueAlleles(jsonResult);
 					if (addedRunCount == 0) {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(uniqueAlleles);
+ 					    
 					}
 
 					var htmlTableContents = buildGenotypeTableContents(jsonResult);
 					$("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == 0 ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == 0 ? ' checked' : '') + (addedRunCount == 0 ? ' active' : '') + '>' + runList[runIndex] + '</label>');
-					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable">' + htmlTableContents + '</table></div>';
+					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
 					if ($('#varId').html() == "") {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(uniqueAlleles);
 					}
 					addedRunCount++;
 				},
@@ -2364,21 +2381,29 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<h4 class="modal-title" id="variantDetailsLabel">Variant details</h4>
 				</div>
 				<div class="modal-body">
-					<div class="bg-dark text-white">
-						<div class="row margin-left">
-							<div class="col-md-6">
+					<div class="bg-dark text-white padding d-flex flex-row justify-between">
+						<div class="d-flex flex-column">
+							<div class="">
 								<p id="varId" class="text-bold"></p>
 							</div>
-							<div class="col-md-6">
-								<p id="varSeq" class="text-bold"></p>
-							</div>
-						</div>
-						<div class="row margin-left">
-							<div class="col-md-6">
+							<div class="">
 								<p id="varType" class="text-bold"></p>
 							</div>
-							<div class="col-md-6">
+						</div>
+						<div class="d-flex flex-column">
+							<div class="">
+								<p id="varSeq" class="text-bold"></p>
+							</div>
+							<div class="">
 								<p id="varPos" class="text-bold"></p>
+							</div>
+						</div>
+						<div class="d-flex flex-column">
+							<div>
+								<p id="textKnownAlleles" class="text-bold"></p>
+							</div>
+							<div>
+								<div id="varKnownAlleles" class="text-bold"></div>
 							</div>
 						</div>
 					</div>
