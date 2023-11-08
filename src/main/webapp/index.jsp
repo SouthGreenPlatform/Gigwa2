@@ -1055,12 +1055,14 @@
     }
     
     function extractUniqueAlleles(jsonResult) {
-    	var knownAlleles = jsonResult.alternateBases;
-    	knownAlleles.unshift(jsonResult.referenceBases);
-    	var uniqueAlleles = knownAlleles.join(''); // Utilisez la méthode join pour concaténer les éléments
-    	var allelesWithDivs = uniqueAlleles.split('').map(allele => '<div class="allele" style="background-color:transparent">' + allele + '</div>').join('');
+        var knownAlleles = jsonResult.alternateBases;
+        knownAlleles.unshift(jsonResult.referenceBases);
+        
+        var allelesWithDivs = knownAlleles.map(allele => {
+            return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
+        }).join('');
 
-  		return allelesWithDivs;
+        return allelesWithDivs;
     }
 
 	// update genotype table when the checkbox in annotation panel is checked
@@ -2400,7 +2402,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<p id="textKnownAlleles" class="text-bold"></p>
 							</div>
 							<div>
-								<div id="varKnownAlleles" class="text-bold"></div>
+								<div id="varKnownAlleles" class="text-bold d-flex d-row" style="gap:5px"></div>
 							</div>
 						</div>
 					</div>
