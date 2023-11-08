@@ -281,7 +281,11 @@ function createCustomSelect(sequences) {
     inputs.forEach(function (input) {
         input.addEventListener('change', function () {
             const loadDiv =  `<div id="densityLoadProgress_${input.id}" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
+            const loadDivDP =  `<div id="densityLoadProgress_${input.id}_DP" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
+            const loadDivGQ =  `<div id="densityLoadProgress_${input.id}_GQ" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
             $(loadDiv).insertBefore('#exportButton');
+            $(loadDivDP).insertBefore('#exportButton');
+            $(loadDivGQ).insertBefore('#exportButton');
             var selectedCount = selectOptions.querySelectorAll('input:checked').length;
             if (selectedCount !== 0) {
                 document.getElementById('showChartButton').removeAttribute('disabled');
@@ -629,7 +633,7 @@ async function displayAllChart(minPos, maxPos, index) {
                         });
                     }
                     $("div#chartContainer div#additionalCharts").toggle(!isNaN(result.intervalSize));
-                    if (!isNaN(result.intervalSize))
+                    if (!isNaN(result.intervalSize) && chart.length === displayedSequences.length)
                         $('.showHideSeriesBox').change();
 
                     if (result.chartInfo.onDisplay !== undefined)
@@ -637,7 +641,7 @@ async function displayAllChart(minPos, maxPos, index) {
                     if (index !== undefined) {
                         return
                     }
-                    startProcess(i);
+                    startProcess(i, null);
                     processChart(i + 1); // Appeler récursivement pour le prochain graphique
                 });
         }
@@ -798,7 +802,6 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
 function addAllMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     //var displayedSequences = getSelectedItems();
     for (var i = 0; i < chart.length; i++) {
-        startProcess(i);
         addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i)
     }
 }
@@ -807,6 +810,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     if (chart[i].get(fieldName)) {
         return;
     }
+    const field = fieldName !== null ? "_" + fieldName : "";
     localmin = minPos;
     localmax = maxPos;
     var displayedSequences = getSelectedItems();
@@ -817,7 +821,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
 
     $.ajax({
-        url: selectionVCFPlotDataURL + "/" + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
+        url: selectionVCFPlotDataURL + "/" + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
@@ -857,17 +861,18 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
+            startProcess(i, fieldName);
             //finishProcess(i);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
-            finishProcess(i);
+            finishProcess(i, fieldName);
         }
     });
 }
 
-function startProcess(i) {
+function startProcess(i, fieldName) {
     // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
     if (progressTimeoutId != null)
         clearTimeout(progressTimeoutId);
@@ -879,14 +884,14 @@ function startProcess(i) {
     
     $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
     
-    progressTimeoutId = setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
+    progressTimeoutId = setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
 }
 
-function finishProcess(i) {
+function finishProcess(i, fieldName) {
     if (dataBeingLoaded) {
         dataBeingLoaded = false;
-        
-        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`).html("");
+        const field = fieldName !== null ? "_" + fieldName : "";
+        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).html("");
         
         $("#chartTypeList").prop("disabled", false);
         $("#chartSequenceList").prop("disabled", false);
@@ -921,9 +926,10 @@ function abortOngoingOperation() {
     });
 }
 
-function checkChartLoadingProgress(i) {
+function checkChartLoadingProgress(i, fieldName) {
+    const field = fieldName !== null ? "_" + fieldName : "";
     $.ajax({
-        url: progressUrl + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
+        url: progressUrl + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "GET",
         contentType: "application/json;charset=utf-8",
         //buildHeader(token, $('#assembly').val())
@@ -941,30 +947,30 @@ function checkChartLoadingProgress(i) {
 					emptyResponseCountsByProcess[token] = null;
 				}
 				else
-                	setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
+                	setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
             }
             else if (jsonResult != null && jsonResult['complete'] == true) {
                	emptyResponseCountsByProcess[token] = null;
                 $('#progress').modal('hide');
-                finishProcess(i);
+                finishProcess(i, fieldName);
             }
             else if (jsonResult != null && jsonResult['aborted'] == true) {
                 processAborted = true;
                 emptyResponseCountsByProcess[token] = null;
                 $('#progress').modal('hide');
-                finishProcess(i);
+                finishProcess(i, fieldName);
             }
             else {
                 if (jsonResult != null && jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
                     alert("Error occurred:\n\n" + jsonResult['error']);
-                    finishProcess(i);
+                    finishProcess(i, fieldName);
                     $('#density').modal('hide');
                     emptyResponseCountsByProcess[token] = null;
                 } else {
 					if (jsonResult != null)
-                        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`).html(jsonResult['progressDescription']);
-                    setTimeout(checkChartLoadingProgress(i), minimumProcessQueryIntervalUnit);
+                        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).html(jsonResult['progressDescription']);
+                    setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
                 }
             }
         },
@@ -980,14 +986,14 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
     
     $('.showHideSeriesBox').prop('disabled', true);
     if (isChecked) {
-        addAllMetadataSeries(localmin, localmax, fieldName, colorIndex);
-        chart.forEach(x => x.series.forEach(function (element) {
-            if(element.name==fieldName){
-                element.yAxis.update({
-                    visible:true
-                });
-            }
-        }))
+            addAllMetadataSeries(localmin, localmax, fieldName, colorIndex);
+            chart.forEach(x => x.series.forEach(function (element) {
+                if (element.name == fieldName) {
+                    element.yAxis.update({
+                        visible: true
+                    });
+                }
+            }))
     }
     else {
         chart.forEach(x => x.series.forEach(function (element) {
