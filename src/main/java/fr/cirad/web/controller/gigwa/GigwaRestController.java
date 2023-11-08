@@ -248,6 +248,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
+	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
+	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 		
 	/**
 	 * get a unique processID
@@ -2463,5 +2465,16 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
-    
+
+    @ApiIgnore
+	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.GET, produces = "application/json")
+	public LinkedHashMap<String, ArrayList<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(value = "projID", required = false) final Integer projID) throws IOException {
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), projID, null);
+	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public List<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, ArrayList<String>> filters, @RequestParam(value = "projID", required = false) Integer projID) throws IOException {
+		return MgdbDao.getInstance().filterIndividualMetadata(module, projID, null, filters);
+	}
 }

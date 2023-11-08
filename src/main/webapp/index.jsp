@@ -120,6 +120,8 @@
 	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
 	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
+	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
+	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
@@ -693,7 +695,7 @@
 						}
 						$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
-						var dataRows = new StringBuffer();
+						/*var dataRows = new StringBuffer();
 						for (var ind in callSetResponse) {
 							dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
 							for (var i in headers) {
@@ -701,11 +703,11 @@
 								dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
 							}
 							dataRows.append("</tr>");
-						}
+						}*/
 						var ifTable = $("table#individualFilteringTable");
 						if (headerRow != "")
 							ifTable.prepend(headerRow + "</tr>");
-						ifTable.append(dataRows.toString());
+						// ifTable.append(dataRows.toString());
 
 						var tableObj = document.getElementById("individualFilteringTable");
 						addSelectionDropDownsToHeaders(tableObj);
