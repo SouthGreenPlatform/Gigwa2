@@ -1054,16 +1054,42 @@
         return htmlTableContents.toString();
     }
     
-    function extractUniqueAlleles(jsonResult) {
-        var knownAlleles = jsonResult.alternateBases;
-        knownAlleles.unshift(jsonResult.referenceBases);
-        
-        var allelesWithDivs = knownAlleles.map(allele => {
-            return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
-        }).join('');
+    function deepCopy(obj) {
+    	  if (obj === null || typeof obj !== 'object') {
+    	    return obj;
+    	  }
+    	  
+    	  if (Array.isArray(obj)) {
+    	    const copyArray = [];
+    	    for (let i = 0; i < obj.length; i++) {
+    	      copyArray[i] = deepCopy(obj[i]);
+    	    }
+    	    return copyArray;
+    	  }
 
-        return allelesWithDivs;
-    }
+    	  const copyObj = {};
+    	  for (const key in obj) {
+    	    if (obj.hasOwnProperty(key)) {
+    	      copyObj[key] = deepCopy(obj[key]);
+    	    }
+    	  }
+    	  return copyObj;
+    	}
+
+    	function extractUniqueAlleles(jsonResult) {
+    	  // Créez une copie profonde de l'objet JSON
+    	  const jsonCopy = deepCopy(jsonResult);
+
+    	  var knownAlleles = jsonCopy.alternateBases;
+    	  knownAlleles.unshift(jsonCopy.referenceBases);
+
+    	  var allelesWithDivs = knownAlleles.map(allele => {
+    	    return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
+    	  }).join('');
+
+    	  return allelesWithDivs;
+    	}
+
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
@@ -1093,14 +1119,13 @@
 				contentType: "application/json;charset=utf-8",
     	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
-					var uniqueAlleles = extractUniqueAlleles(jsonResult);
 					if (addedRunCount == 0) {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-						$('#textKnownAlleles').html("Known Allele(s)");
- 					    $('#varKnownAlleles').html(uniqueAlleles);
+ 						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
 					}
 
 					var htmlTableContents = buildGenotypeTableContents(jsonResult);
@@ -1111,8 +1136,8 @@
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-						$('#textKnownAlleles').html("Known Allele(s)");
- 					    $('#varKnownAlleles').html(uniqueAlleles);
+ 						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
 					}
 					addedRunCount++;
 				},
