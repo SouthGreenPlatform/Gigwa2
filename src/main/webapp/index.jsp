@@ -15,12 +15,15 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
+<%@ page language="java" session="false"
+	contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
+	import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
-<c:set var="googleAnalyticsId" value="<%= appConfig.get(\"googleAnalyticsId\") %>"></c:set>
+<c:set var="googleAnalyticsId"
+	value="<%= appConfig.get(\"googleAnalyticsId\") %>"></c:set>
 <c:set var="nMaxGroups" value="2"></c:set>
 
 <%
@@ -30,7 +33,8 @@
 	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="appVersionType"
+	value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
 <c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
 
 <html>
@@ -41,7 +45,8 @@
 
 <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
-<link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
+<link type="text/css" rel="stylesheet"
+	href="css/bootstrap-select.min.css ">
 <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
 <link type="text/css" rel="stylesheet" href="css/main.css">
 <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
@@ -1053,43 +1058,18 @@
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
-    
-    function deepCopy(obj) {
-    	  if (obj === null || typeof obj !== 'object') {
-    	    return obj;
-    	  }
-    	  
-    	  if (Array.isArray(obj)) {
-    	    const copyArray = [];
-    	    for (let i = 0; i < obj.length; i++) {
-    	      copyArray[i] = deepCopy(obj[i]);
-    	    }
-    	    return copyArray;
-    	  }
 
-    	  const copyObj = {};
-    	  for (const key in obj) {
-    	    if (obj.hasOwnProperty(key)) {
-    	      copyObj[key] = deepCopy(obj[key]);
-    	    }
-    	  }
-    	  return copyObj;
-    	}
+    function extractUniqueAlleles(jsonResult) {
 
-    	function extractUniqueAlleles(jsonResult) {
-    	  // Créez une copie profonde de l'objet JSON
-    	  const jsonCopy = deepCopy(jsonResult);
+   		var knownAlleles = jsonResult.alternateBases;
+    	knownAlleles.unshift(jsonResult.referenceBases);
 
-    	  var knownAlleles = jsonCopy.alternateBases;
-    	  knownAlleles.unshift(jsonCopy.referenceBases);
+    	var allelesWithDivs = knownAlleles.map(allele => {
+    		return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
+    	}).join('');
 
-    	  var allelesWithDivs = knownAlleles.map(allele => {
-    	    return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
-    	  }).join('');
-
-    	  return allelesWithDivs;
-    	}
-
+    	return allelesWithDivs;
+    }
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
@@ -2064,10 +2044,12 @@
 <script type="text/javascript" src="js/charts.js"></script>
 </head>
 
-<c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
-<script>
+<c:if
+	test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
+	<!-- Google tag (gtag.js) -->
+	<script async
+		src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
+	<script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
@@ -2077,238 +2059,385 @@
 
 <body>
 	<%@include file="navbar.jsp"%>
-	<iframe style='display:none;' id='outputFrame' name='outputFrame'></iframe>
+	<iframe style='display: none;' id='outputFrame' name='outputFrame'></iframe>
 	<main>
-	<div id="welcome">
-		<h3>Welcome to Gigwa</h3>
-		<p>
-		Gigwa, which stands for “Genotype Investigator for Genome-Wide Analyses”, is an application that provides an easy and intuitive way to explore large amounts of genotyping data by filtering it not only on the basis of variant features, including functional annotations, but also matching genotype patterns. It is a fairly lightweight, web-based, platform-independent solution that may be deployed on a workstation or as a data portal. It allows to feed a MongoDB database from various data formats with up to tens of billions of genotypes, and provides a user-friendly interface to filter data in real time.
-		</p>
-		<p>
-		The system embeds various online visualization features that are easy to operate. Gigwa also provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
-		</p>
-		<p class="margin-top bold" style="float: left">
-			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
-			<br/>
-			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
-		</p>
-		<div id="summaryTable" class='bold' style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px;">
-			<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary of instance contents
-		</div>
-		<c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
-		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
-			<p class="margin-top text-center">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
-		</c:if>
-		<c:set var="customHomepageParagraph" value="<%= appConfig.get(\"customHomepageParagraph\") %>"></c:set>
-		<c:if test='${!fn:startsWith(customHomepageParagraph, "??") && !empty customHomepageParagraph}'>
-			<p class="margin-top text-justify" style='border-radius:5px; padding:7px; border:1px solid darkblue;'> ${customHomepageParagraph} </p>
-		</c:if>
-		<div class="margin-top" style="margin-left:-20px; margin-right:-20px; text-align:center; text-align:center;" id="logoRow">	 
-			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
-			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
-			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
-			<a href="http://www.inrae.fr/" target="_blank" class="margin-left"><img alt="inra" height="20" src="images/logo-inrae.png" /></a>
-			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
-			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
-		</div>
+		<div id="welcome">
+			<h3>Welcome to Gigwa</h3>
+			<p>Gigwa, which stands for “Genotype Investigator for Genome-Wide
+				Analyses”, is an application that provides an easy and intuitive way
+				to explore large amounts of genotyping data by filtering it not only
+				on the basis of variant features, including functional annotations,
+				but also matching genotype patterns. It is a fairly lightweight,
+				web-based, platform-independent solution that may be deployed on a
+				workstation or as a data portal. It allows to feed a MongoDB
+				database from various data formats with up to tens of billions of
+				genotypes, and provides a user-friendly interface to filter data in
+				real time.</p>
+			<p>The system embeds various online visualization features that
+				are easy to operate. Gigwa also provides the means to export
+				filtered data into several popular formats and features connectivity
+				not only with online genomic tools, but also with standalone
+				software such as FlapJack or IGV. Additionnally, Gigwa-hosted
+				datasets are interoperable via two standard REST APIs: GA4GH and
+				BrAPI.</p>
+			<p class="margin-top bold" style="float: left">
+				Project homepage: <a href="https://southgreen.fr/content/gigwa"
+					target='_blank'>http://southgreen.fr/content/gigwa</a> <br />
+				GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2"
+					target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
+			</p>
+			<div id="summaryTable" class='bold'
+				style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px;">
+				<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary of
+				instance contents
+			</div>
+			<c:set var="adminEmail" value="<%=appConfig.get(\"adminEmail\")%>"></c:set>
+			<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
+				<p class="margin-top text-center">
+					For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a>
+				</p>
+			</c:if>
+			<c:set var="customHomepageParagraph"
+				value="<%=appConfig.get(\"customHomepageParagraph\")%>"></c:set>
+			<c:if
+				test='${!fn:startsWith(customHomepageParagraph, "??") && !empty customHomepageParagraph}'>
+				<p class="margin-top text-justify"
+					style='border-radius: 5px; padding: 7px; border: 1px solid darkblue;'>
+					${customHomepageParagraph}</p>
+			</c:if>
+			<div class="margin-top"
+				style="margin-left: -20px; margin-right: -20px; text-align: center; text-align: center;"
+				id="logoRow">
+				<a href="http://www.southgreen.fr/" target="_blank"><img
+					alt="southgreen" height="28" src="images/logo-southgreen.png" /></a> <a
+					href="http://www.cirad.fr/" target="_blank" class="margin-left"><img
+					alt="cirad" height="28" src="images/logo-cirad.png" /></a> <a
+					href="http://www.ird.fr/" target="_blank" class="margin-left"><img
+					alt="ird" height="28" src="images/logo-ird.png" /></a> <a
+					href="http://www.inrae.fr/" target="_blank" class="margin-left"><img
+					alt="inra" height="20" src="images/logo-inrae.png" /></a> <a
+					href="https://alliancebioversityciat.org/" target="_blank"
+					class="margin-left"><img alt="bioversity intl" height="35"
+					src="images/logo-bioversity.png" /></a> <a
+					href="http://www.arcad-project.org/" target="_blank"
+					class="margin-left"><img alt="arcad" height="25"
+					src="images/logo-arcad.png" /></a>
+			</div>
 
-		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
-		<c:choose>
-			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
-				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
-			</c:when>
-			<c:otherwise>
-<pre class="margin-top" style="margin-left:15px; font-size:10px; position:absolute;">Please cite Gigwa as follows:
+			<c:set var="howToCite" value="<%=appConfig.get(\"howToCite\")%>"></c:set>
+			<c:choose>
+				<c:when
+					test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
+					<pre class="margin-top"
+						style="font-size: 10px; position: absolute;">${howToCite}</pre>
+				</c:when>
+				<c:otherwise>
+					<pre class="margin-top"
+						style="margin-left: 15px; font-size: 10px; position: absolute;">Please cite Gigwa as follows:
 Guilhem Sempéré, Adrien Pétel, Mathieu Rouard, Julien Frouin, Yann Hueber, Fabien De Bellis, Pierre Larmande,
 Gigwa v2—Extended and improved genotype investigator, GigaScience, Volume 8, Issue 5, May 2019, giz051,
 https://doi.org/10.1093/gigascience/giz051</pre>
-			</c:otherwise>
-		</c:choose>
-	</div>
-	<div class="container-fluid" style="padding:0 10px;">
-		<div class="row" id="searchPanel" hidden>
-			<div id="searchDiv" class="col-md-3" style="padding: 0px 0px 0px 15px;">
-				<div class="col-md-12">
-					<!-- Search panel -->
-					<div class="row">
-						<div class="panel panel-default">
-							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
-							<div id="submenu">
-								<p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);"> Filter by IDs</label></p>
-								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
-								<c:if test="${principal != null && !isAnonymous}">
-					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
-									<p id="listqueries" onclick="listQueries()"><span class="glyphicon glyphicon-th-list" aria-hidden="true"> </span> View bookmarked query list </p>
-					   			</c:if>
-								
-							</div>
-							<div class="panel-body panel-grey shadowed-panel">
-								<form class="form">
-								   <div class="col">
-									  <div class="container-fluid">
-										  <div class="row">
-											<div class="col-xl-6 half-width" style="float:left;">
-												<label for="variantTypes" class="custom-label" id="variantTypesLabel">Variant types</label>
-												<select class="selectpicker" multiple id="variantTypes" data-actions-box="true" data-width="100%"											
-													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="variantTypes"></select>												
-										  	</div>
-										  	<div class="col-xl-6 half-width" style="float:left; margin-left:10px;" id="nbAlleleGrp">
-												<label for="numberOfAlleles" class="custom-label">Number of alleles</label>
-												<select class="selectpicker" multiple id="numberOfAlleles" data-actions-box="true" data-width="100%"
-													data-none-selected-text="Any" data-select-all-text="All" data-deselect-all-text="None" name="numberOfAlleles"></select>
+				</c:otherwise>
+			</c:choose>
+		</div>
+		<div class="container-fluid" style="padding: 0 10px;">
+			<div class="row" id="searchPanel" hidden>
+				<div id="searchDiv" class="col-md-3"
+					style="padding: 0px 0px 0px 15px;">
+					<div class="col-md-12">
+						<!-- Search panel -->
+						<div class="row">
+							<div class="panel panel-default">
+								<p id="menu1" class="box-shadow-menu" onclick="menuAction();">
+									<span class="glyphicon glyphicon-menu-hamburger"
+										aria-hidden="true" style="margin-right: 3px;"></span>
+								</p>
+								<div id="submenu">
+									<p>
+										<label><input type="checkbox" id="filterIDsCheckbox"
+											name="filterIDsCheckbox"
+											onchange="onFilterByIds(this.checked);"> Filter by
+											IDs</label>
+									</p>
+									<p onclick="if (confirm('Are you sure?')) resetFilters();">
+										<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+										Clear filters
+									</p>
+									<c:if test="${principal != null && !isAnonymous}">
+										<p id="savequery" onclick="saveQuery()">
+											<span class="glyphicon glyphicon-bookmark" aria-hidden="true">
+											</span> Bookmark current query
+										</p>
+										<p id="listqueries" onclick="listQueries()">
+											<span class="glyphicon glyphicon-th-list" aria-hidden="true">
+											</span> View bookmarked query list
+										</p>
+									</c:if>
+
+								</div>
+								<div class="panel-body panel-grey shadowed-panel">
+									<form class="form">
+										<div class="col">
+											<div class="container-fluid">
+												<div class="row">
+													<div class="col-xl-6 half-width" style="float: left;">
+														<label for="variantTypes" class="custom-label"
+															id="variantTypesLabel">Variant types</label> <select
+															class="selectpicker" multiple id="variantTypes"
+															data-actions-box="true" data-width="100%"
+															data-none-selected-text="Any" data-select-all-text="All"
+															data-deselect-all-text="None" name="variantTypes"></select>
+													</div>
+													<div class="col-xl-6 half-width"
+														style="float: left; margin-left: 10px;" id="nbAlleleGrp">
+														<label for="numberOfAlleles" class="custom-label">Number
+															of alleles</label> <select class="selectpicker" multiple
+															id="numberOfAlleles" data-actions-box="true"
+															data-width="100%" data-none-selected-text="Any"
+															data-select-all-text="All" data-deselect-all-text="None"
+															name="numberOfAlleles"></select>
+													</div>
+												</div>
 											</div>
-										 </div>
-									  </div>
-									</div>
-                                    <div id="sequenceFilter">
-                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
-                                        <div id="Sequences"></div>
-                                    </div>
-                                    <div id="positions" class="margin-top-md">
-										<label id="positionLabel" for="minposition" class="custom-label">Position (bp)</label>
-										<div class="container-fluid">
-										  <div class="row">
-										  	<div class="col-xl-6 input-group half-width" style="float:left;">
-												<span class="input-group-addon input-sm">&ge;</span><input style="padding:3px; font-size:11px;"
-													id="minposition" class="form-control input-sm" type="text"
-													name="minposition" maxlength="11" onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);" onkeypress="return isNumberKey(event);">
-											</div>
-										   <div class="col-xl-6 input-group half-width" style="float:left; margin-left:10px;">
-											  <span class="input-group-addon input-sm">&le;</span><input style="padding:3px; font-size:11px;"
-												  id="maxposition" class="form-control input-sm" type="text"
-												  name="maxposition" maxlength="11" onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);" onkeypress="return isNumberKey(event);">
-											</div>
-										  </div>
 										</div>
-									</div>
-									<div class="margin-top-md" id="varEffGrp">
-									   <label for="variantEffects">Variant Effects</label>
-									   <div class="form-input">
-										  <select class="selectpicker" multiple id="variantEffects"
-											 data-actions-box="true" data-width="100%"
-											 data-live-search="true" name="variantEffects"></select>
-									   </div>
-									</div>
-									<div id="genesGrp" class="margin-top-md">
-									   <label for="geneName" class="custom-label">Genes</label>
-									   <div class="input-group">
-										  <input id="geneName" class="form-control input-sm" type="text"
-											 name="genes"> <span class="input-group-addon input-sm"> <span
-											 class="glyphicon glyphicon-question-sign" id="geneHelp"
-											 title="Leave blank to ignore this filter. Enter '-' for variants without gene-name annotation. Enter '+' for variants with any gene-name annotation. Enter comma-separated names for specific genes"></span>
-										  </span>
-									   </div>
-									</div>
-                                    <div id="VariantIds" class="margin-top-md">
-                                        <div class="container-fluid">
-                                            <div class="row">
-                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-input">
-                                            <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
-                                        </div>
-                                        <div style="margin-top:-25px; text-align:right;">
-											<a id="clearVariantIdSelection" href="#" onclick="clearVariantIdSelection();" style="display:none; font-size:18px; margin-left:-20px; position:absolute; font-weight:bold; text-decoration:none;" title="Clear selection">&nbsp;X&nbsp;</a>
-                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" id="copyVariantIds" disabled onclick="copyVariants(); var infoDiv=$('<div class=\'col-xl-6 input-group half-width\' style=\'float:right\'>Copied!</div>'); $('#variantIdsLabel').after(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteVariantIds" disabled onclick="toggleVariantsPasteBox();"></button>
-                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-upload" aria-pressed="false" title="Upload file with up to 1M variant IDs" id="uploadVariantIds" onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
-                                            <input name="file" type="file" id="uploadVariantIdsFile" style="display:none" />
-                                        </div>
-                                    </div>
-									<div class="margin-top-md">
-										<label class="custom-label margin-top-md">Investigate genotypes</label>
-										<div style="float:right;">
-											<select class="selectpicker form-control input-sm" data-width="92px" data-style="btn-primary" id="genotypeInvestigationMode" onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
-                                                    data-style="btn-primary" id="genotypeInvestigationMode"
-                                                    onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
-                                                <option value="0" selected>disabled</option>
-                                                <option value="1">on 1 group</option>
-											</select>
+										<div id="sequenceFilter">
+											<div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+											<div id="Sequences"></div>
 										</div>
+										<div id="positions" class="margin-top-md">
+											<label id="positionLabel" for="minposition"
+												class="custom-label">Position (bp)</label>
+											<div class="container-fluid">
+												<div class="row">
+													<div class="col-xl-6 input-group half-width"
+														style="float: left;">
+														<span class="input-group-addon input-sm">&ge;</span><input
+															style="padding: 3px; font-size: 11px;" id="minposition"
+															class="form-control input-sm" type="text"
+															name="minposition" maxlength="11"
+															onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);"
+															onkeypress="return isNumberKey(event);">
+													</div>
+													<div class="col-xl-6 input-group half-width"
+														style="float: left; margin-left: 10px;">
+														<span class="input-group-addon input-sm">&le;</span><input
+															style="padding: 3px; font-size: 11px;" id="maxposition"
+															class="form-control input-sm" type="text"
+															name="maxposition" maxlength="11"
+															onpaste="var el=this; setTimeout(function() { el.value=el.value.replace(/\D/g, ''); }, 0);"
+															onkeypress="return isNumberKey(event);">
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="margin-top-md" id="varEffGrp">
+											<label for="variantEffects">Variant Effects</label>
+											<div class="form-input">
+												<select class="selectpicker" multiple id="variantEffects"
+													data-actions-box="true" data-width="100%"
+													data-live-search="true" name="variantEffects"></select>
+											</div>
+										</div>
+										<div id="genesGrp" class="margin-top-md">
+											<label for="geneName" class="custom-label">Genes</label>
+											<div class="input-group">
+												<input id="geneName" class="form-control input-sm"
+													type="text" name="genes"> <span
+													class="input-group-addon input-sm"> <span
+													class="glyphicon glyphicon-question-sign" id="geneHelp"
+													title="Leave blank to ignore this filter. Enter '-' for variants without gene-name annotation. Enter '+' for variants with any gene-name annotation. Enter comma-separated names for specific genes"></span>
+												</span>
+											</div>
+										</div>
+										<div id="VariantIds" class="margin-top-md">
+											<div class="container-fluid">
+												<div class="row">
+													<div class="col-xl-6 input-group half-width custom-label"
+														style="float: left;" id="variantIdsLabel">Variant
+														IDs</div>
+												</div>
+											</div>
+
+											<div class="form-input">
+												<select id="variantIdsSelect"
+													class="selectpicker select-main" multiple
+													data-live-search="true" disabled
+													data-selected-text-format="count > 0"
+													onchange="onVariantIdsSelect()"></select>
+											</div>
+											<div style="margin-top: -25px; text-align: right;">
+												<a id="clearVariantIdSelection" href="#"
+													onclick="clearVariantIdSelection();"
+													style="display: none; font-size: 18px; margin-left: -20px; position: absolute; font-weight: bold; text-decoration: none;"
+													title="Clear selection">&nbsp;X&nbsp;</a>
+												<button type="button"
+													class="btn btn-default btn-xs glyphicon glyphicon-copy"
+													title="Copy current selection to clipboard"
+													id="copyVariantIds" disabled
+													onclick="copyVariants(); var infoDiv=$('<div class=\'
+													col-xl-6 input-group half-width\' style=""'float:right\'>Copied!
+												
+											</div>
+											'); $('#variantIdsLabel').after(infoDiv);
+											setTimeout(function() {infoDiv.remove();}, 1200);">
+											</button>
+											<button type="button"
+												class="btn btn-default btn-xs glyphicon glyphicon-paste"
+												aria-pressed="false"
+												title="Paste filtered list from clipboard"
+												id="pasteVariantIds" disabled
+												onclick="toggleVariantsPasteBox();"></button>
+											<button type="button"
+												class="btn btn-default btn-xs glyphicon glyphicon-upload"
+												aria-pressed="false"
+												title="Upload file with up to 1M variant IDs"
+												id="uploadVariantIds"
+												onclick="$('#uploadVariantIdsFile').trigger('click');"></button>
+											<input name="file" type="file" id="uploadVariantIdsFile"
+												style="display: none" />
+										</div>
+								</div>
+								<div class="margin-top-md">
+									<label class="custom-label margin-top-md">Investigate
+										genotypes</label>
+									<div style="float: right;">
+										<select class="selectpicker form-control input-sm"
+											data-width="92px" data-style="btn-primary"
+											id="genotypeInvestigationMode"
+											onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
+											data-style="btn-primary" id="genotypeInvestigationMode"
+											onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
+											<option value="0" selected>disabled</option>
+											<option value="1">on 1 group</option>
+										</select>
 									</div>
+								</div>
 								</form>
 							</div>
 						</div>
 					</div>
 
-                    <div class="row" id="discriminationDiv" hidden>
-                        <div class="panel panel-default panel-pink shadowed-panel">
-                            <div class="panel-body">
-                                <div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/>
-                                </div>
-                                <label class="label-checkbox">
-                                    <input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
-                                </label>
-                                <b>Discriminate groups </b>
-                                <span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
-                            </div>
-                        </div>
-                    </div>
+					<div class="row" id="discriminationDiv" hidden>
+						<div class="panel panel-default panel-pink shadowed-panel">
+							<div class="panel-body">
+								<div id="overlapWarning" hidden
+									style="float: right; font-weight: bold; margin-top: 2px; cursor: pointer; cursor: hand; color: black;"
+									title="Some individuals are selected in both groups">
+									Overlap&nbsp;<img align="left" src="images/warning.png"
+										height="15" width="18" />
+								</div>
+								<label class="label-checkbox"> <input type="checkbox"
+									id="discriminate" class="input-checkbox"
+									onchange="checkGroupOverlap();">
+								</label> <b>Discriminate groups </b> <span
+									class="glyphicon glyphicon-question-sign"
+									id="genotypeDiscriminateHelp"
+									style="cursor: pointer; cursor: hand;"
+									" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
-			
+
 			<!-- Variant table panel -->
 			<div class="col-md-9">
 				<div id="serverExportBox" class="panel"></div>
-				<div class="row" style="margin-top:-5px; margin-left:1px; position:absolute; width:180px;">
-					<label for="browsingAndExportingEnabled" class="label-checkbox" style="float:right; margin-top:-1px; width:90px;">&nbsp;Enable browse and export</label>
-					<input type="checkbox" onchange="browsingBoxChanged();" id="browsingAndExportingEnabled" class="input-checkbox" checked="checked" style="float:right; margin-top:15px;">
-					<button class="btn btn-primary btn-sm" type="button" name="search" onclick="sortBy=''; sortDesc=false; searchVariants(0, '0');">Search</button>
+				<div class="row"
+					style="margin-top: -5px; margin-left: 1px; position: absolute; width: 180px;">
+					<label for="browsingAndExportingEnabled" class="label-checkbox"
+						style="float: right; margin-top: -1px; width: 90px;">&nbsp;Enable
+						browse and export</label> <input type="checkbox"
+						onchange="browsingBoxChanged();" id="browsingAndExportingEnabled"
+						class="input-checkbox" checked="checked"
+						style="float: right; margin-top: 15px;">
+					<button class="btn btn-primary btn-sm" type="button" name="search"
+						onclick="sortBy=''; sortDesc=false; searchVariants(0, '0');">Search</button>
 				</div>
 				<div id="rightSidePanel">
 					<div class="row text-center" id="navigationPanel">
 						<div id="navigationDiv">
-							<div style="float:left;"><button class="btn btn-primary btn-sm" type="button" id="prev" onclick="iteratePages(false);"> &lt; </button></div>					
-							<div style="float:right;"><button class="col btn btn-primary btn-sm" type="button" id="next" onclick="iteratePages(true);"> &gt; </button></div>
+							<div style="float: left;">
+								<button class="btn btn-primary btn-sm" type="button" id="prev"
+									onclick="iteratePages(false);">&lt;</button>
+							</div>
+							<div style="float: right;">
+								<button class="col btn btn-primary btn-sm" type="button"
+									id="next" onclick="iteratePages(true);">&gt;</button>
+							</div>
 							<div id="currentPage"></div>
 						</div>
-						<div style="float:right; margin-top:-5px; width:340px;" class="row">
-							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
-									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
+						<div style="float: right; margin-top: -5px; width: 340px;"
+							class="row">
+							<div class="col-md-5" style='text-align: right;'>
+								<button style="padding: 2px;" title="Visualization charts"
+									id="showCharts" class="btn btn-default" type="button"
+									onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
+									<img title="Visualization charts" src="images/density.webp"
+										height="25" width="25" />
 								</button>
-								
+
 								<!-- IGV.js browser button -->
-								<button style="padding:2px;" title="IGV.js" id="showIGV" class="btn btn-default" type="button" onclick="igvOpenDialog();">
-									<img title="IGV.js online genome browser" src="images/igvjs.png" height="25" width="25" />
+								<button style="padding: 2px;" title="IGV.js" id="showIGV"
+									class="btn btn-default" type="button"
+									onclick="igvOpenDialog();">
+									<img title="IGV.js online genome browser"
+										src="images/igvjs.png" height="25" width="25" />
 								</button>
-								
-								<div class="row" id="exportPanel" style="position:absolute; margin-left:-220px; width:350px; margin-top:2px; z-index:1; display:none;">
+
+								<div class="row" id="exportPanel"
+									style="position: absolute; margin-left: -220px; width: 350px; margin-top: 2px; z-index: 1; display: none;">
 									<div class="panel panel-default panel-grey shadowed-panel">
 										<div class="panel-body panel-center text-center">
 											<div class="form-group text-nowrap">
-												<label for="exportFormat">Export format</label>
-												<select class="selectpicker" data-actions-box="true" data-width="50%" id="exportFormat"></select>
-												<div id="formatInfo" style="white-space: normal;" align='center'>
+												<label for="exportFormat">Export format</label> <select
+													class="selectpicker" data-actions-box="true"
+													data-width="50%" id="exportFormat"></select>
+												<div id="formatInfo" style="white-space: normal;"
+													align='center'>
 													<div id="formatDesc"></div>
 												</div>
-												<span title="Click to toggle information on selected format" class="glyphicon glyphicon-question-sign hand-cursor" id="formatHelp" onclick="$('#formatInfo').toggle();"></span>
+												<span title="Click to toggle information on selected format"
+													class="glyphicon glyphicon-question-sign hand-cursor"
+													id="formatHelp" onclick="$('#formatInfo').toggle();"></span>
 											</div>
 											<div class="form-group text-nowrap row margin-top-md">
-												<div class="col-md-6" style="padding-right:10px;">
+												<div class="col-md-6" style="padding-right: 10px;">
 													<div class="individualRelated">
-														<label for="exportedIndividuals">Exported individuals</label><br/>
-														<select class="selectpicker" id="exportedIndividuals" onchange="toggleIndividualSelector($(this).parent(), 'choose' == $(this).selectpicker('val'));">
-															<option id="exportedIndividualsAll" value="">All of them</option>
+														<label for="exportedIndividuals">Exported
+															individuals</label><br /> <select class="selectpicker"
+															id="exportedIndividuals"
+															onchange="toggleIndividualSelector($(this).parent(), 'choose' == $(this).selectpicker('val'));">
+															<option id="exportedIndividualsAll" value="">All
+																of them</option>
 														</select>
 													</div>
 												</div>
-												<div class="col-md-6" style="text-align:center; padding-left:10px;">
+												<div class="col-md-6"
+													style="text-align: center; padding-left: 10px;">
 													<div class="individualRelated">
-														<label for="exportedIndividualMetadataCheckBox">
-															<input type="checkbox" class="input-checkbox" id="exportedIndividualMetadataCheckBox" onchange="$('#exportedIndividualMetadata').prop('disabled', !$(this).prop('checked'));" />
+														<label for="exportedIndividualMetadataCheckBox"> <input
+															type="checkbox" class="input-checkbox"
+															id="exportedIndividualMetadataCheckBox"
+															onchange="$('#exportedIndividualMetadata').prop('disabled', !$(this).prop('checked'));" />
 															Export metadata
-														</label>&nbsp;<br/>
-														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
+														</label>&nbsp;<br /> <select disabled
+															id="exportedIndividualMetadata" multiple
+															style="width: 100%;" size="12"></select>
 													</div>
-													<div style="width:100%; text-align:center;">
-														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
+													<div style="width: 100%; text-align: center;">
+														<label class="margin-top margin-bottom label-checkbox"
+															style="margin-left: -10px;"> <input
+															type="checkbox"
+															onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');"
+															id="keepExportOnServ"
+															title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools."
+															class="input-checkbox"> Keep files on
+															server&nbsp;&nbsp;
 														</label>
 														<div>
-															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
+															<button id="export-btn" class="btn btn-primary btn-sm"
+																onclick="exportData();">Export</button>
 														</div>
 													</div>
 												</div>
@@ -2317,24 +2446,42 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 								</div>
-								<a class="btn icon-btn btn-default" id="exportBoxToggleButton" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px 4px 10px;" href="#" onclick="toggleExportPanel();" title="Export selection">
-									<span class="glyphicon btn-glyphicon glyphicon-save img-circle text-muted"></span>
+								<a class="btn icon-btn btn-default" id="exportBoxToggleButton"
+									data-toggle="button" class-toggle="btn-inverse"
+									style="padding: 5px 10px 4px 10px;" href="#"
+									onclick="toggleExportPanel();" title="Export selection"> <span
+									class="glyphicon btn-glyphicon glyphicon-save img-circle text-muted"></span>
 								</a>
 							</div>
-							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 12px;">
-								External tools
-								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
-								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="(DEPRECATED in favor of using the embedded IGV.js) You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
-								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
+							<div
+								class="col-md-7 panel panel-default panel-grey shadowed-panel"
+								style="padding: 3px 12px;">
+								External tools <a href="#"
+									onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img
+									style="margin-left: 8px; cursor: pointer; cursor: hand;"
+									title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database"
+									src="images/icon_genome_browser.gif" height="20" width="20" /></a>
+								<img id="igvTooltip"
+									style="margin-left: 8px; cursor: pointer; cursor: hand;"
+									src="images/logo-igv.jpg" height="20" width="20"
+									title="(DEPRECATED in favor of using the embedded IGV.js) You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV"
+									onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
+								<a href="#"
+									onclick='$("div#outputToolConfigDiv").modal("show");'><img
+									style="margin-left: 8px; cursor: pointer; cursor: hand;"
+									title="Click to configure online output tools"
+									src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>
 					</div>
-					<div class="panel panel-default panel-grey shadowed-panel" id="countResultPanel">
+					<div class="panel panel-default panel-grey shadowed-panel"
+						id="countResultPanel">
 						<div id="countResultDiv" class="padding-bottom text-center">
 							<h4 class="textResult margin-top-md" id="result"></h4>
 						</div>
 					</div>
-					<div class="panel panel-default panel-grey shadowed-panel" id="resultDisplayPanel" style="margin-top:5px;">
+					<div class="panel panel-default panel-grey shadowed-panel"
+						id="resultDisplayPanel" style="margin-top: 5px;">
 						<div class="auto-overflow table-div" id="scrollTable">
 							<table class="table table-hover" id="variantTable"></table>
 						</div>
@@ -2342,13 +2489,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 			</div>
 		</div>
-		
+
 		<!-- IGV visualizer panel
 		<div id="viewerPanel" class="row" hidden>
 			<div id="igvContainer" class="col">
 			</div>
 		</div> -->
-	</div>
+		</div>
 	</main>
 	<!-- modal which display process progress -->
 	<div class="modal" tabindex="-1" id="progress" aria-hidden="true">
@@ -2361,10 +2508,22 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="c3"></div>
 						<div class="c4"></div>
 					</div>
-					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
-					<br/>
-					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<h3 class="loading-message">
+						<span id="progressText" class="loading-message">Please
+							wait...</span><span id="ddlWarning" style="display: none;"><br />
+							<br />Output file is being generated and will not be valid
+							before this message disappears</span>
+					</h3>
+					<br />
+					<button style="display: inline; margin-right: 10px;"
+						class="btn btn-danger btn-sm" type="button" name="abort"
+						id='abort'
+						onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
+					<button style="display: inline; margin-left: 10px;"
+						id="asyncProgressButton" class="btn btn-info btn-sm" type="button"
+						onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));"
+						title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open
+						async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -2374,38 +2533,45 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		<div class="modal-dialog modal-lg" role="document">
 			<div class="modal-content">
 				<div id="genomeBrowserPanelHeader"></div>
-				<iframe id="genomeBrowserFrame" style="width:100%;"></iframe>
+				<iframe id="genomeBrowserFrame" style="width: 100%;"></iframe>
 			</div>
 		</div>
 	</div>
 	<!-- Flapjack-Bytes modal -->
 	<div class="modal" id="fjBytesPanel" role="dialog">
 		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content" style="overflow:hidden;">
+			<div class="modal-content" style="overflow: hidden;">
 				<div id="fjBytesPanelHeader"></div>
-				<iframe id="fjBytesFrame" style="width:100%;"></iframe>
+				<iframe id="fjBytesFrame" style="width: 100%;"></iframe>
 			</div>
 		</div>
 	</div>
 	<!-- variant detail modal -->
-	<div class="modal fade" role="dialog" id="variantDetailPanel" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="variantDetailPanel"
+		aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div style="float: right; margin: 10px;">
-					<a class="btn btn-sm icon-btn btn-default active" id="toggleFunctionalAnn" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#functionalAnn').toggle(100);">
-						View functional annotations
-					</a>
-					<a class="btn btn-sm icon-btn btn-default active" id="toggleVariantMetadata" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#variantMetadata').toggle(100);">
-						View variant metadata
-					</a>
-					Run:
+					<a class="btn btn-sm icon-btn btn-default active"
+						id="toggleFunctionalAnn" data-toggle="button"
+						class-toggle="btn-inverse"
+						style="padding: 5px 10px; margin-right: 30px;" href="#"
+						onclick="$('#functionalAnn').toggle(100);"> View functional
+						annotations </a> <a class="btn btn-sm icon-btn btn-default active"
+						id="toggleVariantMetadata" data-toggle="button"
+						class-toggle="btn-inverse"
+						style="padding: 5px 10px; margin-right: 30px;" href="#"
+						onclick="$('#variantMetadata').toggle(100);"> View variant
+						metadata </a> Run:
 					<div class="btn-group" data-toggle="buttons" id="runButtons"></div>
 				</div>
 				<div class="modal-header">
-					<h4 class="modal-title" id="variantDetailsLabel">Variant details</h4>
+					<h4 class="modal-title" id="variantDetailsLabel">Variant
+						details</h4>
 				</div>
 				<div class="modal-body">
-					<div class="bg-dark text-white padding d-flex flex-row justify-between">
+					<div
+						class="bg-dark text-white padding d-flex flex-row justify-between">
 						<div class="d-flex flex-column">
 							<div class="">
 								<p id="varId" class="text-bold"></p>
@@ -2427,7 +2593,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<p id="textKnownAlleles" class="text-bold"></p>
 							</div>
 							<div>
-								<div id="varKnownAlleles" class="text-bold d-flex d-row" style="gap:5px"></div>
+								<div id="varKnownAlleles" class="text-bold d-flex d-row"
+									style="gap: 5px"></div>
 							</div>
 						</div>
 					</div>
@@ -2439,10 +2606,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<div class="row margin-bottom text-center">
 						<div class="col-md-2"></div>
 						<div class="col-md-4">
-							<label class="label-checkbox" id="displayAllGtOption">display all genotypes <input type="checkbox" id="displayAllGt" class="input-checkbox" /></label>
+							<label class="label-checkbox" id="displayAllGtOption">display
+								all genotypes <input type="checkbox" id="displayAllGt"
+								class="input-checkbox" />
+							</label>
 						</div>
 						<div class="col-md-4">
-							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
+							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+								treated as missing data</label>
 						</div>
 					</div>
 					<div class="row">
@@ -2463,7 +2634,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays project information -->
-	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">
+	<div class="modal fade" role="dialog" id="projectInfo"
+		aria-hidden="true" style="margin-top: 200px;">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header" id="projectInfoContainer"></div>
@@ -2471,68 +2643,100 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays individual selection interface -->
-	<div class="modal fade" role="dialog" id="individualFiltering" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="individualFiltering"
+		aria-hidden="true">
 		<div class="modal-dialog modal-lg">
-			<div class="modal-content" style="padding:10px; min-height:90vh;">
-				<div class="bold" style='float:right;'>
-					Click to set group <span id="filteredGroupNumber"></span> to currently selected <span id="filteredIndCount"></span> individuals
-					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
+			<div class="modal-content" style="padding: 10px; min-height: 90vh;">
+				<div class="bold" style='float: right;'>
+					Click to set group <span id="filteredGroupNumber"></span> to
+					currently selected <span id="filteredIndCount"></span> individuals
+					<button class="btn btn-primary btn-sm"
+						onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
 				</div>
 				<div class="modal-header bold">
-					Please apply filters to select individuals
-					<input class="btn btn-primary btn-sm" style="margin-left:150px;" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
-					<label style="margin-left:20px;">Always reset filters before using this dialog <input type="checkbox" id="resetMetadataFiltersOnDialogShown" checked></label>
+					Please apply filters to select individuals <input
+						class="btn btn-primary btn-sm" style="margin-left: 150px;"
+						type="button" value="Reset filters"
+						onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));" />
+					<label style="margin-left: 20px;">Always reset filters
+						before using this dialog <input type="checkbox"
+						id="resetMetadataFiltersOnDialogShown" checked>
+					</label>
 				</div>
-				<table id="individualFilteringTable" style="width:98%;"></table>
+				<table id="individualFilteringTable" style="width: 98%;"></table>
 			</div>
 		</div>
 	</div>
 	<!-- modal which displays a box for configuring online output tools -->
 	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
-		<div class="modal-content" style="padding:10px; text-align:center;">
-			<div style="font-weight:bold; padding:10px; background-color:#eeeeee; border-top-left-radius:6px; border-top-right-radius:6px;">Configure this to be able to push exported data into external online tools<br />
-			(feature available when the 'Keep files on server' box is ticked)<br />
+			<div class="modal-content" style="padding: 10px; text-align: center;">
+				<div
+					style="font-weight: bold; padding: 10px; background-color: #eeeeee; border-top-left-radius: 6px; border-top-right-radius: 6px;">
+					Configure this to be able to push exported data into external
+					online tools<br /> (feature available when the 'Keep files on
+					server' box is ticked)<br />
+				</div>
+				<hr />
+				<span class='bold'>Favourite <a
+					href="https://galaxyproject.org/" target="_blank" border="0"
+					style="background-color: #333333; color: white; border-radius: 3px; padding: 3px;"><img
+						alt="southgreen" height="15" src="images/logo-galaxy.png" />
+						Galaxy</a> instance URL
+				</span> <input type="text"
+					style="font-size: 11px; width: 230px; margin-bottom: 5px;"
+					placeholder="https://usegalaxy.org/" id="galaxyInstanceURL"
+					onfocus="$(this).prop('previousVal', $(this).val());"
+					onkeyup="checkIfOuputToolConfigChanged();" /> <br /> (You will
+				need to provide an API key to be able to push exported files there)
+				<hr />
+				<p class='bold'>
+					Configuring external tool <select id="onlineOutputTools"
+						onchange="configureSelectedExternalTool();"></select>
+				</p>
+				Supported formats (CSV) <input type="text"
+					onfocus="$(this).prop('previousVal', $(this).val());"
+					onkeyup="checkIfOuputToolConfigChanged();"
+					style="font-size: 11px; width: 260px; margin-bottom: 5px;"
+					id="outputToolFormats"
+					placeholder="Refer to export box contents (empty for all formats)" />
+				<br />Online tool URL (any * will be replaced with exported file
+				location)<br /> <input type="text"
+					style="font-size: 11px; width: 400px; margin-bottom: 5px;"
+					onfocus="$(this).prop('previousVal', $(this).val());"
+					onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL"
+					placeholder="http://some-tool.org/import?fileUrl=*" />
+				<p>
+					<input type="button" style="float: right; margin: 10px;"
+						class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig"
+						value="Apply" onclick='applyOutputToolConfig();' /> <br /> (Set
+					URL blank to revert to default)
+				</p>
 			</div>
-			<hr />
-			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
-			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
-			<br/>
-			(You will need to provide an API key to be able to push exported files there)
-			<hr />
-			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
-			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
-			<br />Online tool URL (any * will be replaced with exported file location)<br />
-			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
-			<p>
-				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
-				<br/>
-				(Set URL blank to revert to default)
-			</p>
-		</div>
 		</div>
 	</div>
 	<!-- modal which displays a box for configuring a genome browser -->
 	<div id="genomeBrowserConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">
-		<div class="modal-content" style="padding:10px; text-align:center;">
-			<b>Please specify a URL for the genome browser you want to use</b> <br />
-			<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
-			<input type="text" style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
-			<p>(Clear box to revert to default)</p>
-			<input type="button" class="btn btn-sm btn-primary" value="Apply" onclick='applyGenomeBrowserURL();' />
-		</div>
+			<div class="modal-content" style="padding: 10px; text-align: center;">
+				<b>Please specify a URL for the genome browser you want to use</b> <br />
+				<i>indicate * wherever variant location (chr:start..end) needs
+					to appear</i> <br /> <input type="text"
+					style="font-size: 11px; width: 350px;" id="genomeBrowserURL">
+				<p>(Clear box to revert to default)</p>
+				<input type="button" class="btn btn-sm btn-primary" value="Apply"
+					onclick='applyGenomeBrowserURL();' />
+			</div>
 		</div>
 	</div>
-	
+
 	<!-- modal which displays a box for managing saved queries -->
 	<div id="queryManager" class="modal fade" role="dialog">
 		<div class="modal-dialog modal-medium" role="document">
-		<div id="loadedQueries" class="modal-content" style="padding:10px; text-align:center;">
-		<b style="font-size:18px">Your bookmarked queries</b>
-		<br>
-		<br>
-		</div>
+			<div id="loadedQueries" class="modal-content"
+				style="padding: 10px; text-align: center;">
+				<b style="font-size: 18px">Your bookmarked queries</b> <br> <br>
+			</div>
 		</div>
 	</div>
 
@@ -2543,139 +2747,207 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				<!-- IGV menu bar -->
 				<div id="igvNav" class="navbar navbar-default">
 					<div class="navbar-header">
-						<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#igvMenu" aria-expanded="false">
-							<span class="sr-only">Toggle navigation</span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
+						<button type="button" class="navbar-toggle collapsed"
+							data-toggle="collapse" data-target="#igvMenu"
+							aria-expanded="false">
+							<span class="sr-only">Toggle navigation</span> <span
+								class="icon-bar"></span> <span class="icon-bar"></span> <span
+								class="icon-bar"></span>
 						</button>
 					</div>
 					<div class="collapse navbar-collapse" id="igvMenu">
 						<ul class="nav navbar-nav">
-							<li class="dropdown">
-								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-									Load reference genome <span class="caret"></span>
-								</a>
-								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
-									<li><a href="#" data-toggle="modal" data-target="#igvGenomeFileModal">Load from file</a></li>
-									<li><a href="#" data-toggle="modal" data-target="#igvGenomeURLModal">Load from URL</a></li>
-									<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
-								</ul>
-							</li>
-							<li id="igvTracksDropdown" class="dropdown disabled">
-								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+							<li class="dropdown"><a href="#" class="dropdown-toggle"
+								data-toggle="dropdown" role="button" aria-haspopup="true"
+								aria-expanded="false"> Load reference genome <span
+									class="caret"></span>
+							</a>
+								<ul class="dropdown-menu" id="igvGenomeMenu"
+									style="max-height: 75vh; overflow-y: auto">
+									<li><a href="#" data-toggle="modal"
+										data-target="#igvGenomeFileModal">Load from file</a></li>
+									<li><a href="#" data-toggle="modal"
+										data-target="#igvGenomeURLModal">Load from URL</a></li>
+									<li role="separator" class="divider"
+										id="igvDefaultGenomesDivider"></li>
+								</ul></li>
+							<li id="igvTracksDropdown" class="dropdown disabled"><a
+								href="#" class="dropdown-toggle" data-toggle="dropdown"
+								role="button" aria-haspopup="true" aria-expanded="false">
 									Load track <span class="caret"></span>
-								</a>
+							</a>
 								<ul hidden="true">
-									<li><a href="#" data-toggle="modal" data-target="#igvTrackFileModal">Load from file</a></li>
-									<li><a href="#" data-toggle="modal" data-target="#igvTrackURLModal">Load from URL</a></li>
-								</ul>
-							</li>
-							<li class="dropdown" id="igvGroupsMenu" hidden="true">
-								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+									<li><a href="#" data-toggle="modal"
+										data-target="#igvTrackFileModal">Load from file</a></li>
+									<li><a href="#" data-toggle="modal"
+										data-target="#igvTrackURLModal">Load from URL</a></li>
+								</ul></li>
+							<li class="dropdown" id="igvGroupsMenu" hidden="true"><a
+								href="#" class="dropdown-toggle" data-toggle="dropdown"
+								role="button" aria-haspopup="true" aria-expanded="false">
 									Groups <span class="caret"></span>
-								</a>
-								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
-							</li>
+							</a>
+								<ul class="dropdown-menu"
+									style="max-height: 75vh; overflow-y: auto"></ul></li>
 						</ul>
 					</div>
 				</div>
-				
+
 				<!-- IGV browser container -->
 				<div id="igvContainer"></div>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- IGV menu submodals -->
-	
+
 	<!-- Load genome by URL -->
-	<div id="igvGenomeURLModal" class="modal fade" role="dialog" aria-hidden=true>
+	<div id="igvGenomeURLModal" class="modal fade" role="dialog"
+		aria-hidden=true>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from URL</h4></div>
+					<div class="modal-title">
+						<button type="button" class="close" data-dismiss="modal"
+							style="float: right;">x</button>
+						<h4>Load genome from URL</h4>
+					</div>
 				</div>
-				
+
 				<div class="modal-body">
-					<table style="width:100%;">
-						<tr><td>Genome file URL</td><td><input type="url" id="igvGenomeURLInput" style="width:100%;"/></td></tr>
-						<tr><td>Index file URL (recommended)</td><td><input type="url" id="igvGenomeIndexURLInput" style="width:100%;" /></td></tr>
+					<table style="width: 100%;">
+						<tr>
+							<td>Genome file URL</td>
+							<td><input type="url" id="igvGenomeURLInput"
+								style="width: 100%;" /></td>
+						</tr>
+						<tr>
+							<td>Index file URL (recommended)</td>
+							<td><input type="url" id="igvGenomeIndexURLInput"
+								style="width: 100%;" /></td>
+						</tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromURL()">OK</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary"
+						data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary"
+						data-dismiss="modal" onclick="igvLoadGenomeFromURL()">OK</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load genome from local file -->
-	<div id="igvGenomeFileModal" class="modal fade" role="dialog" aria-hidden=true>
+	<div id="igvGenomeFileModal" class="modal fade" role="dialog"
+		aria-hidden=true>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from local file</h4></div>
+					<div class="modal-title">
+						<button type="button" class="close" data-dismiss="modal"
+							style="float: right;">x</button>
+						<h4>Load genome from local file</h4>
+					</div>
 				</div>
-				
+
 				<div class="modal-body">
-					<table style="width:100%;">
-						<tr><td>Genome file</td><td><input type="file" id="igvGenomeFileInput" style="width:100%;"/></td></tr>
-						<tr><td>Index file (recommended)</td><td><input type="file" id="igvGenomeIndexFileInput" style="width:100%;" /></td></tr>
+					<table style="width: 100%;">
+						<tr>
+							<td>Genome file</td>
+							<td><input type="file" id="igvGenomeFileInput"
+								style="width: 100%;" /></td>
+						</tr>
+						<tr>
+							<td>Index file (recommended)</td>
+							<td><input type="file" id="igvGenomeIndexFileInput"
+								style="width: 100%;" /></td>
+						</tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadGenomeFromFile()">OK</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary"
+						data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary"
+						data-dismiss="modal" onclick="igvLoadGenomeFromFile()">OK</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load track by URL -->
-	<div id="igvTrackURLModal" class="modal fade" role="dialog" aria-hidden=true>
+	<div id="igvTrackURLModal" class="modal fade" role="dialog"
+		aria-hidden=true>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load track from URL</h4></div>
+					<div class="modal-title">
+						<button type="button" class="close" data-dismiss="modal"
+							style="float: right;">x</button>
+						<h4>Load track from URL</h4>
+					</div>
 				</div>
-				
+
 				<div class="modal-body">
-					<table style="width:100%;">
-						<tr><td>Track file URL</td><td><input type="url" id="igvTrackURLInput" style="width:100%;"/></td></tr>
-						<tr><td>Index file URL (optional)</td><td><input type="url" id="igvTrackIndexURLInput" style="width:100%;" /></td></tr>
+					<table style="width: 100%;">
+						<tr>
+							<td>Track file URL</td>
+							<td><input type="url" id="igvTrackURLInput"
+								style="width: 100%;" /></td>
+						</tr>
+						<tr>
+							<td>Index file URL (optional)</td>
+							<td><input type="url" id="igvTrackIndexURLInput"
+								style="width: 100%;" /></td>
+						</tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromURL()">OK</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary"
+						data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary"
+						data-dismiss="modal" onclick="igvLoadTrackFromURL()">OK</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Load genome from local file -->
-	<div id="igvTrackFileModal" class="modal fade" role="dialog" aria-hidden=true>
+	<div id="igvTrackFileModal" class="modal fade" role="dialog"
+		aria-hidden=true>
 		<div class="modal-md modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<div class="modal-title"><button type="button" class="close" data-dismiss="modal" style="float:right;">x</button><h4>Load genome from local file</h4></div>
+					<div class="modal-title">
+						<button type="button" class="close" data-dismiss="modal"
+							style="float: right;">x</button>
+						<h4>Load genome from local file</h4>
+					</div>
 				</div>
-				
+
 				<div class="modal-body">
-					<table style="width:100%;">
-						<tr><td>Track file</td><td><input type="file" id="igvTrackFileInput" style="width:100%;"/></td></tr>
-						<tr><td>Index file (optional)</td><td><input type="file" id="igvTrackIndexFileInput" style="width:100%;" /></td></tr>
+					<table style="width: 100%;">
+						<tr>
+							<td>Track file</td>
+							<td><input type="file" id="igvTrackFileInput"
+								style="width: 100%;" /></td>
+						</tr>
+						<tr>
+							<td>Index file (optional)</td>
+							<td><input type="file" id="igvTrackIndexFileInput"
+								style="width: 100%;" /></td>
+						</tr>
 					</table>
 				</div>
-	
+
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" onclick="igvLoadTrackFromFile()">OK</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary"
+						data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-secondary"
+						data-dismiss="modal" onclick="igvLoadTrackFromFile()">OK</button>
 				</div>
 			</div>
 		</div>
