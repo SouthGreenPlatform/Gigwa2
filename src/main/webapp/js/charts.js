@@ -280,12 +280,14 @@ function createCustomSelect(sequences) {
     var inputs = selectOptions.querySelectorAll('input');
     inputs.forEach(function (input) {
         input.addEventListener('change', function () {
-            const loadDiv =  `<div id="densityLoadProgress_${input.id}" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
-            const loadDivDP =  `<div id="densityLoadProgress_${input.id}_DP" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
-            const loadDivGQ =  `<div id="densityLoadProgress_${input.id}_GQ" style="display: inline; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>`;
-            $(loadDiv).insertBefore('#exportButton');
-            $(loadDivDP).insertBefore('#exportButton');
-            $(loadDivGQ).insertBefore('#exportButton');
+            if (!document.getElementById("densityLoadProgressContainer")) {
+                const loadDiv = `<div id="densityLoadProgressContainer" class="panel panel-grey panel-default container-fluid" style="font-weight:bold; height: 60px; overflow: auto; text-align: center; width: 80%"></div>`;
+                const label = document.createElement("p");
+                label.id = "densityLoadProgressContainerText";
+                label.innerText = "Click on Show button to load Graphs!";
+                $(loadDiv).insertAfter('#additionalCharts');
+                document.getElementById('densityLoadProgressContainer').append(label);
+            }
             var selectedCount = selectOptions.querySelectorAll('input:checked').length;
             if (selectedCount !== 0) {
                 document.getElementById('showChartButton').removeAttribute('disabled');
@@ -603,6 +605,7 @@ async function displayAllChart(minPos, maxPos, index) {
             if (index !== undefined) {
                 i = index;
             }
+            startProcess(i, null);
             displayChart(minPos, maxPos, i, index !== undefined)
                 .then((result) => {
                     for (let seriesIndex in result.chartInfo.series) {
@@ -641,7 +644,6 @@ async function displayAllChart(minPos, maxPos, index) {
                     if (index !== undefined) {
                         return
                     }
-                    startProcess(i, null);
                     processChart(i + 1); // Appeler récursivement pour le prochain graphique
                 });
         }
@@ -700,6 +702,10 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
         if (chartInfo.buildRequestPayload !== undefined)
             dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
         if (dataPayLoad === null) return;
+        const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}"></div>`;
+        $(`div#densityLoadProgressContainer`).append($(loadDiv));
+
+        console.log(`startProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`);
 
         $.ajax({
             url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
@@ -789,7 +795,6 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
                 else {
                     chart.push(highchart);
                 }
-
                 resolve({jsonResult, chartInfo, i, keys, intervalSize});
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -802,6 +807,7 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
 function addAllMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     //var displayedSequences = getSelectedItems();
     for (var i = 0; i < chart.length; i++) {
+        startProcess(i, fieldName);
         addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i)
     }
 }
@@ -820,6 +826,10 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     dataPayLoad["vcfField"] = fieldName;
     dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
 
+    const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}"></div>`;
+    $(`div#densityLoadProgressContainer`).append($(loadDiv));
+
+    console.log(`startProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
     $.ajax({
         url: selectionVCFPlotDataURL + "/" + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "POST",
@@ -861,7 +871,6 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
                 data: jsonValues
             });
             $('.showHideSeriesBox').prop('disabled', false);
-            startProcess(i, fieldName);
             //finishProcess(i);
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -877,6 +886,8 @@ function startProcess(i, fieldName) {
     if (progressTimeoutId != null)
         clearTimeout(progressTimeoutId);
     dataBeingLoaded = true;
+
+    document.getElementById("densityLoadProgressContainerText").innerText = "";
     
     $("#chartTypeList").prop("disabled", true);
     //$("#chartSequenceList").prop("disabled", true);
@@ -889,20 +900,23 @@ function startProcess(i, fieldName) {
 
 function finishProcess(i, fieldName) {
     if (dataBeingLoaded) {
-        dataBeingLoaded = false;
         const field = fieldName !== null ? "_" + fieldName : "";
-        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).html("");
-        
-        $("#chartTypeList").prop("disabled", false);
-        $("#chartSequenceList").prop("disabled", false);
-        $("#chartVariantTypeList").prop("disabled", false);
-        
-        if (progressTimeoutId != null) {
-            clearTimeout(progressTimeoutId);
-            progressTimeoutId = null;
+        console.log(`finishProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
+        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).remove();
+        if (document.getElementById("densityLoadProgressContainer").children.length === 1) {
+            document.getElementById("densityLoadProgressContainerText").innerText = "All graphs were correctly loaded";
+            dataBeingLoaded = false;
+            $("#chartTypeList").prop("disabled", false);
+            $("#chartSequenceList").prop("disabled", false);
+            $("#chartVariantTypeList").prop("disabled", false);
+
+            if (progressTimeoutId != null) {
+                clearTimeout(progressTimeoutId);
+                progressTimeoutId = null;
+            }
+
+            $("#showChartButton").addClass("btn-success").removeClass("btn-danger").html("Show");
         }
-        
-        $("#showChartButton").addClass("btn-success").removeClass("btn-danger").html("Show");
     }
 }
 
@@ -945,6 +959,7 @@ function checkChartLoadingProgress(i, fieldName) {
 				if (emptyResponseCountsByProcess[token] > 10) {
 					console.log("Giving up requesting progress for process " + token);
 					emptyResponseCountsByProcess[token] = null;
+                    finishProcess(i, fieldName);
 				}
 				else
                 	setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
@@ -968,8 +983,10 @@ function checkChartLoadingProgress(i, fieldName) {
                     $('#density').modal('hide');
                     emptyResponseCountsByProcess[token] = null;
                 } else {
-					if (jsonResult != null)
-                        $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).html(jsonResult['progressDescription']);
+					if (jsonResult != null) {
+                            console.log(`Modification densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
+                            document.getElementById(`densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
+                    }
                     setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
                 }
             }
