@@ -446,8 +446,12 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
     right:8px;
 }
 
-div#VariantIds .bootstrap-select.btn-group .dropdown-menu {
-	min-width:150px;
+div#VariantIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
+}
+
+div#GeneIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
 }
 
 .bootstrap-select div.status {

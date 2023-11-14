@@ -145,7 +145,7 @@
 	    	if (i > 0)
 				$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' groups</option>');
     	}
-		
+
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
@@ -344,21 +344,21 @@
 				resizeDialogs();
 		});
                 
-                $("#uploadVariantIdsFile").click(function(){
-                    $(this).val("");
-                });
+        $("#uploadVariantIdsFile").click(function(){
+            $(this).val("");
+        });
 
-                $("#uploadVariantIdsFile").change(function(){
-                    if ($(this).val() !== "") {
-                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
-                        fileReader = new FileReader();
-                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
-                        fileReader.onload = function(progressEvent) {
-                                onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
-                        };
-                        fileReader.readAsText(selectedFile, "UTF-8");                       
-                    }
-                });
+        $("#uploadVariantIdsFile").change(function(){
+            if ($(this).val() !== "") {
+                var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                fileReader = new FileReader();
+                var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                fileReader.onload = function(progressEvent) {
+                	onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                };
+                fileReader.readAsText(selectedFile, "UTF-8");                       
+            }
+        });
 	});
 	
 	var onbeforeunloadCalled = false;
@@ -735,11 +735,11 @@
 					}
 					$('#variantEffects').html(option).selectpicker('refresh');
 					$('#varEffGrp').show();
-					$('#genesGrp').show();
+					$('#GeneIds').show();
 					isAnnotated = true;
 				} else {
 					isAnnotated = false;
-					$('#genesGrp').hide();
+					$('#GeneIds').hide();
 					$('#varEffGrp').hide();
 				}
 			},
@@ -971,11 +971,120 @@
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
         $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
         
+   		$('#VariantIds button.dropdown-toggle').on('click', function() {
+   			if ($('#VariantIds ul li.selected').length == 0)
+   				$('#VariantIds ul li').remove();
+   			else
+				$('#VariantIds ul li:gt(0):not(.selected)').remove();
+   		});
+        
         if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
             inputObj.css('width', "calc(100% - 24px)");               
             //when clicking on the button, selected IDs and search results are cleared
-            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'><button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button></a>");
+        }
+    }
+    
+    function loadGeneIds() {
+        var options = {
+                ajax:{
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENES_LOOKUP%>" />',
+                    type: "GET",
+                    headers: {
+                            "Authorization": "Bearer " + token
+                    },
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    data: {
+                        projectId: getProjectId(),
+                        q: '{{{q}}}'
+                    },
+                    success: function(jsonResult) {
+                        return jsonResult;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                },
+                cache : false,
+                preserveSelectedPosition : "before",
+                preserveSelected: true,
+                log: 2 /*warn*/,
+                locale: {
+                    statusInitialized: "Start typing a query",
+                    emptyTitle: "Input Names here",
+                    statusTooShort: "Please type more"
+                },
+                minLength: 2,
+                clearOnEmpty: true,
+                preprocessData: function (data) {
+                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                    var asp = this;
+                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                        return;
+                    }
+                    
+                    var array = [];
+                    for (i=0; i<data.length; i++) {
+                        array.push($.extend(true, data[i], {
+                            value: data[i]
+                        }));
+                    }
+                    return array;
+                }
+            };
+        
+        $('#GeneIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
+        if ($('#geneIdsSelect').data('AjaxBootstrapSelect') != null) {
+//         	console.log("reusing existing 1");
+// 	        $('#geneIdsSelect').data('AjaxBootstrapSelect').options = options;
+// 	        console.log("reusing existing 2");
+// // 	        $('#geneIdsSelect').selectpicker('destroy');
+// 			$('#geneIdsSelect').trigger('change')
+	        $('#geneIdsSelect').selectpicker('destroy');
+// 	        $('#geneIdsSelect').removeData('AjaxBootstrapSelect');
+// 	        console.log("reusing existing 3");
+        }
+//         else {
+//         	console.log("creating new 1");
+            $('#geneIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+//         	console.log("creating new 2");
+            $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);       	
+//         	console.log("creating new 3");
+//             $('#geneIdsSelect').trigger('change');
+            
+//         	console.log("creating new 4");
+//         }
+//         console.log("creating new 5");
+        $('#geneIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
+        console.log($('#geneIdsSelect').data('AjaxBootstrapSelect').options);
+        
+        
+//         $('#GeneIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
+//         $('#geneIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+//         $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);
+//         $('#geneIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+        
+        
+   		$('#GeneIds button.dropdown-toggle').on('click', function() {
+   			if ($('#GeneIds ul li.selected').length == 0)
+   				$('#GeneIds ul li').remove();
+   			else
+				$('#GeneIds ul li:gt(0):not(.selected)').remove();
+   		});
+        
+        if ($('#GeneIds').find('div.bs-searchbox a').length === 0) {  
+            let inputObj = $('#GeneIds').find('div.bs-searchbox input');
+            inputObj.css('width', "calc(100% - 24px)");
+            
+            let bsSearchboxDiv = $('#GeneIds').find('div.bs-searchbox');
+            bsSearchboxDiv.css('display', 'flex');
+            bsSearchboxDiv.css('flex-direction', 'row-reverse');
+            
+            //when clicking on the button, selected IDs and search results are cleared
+            inputObj.before("<a href=\"#\" onclick=\"clearGeneIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'><button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button></a>");
         }
     }
 
@@ -2160,22 +2269,32 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 									<div class="margin-top-md" id="varEffGrp">
-									   <label for="variantEffects">Variant Effects</label>
-									   <div class="form-input">
-										  <select class="selectpicker" multiple id="variantEffects"
-											 data-actions-box="true" data-width="100%"
-											 data-live-search="true" name="variantEffects"></select>
-									   </div>
+										<label class="custom-label" for="variantEffects">Variant Effects</label>
+										<div class="form-input">
+											<select class="selectpicker" multiple id="variantEffects"
+												data-actions-box="true" data-width="100%"
+												data-live-search="true" name="variantEffects"></select>
+										</div>
 									</div>
-									<div id="genesGrp" class="margin-top-md">
-									   <label for="geneName" class="custom-label">Genes</label>
-									   <div class="input-group">
-										  <input id="geneName" class="form-control input-sm" type="text"
-											 name="genes"> <span class="input-group-addon input-sm"> <span
-											 class="glyphicon glyphicon-question-sign" id="geneHelp"
-											 title="Leave blank to ignore this filter. Enter '-' for variants without gene-name annotation. Enter '+' for variants with any gene-name annotation. Enter comma-separated names for specific genes"></span>
-										  </span>
-									   </div>
+									<div id="GeneIds" class="margin-top-md">
+										<div class="container-fluid">
+											<div class="row">
+												<div class="col-xl-6 input-group half-width custom-label"
+													style="float: left;" id="geneIdsLabel">Gene Names</div>
+													<div class="col-xl-6 input-group half-width custom-label" style="float: right; font-weight:400;">Selection mode</div>
+											</div>
+										</div>
+										<div class="form-input">
+											<select id="geneIdsSelect" class="selectpicker select-main" multiple multiple data-live-search="true" disabled data-selected-text-format="count > 0"></select>
+										</div>
+										<div style="margin-top: -25px; text-align: right;">
+											<a id="clearGenesIdSelection" href="#" onclick="clearGeneIdSelection();" style="display: none; font-size: 18px; margin-left: -20px; position: absolute; font-weight: bold; text-decoration: none;" title="Clear selection">
+												<button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button>
+											</a>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-plus" title="Variants with any gene-name annotation" id="plusMode" disabled onclick="onGeneSelectionPlusMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-minus" aria-pressed="false" title="Variants without gene-name annotation" id="minusMode" disabled onclick="onGeneSelectionMinusMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Variants with selected gene-name annotation" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
+										</div>
 									</div>
                                     <div id="VariantIds" class="margin-top-md">
                                         <div class="container-fluid">

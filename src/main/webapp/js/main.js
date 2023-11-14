@@ -339,6 +339,27 @@ function getSelectedVariantIds() {
     return selectedVariantIds.join(";");
 }
 
+function getSelectedGenesIds() {
+    var mode = "";
+    if ($('#plusMode').hasClass('active')) {
+        mode = "+";
+    } else if ($('#minusMode').hasClass('active')) {
+        mode = "-";
+    }
+
+    if (mode !== "") {
+        return mode;
+    } else {
+		var selectedGenesIds = $('#geneIdsSelect').val();
+		if (selectedGenesIds === null || selectedGenesIds === undefined){
+			return "";
+		}
+		else {
+			return selectedGenesIds.join(",");
+		}		
+    }
+}
+
 function getSelectedNumberOfAlleles() {
     var selectedNbAlleles = $('#numberOfAlleles').val();
     if (selectedNbAlleles === null || selectedNbAlleles.length === alleleCount)
@@ -372,6 +393,7 @@ function fillWidgets() {
     loadGenotypePatterns();
     readPloidyLevel();
     loadVariantIds();
+    loadGeneIds();
 }
 
 function loadSearchableVcfFields() {
@@ -498,7 +520,7 @@ function buildSearchQuery(searchMode, pageToken) {
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+        "geneName": getSelectedGenesIds(),
 
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1228,6 +1250,12 @@ function clearVariantIdSelection() {
     $('#variantIdsSelect').selectpicker('refresh');
 }
 
+function clearGeneIdSelection() {
+    $('#clearGenesIdSelection').hide();
+	$('#geneIdsSelect').removeAttr('disabled').selectpicker('deselectAll').find('[value]').remove()
+    $('#geneIdsSelect').selectpicker('refresh');
+}
+
 function displayProjectInfo(projName)
 {
     $("#projectInfoContainer").html("<h4>Information on project " + projName + "</h4><div style='font-weight:bold; float:right;'>" + dbDesc + "</div><p>This project contains " + runList.length + " run(s) of data.</p><pre>" + projectDescriptions[projName] + "</pre>");
@@ -1433,10 +1461,11 @@ function resetFilters() {
     $('#Sequences').selectmultiple('deselectAll');
     $('#minposition').val("");
     $('#maxposition').val("");
-    $('#geneName').val("");
+    $('#geneIdsSelect').val("");
+    $('#geneIdsSelect').prop('disabled', true);
+    $("#GeneIds button").removeClass("active").change();
     $('#variantEffects').selectpicker('deselectAll');
     $('#variantIdsSelect').selectpicker('deselectAll');
-
     $('#genotypeInvestigationMode').val(0);
     $('.selectpicker').selectpicker('refresh')
     $('#genotypeInvestigationMode').change();
@@ -1492,7 +1521,6 @@ function saveQuery() {
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
 
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1630,7 +1658,7 @@ function listQueries(){
                     "start": jsonResult['start'],
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
-                    "geneName": jsonResult['geneName'],
+                    "geneName": jsonResult['selectedGenesIds'],
 
                     "discriminate": jsonResult['discriminate'],
                     "pageSize": jsonResult['pageSize'],
@@ -1718,8 +1746,8 @@ function listQueries(){
                     $('#variantEffects').selectpicker('val', tabEffects);
                 }
                 
-                var names = jsonResult['geneName']; //change gene name value
-                $('#geneName').val(names);
+                var names = jsonResult['selectedGenesIds']; //change gene name value
+                $('#geneIdsSelect').val(names);
                 
                 if(jsonResult['alleleCount'] != ""){
                     var tabAlleles = jsonResult['alleleCount'].split(';'); 
@@ -1796,6 +1824,9 @@ function listQueries(){
 }
 
 function onFilterByIds(checked) {
+	if ($('#filterNamesCheckbox').prop('checked')) {
+  		$('#filterNamesCheckbox').prop('checked', false);
+	}
     if (checked) {
         localStorage.setItem($('#module').val() + idSep + $('#project').val() + '_filterByIds', true);
         $('#variantTypes').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
@@ -1807,7 +1838,7 @@ function onFilterByIds(checked) {
         
         $('#minposition').val("").prop('disabled', true); 
         $('#maxposition').val("").prop('disabled', true);
-        $('#geneName').val("").prop('disabled', true);
+        //$('#geneName').val("").prop('disabled', true);
         
         $('#variantEffects').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
@@ -1815,6 +1846,11 @@ function onFilterByIds(checked) {
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
+        $('#GeneIds').val("").prop('disabled', true);
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#clearGeneIdSelection').hide();
+        $('#GeneIds button').prop('disabled', true).removeClass('active');
+
 		for (var nGroup=1; nGroup<=2; nGroup++) {
 	        $('#minMissingData' + nGroup).val(0).prop('disabled', true);
 	        $('#maxMissingData' + nGroup).val(100).prop('disabled', true);
@@ -1834,7 +1870,6 @@ function onFilterByIds(checked) {
         $('#Sequences').find('.btn').prop('disabled', false).selectpicker('refresh');
         $('#minposition').prop('disabled', false);
         $('#maxposition').prop('disabled', false);     
-        $('#geneName').prop('disabled', false);
         $('#variantEffects').prop('disabled', false).selectpicker('refresh');        
         
         $('#variantIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
@@ -1843,6 +1878,9 @@ function onFilterByIds(checked) {
         $('#clearVariantIdSelection').hide();
         $('#pasteVariantIds').prop('disabled', true);
         $('#uploadVariantIds').prop('disabled', true);
+        
+        $('#GeneIds').prop('disabled', false);
+        $('#GeneIds button').prop('disabled', false);
                 
         for (var nGroup=1; nGroup<=2; nGroup++) {
 	        $('#minMissingData' + nGroup).prop('disabled', false);
@@ -1856,6 +1894,57 @@ function onFilterByIds(checked) {
 		}
     }
 }
+
+function onGeneSelectionMinusMode() {
+    if (!$('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+    }
+
+    if (!$("#minusMode").hasClass("active")) {
+        $("#minusMode").addClass("active");
+    }
+    else {
+		$("#minusMode.active").removeClass("active");
+	}
+    
+    $("#plusMode.active").removeClass("active");
+    $("#editMode.active").removeClass("active");
+}
+
+function onGeneSelectionPlusMode() {
+    if (!$('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+    }
+
+    if (!$("#plusMode").hasClass("active")) {
+        $("#plusMode").addClass("active");
+    }
+    else {
+		$("#plusMode.active").removeClass("active");
+	}
+    
+    $("#minusMode.active").removeClass("active");
+    $("#editMode.active").removeClass("active");
+}
+
+function onGeneSelectionEditMode() {
+    if ($('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').removeAttr('disabled').selectpicker('refresh');
+    }
+
+    if (!$("#editMode").hasClass("active")) {
+        $("#editMode").addClass("active");
+        $('#geneIdsSelect').removeAttr('disabled').selectpicker('refresh');
+    }
+    else {
+		$("#editMode.active").removeClass("active");
+		$('#geneIdsSelect').prop('disabled', true).selectpicker('refresh');
+	}
+    
+    $("#minusMode.active").removeClass("active");
+    $("#plusMode.active").removeClass("active");
+}
+
 
 function rangeChanged(paramName, nGroup, minThreshold, maxThreshold) {
 	var minInput = $("input#min" + paramName + nGroup), maxInput = $("input#max" + paramName + nGroup);
