@@ -331,16 +331,6 @@ function setChartType(typeSelect) {
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
     const chartInfo = chartTypes.get(currentChartType);
-
-	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-	$('#vcfFieldFilterGroup1 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
-	$('#vcfFieldFilterGroup2 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
 	
 	let plotIndividuals = null;
 	if (chartInfo.selectIndividuals) {
@@ -363,7 +353,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	    }
 	}
 	
-	return {         	
+	let result = {
         "variantSetId": $('#project :selected').data("id"),
         "searchMode": 0,
         "getGT": false,
@@ -375,9 +365,10 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+        "numberGroups": groupColors.length,
 
         "callSetIds": getSelectedIndividuals([1], true),
-        "gtPattern": $('#Genotypes1').val(),
+        /*"gtPattern": $('#Genotypes1').val(),
         "mostSameRatio": $('#mostSameRatio1').val(),
         "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
         "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
@@ -385,10 +376,10 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
         "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
         "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
-		"annotationFieldThresholds": annotationFieldThresholds,
+		"annotationFieldThresholds": annotationFieldThresholds,*/
 
         "callSetIds2": getSelectedIndividuals([2], true),
-        "gtPattern2": $('#Genotypes2').val(),
+        /*"gtPattern2": $('#Genotypes2').val(),
         "mostSameRatio2": $('#mostSameRatio2').val(),
         "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
         "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
@@ -396,7 +387,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
         "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
         "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
-        "annotationFieldThresholds2": annotationFieldThresholds2,
+        "annotationFieldThresholds2": annotationFieldThresholds2,*/
 
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -408,6 +399,43 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
     };
+    let genotypes = [];
+    let mostsameratio = [];
+    let minmaf = [];
+    let maxmaf = [];
+    let minmissingdata = [];
+    let maxmissingdata = [];
+    let minhez = [];
+    let maxhez = [];
+    var annotationFieldThresholds = {};
+    for (let i = 0; i < groupColors.length; i++) {
+        var threshold = {};
+        $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
+            if (parseInt($(this).val()) > 0)
+                threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+        });
+        annotationFieldThresholds[i] = threshold;
+        genotypes.push($(`#Genotypes${i + 1}`).val());
+        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
+        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
+        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
+        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
+        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
+        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
+        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
+    }
+
+    result["gtPattern"] = genotypes;
+    result["mostSameRatio"] = mostsameratio;
+    result["minMaf"] = minmaf;
+    result["maxMaf"] = maxmaf;
+    result["minMissingData"] = minmissingdata;
+    result["maxMissingData"] = maxmissingdata;
+    result["minHeZ"] = minhez;
+    result["maxHeZ"] = maxhez;
+    result["annotationFieldThresholds"] = annotationFieldThresholds;
+
+    return result;
 }
 
 function loadChart(minPos, maxPos) {    
