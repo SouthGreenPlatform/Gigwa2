@@ -909,6 +909,9 @@ function setGenotypeInvestigationMode(mode) {
     }
 
     loadSearchableVcfFields();
+    $('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
+    $('#exportedIndividuals').parent().parent().find('div.individualSelectionDiv').remove();
+    $('#exportedIndividuals').selectpicker('refresh');
 }
 
 function getExportIndividualSelectionModeOptions() {
