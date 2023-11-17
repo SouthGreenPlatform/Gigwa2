@@ -1053,21 +1053,15 @@
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
-    
-    
 
     function extractUniqueAlleles(jsonResult) {
-
-   		var knownAlleles = jsonResult.alternateBases;
-   		knownAlleles.splice(0,0,jsonResult.referenceBases);
-
+   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
     	var allelesWithDivs = knownAlleles.map(allele => {
     	return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
     	}).join('');
 
     	return allelesWithDivs;
     }
-
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
