@@ -960,18 +960,18 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
 }
 
 function groupHasFilters(jsonResult, grpNumber){
-    var e = grpNumber;
-    if (grpNumber == 1) var e = '';
-    if(jsonResult['callSetIds'+e].length != 0) return true;
-    if(typeof jsonResult['annotationFieldThresholds'+e]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['DP'].length != 0) return true;
-    if(typeof jsonResult['annotationFieldThresholds'+e]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'+e]['GQ'].length != 0) return true;
-    if(jsonResult['minMissingData'+e] != 0) return true;
-    if(jsonResult['maxMissingData'+e] != 100) return true;
-    if(jsonResult['minHeZ'+e] != 0) return true;
-    if(jsonResult['maxHeZ'+e] != 100) return true;
-    if(jsonResult['minMaf'+e] != 0) return true;
-    if(jsonResult['maxMaf'+e] != 50) return true;
-    if(jsonResult['gtPattern'+e] != 'Any') return true;
+    // var e = grpNumber;
+    // if (grpNumber == 1) var e = '';
+    if(jsonResult['callSetIds'][grpNumber].length != 0) return true;
+    if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['DP'].length != 0) return true;
+    if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['GQ'].length != 0) return true;
+    if(jsonResult['minMissingData'][grpNumber] != 0) return true;
+    if(jsonResult['maxMissingData'][grpNumber] != 100) return true;
+    if(jsonResult['minHeZ'][grpNumber] != 0) return true;
+    if(jsonResult['maxHeZ'][grpNumber] != 100) return true;
+    if(jsonResult['minMaf'][grpNumber] != 0) return true;
+    if(jsonResult['maxMaf'][grpNumber] != 50) return true;
+    if(jsonResult['gtPattern'][grpNumber] != 'Any') return true;
 }
 
 function getToken() {
@@ -1472,17 +1472,17 @@ function saveQuery() {
     while (queryName.trim() == "")
         if ((queryName = prompt("Enter query name")) == null)
             return;
-    var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-    $('#vcfFieldFilterGroup1 input').each(function () {
-        if (parseFloat($(this).val()) > 0)
-            annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-    });
-    $('#vcfFieldFilterGroup2 input').each(function () {
-        if (parseFloat($(this).val()) > 0)
-            annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-    });
+    // var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
+    // $('#vcfFieldFilterGroup1 input').each(function () {
+    //     if (parseFloat($(this).val()) > 0)
+    //         annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    // });
+    // $('#vcfFieldFilterGroup2 input').each(function () {
+    //     if (parseFloat($(this).val()) > 0)
+    //         annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    // });
 
-    let activeGroups = $(".genotypeInvestigationDiv").length;
+    // let activeGroups = $(".genotypeInvestigationDiv").length;
 
     var query = {
         "variantSetId": getProjectId(),
@@ -1496,6 +1496,7 @@ function saveQuery() {
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+        "numberGroups": groupColors.length,
 
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1503,52 +1504,92 @@ function saveQuery() {
         "sortDir": sortDesc === true ? 'desc' : 'asc'
     };
 
-    if (activeGroups < 2){
-        query[`callSetIds2`] = [];
-        query[`gtPattern2`] = 'Any';
-        query[`mostSameRatio2`] = 0;
-        query[`minMaf2`] = 0;
-        query[`maxMaf2`] = 50;
-        query[`minMissingData2`] = 0;
-        query[`maxMissingData2`] = 100;
-        query[`minHeZ2`] = 0;
-        query[`maxHeZ2`] = 100;
-        query['annotationFieldThresholds2'] = {};
-        if (activeGroups < 1){
-            query[`callSetIds`] = [];
-            query[`gtPattern`] = 'Any';
-            query[`mostSameRatio`] = 0;
-            query[`minMaf`] = 0;
-            query[`maxMaf`] = 50;
-            query[`minMissingData`] = 0;
-            query[`maxMissingData`] = 100;
-            query[`minHeZ`] = 0;
-            query[`maxHeZ`] = 100;
-            query['annotationFieldThresholds'] = {};
-        }
-    }
-
-    for (let j = 1; j <= activeGroups ; j++) {
-        var i = j === 1 ? "" : j;
-        const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
-        const annotationFieldThresholdsValue = {};
-        $(`#vcfFieldFilterGroup${j} input`).each(function () {
-            if (parseFloat($(this).val()) > 0) {
-                annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-            }
+    let geno = [];
+    let mostsameratio = [];
+    let minmaf = [];
+    let maxmaf = [];
+    let minmissingdata = [];
+    let maxmissingdata = [];
+    let minhez = [];
+    let maxhez = [];
+    let callsetids = [];
+    var annotationFieldThresholds = [];
+    for (let i = 0; i < groupColors.length; i++) {
+        var threshold = {};
+        $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
+            if (parseInt($(this).val()) > 0)
+                threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
         });
-
-        query[`callSetIds${i}`] = getSelectedIndividuals([j], true);
-        query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
-        query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
-        query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
-        query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
-        query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
-        query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
-        query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
-        query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
-        query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
+        if (i !== 0)
+            callsetids.push(getSelectedIndividuals([i + 1], true));
+        annotationFieldThresholds.push(threshold);
+        geno.push($(`#Genotypes${i + 1}`).val());
+        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
+        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
+        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
+        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
+        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
+        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
+        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
     }
+
+    query["gtPattern"] = geno;
+    query["mostSameRatio"] = mostsameratio;
+    query["minMaf"] = minmaf;
+    query["maxMaf"] = maxmaf;
+    query["minMissingData"] = minmissingdata;
+    query["maxMissingData"] = maxmissingdata;
+    query["minHeZ"] = minhez;
+    query["maxHeZ"] = maxhez;
+    query["annotationFieldThresholds"] = annotationFieldThresholds;
+    query["additionalCallSetId"] = callsetids;
+
+    // if (activeGroups < 2){
+    //     query[`callSetIds2`] = [];
+    //     query[`gtPattern2`] = 'Any';
+    //     query[`mostSameRatio2`] = 0;
+    //     query[`minMaf2`] = 0;
+    //     query[`maxMaf2`] = 50;
+    //     query[`minMissingData2`] = 0;
+    //     query[`maxMissingData2`] = 100;
+    //     query[`minHeZ2`] = 0;
+    //     query[`maxHeZ2`] = 100;
+    //     query['annotationFieldThresholds2'] = {};
+    //     if (activeGroups < 1){
+    //         query[`callSetIds`] = [];
+    //         query[`gtPattern`] = 'Any';
+    //         query[`mostSameRatio`] = 0;
+    //         query[`minMaf`] = 0;
+    //         query[`maxMaf`] = 50;
+    //         query[`minMissingData`] = 0;
+    //         query[`maxMissingData`] = 100;
+    //         query[`minHeZ`] = 0;
+    //         query[`maxHeZ`] = 100;
+    //         query['annotationFieldThresholds'] = {};
+    //     }
+    // }
+    //
+    // for (let j = 1; j <= activeGroups ; j++) {
+    //     var i = j === 1 ? "" : j;
+    //     const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
+    //     const annotationFieldThresholdsValue = {};
+    //     $(`#vcfFieldFilterGroup${j} input`).each(function () {
+    //         if (parseFloat($(this).val()) > 0) {
+    //             annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+    //         }
+    //     });
+    //
+    //     query[`callSetIds${i}`] = getSelectedIndividuals([j], true);
+    //     query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
+    //     query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
+    //     query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
+    //     query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
+    //     query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
+    //     query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
+    //     query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
+    //     query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
+    //     query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
+    // }
 
     $.ajax({
         url: 'rest/gigwa/saveQuery',
@@ -1729,33 +1770,33 @@ function listQueries(){
                     $('#numberOfAlleles').selectpicker('val', tabAlleles);
                 }
 
-                for (var i=1 ; i <= groupColors.length ; i++) {
+                for (var i= 0 ; i <= groupColors.length ; i++) {
                     var e = i==1 ? "" : i;
 
                     if(groupHasFilters(jsonResult, i)){
-                        $('#genotypeInvestigationMode').selectpicker('val', i);
+                        $('#genotypeInvestigationMode').selectpicker('val', i + 1);
                           $('#genotypeInvestigationMode').trigger('change');
                           
-                          var tabIds = jsonResult['callSetIds'+e];
+                          var tabIds = jsonResult['callSetIds'][i];
                           if(tabIds.length != 0) {
-                            $('#Individuals'+i+' div select').val(tabIds.map(function(x) {
+                            $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
                                 return x.split(idSep)[2];
                             }));
-                            $('#Individuals'+i+' div select').trigger('change');
+                            $('#Individuals'+ (i + 1) +' div select').trigger('change');
                           }
                           
-                          let groupThresholds = jsonResult['annotationFieldThresholds'+e];
+                          let groupThresholds = jsonResult['annotationFieldThresholds'][i];
                           for (var key in groupThresholds)
-                              $('#vcfFieldFilterGroup'+i+' #' + key + '_threshold' + i).val(groupThresholds[key]);
-                          $('#minMissingData'+i).val(jsonResult['minMissingData'+e]);
-                          $('#maxMissingData'+i).val(jsonResult['maxMissingData'+e]);
-                          $('#minHeZ'+i).val(jsonResult['minHeZ'+e]);
-                          $('#maxHeZ'+i).val(jsonResult['maxHeZ'+e]);
-                          $('#minMaf'+i).val(jsonResult['minMaf'+e]);
-                          $('#maxMaf'+i).val(jsonResult['maxMaf'+e]);
-                          $('#Genotypes'+i).selectpicker('val',jsonResult['gtPattern'+e]);
-                          $('#mostSameRatio'+i).val(jsonResult['mostSameRatio'+e]);
-                          $('#Genotypes'+i).trigger('change');
+                              $('#vcfFieldFilterGroup'+ (i + 1) +' #' + key + '_threshold' + (i + 1)).val(groupThresholds[key]);
+                          $('#minMissingData'+ (i + 1)).val(jsonResult['minMissingData'][i]);
+                          $('#maxMissingData'+ (i + 1)).val(jsonResult['maxMissingData'][i]);
+                          $('#minHeZ'+ (i + 1)).val(jsonResult['minHeZ'][i]);
+                          $('#maxHeZ'+ (i + 1)).val(jsonResult['maxHeZ'][i]);
+                          $('#minMaf'+ (i + 1)).val(jsonResult['minMaf'][i]);
+                          $('#maxMaf'+ (i + 1)).val(jsonResult['maxMaf'][i]);
+                          $('#Genotypes'+ (i + 1)).selectpicker('val',jsonResult['gtPattern'][i]);
+                          $('#mostSameRatio'+ (i + 1)).val(jsonResult['mostSameRatio'][i]);
+                          $('#Genotypes'+ (i + 1)).trigger('change');
                     }
                 }
                
@@ -1818,7 +1859,7 @@ function onFilterByIds(checked) {
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
-		for (var nGroup=1; nGroup<=2; nGroup++) {
+		for (var nGroup= 1; nGroup <= groupColors.length; nGroup++) {
 	        $('#minMissingData' + nGroup).val(0).prop('disabled', true);
 	        $('#maxMissingData' + nGroup).val(100).prop('disabled', true);
 	        $('#minHeZ' + nGroup).val(0).prop('disabled', true);
@@ -1847,7 +1888,7 @@ function onFilterByIds(checked) {
         $('#pasteVariantIds').prop('disabled', true);
         $('#uploadVariantIds').prop('disabled', true);
                 
-        for (var nGroup=1; nGroup<=2; nGroup++) {
+        for (var nGroup= 1; nGroup<= groupColors.length; nGroup++) {
 	        $('#minMissingData' + nGroup).prop('disabled', false);
 	        $('#maxMissingData' + nGroup).prop('disabled', false);
 	        $('#minHeZ' + nGroup).prop('disabled', false);

@@ -378,8 +378,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
 		"annotationFieldThresholds": annotationFieldThresholds,*/
 
-        "callSetIds2": getSelectedIndividuals([2], true),
-        /*"gtPattern2": $('#Genotypes2').val(),
+        /*"callSetIds2": getSelectedIndividuals([2], true),
+        "gtPattern2": $('#Genotypes2').val(),
         "mostSameRatio2": $('#mostSameRatio2').val(),
         "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
         "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
@@ -407,14 +407,17 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
     let maxmissingdata = [];
     let minhez = [];
     let maxhez = [];
-    var annotationFieldThresholds = {};
+    let callsetids = [];
+    var annotationFieldThresholds = [];
     for (let i = 0; i < groupColors.length; i++) {
         var threshold = {};
         $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
             if (parseInt($(this).val()) > 0)
                 threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
         });
-        annotationFieldThresholds[i] = threshold;
+        if (i !== 0)
+            callsetids.push(getSelectedIndividuals([i + 1], true));
+        annotationFieldThresholds.push(threshold);
         genotypes.push($(`#Genotypes${i + 1}`).val());
         mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
         minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
@@ -434,6 +437,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
     result["minHeZ"] = minhez;
     result["maxHeZ"] = maxhez;
     result["annotationFieldThresholds"] = annotationFieldThresholds;
+    result["additionalCallSetId"] = callsetids;
 
     return result;
 }

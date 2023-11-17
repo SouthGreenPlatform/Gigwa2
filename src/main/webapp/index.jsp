@@ -239,7 +239,7 @@
 			fillWidgets();
 			resetFilters();
 			
-			for (var groupNumber=groupColors.length; groupNumber>=1; groupNumber--) {
+			for (var groupNumber = groupColors.length; groupNumber >= 1; groupNumber--) {
 				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
 				if (localValue == null)
 					localValue = [];
