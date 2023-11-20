@@ -919,10 +919,9 @@ function getExportIndividualSelectionModeOptions() {
     var exportedIndOptions = "";
     if (mode > 1)
         exportedIndOptions += '<option id="exportedIndividuals12" value="12">Both groups</option>';
-    if (mode > 0)
-        exportedIndOptions += '<option id="exportedIndividuals1" value="1">Group 1</option>';
-    if (mode > 1)
-        exportedIndOptions += '<option id="exportedIndividuals2" value="2">Group 2</option>';
+    for (var i = 1; i <= mode; i++) {
+        exportedIndOptions += `<option id="exportedIndividuals${i}" value="${i}">Group ${i}</option>`;
+    }
     exportedIndOptions += '<option id="exportedIndividualsAll" value="">All of them</option>';
     exportedIndOptions += '<option id="exportedIndividualsChoose" value="choose">Choose some</option>';
     return exportedIndOptions;
@@ -962,7 +961,7 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
 function groupHasFilters(jsonResult, grpNumber){
     // var e = grpNumber;
     // if (grpNumber == 1) var e = '';
-    if(jsonResult['callSetIds'][grpNumber].length != 0) return true;
+    if(jsonResult['callSetIds'].length != 0) return true;
     if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['DP'].length != 0) return true;
     if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['GQ'].length != 0) return true;
     if(jsonResult['minMissingData'][grpNumber] != 0) return true;
