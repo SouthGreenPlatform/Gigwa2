@@ -352,6 +352,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	            break;
 	    }
 	}
+
+    let activeGroups = $(".genotypeInvestigationDiv").length;
 	
 	let result = {
         "variantSetId": $('#project :selected').data("id"),
@@ -365,9 +367,9 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-        "numberGroups": groupColors.length,
+        "numberGroups": activeGroups,
 
-        "callSetIds": getSelectedIndividuals([1], true),
+        "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         /*"gtPattern": $('#Genotypes1').val(),
         "mostSameRatio": $('#mostSameRatio1').val(),
         "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
@@ -409,7 +411,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
     let maxhez = [];
     let callsetids = [];
     var annotationFieldThresholds = [];
-    for (let i = 0; i < groupColors.length; i++) {
+    for (let i = 0; i < activeGroups; i++) {
         var threshold = {};
         $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
             if (parseInt($(this).val()) > 0)
@@ -437,7 +439,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
     result["minHeZ"] = minhez;
     result["maxHeZ"] = maxhez;
     result["annotationFieldThresholds"] = annotationFieldThresholds;
-    result["additionalCallSetId"] = callsetids;
+    result["additionalCallSetIds"] = callsetids;
 
     return result;
 }
