@@ -1036,37 +1036,9 @@
                 }
             };
         
-        $('#GeneIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-        if ($('#geneIdsSelect').data('AjaxBootstrapSelect') != null) {
-//         	console.log("reusing existing 1");
-// 	        $('#geneIdsSelect').data('AjaxBootstrapSelect').options = options;
-// 	        console.log("reusing existing 2");
-// // 	        $('#geneIdsSelect').selectpicker('destroy');
-// 			$('#geneIdsSelect').trigger('change')
-	        $('#geneIdsSelect').selectpicker('destroy');
-// 	        $('#geneIdsSelect').removeData('AjaxBootstrapSelect');
-// 	        console.log("reusing existing 3");
-        }
-//         else {
-//         	console.log("creating new 1");
-            $('#geneIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
-//         	console.log("creating new 2");
-            $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);       	
-//         	console.log("creating new 3");
-//             $('#geneIdsSelect').trigger('change');
-            
-//         	console.log("creating new 4");
-//         }
-//         console.log("creating new 5");
-        $('#geneIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
-        console.log($('#geneIdsSelect').data('AjaxBootstrapSelect').options);
-        
-        
-//         $('#GeneIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-//         $('#geneIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
-//         $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);
-//         $('#geneIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
-        
+        $('#geneIdsSelect').parent().html($('#geneIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
+        $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);
+       	$('#geneIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
         
    		$('#GeneIds button.dropdown-toggle').on('click', function() {
    			if ($('#GeneIds ul li.selected').length == 0)
