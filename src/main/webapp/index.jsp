@@ -966,11 +966,17 @@
                 }
             };
         
-        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').parent().html($('#variantIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+       	$('#variantIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
         
+        $('#VariantIds button.dropdown-toggle').on('click', function() {
+   			if ($('#VariantIds ul li.selected').length == 0)
+   				$('#VariantIds ul li').remove();
+   			else
+				$('#VariantIds ul li:gt(0):not(.selected)').remove();
+   		});
+           		
         if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
             inputObj.css('width', "calc(100% - 24px)");               
