@@ -184,7 +184,7 @@ function initializeChartDisplay(){
         		selectedSequences = jsonResult;
         	feedSequenceSelectAndLoadVariantTypeList(
                     selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-                    selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
+                    selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
