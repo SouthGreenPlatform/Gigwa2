@@ -665,6 +665,7 @@ public class GigwaUnitTests {
 		GigwaSearchVariantsRequest svr = new GigwaSearchVariantsRequest();
 		
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6", "testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4")));
+		svr.setAdditionalCallSetIds(new ArrayList<>());
 		svr.setGtPatternWithIndex(GenotypingDataQueryBuilder.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 0);
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
