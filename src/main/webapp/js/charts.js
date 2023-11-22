@@ -368,28 +368,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
         "numberGroups": activeGroups,
-
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
-        /*"gtPattern": $('#Genotypes1').val(),
-        "mostSameRatio": $('#mostSameRatio1').val(),
-        "minMaf": $('#minMaf1').val() === null ? 0 : parseFloat($('#minMaf1').val()),
-        "maxMaf": $('#maxMaf1').val() === null ? 50 : parseFloat($('#maxMaf1').val()),
-        "minMissingData": $('#minMissingData1').val() === null ? 0 : parseFloat($('#minMissingData1').val()),
-        "maxMissingData": $('#maxMissingData1').val() === null ? 100 : parseFloat($('#maxMissingData1').val()),
-        "minHeZ": $('#minHeZ1').val() === null ? 0 : parseFloat($('#minHeZ1').val()),
-        "maxHeZ": $('#maxHeZ1').val() === null ? 100 : parseFloat($('#maxHeZ1').val()),
-		"annotationFieldThresholds": annotationFieldThresholds,*/
-
-        /*"callSetIds2": getSelectedIndividuals([2], true),
-        "gtPattern2": $('#Genotypes2').val(),
-        "mostSameRatio2": $('#mostSameRatio2').val(),
-        "minMaf2": $('#minMaf2').val() === null ? 0 : parseFloat($('#minMaf2').val()),
-        "maxMaf2": $('#maxMaf2').val() === null ? 50 : parseFloat($('#maxMaf2').val()),
-        "minMissingData2": $('#minMissingData2').val() === null ? 0 : parseFloat($('#minMissingData2').val()),
-        "maxMissingData2": $('#maxMissingData2').val() === null ? 100 : parseFloat($('#maxMissingData2').val()),
-        "minHeZ2": $('#minHeZ2').val() === null ? 0 : parseFloat($('#minHeZ2').val()),
-        "maxHeZ2": $('#maxHeZ2').val() === null ? 100 : parseFloat($('#maxHeZ2').val()),
-        "annotationFieldThresholds2": annotationFieldThresholds2,*/
 
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,

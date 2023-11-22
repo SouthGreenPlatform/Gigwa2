@@ -490,7 +490,6 @@ function buildSearchQuery(searchMode, pageToken) {
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
         "numberGroups": activeGroups,
-
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1457,15 +1456,6 @@ function saveQuery() {
     while (queryName.trim() == "")
         if ((queryName = prompt("Enter query name")) == null)
             return;
-    // var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-    // $('#vcfFieldFilterGroup1 input').each(function () {
-    //     if (parseFloat($(this).val()) > 0)
-    //         annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-    // });
-    // $('#vcfFieldFilterGroup2 input').each(function () {
-    //     if (parseFloat($(this).val()) > 0)
-    //         annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-    // });
 
     let activeGroups = $(".genotypeInvestigationDiv").length;
 
@@ -1482,7 +1472,6 @@ function saveQuery() {
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
         "numberGroups": activeGroups,
-
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1529,53 +1518,6 @@ function saveQuery() {
     query["maxHeZ"] = maxhez;
     query["annotationFieldThresholds"] = annotationFieldThresholds;
     query["additionalCallSetIds"] = callsetids;
-
-    // if (activeGroups < 2){
-    //     query[`callSetIds2`] = [];
-    //     query[`gtPattern2`] = 'Any';
-    //     query[`mostSameRatio2`] = 0;
-    //     query[`minMaf2`] = 0;
-    //     query[`maxMaf2`] = 50;
-    //     query[`minMissingData2`] = 0;
-    //     query[`maxMissingData2`] = 100;
-    //     query[`minHeZ2`] = 0;
-    //     query[`maxHeZ2`] = 100;
-    //     query['annotationFieldThresholds2'] = {};
-    //     if (activeGroups < 1){
-    //         query[`callSetIds`] = [];
-    //         query[`gtPattern`] = 'Any';
-    //         query[`mostSameRatio`] = 0;
-    //         query[`minMaf`] = 0;
-    //         query[`maxMaf`] = 50;
-    //         query[`minMissingData`] = 0;
-    //         query[`maxMissingData`] = 100;
-    //         query[`minHeZ`] = 0;
-    //         query[`maxHeZ`] = 100;
-    //         query['annotationFieldThresholds'] = {};
-    //     }
-    // }
-    //
-    // for (let j = 1; j <= activeGroups ; j++) {
-    //     var i = j === 1 ? "" : j;
-    //     const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
-    //     const annotationFieldThresholdsValue = {};
-    //     $(`#vcfFieldFilterGroup${j} input`).each(function () {
-    //         if (parseFloat($(this).val()) > 0) {
-    //             annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-    //         }
-    //     });
-    //
-    //     query[`callSetIds${i}`] = getSelectedIndividuals([j], true);
-    //     query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
-    //     query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
-    //     query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
-    //     query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
-    //     query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
-    //     query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
-    //     query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
-    //     query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
-    //     query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
-    // }
 
     $.ajax({
         url: 'rest/gigwa/saveQuery',
