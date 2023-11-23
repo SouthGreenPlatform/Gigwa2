@@ -107,10 +107,9 @@ public class Ga4ghRestController extends ControllerInterface {
      * get bases from reference sequence
      *
      * @param request
-     * @param module
-     * @param name
-     * @param start
-     * @param end
+     * @param response
+     * @param id
+     * @param listReferenceBasesRequest
      * @return
      * @throws IOException
      */
