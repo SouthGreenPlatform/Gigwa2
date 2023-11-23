@@ -916,19 +916,17 @@ function setGenotypeInvestigationMode(mode) {
     }
 
     loadSearchableVcfFields();
-    $('#exportedIndividuals').html(getExportIndividualSelectionModeOptions());
+    $('#exportedIndividuals').html(getExportIndividualSelectionModeOptions(mode));
     $('#exportedIndividuals').parent().parent().find('div.individualSelectionDiv').remove();
     $('#exportedIndividuals').selectpicker('refresh');
 }
 
-function getExportIndividualSelectionModeOptions() {
-    var mode = $('select#genotypeInvestigationMode').val();
+function getExportIndividualSelectionModeOptions(mode) {
     var exportedIndOptions = "";
     if (mode > 1)
-        exportedIndOptions += '<option id="exportedIndividuals12" value="12">Both groups</option>';
-    for (var i = 1; i <= mode; i++) {
+        exportedIndOptions += '<option id="exportedIndividualsAllGroups" value="allGroups">All groups</option>';
+    for (var i = 1; i <= mode; i++)
         exportedIndOptions += `<option id="exportedIndividuals${i}" value="${i}">Group ${i}</option>`;
-    }
     exportedIndOptions += '<option id="exportedIndividualsAll" value="">All of them</option>';
     exportedIndOptions += '<option id="exportedIndividualsChoose" value="choose">Choose some</option>';
     return exportedIndOptions;
