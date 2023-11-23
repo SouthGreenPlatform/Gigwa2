@@ -1188,7 +1188,7 @@
 
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals([1]) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals([2]) : null)));
+		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
 			if (exportedIndividualCount * count > 1000000000) {

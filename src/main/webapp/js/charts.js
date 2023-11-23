@@ -258,7 +258,7 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
-        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -338,20 +338,18 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	        case "choose":
 	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
 	            break;
-	        case "12":
+	        case "allGroups":
 	            plotIndividuals = getSelectedIndividuals();
 	            break;
-	        case "1":
-	            plotIndividuals = getSelectedIndividuals([1]);
-	            break;
-	        case "2":
-	            plotIndividuals = getSelectedIndividuals([2]);
+	        case "":
+				plotIndividuals = [];
 	            break;
 	        default:
-	            plotIndividuals = [];
+	            plotIndividuals = getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())]);
 	            break;
 	    }
 	}
+
 
     let activeGroups = $(".genotypeInvestigationDiv").length;
 	let query = {
@@ -599,7 +597,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     var displayedVariantType = $("select#chartVariantTypeList").val();   
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
-    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals([1]) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals([2]) : null)))
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
     
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
