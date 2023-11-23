@@ -132,7 +132,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1" , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
+    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
