@@ -258,7 +258,7 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
-        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -331,16 +331,6 @@ function setChartType(typeSelect) {
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
     const chartInfo = chartTypes.get(currentChartType);
-
-	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-	$('#vcfFieldFilterGroup1 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
-	$('#vcfFieldFilterGroup2 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
 	
 	let plotIndividuals = null;
 	if (chartInfo.selectIndividuals) {
@@ -348,22 +338,21 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	        case "choose":
 	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
 	            break;
-	        case "12":
+	        case "allGroups":
 	            plotIndividuals = getSelectedIndividuals();
 	            break;
-	        case "1":
-	            plotIndividuals = getSelectedIndividuals([1]);
-	            break;
-	        case "2":
-	            plotIndividuals = getSelectedIndividuals([2]);
+	        case "":
+				plotIndividuals = [];
 	            break;
 	        default:
-	            plotIndividuals = [];
+	            plotIndividuals = getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())]);
 	            break;
 	    }
 	}
-	
-	var query = {         	
+
+
+    let activeGroups = $(".genotypeInvestigationDiv").length;
+	let query = {
         "variantSetId": $('#project :selected').data("id"),
         "searchMode": 0,
         "getGT": false,
@@ -375,7 +364,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-
+        "numberGroups": activeGroups,
+        "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
         "pageToken": "0",
@@ -386,56 +376,47 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
     };
-    
-    let activeGroups = $(".genotypeInvestigationDiv").length;
-    if (activeGroups < 2) {
-        query[`callSetIds2`] = [];
-        query[`gtPattern2`] = 'Any';
-        query[`mostSameRatio2`] = 0;
-        query[`minMaf2`] = 0;
-        query[`maxMaf2`] = 50;
-        query[`minMissingData2`] = 0;
-        query[`maxMissingData2`] = 100;
-        query[`minHeZ2`] = 0;
-        query[`maxHeZ2`] = 100;
-        query['annotationFieldThresholds2'] = {};
-	
-	    if (activeGroups < 1) {
-	        query[`callSetIds`] = [];
-	        query[`gtPattern`] = 'Any';
-	        query[`mostSameRatio`] = 0;
-	        query[`minMaf`] = 0;
-	        query[`maxMaf`] = 50;
-	        query[`minMissingData`] = 0;
-	        query[`maxMissingData`] = 100;
-	        query[`minHeZ`] = 0;
-	        query[`maxHeZ`] = 100;
-	        query['annotationFieldThresholds'] = {};
-	    }
-    }
-    
-    for (let j = 1; j <= activeGroups ; j++) {
-        var i = j === 1 ? "" : j;
-        const annotationFieldThresholdsKey = `annotationFieldThresholds${i}`;
-        const annotationFieldThresholdsValue = {};
-        $(`#vcfFieldFilterGroup${j} input`).each(function () {
-            if (parseFloat($(this).val()) > 0) {
-                annotationFieldThresholdsValue[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-            }
-        });
 
-        query[`callSetIds${i}`] = getSelectedIndividuals([j], true);
-        query[`gtPattern${i}`] = $(`#Genotypes${j}`).val();
-        query[`mostSameRatio${i}`] = $(`#mostSameRatio${j}`).val();
-        query[`minMaf${i}`] = $(`#minMaf${j}`).val() === null ? 0 : parseFloat($(`#minMaf${j}`).val());
-        query[`maxMaf${i}`] = $(`#maxMaf${j}`).val() === null ? 50 : parseFloat($(`#maxMaf${j}`).val());
-        query[`minMissingData${i}`] = $(`#minMissingData${j}`).val() === null ? 0 : parseFloat($(`#minMissingData${j}`).val());
-        query[`maxMissingData${i}`] = $(`#maxMissingData${j}`).val() === null ? 100 : parseFloat($(`#maxMissingData${j}`).val());
-        query[`minHeZ${i}`] = $(`#minHeZ${j}`).val() === null ? 0 : parseFloat($(`#minHeZ${j}`).val());
-        query[`maxHeZ${i}`] = $(`#maxHeZ${j}`).val() === null ? 100 : parseFloat($(`#maxHeZ${j}`).val());
-        query[annotationFieldThresholdsKey] = annotationFieldThresholdsValue;
+    let genotypes = [];
+    let mostsameratio = [];
+    let minmaf = [];
+    let maxmaf = [];
+    let minmissingdata = [];
+    let maxmissingdata = [];
+    let minhez = [];
+    let maxhez = [];
+    let callsetids = [];
+    var annotationFieldThresholds = [];
+    for (let i = 0; i < activeGroups; i++) {
+        var threshold = {};
+        $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
+            if (parseInt($(this).val()) > 0)
+                threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+        });
+        if (i !== 0)
+            callsetids.push(getSelectedIndividuals([i + 1], true));
+        annotationFieldThresholds.push(threshold);
+        genotypes.push($(`#Genotypes${i + 1}`).val());
+        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
+        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
+        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
+        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
+        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
+        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
+        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
     }
-    
+
+    query["gtPattern"] = genotypes;
+    query["mostSameRatio"] = mostsameratio;
+    query["minMaf"] = minmaf;
+    query["maxMaf"] = maxmaf;
+    query["minMissingData"] = minmissingdata;
+    query["maxMissingData"] = maxmissingdata;
+    query["minHeZ"] = minhez;
+    query["maxHeZ"] = maxhez;
+    query["annotationFieldThresholds"] = annotationFieldThresholds;
+    query["additionalCallSetIds"] = callsetids;
+
     return query;
 }
 
@@ -616,7 +597,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     var displayedVariantType = $("select#chartVariantTypeList").val();   
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
-    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals([1]) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals([2]) : null)))
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
     
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),

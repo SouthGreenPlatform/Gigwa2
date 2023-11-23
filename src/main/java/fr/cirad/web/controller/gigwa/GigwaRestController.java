@@ -879,12 +879,23 @@ public class GigwaRestController extends ControllerInterface {
 	                            if (gtCode == null)
                                     continue;   // skip genotype
 
-	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
-    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-    								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
-    									continue;	// skip genotype
-	                            }
+								Collection<Collection<String>> indlists = new ArrayList<>();
+								for (HashMap<String, Float> entry : gir.getAnnotationFieldThresholds()) {
+									if (!entry.isEmpty()) {
+										List<String> indList = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+										indlists.add(indList);
+									}
+								}
+
+								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indlists, gir.getAnnotationFieldThresholds()))
+    									continue;
+
+//	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
+//    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+//    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+//    								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
+//    									continue;	// skip genotype
+//	                            }
 
 								if (individualGenotypes[individualIndex] == null)
 									individualGenotypes[individualIndex] = new ArrayList<String>();
@@ -964,7 +975,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * get VCF field plot data
 	 *
 	 * @param request
-	 * @param gdr
+	 * @param gvfpr
 	 * @param variantSetId
 	 * @return Map<String, Map<Long, Long>> containing plot data in JSON format
 	 * @throws Exception
@@ -1085,7 +1096,7 @@ public class GigwaRestController extends ControllerInterface {
 	/**
 	 *
 	 * @param request
-	 * @param variantSetId
+	 * @param resp
 	 * @return
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getExportFormat", notes = "get available exports formats and descriptions")
@@ -1651,7 +1662,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sProjectDescription the project description
 	 * @param sTechnology the technology
 	 * @param fClearProjectData whether or not to clear project data
-	 * @param skipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
+	 * @param fSkipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
 	 * @param dataUri1 URI-provided data file 1
 	 * @param dataUri2 URI-provided data file 2
 	 * @param dataUri3 URI-provided data file 3

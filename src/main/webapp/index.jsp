@@ -132,7 +132,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8" */];
+    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -239,7 +239,7 @@
 			fillWidgets();
 			resetFilters();
 			
-			for (var groupNumber=groupColors.length; groupNumber>=1; groupNumber--) {
+			for (var groupNumber = groupColors.length; groupNumber >= 1; groupNumber--) {
 				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
 				if (localValue == null)
 					localValue = [];
@@ -1062,10 +1062,7 @@
 
     function extractUniqueAlleles(jsonResult) {
    		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
-    	var allelesWithDivs = knownAlleles.map(allele => {
-    	return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
-    	}).join('');
-
+    	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
     	return allelesWithDivs;
     }
 
@@ -1191,7 +1188,7 @@
 
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals([1]) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals([2]) : null)));
+		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
 			if (exportedIndividualCount * count > 1000000000) {
