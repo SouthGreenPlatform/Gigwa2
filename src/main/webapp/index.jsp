@@ -966,11 +966,17 @@
                 }
             };
         
-        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').parent().html($('#variantIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+       	$('#variantIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
         
+        $('#VariantIds button.dropdown-toggle').on('click', function() {
+   			if ($('#VariantIds ul li.selected').length == 0)
+   				$('#VariantIds ul li').remove();
+   			else
+				$('#VariantIds ul li:gt(0):not(.selected)').remove();
+   		});
+           		
         if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
             inputObj.css('width', "calc(100% - 24px)");               
@@ -1053,21 +1059,15 @@
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
-    
-    
 
     function extractUniqueAlleles(jsonResult) {
-
-   		var knownAlleles = jsonResult.alternateBases;
-   		knownAlleles.splice(0,0,jsonResult.referenceBases);
-
+   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
     	var allelesWithDivs = knownAlleles.map(allele => {
     	return '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>';
     	}).join('');
 
     	return allelesWithDivs;
     }
-
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
@@ -1771,6 +1771,7 @@
 			let targetSuffix = getSuffix(targetNames);
 			let targetSuffixRegex = new RegExp(targetSuffix + "$");
 			igvGenomeRefTable = {};
+			let aliasLessContigs = new Set();
 			for (let target of targetNames){  // target = chromosome name in the genome file, as used by IGV
 				let zeroname = target.replace(targetPrefix, "").replace(targetSuffixRegex, "");
 				let basename = zeroname.replace(/^0+/, "");  // Base chromosome name
@@ -1790,9 +1791,13 @@
 				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
 				if (gigwaContigName != null)
 					igvGenomeRefTable[target] = gigwaContigName;
-				else
+				else {
+					aliasLessContigs.add(target);
 					igvGenomeRefTable[target] = target;	// couldn't find it, use the provided name (better than nothing)
+				}
 			}
+			if (aliasLessContigs.size > 0)
+				console.log("Unable to find an alias for the following contigs in Gigwa sequences: " + Array.from(aliasLessContigs).join(", "));
 			
 			// Load the default tracks
 			for (let trackConfig of tracks){
@@ -1801,6 +1806,8 @@
 
 			// Add the variant tracks
 			await igvUpdateVariants();
+			
+			setIgvLocusIfApplicable();
 		});
 	}
 	
@@ -1916,7 +1923,7 @@
 	function setIgvLocusIfApplicable() {
 		var minPos = getSearchMinPosition(), maxPos = getSearchMaxPosition();
 	    if (minPos > -1 && minPos < maxPos && $('#Sequences').selectmultiple('count') == 1)
-	    	setTimeout(function() {igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);}, 0);
+	    	setTimeout(function() {igvBrowser.goto($('#Sequences').selectmultiple('value')[0].replace(/^\D+/, '').replace(/^0+/, '') + ":" + minPos + "-" + maxPos);}, 0);
 	}
 
 	// Called when the individuals groups have been changed
