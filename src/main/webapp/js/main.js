@@ -930,10 +930,9 @@ function applyGroupMemorizing(groupNumber, rememberedSelection) {
 function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
     if (flag)
     {
-        var allInd = $('#Individuals1').selectmultiple('option');
         var allIndOptions = new StringBuffer();
-        for (var key in allInd)
-            allIndOptions.append("<option title=\"" + allInd[key] + "\">" + allInd[key] + "</option>");
+        for (var key in indOpt)
+            allIndOptions.append("<option title=\"" + indOpt[key] + "\">" + indOpt[key] + "</option>");
         previousSibling.after("<div style='display:none; margin-top:5px;' class='individualSelectionDiv'><select " + (onchangeFunc != null ? "onchange='" + onchangeFunc + "();' " : "") + " style='width:100%;' multiple size='15' class='individualSelector'>" + allIndOptions + "</select></div>");
         if (!isNaN(size))
             previousSibling.parent().find('select.individualSelector').attr("size", size);

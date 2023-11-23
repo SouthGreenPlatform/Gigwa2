@@ -184,7 +184,7 @@ function initializeChartDisplay(){
         		selectedSequences = jsonResult;
         	feedSequenceSelectAndLoadVariantTypeList(
                     selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-                    selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
+                    selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -354,8 +354,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	}
 
     let activeGroups = $(".genotypeInvestigationDiv").length;
-	
-	let result = {
+	let query = {
         "variantSetId": $('#project :selected').data("id"),
         "searchMode": 0,
         "getGT": false,
@@ -369,7 +368,6 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
         "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
-
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
         "pageToken": "0",
@@ -380,6 +378,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
     };
+
     let genotypes = [];
     let mostsameratio = [];
     let minmaf = [];
@@ -409,18 +408,18 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
     }
 
-    result["gtPattern"] = genotypes;
-    result["mostSameRatio"] = mostsameratio;
-    result["minMaf"] = minmaf;
-    result["maxMaf"] = maxmaf;
-    result["minMissingData"] = minmissingdata;
-    result["maxMissingData"] = maxmissingdata;
-    result["minHeZ"] = minhez;
-    result["maxHeZ"] = maxhez;
-    result["annotationFieldThresholds"] = annotationFieldThresholds;
-    result["additionalCallSetIds"] = callsetids;
+    query["gtPattern"] = genotypes;
+    query["mostSameRatio"] = mostsameratio;
+    query["minMaf"] = minmaf;
+    query["maxMaf"] = maxmaf;
+    query["minMissingData"] = minmissingdata;
+    query["maxMissingData"] = maxmissingdata;
+    query["minHeZ"] = minhez;
+    query["maxHeZ"] = maxhez;
+    query["annotationFieldThresholds"] = annotationFieldThresholds;
+    query["additionalCallSetIds"] = callsetids;
 
-    return result;
+    return query;
 }
 
 function loadChart(minPos, maxPos) {    
