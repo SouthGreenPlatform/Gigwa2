@@ -1609,10 +1609,7 @@ function listQueries(){
                     "sortDir": jsonResult['sortDir']
                 };
 
-
-
                 for (var j = 0; j < $(".genotypeInvestigationDiv").length; i++) {
-
                     requestData["additionalCallSetIds"][j] = jsonResult["additionalCallSetIds"][j];
                     requestData["gtPattern"][j] = jsonResult["gtPattern"][j];
                     requestData["mostSameRatio"][j] = jsonResult["mostSameRatio"][j];
