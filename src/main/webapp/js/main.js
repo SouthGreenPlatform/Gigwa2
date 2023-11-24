@@ -1449,7 +1449,7 @@ function menuAction(){
 
 //This function allow the user to save a query into the DB
 function saveQuery() {
-    var queryName = "";
+    var queryName = ""; // test
     while (queryName.trim() == "")
         if ((queryName = prompt("Enter query name")) == null)
             return;
