@@ -489,7 +489,6 @@ function buildSearchQuery(searchMode, pageToken) {
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-        "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1468,7 +1467,6 @@ function saveQuery() {
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-        "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1517,7 +1515,7 @@ function saveQuery() {
     query["additionalCallSetIds"] = callsetids;
 
     $.ajax({
-        url: 'rest/gigwa/saveQuery',
+        url: saveBookmarkedQueryURL,
         type: "POST",
         contentType: "application/json;charset=utf-8",
         timeout: 0,
@@ -1547,7 +1545,7 @@ function listQueries(){
     $('#loadedQueries p').remove();
     $('#queryManager').modal("show");
     $.ajax({    // load queries 
-        url: 'rest/gigwa/listSavedQueries?module=' + referenceset,
+        url: listBookmarkedQueriesURL + '?module=' + referenceset,
         type: "GET",
         dataType: "json",
         async: false,
@@ -1578,7 +1576,7 @@ function listQueries(){
             if ((queryName = prompt("Enter query name", $(this).parent('p').text())) == null)
                 return;
         $.ajax({    // load queries 
-            url: 'rest/gigwa/loadQuery?module=' + referenceset
+            url: loadBookmarkedQueryURL + '?module=' + referenceset
                 + '&queryId=' + queryId,
             type: "GET",
             dataType: "json",
@@ -1600,7 +1598,6 @@ function listQueries(){
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
                     "geneName": jsonResult['geneName'],
-                    "numberGroups": $(".genotypeInvestigationDiv").length,
                     "callSetIds": jsonResult['callSetIds'],
 
                     "discriminate": jsonResult['discriminate'],
@@ -1623,7 +1620,7 @@ function listQueries(){
                 }
 
                 $.ajax({
-                    url: 'rest/gigwa/saveQuery',
+                    url: saveBookmarkedQueryURL,
                     type: "POST",
                     contentType: "application/json;charset=utf-8",
                     timeout: 0,
@@ -1653,7 +1650,7 @@ function listQueries(){
     $('#loadedQueries p .glyphicon-folder-open').click(function(){
         var queryId = $(this).parent('p').attr('id');
         $.ajax({    // load queries 
-            url: 'rest/gigwa/loadQuery?module=' + referenceset 
+            url: loadBookmarkedQueryURL + '?module=' + referenceset 
             + '&queryId='+ queryId,
             type: "GET",
             dataType: "json",
@@ -1744,7 +1741,7 @@ function listQueries(){
         var queryId = $(this).parent().attr('id');
         if(confirm('Do you really want to delete this query ?')){
             $.ajax({    
-                url: 'rest/gigwa/deleteQuery?module='+referenceset+'&queryId='+queryId,
+                url: deleteBookmarkedQueryURL + '?module='+referenceset+'&queryId='+queryId,
                 type: "DELETE",
                 dataType: "json",
                 async: false,

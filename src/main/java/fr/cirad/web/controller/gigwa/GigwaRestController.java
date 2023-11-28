@@ -879,7 +879,7 @@ public class GigwaRestController extends ControllerInterface {
 	                            if (gtCode == null)
                                     continue;   // skip genotype
 
-								Collection<Collection<String>> indlists = new ArrayList<>();
+								List<Collection<String>> indlists = new ArrayList<>();
 								for (HashMap<String, Float> entry : gir.getAnnotationFieldThresholds()) {
 									if (!entry.isEmpty()) {
 										List<String> indList = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
@@ -888,7 +888,7 @@ public class GigwaRestController extends ControllerInterface {
 								}
 
 								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indlists, gir.getAnnotationFieldThresholds()))
-    									continue;
+    								continue;
 
 //	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
 //    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
