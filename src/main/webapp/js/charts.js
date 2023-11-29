@@ -364,7 +364,6 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-        "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
