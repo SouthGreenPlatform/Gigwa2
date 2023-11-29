@@ -1692,7 +1692,7 @@ function listQueries(){
                     $('#numberOfAlleles').selectpicker('val', tabAlleles);
                 }
 
-                for (var i= 0 ; i < jsonResult['numberGroups'] ; i++) {
+                for (var i= 0 ; i < jsonResult['gtPattern'].length ; i++) {
                     var e = i==1 ? "" : i;
 
                     if(groupHasFilters(jsonResult, i)){
