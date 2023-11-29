@@ -21,6 +21,7 @@
 
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <c:set var="googleAnalyticsId" value="<%= appConfig.get(\"googleAnalyticsId\") %>"></c:set>
+<c:set var="nMaxGroups" value="2"></c:set>
 
 <%
 	java.util.Properties prop = new java.util.Properties();
@@ -99,7 +100,6 @@
 	var rangeMax = -1;
 	var runList = [];
 	var seqCount;
-	var indCount;
 	var variantTypesCount;
 	var variantId;
 	var alleleCount;
@@ -122,28 +122,42 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
+	var loadBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LOAD_QUERY_URL%>" />';
+	var saveBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SAVE_QUERY_URL%>" />';
+	var deleteBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DELETE_QUERY_URL%>" />';
+	var listBookmarkedQueriesURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LIST_SAVED_QUERIES_URL%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
-	var genotypeInvestigationMode = 0;
 	var callSetResponse = [];
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
 	var exportedIndividualCount = 0;
-	
+    var indOpt = [];
+
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-        
     var stringVariantIdsFromUploadFile = null;
+    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
+		for (var i=0; i<groupColors.length; i++) {
+	    	const className = "group" + (i + 1);
+	    	const color = groupColors[i];
+	    	const styleTag = document.createElement('style');
+	    	styleTag.textContent = "." + className + " { background-color: " + color + "; }";
+	    	document.head.appendChild(styleTag);
+	    	if (i > 0)
+				$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' groups</option>');
+    	}
+		
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
 				dropTempColl(false);
-
+			
 			referenceset = $(this).val();
 
 			if (!loadProjects(referenceset))
@@ -232,7 +246,7 @@
 			fillWidgets();
 			resetFilters();
 			
-			for (var groupNumber=1; groupNumber<=2; groupNumber++) {
+			for (var groupNumber = groupColors.length; groupNumber >= 1; groupNumber--) {
 				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
 				if (localValue == null)
 					localValue = [];
@@ -240,14 +254,14 @@
 					localValue = JSON.parse(localValue);
 				if (localValue.length > 0)
 				{
+					if ($("#genotypeInvestigationMode").val() == 0) {
+						setGenotypeInvestigationMode(groupNumber);
+						$("#genotypeInvestigationMode").val(groupNumber);
+						$('#genotypeInvestigationMode').selectpicker('refresh');
+					}
 					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
 					$("button#groupMemorizer" + groupNumber).addClass("active");
-					$("#genotypeInvestigationMode").val(groupNumber);
-					$('#genotypeInvestigationMode').selectpicker('refresh');
-					setGenotypeInvestigationMode(groupNumber);
 				}
-				else
-					$("button#groupMemorizer" + groupNumber).removeClass("active");
 				applyGroupMemorizing(groupNumber, localValue);
 			}
 
@@ -280,7 +294,7 @@
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
 			var hideMaf = $('#numberOfAlleles option[value=2]').length == 0;
-	        for (var nGroup=1; nGroup<=2; nGroup++) {
+	        for (var nGroup=1; nGroup<=groupColors.length; nGroup++) {
 			    $('.mafZone').css('display', hideMaf ? "none" : "block");
 	        }
 		});
@@ -292,16 +306,6 @@
 		$('#Sequences').on('multiple_select_change', function() {
 			var nCount = $('#Sequences').selectmultiple('count');
 			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
-		});
-		$('#Individuals1').on('multiple_select_change', function() {
-			var nCount = $('#Individuals1').selectmultiple('count');
-			$('#individualsLabel1').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
-			updateGtPatterns();
-		});
-		$('#Individuals2').on('multiple_select_change', function() {
-			var nCount = $('#Individuals2').selectmultiple('count');
-			$('#individualsLabel2').html("Individuals (" + (nCount == 0 ? indCount : nCount) + "/" + indCount + ")");
-			updateGtPatterns();
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
@@ -615,155 +619,113 @@
 		});
 	}
 
-	function loadIndividuals() {
-		individualSubSet = "${param.individualSubSet}".trim().split(";");
-		if (individualSubSet.length == 1 && individualSubSet[0] == "")
-			individualSubSet = null;
-						
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
-			type: "POST",
-			dataType: "json",
-			async:false,
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			data: JSON.stringify({
-				"variantSetId": getProjectId(),
-				"name": null,
-				"pageSize": null,
-				"pageToken": null
-			}),
-			success: function(jsonResult) {
-				callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
-				var indOpt = [];
+    function loadIndividuals() {
+        individualSubSet = "${param.individualSubSet}".trim().split(";");
+        if (individualSubSet.length == 1 && individualSubSet[0] == "")
+            individualSubSet = null;
 
-				gotMetaData = false;
-				
-				// first pass to compile an exhaustive field list
-				var headers = new Array();
-				for (var ind in callSetResponse)
-				{
-					if (!gotMetaData && callSetResponse[ind].info != null && Object.keys(callSetResponse[ind].info).length > 0)
-						gotMetaData = true;
-					if (gotMetaData)
-						for (var key in callSetResponse[ind].info)
-							if (!headers.includes(key))
-								headers.push(key);
-					if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
-						indOpt.push(callSetResponse[ind].name);
-				}
-				callSetMetadataFields = headers;
-				
-				var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
-				$.ajax({
-					url: brapiBaseUrl,
-					async: false,
-					type: "GET",
-					contentType: "application/json;charset=utf-8",
-					success: function(jsonResult) {
-						dbDesc = jsonResult['description'].replace('germplasm', 'individual');
-						if ((dbDesc.match(/; 0/g) || []).length == 2)
-							dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
-					},
-					error: function(xhr, thrownError) {
-						handleError(xhr, thrownError);
-					}
-				});
-				$('#exportPanel input#exportedIndividualMetadataCheckBox').prop('checked', false);
-				$('#exportPanel input#exportedIndividualMetadataCheckBox').prop('disabled', !gotMetaData);
-				$('#exportPanel input#exportedIndividualMetadataCheckBox').change();
-				if (gotMetaData) {
-					$('#asyncProgressButton').hide();
-					$('button#abort').hide();
-					$('#ddlWarning').hide();
-					$('#progressText').html("Loading individuals' metadata...");
-					$('#progress').modal({
-						backdrop: 'static',
-						keyboard: false,
-						show: true
-					});
-					setTimeout(function() {
-						var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
-						headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
-						for (var i in headers) {
-							headerRow.append("<th>" + headers[i] + "<br/></th>");
-							exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
-						}
-						$("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
+        $.ajax({
+            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
+            type: "POST",
+            dataType: "json",
+            async: false,
+            contentType: "application/json;charset=utf-8",
+            headers: {
+                "Authorization": "Bearer " + token
+            },
+            data: JSON.stringify({
+                "variantSetId": getProjectId(),
+                "name": null,
+                "pageSize": null,
+                "pageToken": null
+            }),
+            success: function (jsonResult) {
+                callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 
-						var dataRows = new StringBuffer();
-						for (var ind in callSetResponse) {
-							dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
-							for (var i in headers) {
-								var value = callSetResponse[ind].info[headers[i]];
-								dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
-							}
-							dataRows.append("</tr>");
-						}
-						var ifTable = $("table#individualFilteringTable");
-						if (headerRow != "")
-							ifTable.prepend(headerRow + "</tr>");
-						ifTable.append(dataRows.toString());
+                indOpt = [];
+		gotMetaData = false;
 
-						var tableObj = document.getElementById("individualFilteringTable");
-						addSelectionDropDownsToHeaders(tableObj);
+                // first pass to compile an exhaustive field list
+                var headers = new Array();
+                for (var ind in callSetResponse) {
+                    if (!gotMetaData && callSetResponse[ind].info != null && Object.keys(callSetResponse[ind].info).length > 0)
+                        gotMetaData = true;
+                    if (gotMetaData)
+                        for (var key in callSetResponse[ind].info)
+                            if (!headers.includes(key))
+                                headers.push(key);
+                    if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
+                        indOpt.push(callSetResponse[ind].name);
+                }
+                callSetMetadataFields = headers;
 
-						$('#progress').modal('hide');
-						displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
-					}, 1);
-				}
-				else {
-					displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
-					$("#exportedIndividualMetadata").html("");
-				}
-				for (var groupNumber=1; groupNumber<=2; groupNumber++)
-					if (gotMetaData)
-						$("button#groupSelector" + groupNumber).removeClass("hidden");
-					else
-					{
-						$("button#groupSelector" + groupNumber).addClass("hidden");
-						$("table#individualFilteringTable").html("");
-					}
-				
-				var multipleSelectOpts = {
-					text: 'Individuals',
-					data: indOpt,
-					placeholder: 'Lookup'
-				}
-				if (individualSubSet != null)
-					multipleSelectOpts['size'] = individualSubSet.length;
-					
-				$('#Individuals1').selectmultiple(multipleSelectOpts);
-				$('#Individuals2').selectmultiple(multipleSelectOpts);
-				
-				$('#Individuals1').on('change', function(e) { applyGroupMemorizing(1); checkGroupOverlap(); });
-				$('#Individuals2').on('change', function(e) { applyGroupMemorizing(2); checkGroupOverlap(); });
-				
-				indCount = indOpt.length;
-				$('#individualsLabel').html("Individuals (" + indCount + "/" + indCount + ")");
-				$('#individualsLabel2').html("Individuals (" + indCount + "/" + indCount + ")");
-				
-				updateGtPatterns(); // make sure to call this only after selectmultiple was initialized
-				$("#genotypeInvestigationMode").prop('disabled', indCount == 0);
-				if (indCount == 0)
-					setGenotypeInvestigationMode(0);
-				else {
-					$('#individualsLabel1').show();
-					$('#Individuals1').show();
-					$('#Individuals1').next().show();
-					$('#individualsLabel2').show();
-					$('#Individuals2').show();
-					$('#Individuals2').next().show();
-					$("#genotypeInvestigationMode").prop('disabled', false);
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
-	}
+                var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
+                $.ajax({
+                    url: brapiBaseUrl,
+                    async: false,
+                    type: "GET",
+                    contentType: "application/json;charset=utf-8",
+                    success: function (jsonResult) {
+                        dbDesc = jsonResult['description'].replace('germplasm', 'individual');
+                        if ((dbDesc.match(/; 0/g) || []).length == 2)
+                            dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
+                    },
+                    error: function (xhr, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                });
+                $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('checked', false);
+                $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('disabled', !gotMetaData);
+                $('#exportPanel input#exportedIndividualMetadataCheckBox').change();
+                if (gotMetaData) {
+                    $('#asyncProgressButton').hide();
+                    $('button#abort').hide();
+                    $('#ddlWarning').hide();
+                    $('#progressText').html("Loading individuals' metadata...");
+                    $('#progress').modal({
+                        backdrop: 'static',
+                        keyboard: false,
+                        show: true
+                    });
+                    setTimeout(function () {
+                        var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
+                        headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
+                        for (var i in headers) {
+                            headerRow.append("<th>" + headers[i] + "<br/></th>");
+                            exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
+                        }
+                        $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
+
+                        var dataRows = new StringBuffer();
+                        for (var ind in callSetResponse) {
+                            dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
+                            for (var i in headers) {
+                                var value = callSetResponse[ind].info[headers[i]];
+                                dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
+                            }
+                            dataRows.append("</tr>");
+                        }
+                        var ifTable = $("table#individualFilteringTable");
+                        if (headerRow != "")
+                            ifTable.prepend(headerRow + "</tr>");
+                        ifTable.append(dataRows.toString());
+
+                        var tableObj = document.getElementById("individualFilteringTable");
+                        addSelectionDropDownsToHeaders(tableObj);
+
+                        $('#progress').modal('hide');
+                        displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+                    }, 1);
+                } else {
+                    displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+                    $("#exportedIndividualMetadata").html("");
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                handleError(xhr, thrownError);
+            }
+        });
+    }
 
 	function loadVariantEffects() {
 		$.ajax({
@@ -1011,11 +973,17 @@
                 }
             };
         
-        $('#VariantIds').find('div.status').remove(); //needed to avoid having multiple status messages "enter more characters" after selecting another project
-        $('#variantIdsSelect').removeData('AjaxBootstrapSelect'); //needed to have the right projectId sent to the WS after selecting another project
+        $('#variantIdsSelect').parent().html($('#variantIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
-        $('#variantIdsSelect').trigger('change').data('AjaxBootstrapSelect').list.cache = {};
+       	$('#variantIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
         
+        $('#VariantIds button.dropdown-toggle').on('click', function() {
+   			if ($('#VariantIds ul li.selected').length == 0)
+   				$('#VariantIds ul li').remove();
+   			else
+				$('#VariantIds ul li:gt(0):not(.selected)').remove();
+   		});
+           		
         if ($('#VariantIds').find('div.bs-searchbox a').length === 0) {  
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
             inputObj.css('width', "calc(100% - 24px)");               
@@ -1024,82 +992,86 @@
         }
     }
 
-	function buildGenotypeTableContents(jsonResult)
-	{
-		var before = new Date().getTime();
-		var knownAlleles = jsonResult.alternateBases;
-		knownAlleles.unshift(jsonResult.referenceBases);
+    function buildGenotypeTableContents(jsonResult) {
+        var before = new Date().getTime();
+        var knownAlleles = jsonResult.alternateBases;
+        knownAlleles.unshift(jsonResult.referenceBases);
 
-		var gtTable = new Array();
-		var headerPositions = new Array();
-		for (var call in jsonResult.calls)
-		{
-			var individual = splitId(jsonResult.calls[call].callSetId, 2);
-			var gtRow = new Array();
-			gtRow.push(individual);
-			var gt = '';
-			for (var allele in jsonResult.calls[call].genotype)
-				gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
-			gtRow.push(gt);
-			for (var header in jsonResult.calls[call].info)
-			{
-				var headerPos = headerPositions[header];
-				if (headerPos == null)
-				{
-					headerPos = Object.keys(headerPositions).length;
-					headerPositions[header] = headerPos;
-				}
-				gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-			}
-			gtTable.push(gtRow);
-		}
-		var tableHeader = new Array(2);
-		for (var header in headerPositions)
-			tableHeader[headerPositions[header] + 2] = header;
-		
-		var htmlTableContents = new StringBuffer();
-		htmlTableContents.append('<thead><tr><th>Individual</th><th>Genotype</th>');
-		for (var headerPos in tableHeader)
-		{
-			var header = tableHeader[headerPos];
-			htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>' + header + '</th>');
-		}
-		htmlTableContents.append('</tr></thead>');
+        var gtTable = new Array();
+        var headerPositions = new Array();
+        for (var call in jsonResult.calls) {
+            var individual = splitId(jsonResult.calls[call].callSetId, 2);
+            var gtRow = new Array();
+            gtRow.push(individual);
+            var gt = '';
+            for (var allele in jsonResult.calls[call].genotype)
+                gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
+            gtRow.push(gt);
+            for (var header in jsonResult.calls[call].info) {
+                var headerPos = headerPositions[header];
+                if (headerPos == null) {
+                    headerPos = Object.keys(headerPositions).length;
+                    headerPositions[header] = headerPos;
+                }
+                gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
+            }
+            gtTable.push(gtRow);
+        }
+        var tableHeader = new Array(2);
+        for (var header in headerPositions)
+            tableHeader[headerPositions[header] + 2] = header;
 
-		var annotationFieldThresholds = {};
-		for (var i=1; i<=2; i++)
-   		$('#vcfFieldFilterGroup' + i + ' input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-   		});
+        var htmlTableContents = new StringBuffer();
+        htmlTableContents.append('<thead><tr><th style="width: 90vh;">Individual</th><th style="width: 20vh;">Genotype</th>');
+        for (var headerPos in tableHeader) {
+            var header = tableHeader[headerPos];
+            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>' + header + '</th>');
+        }
+        htmlTableContents.append('</tr></thead>');
 
-		var checkThresholds = Object.keys(annotationFieldThresholds).length > 0;
-		var indArray1 = getSelectedIndividuals(1);
-		var indArray2 = getSelectedIndividuals(2);
-		for (var row in gtTable)
-		{
-			var annotationThresholds = !checkThresholds ? null : getAnnotationThresholds(gtTable[row][0], indArray1, indArray2);
-			htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
-			var inGroup1 = indArray1.length == 0 || indArray1.includes(gtTable[row][0]);
-			var inGroup2 = $('#genotypeInvestigationDiv2').is(':visible') && (indArray2.length == 0 || indArray2.includes(gtTable[row][0]));
-			for (var i=0; i<tableHeader.length; i++)
-			{
-				var indivClass = inGroup1 ? (inGroup2 ? "groups1and2" : "group1") : (inGroup2 ? "group2" : "");
-				var missingData = false;
-				if (checkThresholds && i >= 2)
-					for (var annotation in annotationThresholds)
-						if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation])
-						{
-							missingData = true;
-							break;
-						}
-				htmlTableContents.append((i == 0 ? "<th class='" + indivClass + "'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-			}
-			htmlTableContents.append('</tr>');
-		}
-//		 console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
-		return htmlTableContents.toString();
-	}
+        var annotationFieldThresholds = {};
+        for (var i = 1; i <= 10; i++)
+            $('#vcfFieldFilterGroup' + i + ' input').each(function () {
+                if (parseFloat($(this).val()) > 0)
+                    annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+            });
+
+        var activeGroups = $(".genotypeInvestigationDiv").length;
+        var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
+        var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
+        for (var row in gtTable) {
+            var indivColors = [];
+        	for (var i=0; i<individualsByGroup.length; i++) {
+        		var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
+        		if (inGroup)
+        			indivColors.push(groupColors[i]);
+        	}
+        	
+            var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
+            htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
+            for (var i = 0; i < tableHeader.length; i++) {
+                var missingData = false;
+                if (applyThresholds && i >= 2)
+                    for (var annotation in annotationThresholds)
+                        if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
+                            missingData = true;
+                            break;
+                        }
+                
+                htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
+            }
+            htmlTableContents.append('</tr>');
+        }
+
+        //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
+        return htmlTableContents.toString();
+    }
+
+    function extractUniqueAlleles(jsonResult) {
+   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
+    	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
+    	return allelesWithDivs;
+    }
 
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
@@ -1107,28 +1079,12 @@
 		// get genotypes for a variant 
 		var modalContent = '';
 		var ind;
-		if (individualSubSet == null)
-		{
-			if ($("#displayAllGt").prop('checked'))
-				ind = [];
-			else
-			{
-   				ind = getSelectedIndividuals($('#genotypeInvestigationDiv2').is(':visible') ? null : 1);
-   				if (ind.length == indCount)
-   					ind = [];
-			}
-		}
+		var activeGroups = $(".genotypeInvestigationDiv").length;
+		if (activeGroups == 0 || $("#displayAllGt").prop('checked'))
+			ind = individualSubSet == null ? [] : individualSubSet;
 		else
-		{	// not all individuals are shown in the interface
-			if ($("#displayAllGt").prop('checked'))
-				ind = ($('#Individuals1 select option').map(function() { return $(this).text(); })).get();
-			else
-			{
-				var	selectedInGroup1 = ($('#Individuals1 select option:selected').map(function() { return $(this).text(); })).get();
-				var	selectedInGroup2 = ($('#Individuals2 select option:selected').map(function() { return $(this).text(); })).get();
-				ind = selectedInGroup1.concat(selectedInGroup2);
-			}
-		}
+			ind = getSelectedIndividuals(Array.from({ length: activeGroups }, (_, index) => index + 1));
+		
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
 		$("#runButtons").html("");
@@ -1150,16 +1106,20 @@
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+ 						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
 					}
 
 					var htmlTableContents = buildGenotypeTableContents(jsonResult);
 					$("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == 0 ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == 0 ? ' checked' : '') + (addedRunCount == 0 ? ' active' : '') + '>' + runList[runIndex] + '</label>');
-					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable">' + htmlTableContents + '</table></div>';
+					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
 					if ($('#varId').html() == "") {
 						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
 						$('#varSeq').html("Seq: " + jsonResult.referenceName);
 						$('#varType').html("Type: " + jsonResult.info.type[0]);
 						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+ 						$('#textKnownAlleles').html("Known Allele(s)");
+ 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
 					}
 					addedRunCount++;
 				},
@@ -1235,8 +1195,8 @@
 
 	function exportData() {
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "12" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "1" ? getSelectedIndividuals(1) : ($('#exportedIndividuals').val() == "2" ? getSelectedIndividuals(2) : null)));
-		exportedIndividualCount = indToExport == null ? indCount : indToExport.length;
+		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
+		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
 			if (exportedIndividualCount * count > 1000000000) {
 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
@@ -1618,30 +1578,30 @@
 		}
 	}
 	
-	// Update the default genomes list in the `load genome` menu
-	function igvUpdateGenomeMenu(){
-		// Discard the existing list, if it exists
-		$("#igvDefaultGenomesDivider").nextAll().remove();
-		
-		let menu = $("#igvGenomeMenu");
-		igvGenomeList.forEach(function (listConfig, index){
-			// Make a section header
-			if (index > 0){  // The divider already exists for the first one
-				let divider = $('<li class="divider" role="separator"></li>');
-				menu.append(divider);
-			}
-			let header = $('<li class="dropdown-header"></li>').text(listConfig.name);
-			menu.append(header);
-			
-			listConfig.genomes.forEach(function (genome){
-				let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function(){
-					igvSwitchGenome(genome.id).then(igvCheckReferenceCounts);
-				});
-				let item = $("<li></li>").append(link);
-				menu.append(item);
-			});
-		});
-	}
+    // Update the default genomes list in the `load genome` menu
+    function igvUpdateGenomeMenu() {
+        // Discard the existing list, if it exists
+        $("#igvDefaultGenomesDivider").nextAll().remove();
+
+        let menu = $("#igvGenomeMenu");
+        igvGenomeList.forEach(function (listConfig, index) {
+            // Make a section header
+            if (index > 0) {  // The divider already exists for the first one
+                let divider = $('<li class="divider" role="separator"></li>');
+                menu.append(divider);
+            }
+            let header = $('<li class="dropdown-header"></li>').text(listConfig.name);
+            menu.append(header);
+
+            listConfig.genomes.forEach(function (genome) {
+                let link = $('<a href="#"></a>').text(genome.id + " : " + genome.name).click(function () {
+                    igvSwitchGenome(genome.id).then(igvCheckReferenceCounts);
+                });
+                let item = $("<li></li>").append(link);
+                menu.append(item);
+            });
+        });
+    }
 	
 	// Load genome configuration(s) from JSON object
 	function igvLoadJSONGenome(name, config){
@@ -1815,6 +1775,7 @@
 			let targetSuffix = getSuffix(targetNames);
 			let targetSuffixRegex = new RegExp(targetSuffix + "$");
 			igvGenomeRefTable = {};
+			let aliasLessContigs = new Set();
 			for (let target of targetNames){  // target = chromosome name in the genome file, as used by IGV
 				let zeroname = target.replace(targetPrefix, "").replace(targetSuffixRegex, "");
 				let basename = zeroname.replace(/^0+/, "");  // Base chromosome name
@@ -1834,9 +1795,13 @@
 				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
 				if (gigwaContigName != null)
 					igvGenomeRefTable[target] = gigwaContigName;
-				else
+				else {
+					aliasLessContigs.add(target);
 					igvGenomeRefTable[target] = target;	// couldn't find it, use the provided name (better than nothing)
+				}
 			}
+			if (aliasLessContigs.size > 0)
+				console.log("Unable to find an alias for the following contigs in Gigwa sequences: " + Array.from(aliasLessContigs).join(", "));
 			
 			// Load the default tracks
 			for (let trackConfig of tracks){
@@ -1845,6 +1810,8 @@
 
 			// Add the variant tracks
 			await igvUpdateVariants();
+			
+			setIgvLocusIfApplicable();
 		});
 	}
 	
@@ -1960,7 +1927,7 @@
 	function setIgvLocusIfApplicable() {
 		var minPos = getSearchMinPosition(), maxPos = getSearchMaxPosition();
 	    if (minPos > -1 && minPos < maxPos && $('#Sequences').selectmultiple('count') == 1)
-	    	setTimeout(function() {igvBrowser.goto($('#Sequences').selectmultiple('value')[0] + ":" + minPos + "-" + maxPos);}, 0);
+	    	setTimeout(function() {igvBrowser.goto($('#Sequences').selectmultiple('value')[0].replace(/^\D+/, '').replace(/^0+/, '') + ":" + minPos + "-" + maxPos);}, 0);
 	}
 
 	// Called when the individuals groups have been changed
@@ -1972,63 +1939,63 @@
 		}
 	}
 	
-	// Update the browser's variant track
-	function igvUpdateVariants(){
-		if (igvBrowser){
-			let trackIndividuals = igvSelectedIndividuals();
-			let trackConfigs = [];
-			
-			trackIndividuals.forEach (function(individuals, index, array) {
-				trackConfigs.push({
-					name: array.length > 1 ? "Group " + (index+1) : "Query",
-					type: "variant",
-					format: "custom",
-					sourceType: "file",
-					order: Number.MAX_SAFE_INTEGER,
-					visibilityWindow: 100000,
-					reader: new GigwaSearchReader(
-							individuals, token,
-							"<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
-				});
-			})
-			
-			
-			// Display bug when updating while hidden
-			// So we delay it until the modal is shown again
-			let updateFunction = async function (){
-				// Remove the existing variant tracks
-				if (igvVariantTracks){
-					for (let track of igvVariantTracks)
-						await igvBrowser.removeTrack(track);
-					igvVariantTracks = undefined;	
-				}
-				
-				// Add the new tracks
-				let availableHeight = igvAvailableHeight();
-				for (let config of trackConfigs){
-					config.height = Math.max(200, availableHeight / trackConfigs.length);
-					let track = await igvBrowser.loadTrack(config);
-					if (!igvVariantTracks) igvVariantTracks = [];
-					igvVariantTracks.push(track);
-				}
-			}
-			
-			// Or .hasClass("in") ?
-			if ($("#igvPanel").is(":visible")){  // Already visible -> update right away
-				return updateFunction();
-			} else {  // Not visible -> hook it on the modal opening event
-				// In case several searches are made without showing the browser, prevents obsolete requests from triggering
-				$("#igvPanel").off("shown.bs.modal.updateVariants");
-			
-				return new Promise(function(resolve, reject) {
-					$("#igvPanel").one("shown.bs.modal.updateVariants", function() {
-						updateFunction().then(resolve).catch(reject);
-					});
-				});
-				
-			}
-		}
-	}
+    // Update the browser's variant track
+    function igvUpdateVariants() {
+        if (igvBrowser) {
+            let trackIndividuals = igvSelectedIndividuals();
+            let trackConfigs = [];
+
+            trackIndividuals.forEach(function (individuals, index, array) {
+                trackConfigs.push({
+                    name: array.length > 1 ? "Group " + (index + 1) : "Query",
+                    type: "variant",
+                    format: "custom",
+                    sourceType: "file",
+                    order: Number.MAX_SAFE_INTEGER,
+                    visibilityWindow: 100000,
+                    reader: new GigwaSearchReader(
+                        individuals, token,
+                        "<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
+                });
+            })
+
+
+            // Display bug when updating while hidden
+            // So we delay it until the modal is shown again
+            let updateFunction = async function () {
+                // Remove the existing variant tracks
+                if (igvVariantTracks) {
+                    for (let track of igvVariantTracks)
+                        await igvBrowser.removeTrack(track);
+                    igvVariantTracks = undefined;
+                }
+
+                // Add the new tracks
+                let availableHeight = igvAvailableHeight();
+                for (let config of trackConfigs) {
+                    config.height = Math.max(200, availableHeight / trackConfigs.length);
+                    let track = await igvBrowser.loadTrack(config);
+                    if (!igvVariantTracks) igvVariantTracks = [];
+                    igvVariantTracks.push(track);
+                }
+            }
+
+            // Or .hasClass("in") ?
+            if ($("#igvPanel").is(":visible")) {  // Already visible -> update right away
+                return updateFunction();
+            } else {  // Not visible -> hook it on the modal opening event
+                // In case several searches are made without showing the browser, prevents obsolete requests from triggering
+                $("#igvPanel").off("shown.bs.modal.updateVariants");
+
+                return new Promise(function (resolve, reject) {
+                    $("#igvPanel").one("shown.bs.modal.updateVariants", function () {
+                        updateFunction().then(resolve).catch(reject);
+                    });
+                });
+
+            }
+        }
+    }
 	
 	// Remove the browser if it is initialised
 	function igvRemoveExistingBrowser(){
@@ -2061,23 +2028,27 @@
 	
 	// Get the list of individuals to display in IGV
 	// Return an empty array for all individuals
-	function igvSelectedIndividuals(){
-		let group = $('input[name="igvGroupsButton"]:checked').val();
-		let trackIndividuals;
-		switch (group){
-			case "selected":
-				trackIndividuals = [getAllSelectedIndividuals(false)]; break;
-			case "group1":
-				trackIndividuals = [getSelectedIndividuals(1, false)]; break;
-			case "group2":
-				trackIndividuals = [getSelectedIndividuals(2, false)]; break;
-			case "separate":
-				trackIndividuals = [getSelectedIndividuals(1, false), getSelectedIndividuals(2, false)]; break;
-			case "all":
-				trackIndividuals = [[]]; break;
-		}
-		return trackIndividuals;
-	}
+    function igvSelectedIndividuals() {
+        let group = $('input[name="igvGroupsButton"]:checked').val();
+        let trackIndividuals;
+        switch (group) {
+            case "selected":
+                trackIndividuals = [getSelectedIndividuals(null, false)];
+                break;
+            case "separate":
+                trackIndividuals = [];
+                for (var i = 1; i <= $(".genotypeInvestigationDiv").length; i++)
+                    trackIndividuals.push(getSelectedIndividuals([i], false));
+                break;
+            case "all":
+                trackIndividuals = [[]];
+                break;
+            default:
+                trackIndividuals = [getSelectedIndividuals([group.replace("group", "")], false)];
+            	break;
+        }
+        return trackIndividuals;
+    }
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
 </head>
@@ -2105,16 +2076,23 @@
 		<p>
 		The system embeds various online visualization features that are easy to operate. Gigwa also provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
-		<p class="margin-top bold">
+		<p class="margin-top bold" style="float: left">
 			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
+		<div id="summaryTable" class='bold' style="display: flex; justify-content: right; margin-bottom: 25px; margin-top: 35px;">
+			<a href="summaryTable.jsp">Click here</a>&nbsp;to view a summary of instance contents
+		</div>
 		<c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
 		<c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>
-			<p class="margin-top">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
+			<p class="margin-top text-center">For any inquiries please contact <a href="mailto:${adminEmail}">${adminEmail}</a></p>
 		</c:if>
-		<div class="margin-top" style="margin:0 -30px; text-align:center; text-align:center;" id="logoRow">	 
+		<c:set var="customHomepageParagraph" value="<%= appConfig.get(\"customHomepageParagraph\") %>"></c:set>
+		<c:if test='${!fn:startsWith(customHomepageParagraph, "??") && !empty customHomepageParagraph}'>
+			<p class="margin-top text-justify" style='border-radius:5px; padding:7px; border:1px solid darkblue;'> ${customHomepageParagraph} </p>
+		</c:if>
+		<div class="margin-top" style="margin-left:-20px; margin-right:-20px; text-align:center; text-align:center;" id="logoRow">	 
 			<a href="http://www.southgreen.fr/" target="_blank"><img alt="southgreen" height="28" src="images/logo-southgreen.png" /></a>
 			<a href="http://www.cirad.fr/" target="_blank" class="margin-left"><img alt="cirad" height="28" src="images/logo-cirad.png" /></a>
 			<a href="http://www.ird.fr/" target="_blank" class="margin-left"><img alt="ird" height="28" src="images/logo-ird.png" /></a>
@@ -2122,13 +2100,14 @@
 			<a href="https://alliancebioversityciat.org/" target="_blank" class="margin-left"><img alt="bioversity intl" height="35" src="images/logo-bioversity.png" /></a>
 			<a href="http://www.arcad-project.org/" target="_blank" class="margin-left"><img alt="arcad" height="25" src="images/logo-arcad.png" /></a>
 		</div>
+
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
 		<c:choose>
 			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
 				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
 			</c:when>
 			<c:otherwise>
-<pre class="margin-top" style="font-size:10px; position:absolute;">Please cite Gigwa as follows:
+<pre class="margin-top" style="margin-left:15px; font-size:10px; position:absolute;">Please cite Gigwa as follows:
 Guilhem Sempéré, Adrien Pétel, Mathieu Rouard, Julien Frouin, Yann Hueber, Fabien De Bellis, Pierre Larmande,
 Gigwa v2—Extended and improved genotype investigator, GigaScience, Volume 8, Issue 5, May 2019, giz051,
 https://doi.org/10.1093/gigascience/giz051</pre>
@@ -2209,7 +2188,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										  </span>
 									   </div>
 									</div>
-                                                                        <div id="VariantIds" class="margin-top-md">
+                                    <div id="VariantIds" class="margin-top-md">
                                         <div class="container-fluid">
                                             <div class="row">
                                                 <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
@@ -2230,10 +2209,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<div class="margin-top-md">
 										<label class="custom-label margin-top-md">Investigate genotypes</label>
 										<div style="float:right;">
-											<select class="selectpicker form-control input-sm" data-width="92px" data-style="btn-primary" id="genotypeInvestigationMode" onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
-											  <option value="0" selected>disabled</option>
-											  <option value="1">on 1 group</option>
-											  <option value="2">on 2 groups</option>
+											<select class="selectpicker form-control input-sm" data-width="92px" data-style="btn-primary" id="genotypeInvestigationMode" onchange="setGenotypeInvestigationMode(parseInt($(this).val()));" 
+                                                    data-style="btn-primary" id="genotypeInvestigationMode"
+                                                    onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
+                                                <option value="0" selected>disabled</option>
+                                                <option value="1">on 1 group</option>
 											</select>
 										</div>
 									</div>
@@ -2242,207 +2222,19 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 					</div>
 
-					<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv1">
-						<span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group 1</span>
-						<div class="panel panel-default group1 shadowed-panel">
-							<div class="panel-body">
-							   <form class="form" role="form">
-							   <div class="custom-label" id="individualsLabel1">Individuals</div>
-							   <div id="Individuals1"></div>
-							   <div style="margin-top:-25px; text-align:right;">
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer1" onclick="setTimeout('applyGroupMemorizing(1);', 100);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector1" onclick="selectGroupUsingMetadata(1);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(1); var infoDiv=$('<div style=\'margin-top:-40px; right:55px; position:absolute;\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals1" onclick="toggleIndividualPasteBox(1);"></button>
-							   </div>
-							   <div class="col margin-top-md vcfFieldFilters">
-							   		<label class="custom-label">Minimum per-sample...</label><br/>
-									<div class="container-fluid">
-									  <div class="row" id="vcfFieldFilterGroup1"></div>
-									</div>
-									<small class="text-muted">(other data seen as missing)</small>
-							   </div>						
-								<div class="margin-top-md">
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minMissingData1" value="0" id="minMissingData1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 1, 0, 100);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
-											<label class="custom-label">Missing %</label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxMissingData1" value="100" id="maxMissingData1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 1, 0, 100);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div class="mafZone">
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minMaf1" value="0" id="minMaf1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 1, 0, 50);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:0 2px; margin-top:-3px;">
-											<label class="custom-label">MAF %<small><br/>(for bi-allelic)</small></label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxMaf1" value="50" id="maxMaf1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 1, 0, 50);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div>
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minHeZ1" value="0" id="minHeZ1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 1, 0, 100);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
-											<label class="custom-label">HeteroZ %</label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxHeZ1" value="100" id="maxHeZ1" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 1, 0, 100);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div class="margin-top-md">
-								   <div id="mostSameRatioSpan1" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio
-										<input id="mostSameRatio1" class="input-xs" style="width:35px;" value="100" maxlength="3"
-										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
-								   </div>
-								   <label for="Genotypes1" class="custom-label">Genotype patterns</label>
-								   &nbsp;
-								   <span class="glyphicon glyphicon-question-sign" id="genotypeHelp1"></span>
-								   <br/>
-								   <select
-									  class="selectpicker" id="Genotypes1" data-actions-box="true"
-									  data-width="100%" data-live-search="true" name="Genotypes1"></select>
-								</div>
-								</form>
-							</div>
-						</div>
-					</div>
-
-					<div class="row" id="discriminationDiv" hidden>
-						<div class="panel panel-default panel-pink shadowed-panel">
-							<div class="panel-body">
-								<div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand;" title="Some individuals are selected in both groups"><img align="left" src="images/warning.png" height="15" width="18" />&nbsp;Overlap</div>
-								<label class="label-checkbox">
-									<input type="checkbox" id="discriminate" class="input-checkbox" title="Check this box to limit search to variants for which the major genotype differs between both groups" onchange="checkGroupOverlap();">
-									&nbsp;Discriminate groups
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv2">
-						<span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group 2</span>
-						<div class="panel panel-default group2 shadowed-panel">
-							<div class="panel-body">
-							   <form class="form" role="form">
-							   <div class="custom-label" id="individualsLabel2">Individuals</div>
-							   <div id="Individuals2"></div>
-							   <div style="margin-top:-25px; float:right;">
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer2" onclick="setTimeout('applyGroupMemorizing(2);', 100);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector2" onclick="selectGroupUsingMetadata(2);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(2); var infoDiv=$('<div style=\'margin-top:-40px; right:55px; position:absolute\'>Copied!</div>'); infoDiv.insertBefore($(this)); setTimeout(function() {infoDiv.remove();}, 1200);"></button>
-								   <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals2" onclick="toggleIndividualPasteBox(2);"></button>
-							   </div>
-							   <div class="col margin-top-md vcfFieldFilters">
-							   		<label class="custom-label">Minimum per-sample...</label><br/>
-									<div class="container-fluid">
-									  <div class="row" id="vcfFieldFilterGroup2"></div>
-									</div>
-									<small class="text-muted">(other data seen as missing)</small>
-							   </div>
-								<div class="margin-top-md">
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minMissingData2" value="0" id="minMissingData2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 2, 0, 100);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
-											<label class="custom-label">Missing %</label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxMissingData2" value="100" id="maxMissingData2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', 2, 0, 100);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div class="mafZone">
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minMaf2" value="0" id="minMaf2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 2, 0, 50);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:0 2px; margin-top:-3px;">
-											<label class="custom-label">MAF %<small><br/>(for bi-allelic)</small></label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxMaf2" value="50" id="maxMaf2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', 2, 0, 50);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div>
-									<div class="container-fluid">
-									  <div class="row">
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-											<input name="minHeZ2" value="0" id="minHeZ2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 2, 0, 100);">
-											<span class="input-group-addon input-sm">&le;</span>
-											</div>
-										</div>
-										<div class="col-md-4" style="text-align:center; padding:7px 2px;">
-											<label class="custom-label">HeteroZ %</label>
-										</div>
-									  	<div class="col-md-4" style="padding:0;"><div class="input-group">
-										  <span class="input-group-addon input-sm">&le;</span>
-										  <input name="maxHeZ2" value="100" id="maxHeZ2" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', 2, 0, 100);">
-										  </div>
-										</div>
-									  </div>
-									</div>
-								</div>
-								<div class="margin-top-md">
-								   <div id="mostSameRatioSpan2" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio
-										<input id="mostSameRatio2" class="input-xs" style="width:35px;" value="100" maxlength="3"
-										onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%
-								   </div>
-								   <label for="Genotypes2" class="custom-label">Genotype patterns</label>
-								   &nbsp;
-								   <span class="glyphicon glyphicon-question-sign" id="genotypeHelp2"></span>
-								   <br/>
-								   <select
-									  class="selectpicker" id="Genotypes2" data-actions-box="true"
-									  data-width="100%" data-live-search="true" name="Genotypes2"></select>
-								</div>
-								</form>
-							</div>
-						</div>
-					</div>
+                    <div class="row" id="discriminationDiv" hidden>
+                        <div class="panel panel-default panel-pink shadowed-panel">
+                            <div class="panel-body">
+                                <div id="overlapWarning" hidden style="float:right; font-weight:bold; margin-top:2px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/>
+                                </div>
+                                <label class="label-checkbox">
+                                    <input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
+                                </label>
+                                <b>Discriminate groups </b>
+                                <span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
+                            </div>
+                        </div>
+                    </div>
 				</div>
 			</div>
 			
@@ -2602,21 +2394,29 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<h4 class="modal-title" id="variantDetailsLabel">Variant details</h4>
 				</div>
 				<div class="modal-body">
-					<div class="bg-dark text-white">
-						<div class="row margin-left">
-							<div class="col-md-6">
+					<div class="bg-dark text-white padding d-flex flex-row justify-between">
+						<div class="d-flex flex-column">
+							<div class="">
 								<p id="varId" class="text-bold"></p>
 							</div>
-							<div class="col-md-6">
-								<p id="varSeq" class="text-bold"></p>
-							</div>
-						</div>
-						<div class="row margin-left">
-							<div class="col-md-6">
+							<div class="">
 								<p id="varType" class="text-bold"></p>
 							</div>
-							<div class="col-md-6">
+						</div>
+						<div class="d-flex flex-column">
+							<div class="">
+								<p id="varSeq" class="text-bold"></p>
+							</div>
+							<div class="">
 								<p id="varPos" class="text-bold"></p>
+							</div>
+						</div>
+						<div class="d-flex flex-column">
+							<div>
+								<p id="textKnownAlleles" class="text-bold"></p>
+							</div>
+							<div>
+								<div id="varKnownAlleles" class="text-bold d-flex d-row" style="gap:5px"></div>
 							</div>
 						</div>
 					</div>
@@ -2764,13 +2564,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 									Groups <span class="caret"></span>
 								</a>
-								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
-									<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>
-									<li id="igvGroups1"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group1" onchange="igvSelectGroup();" /> Group 1</label></a></li>
-									<li id="igvGroups2"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group2" onchange="igvSelectGroup();" /> Group 2</label></a></li>
-									<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();" /> Separate groups</label></a></li>
-									<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();" checked="checked" /> All individuals</label></a></li>
-								</ul>
+								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
 							</li>
 						</ul>
 					</div>
