@@ -511,7 +511,6 @@ function buildSearchQuery(searchMode, pageToken) {
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": getSelectedGenesIds(),
-        "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1497,7 +1496,6 @@ function saveQuery() {
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
 		"geneName": getSelectedGenesIds(),
-        "numberGroups": activeGroups,
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1546,7 +1544,7 @@ function saveQuery() {
     query["additionalCallSetIds"] = callsetids;
 
     $.ajax({
-        url: 'rest/gigwa/saveQuery',
+        url: saveBookmarkedQueryURL,
         type: "POST",
         contentType: "application/json;charset=utf-8",
         timeout: 0,
@@ -1576,7 +1574,7 @@ function listQueries(){
     $('#loadedQueries p').remove();
     $('#queryManager').modal("show");
     $.ajax({    // load queries 
-        url: 'rest/gigwa/listSavedQueries?module=' + referenceset,
+        url: listBookmarkedQueriesURL + '?module=' + referenceset,
         type: "GET",
         dataType: "json",
         async: false,
@@ -1607,7 +1605,7 @@ function listQueries(){
             if ((queryName = prompt("Enter query name", $(this).parent('p').text())) == null)
                 return;
         $.ajax({    // load queries 
-            url: 'rest/gigwa/loadQuery?module=' + referenceset
+            url: loadBookmarkedQueryURL + '?module=' + referenceset
                 + '&queryId=' + queryId,
             type: "GET",
             dataType: "json",
@@ -1629,6 +1627,7 @@ function listQueries(){
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
                     "geneName": jsonResult['selectedGenesIds'],
+                    "callSetIds": jsonResult['callSetIds'],
 
                     "discriminate": jsonResult['discriminate'],
                     "pageSize": jsonResult['pageSize'],
@@ -1636,23 +1635,21 @@ function listQueries(){
                     "sortDir": jsonResult['sortDir']
                 };
 
-                for (var j = 1; j <= $(".genotypeInvestigationDiv").length; i++) {
-                    var i = j === 1 ? "" : i;
-
-                    requestData["callSetIds" + i] = jsonResult["callSetIds" + i];
-                    requestData["gtPattern" + i] = jsonResult["gtPattern" + i];
-                    requestData["mostSameRatio" + i] = jsonResult["mostSameRatio" + prefix];
-                    requestData["minMaf" + i] = jsonResult["minMaf" + i];
-                    requestData["maxMaf" + i] = jsonResult["maxMaf" + i];
-                    requestData["minMissingData" + i] = jsonResult["minMissingData" + i];
-                    requestData["maxMissingData" + i] = jsonResult["maxMissingData" + i];
-                    requestData["minHeZ" + i] = jsonResult["minHeZ" + i];
-                    requestData["maxHeZ" + i] = jsonResult["maxHeZ" + i];
-                    requestData["annotationFieldThresholds" + i] = jsonResult["annotationFieldThresholds" + i];
+                for (var j = 0; j < $(".genotypeInvestigationDiv").length; i++) {
+                    requestData["additionalCallSetIds"][j] = jsonResult["additionalCallSetIds"][j];
+                    requestData["gtPattern"][j] = jsonResult["gtPattern"][j];
+                    requestData["mostSameRatio"][j] = jsonResult["mostSameRatio"][j];
+                    requestData["minMaf"][j] = jsonResult["minMaf"][j];
+                    requestData["maxMaf"][j] = jsonResult["maxMaf"][j];
+                    requestData["minMissingData"][j] = jsonResult["minMissingData"][j];
+                    requestData["maxMissingData"][j] = jsonResult["maxMissingData"][j];
+                    requestData["minHeZ"][j] = jsonResult["minHeZ"][j];
+                    requestData["maxHeZ"][j] = jsonResult["maxHeZ"][j];
+                    requestData["annotationFieldThresholds"][j] = jsonResult["annotationFieldThresholds"][j];
                 }
 
                 $.ajax({
-                    url: 'rest/gigwa/saveQuery',
+                    url: saveBookmarkedQueryURL,
                     type: "POST",
                     contentType: "application/json;charset=utf-8",
                     timeout: 0,
@@ -1682,7 +1679,7 @@ function listQueries(){
     $('#loadedQueries p .glyphicon-folder-open').click(function(){
         var queryId = $(this).parent('p').attr('id');
         $.ajax({    // load queries 
-            url: 'rest/gigwa/loadQuery?module=' + referenceset 
+            url: loadBookmarkedQueryURL + '?module=' + referenceset 
             + '&queryId='+ queryId,
             type: "GET",
             dataType: "json",
@@ -1724,14 +1721,14 @@ function listQueries(){
                     $('#numberOfAlleles').selectpicker('val', tabAlleles);
                 }
 
-                for (var i= 0 ; i <= groupColors.length ; i++) {
+                for (var i= 0 ; i < jsonResult['gtPattern'].length ; i++) {
                     var e = i==1 ? "" : i;
 
                     if(groupHasFilters(jsonResult, i)){
                         $('#genotypeInvestigationMode').selectpicker('val', i + 1);
                           $('#genotypeInvestigationMode').trigger('change');
                           
-                          var tabIds = jsonResult['callSetIds'][i];
+                          var tabIds = i == 0 ? jsonResult['callSetIds'] : jsonResult['additionalCallSetIds'][i - 1];
                           if(tabIds.length != 0) {
                             $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
                                 return x.split(idSep)[2];
@@ -1773,7 +1770,7 @@ function listQueries(){
         var queryId = $(this).parent().attr('id');
         if(confirm('Do you really want to delete this query ?')){
             $.ajax({    
-                url: 'rest/gigwa/deleteQuery?module='+referenceset+'&queryId='+queryId,
+                url: deleteBookmarkedQueryURL + '?module='+referenceset+'&queryId='+queryId,
                 type: "DELETE",
                 dataType: "json",
                 async: false,

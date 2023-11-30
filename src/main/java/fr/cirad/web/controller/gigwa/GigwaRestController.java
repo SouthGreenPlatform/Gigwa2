@@ -821,7 +821,8 @@ public class GigwaRestController extends ControllerInterface {
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
-		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+		int projId = Integer.parseInt(info[1]);
+		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], projId, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
 		
 		Map<String, Integer> individualPositions = new LinkedHashMap<>();
 		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
@@ -879,23 +880,28 @@ public class GigwaRestController extends ControllerInterface {
 	                            if (gtCode == null)
                                     continue;   // skip genotype
 
-								Collection<Collection<String>> indlists = new ArrayList<>();
+								List<Collection<String>> indlists = new ArrayList<>();
 								for (HashMap<String, Float> entry : gir.getAnnotationFieldThresholds()) {
 									if (!entry.isEmpty()) {
 										List<String> indList = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
 										indlists.add(indList);
 									}
 								}
+								
+								
+						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
+						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
+						        List<List<String>> callsetIds = gir.getAllCallSetIds();
+						        for (int i = 0; i < callsetIds.size(); i++)
+						        	try {
+							            individualsByPop.put("Group" + (i+1), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+							            annotationFieldThresholdsByPop.put("Group" + (i+1), gir.getAnnotationFieldThresholds(i));
+							        }
+						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
+						        	{}
 
-								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indlists, gir.getAnnotationFieldThresholds()))
-    									continue;
-
-//	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
-//    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-//    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-//    								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
-//    									continue;	// skip genotype
-//	                            }
+								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individualsByPop, annotationFieldThresholdsByPop))
+    								continue;
 
 								if (individualGenotypes[individualIndex] == null)
 									individualGenotypes[individualIndex] = new ArrayList<String>();

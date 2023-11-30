@@ -119,6 +119,10 @@
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
+	var loadBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LOAD_QUERY_URL%>" />';
+	var saveBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SAVE_QUERY_URL%>" />';
+	var deleteBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DELETE_QUERY_URL%>" />';
+	var listBookmarkedQueriesURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LIST_SAVED_QUERIES_URL%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var downloadURL;
 	var callSetResponse = [];
@@ -132,7 +136,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1" , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
+    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
