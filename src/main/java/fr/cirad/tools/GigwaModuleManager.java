@@ -654,9 +654,22 @@ public class GigwaModuleManager implements IModuleManager {
         	throw new Exception("Not managing entities of type " + entityType);
 	}
 	
+
 	@Override
-	public boolean doesEntityTypeSupportDescription(String sModule, String sEntityType) {
-		return true;
+	public String getEntityAdditionURL(String sEntityType) {
+		return null;	// not supported for any entity type
+	}
+	
+	@Override
+	public String getEntityEditionURL(String sEntityType) {
+		return null;	// not supported for any entity type
+	}
+	
+	@Override
+	public boolean isInlineDescriptionUpdateSupportedForEntity(String sEntityType) {
+		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
+			return true;
+		return false;
 	}
 
 	@Override
