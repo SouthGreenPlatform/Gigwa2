@@ -716,8 +716,6 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
         const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}"></div>`;
         $(`div#densityLoadProgressContainer`).append($(loadDiv));
 
-        console.log(`startProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}`);
-
         $.ajax({
             url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
             type: "POST",
@@ -840,7 +838,6 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}"></div>`;
     $(`div#densityLoadProgressContainer`).append($(loadDiv));
 
-    console.log(`startProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
     $.ajax({
         url: selectionVCFPlotDataURL + "/" + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "POST",
@@ -1046,7 +1043,6 @@ function startProcess(i, fieldName) {
 function finishProcess(i, fieldName) {
     if (dataBeingLoaded) {
         const field = fieldName !== null ? "_" + fieldName : "";
-        console.log(`finishProcess densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
         $(`div#densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).remove();
         if (document.getElementById("densityLoadProgressContainer").children.length === 1) {
             document.getElementById("densityLoadProgressContainerText").innerText = "All graphs were correctly loaded";
@@ -1129,7 +1125,6 @@ function checkChartLoadingProgress(i, fieldName) {
                     emptyResponseCountsByProcess[token] = null;
                 } else {
 					if (jsonResult != null) {
-                            console.log(`Modification densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`);
                             document.getElementById(`densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
                     }
                     setTimeout(checkChartLoadingProgress(i, fieldName), minimumProcessQueryIntervalUnit);
