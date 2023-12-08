@@ -116,7 +116,6 @@
 	var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
 	var variantTypesListURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANT_TYPES_PATH%>" />';
 	var selectionDensityDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DENSITY_DATA_PATH %>" />';
-	var selectionVCFPlotDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VCF_FIELD_PLOT_DATA_PATH %>" />';
 	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
 	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
@@ -139,7 +138,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1"/* , "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
+    const groupColors = ["#bcd4f2", "#efecb1" /*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -152,7 +151,7 @@
 	    	if (i > 0)
 				$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' groups</option>');
     	}
-		
+
 		$('#module').on('change', function() {
 			$('#serverExportBox').hide();
 			if (referenceset != '')
@@ -351,21 +350,21 @@
 				resizeDialogs();
 		});
                 
-                $("#uploadVariantIdsFile").click(function(){
-                    $(this).val("");
-                });
+        $("#uploadVariantIdsFile").click(function(){
+            $(this).val("");
+        });
 
-                $("#uploadVariantIdsFile").change(function(){
-                    if ($(this).val() !== "") {
-                        var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
-                        fileReader = new FileReader();
-                        var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
-                        fileReader.onload = function(progressEvent) {
-                                onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
-                        };
-                        fileReader.readAsText(selectedFile, "UTF-8");                       
-                    }
-                });
+        $("#uploadVariantIdsFile").change(function(){
+            if ($(this).val() !== "") {
+                var fileName = $('#uploadVariantIdsFile').get(0).files[0].name;
+                fileReader = new FileReader();
+                var selectedFile = $('#uploadVariantIdsFile').get(0).files[0];
+                fileReader.onload = function(progressEvent) {
+                	onProvideVariantIds(fileReader.result, maxUploadableVariantIdCount);
+                };
+                fileReader.readAsText(selectedFile, "UTF-8");                       
+            }
+        });
 	});
 	
 	var onbeforeunloadCalled = false;
@@ -808,15 +807,18 @@
 			contentType: "application/json;charset=utf-8",
 			success: function(jsonResult) {
 				gtTable = jsonResult;
-				let activeGroups = $(".genotypeInvestigationDiv").length;
-				for (let i = 1; i <= activeGroups; i++) {
-					$(`#Genotypes1${i}`).on('change', function() {
-					$(`span#genotypeHelp${i}`).attr('title', gtTable[$(`#Genotypes${i}`).val()]);
-					var fMostSameSelected = $(`#Genotypes${i}`).val().indexOf("ostly the same") != -1;
-					$(`#mostSameRatioSpan${i}`).toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(i);
+				$('#Genotypes1').on('change', function() {
+					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
+					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
+					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
+					resetMafWidgetsIfNecessary(1);
 				});
-				}
+				$('#Genotypes2').on('change', function() {
+					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
+					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
+					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
+					resetMafWidgetsIfNecessary(2);
+				});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1017,12 +1019,27 @@
         var tableHeader = new Array(2);
         for (var header in headerPositions)
             tableHeader[headerPositions[header] + 2] = header;
-
+        
+        var indexSample = tableHeader.indexOf("sample");
         var htmlTableContents = new StringBuffer();
-        htmlTableContents.append('<thead><tr><th style="width: 90vh;">Individual</th><th style="width: 20vh;">Genotype</th>');
+        htmlTableContents.append('<thead><tr>');
+
+        // Add "Individual" as first column always
+        htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
+        // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
+        if (indexSample !== -1) {
+            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
+        }
+        // Add "Genotype" as a column
+        htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
+        
         for (var headerPos in tableHeader) {
             var header = tableHeader[headerPos];
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>' + header + '</th>');
+            // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
+            if (header === "sample") {
+                continue;
+            }
+            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
         }
         htmlTableContents.append('</tr></thead>');
 
@@ -1036,30 +1053,47 @@
         var activeGroups = $(".genotypeInvestigationDiv").length;
         var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
         var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
+
+        var prevFirstElement = null;
+        var prevColor = '#d1d1e0';
+        
         for (var row in gtTable) {
             var indivColors = [];
-        	for (var i=0; i<individualsByGroup.length; i++) {
-        		var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-        		if (inGroup)
-        			indivColors.push(groupColors[i]);
-        	}
-        	
+
+            for (var i = 0; i < individualsByGroup.length; i++) {
+                var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
+                if (inGroup)
+                    indivColors.push(groupColors[i]);
+            }
             var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
             htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
+
             for (var i = 0; i < tableHeader.length; i++) {
                 var missingData = false;
-                if (applyThresholds && i >= 2)
-                    for (var annotation in annotationThresholds)
-                        if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                            missingData = true;
-                            break;
+                // Ignore the "sample" column because we will treat it separately
+                if (i !== indexSample) {
+                    // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
+                    if (indexSample !== -1 && i === 1) {
+                    	// Changes the color if the first element in the row is different from the previous row
+                        var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
+                        htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
+                        prevColor = backgroundColor;
+                    }
+                    if (applyThresholds && i >= 2) {
+                        for (var annotation in annotationThresholds) {
+                            if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
+                                missingData = true;
+                                break;
+                            }
                         }
-                
-                htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
+                    }
+                    htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
+                }
             }
             htmlTableContents.append('</tr>');
+            // Updates the first element of the previous row
+            prevFirstElement = gtTable[row][0];
         }
-
         //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
         return htmlTableContents.toString();
     }
@@ -1088,44 +1122,69 @@
 		var addedRunCount = 0;
 		
 		let requests = [];
+		var firstValidRun = null;
 		for (var runIndex in runList) {
-			requests.push($.ajax({	// result of a run for a variant has an id as module§project§variant§run
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
-				type: "POST",
-				data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
-				async: false,
-				dataType: "json",
-				contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-				success: function(jsonResult) {
-					if (addedRunCount == 0) {
-						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-						$('#varSeq').html("Seq: " + jsonResult.referenceName);
-						$('#varType').html("Type: " + jsonResult.info.type[0]);
-						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
- 						$('#textKnownAlleles').html("Known Allele(s)");
- 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-					}
+            requests.push($.ajax({        // result of a run for a variant has an id as module§project§variant§run
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
+                    type: "POST",
+                    data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
+                    async: false,
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+     				headers: buildHeader(token, $('#assembly').val()),
+                    success: function(jsonResult) {
+                            if (addedRunCount == 0) {
+                                    $('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
+                                    $('#varSeq').html("Seq: " + jsonResult.referenceName);
+                                    $('#varType').html("Type: " + jsonResult.info.type[0]);
+                                    $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+                                     $('#textKnownAlleles').html("Known Allele(s)");
+                                 $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+                            }
+                            var htmlTableContents = buildGenotypeTableContents(jsonResult);
+                            
+                            // Initialize a flag to track if the current run has non-empty genotypes
+                            var hasNonEmptyGenotype = false;
+                            // Iterate over the calls in the JSON result for the current run
+                            for (var callIndex in jsonResult.calls) {
+                                var genotype = jsonResult.calls[callIndex].genotype;
+                                // Check if the genotype exists and has a length greater than zero
+                                if (genotype && genotype.length > 0) {
+                                    // Set the flag to true and exit the loop
+                                    hasNonEmptyGenotype = true;
+                                    break;
+                                }
+                            }
 
-					var htmlTableContents = buildGenotypeTableContents(jsonResult);
-					$("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == 0 ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == 0 ? ' checked' : '') + (addedRunCount == 0 ? ' active' : '') + '>' + runList[runIndex] + '</label>');
-					modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == 0 ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
-					if ($('#varId').html() == "") {
-						$('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-						$('#varSeq').html("Seq: " + jsonResult.referenceName);
-						$('#varType').html("Type: " + jsonResult.info.type[0]);
-						$('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
- 						$('#textKnownAlleles').html("Known Allele(s)");
- 					    $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-					}
-					addedRunCount++;
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					handleError(xhr, thrownError);
-					errorEncountered = true;
-				}
-			}));
-		}
+                            // If the current run has non-empty genotypes
+                            if (hasNonEmptyGenotype) {
+                                // Check if the first valid run has not been set yet
+                                if (firstValidRun === null) {
+                                    // Set the index of the first valid run
+                                    firstValidRun = runIndex;
+                                }
+
+                                // Displays the buttons and table of valid runs and directly displays the table of the first valid run
+                                $("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == firstValidRun ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == firstValidRun ? ' checked' : '') + (addedRunCount == firstValidRun ? ' active' : '') + '>' + runList[runIndex] + '</label>');
+                                    modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == firstValidRun ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
+                            }
+                            if ($('#varId').html() == "") {
+                                $('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
+                                $('#varSeq').html("Seq: " + jsonResult.referenceName);
+                                $('#varType').html("Type: " + jsonResult.info.type[0]);
+                                $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+                                $('#textKnownAlleles').html("Known Allele(s)");
+                                $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+                            }
+                            addedRunCount++;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                            handleError(xhr, thrownError);
+                            errorEncountered = true;
+                    }
+            }));
+    	}
+
 		
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
@@ -1239,14 +1298,15 @@
 			show: true
 		});
 
-		var annotationFieldThresholds = [];
-		let activeGroups = $(".genotypeInvestigationDiv").length;
-		for (let i = 1; i <= activeGroups; i++) {
-			$(`#vcfFieldFilterGroup${i} input`).each(function() {
-				if (parseFloat($(this).val()) > 0)
-					annotationFieldThresholds[i - 1] += (annotationFieldThresholds[i - 1] == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-			});
-		}
+		var annotationFieldThresholds = "", annotationFieldThresholds2 = "";
+   		$('#vcfFieldFilterGroup1 input').each(function() {
+   			if (parseFloat($(this).val()) > 0)
+   				annotationFieldThresholds += (annotationFieldThresholds == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
+   		});
+   		$('#vcfFieldFilterGroup2 input').each(function() {
+   			if (parseFloat($(this).val()) > 0)
+	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
+   		});
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 
@@ -2119,7 +2179,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="panel panel-default">
 							<p id="menu1" class="box-shadow-menu" onclick="menuAction();"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true" style="margin-right:3px;"></span></p>
 							<div id="submenu">
-								<p><label><input type="checkbox" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);"> Filter by IDs</label></p>
 								<p onclick="if (confirm('Are you sure?')) resetFilters();"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Clear filters</p>
 								<c:if test="${principal != null && !isAnonymous}">
 					   				<p id="savequery" onclick="saveQuery()" ><span class="glyphicon glyphicon-bookmark" aria-hidden="true"> </span> Bookmark current query </p>
@@ -2185,13 +2244,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									   </div>
 									</div>
                                     <div id="VariantIds" class="margin-top-md">
-                                        <div class="container-fluid">
-                                            <div class="row">
-                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left;" id="variantIdsLabel">Variant IDs</div>   
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-input">
+ 										<div style="display:flex; justify-content:left; align-items:center; gap:5px; white-space:nowrap;">
+                                                <input type="checkbox" style="margin:0; width:10px; height:10px;" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);">
+                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left; line-height:normal;" id="variantIdsLabel">Filter by variant IDs</div>
+                                            </div>                                       <div class="form-input">
                                             <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                         </div>
                                         <div style="margin-top:-25px; text-align:right;">
@@ -2432,7 +2488,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<div class="row">
 						<div class="col-md-12">
-							<div id="gtTable" class="auto-overflow"></div>
+							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 						</div>
 					</div>
 				</div>
@@ -2441,11 +2497,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	<!-- modal which displays density data -->
 	<div class="modal fade" role="dialog" id="density" aria-hidden="true">
-<%--		<div class="modal-dialog modal-lg">--%>
-<%--			<div class="modal-content">--%>
-				<div id="chartContainer" style="background-color:white; height:95%; overflow-y: auto"></div>
-<%--			</div>--%>
-<%--		</div>--%>
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header" id="chartContainer"></div>
+			</div>
+		</div>
 	</div>
 	<!-- modal which displays project information -->
 	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">
