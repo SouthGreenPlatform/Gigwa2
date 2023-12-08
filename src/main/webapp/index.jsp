@@ -808,18 +808,15 @@
 			contentType: "application/json;charset=utf-8",
 			success: function(jsonResult) {
 				gtTable = jsonResult;
-				$('#Genotypes1').on('change', function() {
-					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
-					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(1);
+				let activeGroups = $(".genotypeInvestigationDiv").length;
+				for (let i = 1; i <= activeGroups; i++) {
+					$(`#Genotypes1${i}`).on('change', function() {
+					$(`span#genotypeHelp${i}`).attr('title', gtTable[$(`#Genotypes${i}`).val()]);
+					var fMostSameSelected = $(`#Genotypes${i}`).val().indexOf("ostly the same") != -1;
+					$(`#mostSameRatioSpan${i}`).toggle(fMostSameSelected);
+					resetMafWidgetsIfNecessary(i);
 				});
-				$('#Genotypes2').on('change', function() {
-					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
-					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(2);
-				});
+				}
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1242,15 +1239,14 @@
 			show: true
 		});
 
-		var annotationFieldThresholds = "", annotationFieldThresholds2 = "";
-   		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds += (annotationFieldThresholds == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
-   		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
+		var annotationFieldThresholds = [];
+		let activeGroups = $(".genotypeInvestigationDiv").length;
+		for (let i = 1; i <= activeGroups; i++) {
+			$(`#vcfFieldFilterGroup${i} input`).each(function() {
+				if (parseFloat($(this).val()) > 0)
+					annotationFieldThresholds[i - 1] += (annotationFieldThresholds[i - 1] == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
+			});
+		}
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
 
