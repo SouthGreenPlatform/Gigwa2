@@ -136,7 +136,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1" /*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
+    const groupColors = ["#bcd4f2", "#efecb1"/*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -805,18 +805,14 @@
 			contentType: "application/json;charset=utf-8",
 			success: function(jsonResult) {
 				gtTable = jsonResult;
-				$('#Genotypes1').on('change', function() {
-					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
-					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(1);
-				});
-				$('#Genotypes2').on('change', function() {
-					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
-					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(2);
-				});
+				for (var i=0; i<getGenotypeInvestigationMode(); i++)
+					$('#Genotypes' + (i + 1)).on('change', function() {
+						var j = this.id.replace(/[^0-9.]/g, '');
+						$('span#genotypeHelp' + j).attr('title', gtTable[$('#Genotypes' + j).val()]);
+						var fMostSameSelected = $('#Genotypes' + j).val().indexOf("ostly the same") != -1;
+						$('#mostSameRatioSpan' + j).toggle(fMostSameSelected);
+						resetMafWidgetsIfNecessary(j);
+					});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1295,19 +1291,8 @@
 			keyboard: false,
 			show: true
 		});
-
-		var annotationFieldThresholds = "", annotationFieldThresholds2 = "";
-   		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds += (annotationFieldThresholds == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
-   		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
    		
-		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
-
+		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />';
         var query = buildSearchQuery(3, currentPageToken);
         query["keepExportOnServer"] =  keepExportOnServer;
         query["exportFormat"] =  $('#exportFormat').val();
