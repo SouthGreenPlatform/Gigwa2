@@ -423,14 +423,29 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
-    if (hasVcfMetadata) {
-        customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
-        $("#vcfFieldFilterGroup1 input").each(function(index) {
-            let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
-        });
-        customisationDivHTML += "</div>"
-    }
+    customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
+    $.ajax({    // load searchable annotations
+        url: searchableVcfFieldListURL + '/' + encodeURIComponent(getProjectId()),
+        type: "GET",
+        dataType: "json",
+        async: false,
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+            i = 0;
+            for (var key in jsonResult) {
+                let fieldName = jsonResult[key];
+                customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (i + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
+                i++
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+     customisationDivHTML += "</div>"
 
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
@@ -831,7 +846,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     var displayedVariantType = $("select#chartVariantTypeList").val();
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
-    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" || $('#plotIndividualSelectionMode').val() == undefined ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
     const field = fieldName !== null ? "_" + fieldName : "";
     const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}"></div>`;
     $(`div#densityLoadProgressContainer`).append($(loadDiv));
