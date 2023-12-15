@@ -2010,10 +2010,6 @@ public class GigwaRestController extends ControllerInterface {
 						
 						Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
 						Serializable s = filesByExtension.values().iterator().next();
-						boolean fIsGenotypingFileLocal = s instanceof File;
-						Scanner scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-						if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,"))
-							sampleMappingFile = null;
 						boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
 
 						if (sampleMappingFile != null) {
@@ -2096,15 +2092,6 @@ public class GigwaRestController extends ControllerInterface {
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new FlapjackImport(processId));
 												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-											}
-											else if (filesByExtension.containsKey("csv")) {
-												Serializable s = filesByExtension.values().iterator().next();
-												boolean fIsGenotypingFileLocal = s instanceof File;
-												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,")) {
-													genotypeImporter.set(new DartImport(processId));
-													newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-												}
 											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
