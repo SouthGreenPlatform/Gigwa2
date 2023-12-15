@@ -642,7 +642,7 @@ public class GigwaUnitTests {
 		svr.setGtPatternWithIndex(GigwaSearchVariantsRequest.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 1);
 		svr.setMostSameRatioWithIndex(75, 1);
 		
-		svr.setDiscriminate(true);
+		svr.setDiscriminateWithIndex(2, 1);
 		
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
