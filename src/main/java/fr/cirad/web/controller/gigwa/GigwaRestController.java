@@ -59,6 +59,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import fr.cirad.mgdb.importing.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -120,14 +121,6 @@ import fr.cirad.manager.IModuleManager;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
-import fr.cirad.mgdb.importing.BrapiImport;
-import fr.cirad.mgdb.importing.FlapjackImport;
-import fr.cirad.mgdb.importing.HapMapImport;
-import fr.cirad.mgdb.importing.IndividualMetadataImport;
-import fr.cirad.mgdb.importing.IntertekImport;
-import fr.cirad.mgdb.importing.PlinkImport;
-import fr.cirad.mgdb.importing.SequenceImport;
-import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
@@ -256,6 +249,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
@@ -2015,41 +2009,48 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						
 						Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
+						Serializable s = filesByExtension.values().iterator().next();
+						boolean fIsGenotypingFileLocal = s instanceof File;
+						Scanner scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
+						if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,"))
+							sampleMappingFile = null;
 						boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
+
 						if (sampleMappingFile != null) {
 							if (filesByExtension.size() == 1) {
-						        progress.setError("You must provide some genotyping data with your sample-mapping file!");
-						        return processId;
-						    }
-							
-							if (fBrapiImport) {
-						        progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
-						        return processId;
-						    }
-		
-							Scanner sampleMappingScanner = fIsSampleMappingFileLocal ? new Scanner((File) sampleMappingFile) : new Scanner(((URL) sampleMappingFile).openStream());
-				        	if (!sampleMappingScanner.hasNextLine()) {
-						        progress.setError("Sample-mapping file is empty!");
-						        return processId;
-						    }
-				        	else {
-				        		List<String> splitLine = Helper.split(sampleMappingScanner.nextLine(), "\t");
-				        		if (splitLine.size() != 2) {
-							        progress.setError("Sample-mapping file has a wrong structure (2 columns expected)!");
-							        return processId;
-							    }
+								progress.setError("You must provide some genotyping data with your sample-mapping file!");
+								return processId;
+							}
 
-				        		if (!splitLine.contains("individual") || !splitLine.contains("sample")) {
-							        progress.setError("Sample-mapping header must contain 2 columns named sample and individual!");
-							        return processId;
-							    }
-				        	}
+							if (fBrapiImport) {
+								progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
+								return processId;
+							}
+
+							Scanner sampleMappingScanner = fIsSampleMappingFileLocal ? new Scanner((File) sampleMappingFile) : new Scanner(((URL) sampleMappingFile).openStream());
+							if (!sampleMappingScanner.hasNextLine()) {
+								progress.setError("Sample-mapping file is empty!");
+								return processId;
+							} else {
+								List<String> splitLine = Helper.split(sampleMappingScanner.nextLine(), "\t");
+								if (splitLine.size() != 2) {
+									progress.setError("Sample-mapping file has a wrong structure (2 columns expected)!");
+									return processId;
+								}
+
+								if (!splitLine.contains("individual") || !splitLine.contains("sample")) {
+									progress.setError("Sample-mapping header must contain 2 columns named sample and individual!");
+									return processId;
+								}
+							}
 							sampleMappingScanner.close();
 							filesByExtension.remove(FilenameUtils.getExtension(sampleMappingFile.toString()));
 						}
+
 		
 						final AtomicInteger createdProjectId = new AtomicInteger(-1);
 						final SecurityContext securityContext = SecurityContextHolder.getContext();
+						Serializable finalSampleMappingFile = sampleMappingFile;
 						new SessionAttributeAwareThread(request.getSession()) {
 							public void run() {
 								Scanner scanner = null;
@@ -2060,7 +2061,7 @@ public class GigwaRestController extends ControllerInterface {
 										newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
-										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
+										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) finalSampleMappingFile).toURI().toURL() : (URL) finalSampleMappingFile);
 										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
 											Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
 											if (Boolean.TRUE.equals(fClearProjectData))
@@ -2095,6 +2096,15 @@ public class GigwaRestController extends ControllerInterface {
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new FlapjackImport(processId));
 												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											}
+											else if (filesByExtension.containsKey("csv")) {
+												Serializable s = filesByExtension.values().iterator().next();
+												boolean fIsGenotypingFileLocal = s instanceof File;
+												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
+												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,")) {
+													genotypeImporter.set(new DartImport(processId));
+													newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+												}
 											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
@@ -2493,6 +2503,32 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
 
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + GENES_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<String> searchableGenesLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
+            int project = Integer.parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return ga4ghService.searchGenesLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
+    
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
 	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		

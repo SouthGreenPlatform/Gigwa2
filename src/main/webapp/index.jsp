@@ -138,7 +138,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1" /*, "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
+    const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc"/*, "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -741,11 +741,11 @@
 					}
 					$('#variantEffects').html(option).selectpicker('refresh');
 					$('#varEffGrp').show();
-					$('#genesGrp').show();
+					$('#GeneIds').show();
 					isAnnotated = true;
 				} else {
 					isAnnotated = false;
-					$('#genesGrp').hide();
+					$('#GeneIds').hide();
 					$('#varEffGrp').hide();
 				}
 			},
@@ -807,18 +807,14 @@
 			contentType: "application/json;charset=utf-8",
 			success: function(jsonResult) {
 				gtTable = jsonResult;
-				$('#Genotypes1').on('change', function() {
-					$('span#genotypeHelp1').attr('title', gtTable[$('#Genotypes1').val()]);
-					var fMostSameSelected = $('#Genotypes1').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan1').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(1);
-				});
-				$('#Genotypes2').on('change', function() {
-					$('span#genotypeHelp2').attr('title', gtTable[$('#Genotypes2').val()]);
-					var fMostSameSelected = $('#Genotypes2').val().indexOf("ostly the same") != -1;
-					$('#mostSameRatioSpan2').toggle(fMostSameSelected);
-					resetMafWidgetsIfNecessary(2);
-				});
+				for (var i=0; i<getGenotypeInvestigationMode(); i++)
+					$('#Genotypes' + (i + 1)).on('change', function() {
+						var j = this.id.replace(/[^0-9.]/g, '');
+						$('span#genotypeHelp' + j).attr('title', gtTable[$('#Genotypes' + j).val()]);
+						var fMostSameSelected = $('#Genotypes' + j).val().indexOf("ostly the same") != -1;
+						$('#mostSameRatioSpan' + j).toggle(fMostSameSelected);
+						resetMafWidgetsIfNecessary(j);
+					});
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -987,7 +983,81 @@
             let inputObj = $('#VariantIds').find('div.bs-searchbox input');
             inputObj.css('width', "calc(100% - 24px)");               
             //when clicking on the button, selected IDs and search results are cleared
-            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'>&nbsp;X&nbsp;</a>");
+            inputObj.before("<a href=\"#\" onclick=\"clearVariantIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'><button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button></a>");
+        }
+    }
+    
+    function loadGeneIds() {
+        var options = {
+                ajax:{
+                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENES_LOOKUP%>" />',
+                    type: "GET",
+                    headers: {
+                            "Authorization": "Bearer " + token
+                    },
+                    dataType: "json",
+                    contentType: "application/json;charset=utf-8",
+                    data: {
+                        projectId: getProjectId(),
+                        q: '{{{q}}}'
+                    },
+                    success: function(jsonResult) {
+                        return jsonResult;
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        handleError(xhr, thrownError);
+                    }
+                },
+                cache : false,
+                preserveSelectedPosition : "before",
+                preserveSelected: true,
+                log: 2 /*warn*/,
+                locale: {
+                    statusInitialized: "Start typing a query",
+                    emptyTitle: "Input Names here",
+                    statusTooShort: "Please type more"
+                },
+                minLength: 2,
+                clearOnEmpty: true,
+                preprocessData: function (data) {
+                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                    var asp = this;
+                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                        return;
+                    }
+                    
+                    var array = [];
+                    for (i=0; i<data.length; i++) {
+                        array.push($.extend(true, data[i], {
+                            value: data[i]
+                        }));
+                    }
+                    return array;
+                }
+            };
+        
+        $('#geneIdsSelect').parent().html($('#geneIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
+        $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);
+       	$('#geneIdsSelect').data('AjaxBootstrapSelect').list.cache = {};
+        
+   		$('#GeneIds button.dropdown-toggle').on('click', function() {
+   			if ($('#GeneIds ul li.selected').length == 0)
+   				$('#GeneIds ul li').remove();
+   			else
+				$('#GeneIds ul li:gt(0):not(.selected)').remove();
+   		});
+        
+        if ($('#GeneIds').find('div.bs-searchbox a').length === 0) {  
+            let inputObj = $('#GeneIds').find('div.bs-searchbox input');
+            inputObj.css('width', "calc(100% - 24px)");
+            
+            let bsSearchboxDiv = $('#GeneIds').find('div.bs-searchbox');
+            bsSearchboxDiv.css('display', 'flex');
+            bsSearchboxDiv.css('flex-direction', 'row-reverse');
+            
+            //when clicking on the button, selected IDs and search results are cleared
+            inputObj.before("<a href=\"#\" onclick=\"clearGeneIdSelection();\" style='font-size:18px; margin-top:5px; font-weight:bold; text-decoration: none; float:right;' title='Clear selection'><button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button></a>");
         }
     }
 
@@ -1297,19 +1367,8 @@
 			keyboard: false,
 			show: true
 		});
-
-		var annotationFieldThresholds = "", annotationFieldThresholds2 = "";
-   		$('#vcfFieldFilterGroup1 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-   				annotationFieldThresholds += (annotationFieldThresholds == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
-   		$('#vcfFieldFilterGroup2 input').each(function() {
-   			if (parseFloat($(this).val()) > 0)
-	   			annotationFieldThresholds2 += (annotationFieldThresholds2 == "" ? "" : ";") + this.id.substring(0, this.id.indexOf("_")) + ":" + $(this).val();
-   		});
    		
-		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />'
-
+		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />';
         var query = buildSearchQuery(3, currentPageToken);
         query["keepExportOnServer"] =  keepExportOnServer;
         query["exportFormat"] =  $('#exportFormat').val();
@@ -2226,22 +2285,32 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 										</div>
 									</div>
 									<div class="margin-top-md" id="varEffGrp">
-									   <label for="variantEffects">Variant Effects</label>
-									   <div class="form-input">
-										  <select class="selectpicker" multiple id="variantEffects"
-											 data-actions-box="true" data-width="100%"
-											 data-live-search="true" name="variantEffects"></select>
-									   </div>
+										<label class="custom-label" for="variantEffects">Variant Effects</label>
+										<div class="form-input">
+											<select class="selectpicker" multiple id="variantEffects"
+												data-actions-box="true" data-width="100%"
+												data-live-search="true" name="variantEffects"></select>
+										</div>
 									</div>
-									<div id="genesGrp" class="margin-top-md">
-									   <label for="geneName" class="custom-label">Genes</label>
-									   <div class="input-group">
-										  <input id="geneName" class="form-control input-sm" type="text"
-											 name="genes"> <span class="input-group-addon input-sm"> <span
-											 class="glyphicon glyphicon-question-sign" id="geneHelp"
-											 title="Leave blank to ignore this filter. Enter '-' for variants without gene-name annotation. Enter '+' for variants with any gene-name annotation. Enter comma-separated names for specific genes"></span>
-										  </span>
-									   </div>
+									<div id="GeneIds" class="margin-top-md">
+										<div class="container-fluid">
+											<div class="row">
+												<div class="col-xl-6 input-group half-width custom-label"
+													style="float: left;" id="geneIdsLabel">Gene Names</div>
+													<div class="col-xl-6 input-group half-width custom-label" style="float: right; font-weight:400;">Selection mode</div>
+											</div>
+										</div>
+										<div class="form-input">
+											<select id="geneIdsSelect" class="selectpicker select-main" multiple multiple data-live-search="true" disabled data-selected-text-format="count > 0"></select>
+										</div>
+										<div style="margin-top: -25px; text-align: right;">
+											<a id="clearGenesIdSelection" href="#" onclick="clearGeneIdSelection();" style="display: none; font-size: 18px; margin-left: -20px; position: absolute; font-weight: bold; text-decoration: none;" title="Clear selection">
+												<button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button>
+											</a>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-plus" title="Variants with any gene-name annotation" id="plusMode" disabled onclick="onGeneSelectionPlusMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-minus" aria-pressed="false" title="Variants without gene-name annotation" id="minusMode" disabled onclick="onGeneSelectionMinusMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Variants with selected gene-name annotation" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
+										</div>
 									</div>
                                     <div id="VariantIds" class="margin-top-md">
  										<div style="display:flex; justify-content:left; align-items:center; gap:5px; white-space:nowrap;">
@@ -2283,7 +2352,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                     <input type="checkbox" id="discriminate" class="input-checkbox" onchange="checkGroupOverlap();">
                                 </label>
                                 <b>Discriminate groups </b>
-                                <span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
+                                <span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Check this box to limit search to variants for which the major genotype differs between selected groups"></span>
                             </div>
                         </div>
                     </div>

@@ -339,6 +339,27 @@ function getSelectedVariantIds() {
     return selectedVariantIds.join(";");
 }
 
+function getSelectedGenesIds() {
+    var mode = "";
+    if ($('#plusMode').hasClass('active')) {
+        mode = "+";
+    } else if ($('#minusMode').hasClass('active')) {
+        mode = "-";
+    }
+
+    if (mode !== "") {
+        return mode;
+    } else {
+		var selectedGenesIds = $('#geneIdsSelect').val();
+		if (selectedGenesIds === null || selectedGenesIds === undefined){
+			return "";
+		}
+		else {
+			return selectedGenesIds.join(",");
+		}		
+    }
+}
+
 function getSelectedNumberOfAlleles() {
     var selectedNbAlleles = $('#numberOfAlleles').val();
     if (selectedNbAlleles === null || selectedNbAlleles.length === alleleCount)
@@ -372,6 +393,7 @@ function fillWidgets() {
     loadGenotypePatterns();
     readPloidyLevel();
     loadVariantIds();
+    loadGeneIds();
 }
 
 function loadSearchableVcfFields() {
@@ -488,7 +510,7 @@ function buildSearchQuery(searchMode, pageToken) {
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+        "geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -839,7 +861,6 @@ function setGenotypeInvestigationMode(mode) {
 			toDitch[i].remove();
 		}
     } else if (mode > count) { // add required groups
-        loadGenotypePatterns();
         for (var i = count + 1; i <= mode; i++) {
             var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"></span><br/><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="100%" data-live-search="true" name="Genotypes${i}"></select></div></form></div></div></div>`;
             childContainer.append(htmlContent);
@@ -890,6 +911,7 @@ function setGenotypeInvestigationMode(mode) {
         });
 
         updateGtPatterns();
+        loadGenotypePatterns();
     }
 
     loadSearchableVcfFields();
@@ -1211,6 +1233,12 @@ function clearVariantIdSelection() {
     $('#variantIdsSelect').selectpicker('refresh');
 }
 
+function clearGeneIdSelection() {
+    $('#clearGenesIdSelection').hide();
+	$('#geneIdsSelect').removeAttr('disabled').selectpicker('deselectAll').find('[value]').remove()
+    $('#geneIdsSelect').selectpicker('refresh');
+}
+
 function displayProjectInfo(projName)
 {
     $("#projectInfoContainer").html("<h4>Information on project " + projName + "</h4><div style='font-weight:bold; float:right;'>" + dbDesc + "</div><p>This project contains " + runList.length + " run(s) of data.</p><pre>" + projectDescriptions[projName] + "</pre>");
@@ -1416,10 +1444,11 @@ function resetFilters() {
     $('#Sequences').selectmultiple('deselectAll');
     $('#minposition').val("");
     $('#maxposition').val("");
-    $('#geneName').val("");
+    $('#geneIdsSelect').val("");
+    $('#geneIdsSelect').prop('disabled', true);
+    $("#GeneIds button").removeClass("active").change();
     $('#variantEffects').selectpicker('deselectAll');
     $('#variantIdsSelect').selectpicker('deselectAll');
-
     $('#genotypeInvestigationMode').val(0);
     $('.selectpicker').selectpicker('refresh')
     $('#genotypeInvestigationMode').change();
@@ -1448,7 +1477,7 @@ function menuAction(){
 
 //This function allow the user to save a query into the DB
 function saveQuery() {
-    var queryName = "";
+    var queryName = ""; // test
     while (queryName.trim() == "")
         if ((queryName = prompt("Enter query name")) == null)
             return;
@@ -1466,7 +1495,7 @@ function saveQuery() {
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
+		"geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": $('#discriminate').prop('checked'),
         "pageSize": 100,
@@ -1597,7 +1626,7 @@ function listQueries(){
                     "start": jsonResult['start'],
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
-                    "geneName": jsonResult['geneName'],
+                    "geneName": jsonResult['selectedGenesIds'],
                     "callSetIds": jsonResult['callSetIds'],
 
                     "discriminate": jsonResult['discriminate'],
@@ -1684,8 +1713,8 @@ function listQueries(){
                     $('#variantEffects').selectpicker('val', tabEffects);
                 }
                 
-                var names = jsonResult['geneName']; //change gene name value
-                $('#geneName').val(names);
+                var names = jsonResult['selectedGenesIds']; //change gene name value
+                $('#geneIdsSelect').val(names);
                 
                 if(jsonResult['alleleCount'] != ""){
                     var tabAlleles = jsonResult['alleleCount'].split(';'); 
@@ -1773,13 +1802,17 @@ function onFilterByIds(checked) {
         
         $('#minposition').val("").prop('disabled', true); 
         $('#maxposition').val("").prop('disabled', true);
-        $('#geneName').val("").prop('disabled', true);
         
         $('#variantEffects').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
         $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
+        
+        $('#GeneIds').val("").prop('disabled', true);
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#clearGeneIdSelection').hide();
+        $('#GeneIds button').prop('disabled', true).removeClass('active');
         
 		for (var nGroup= 1; nGroup <= groupColors.length; nGroup++) {
 	        $('#minMissingData' + nGroup).val(0).prop('disabled', true);
@@ -1800,7 +1833,6 @@ function onFilterByIds(checked) {
         $('#Sequences').find('.btn').prop('disabled', false).selectpicker('refresh');
         $('#minposition').prop('disabled', false);
         $('#maxposition').prop('disabled', false);     
-        $('#geneName').prop('disabled', false);
         $('#variantEffects').prop('disabled', false).selectpicker('refresh');        
         
         $('#variantIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
@@ -1809,7 +1841,10 @@ function onFilterByIds(checked) {
         $('#clearVariantIdSelection').hide();
         $('#pasteVariantIds').prop('disabled', true);
         $('#uploadVariantIds').prop('disabled', true);
-                
+        
+        $('#GeneIds').prop('disabled', false);
+        $('#GeneIds button').prop('disabled', false);
+        
         for (var nGroup= 1; nGroup<= groupColors.length; nGroup++) {
 	        $('#minMissingData' + nGroup).prop('disabled', false);
 	        $('#maxMissingData' + nGroup).prop('disabled', false);
@@ -1821,6 +1856,57 @@ function onFilterByIds(checked) {
 		    $('#maxMaf' + nGroup).prop('disabled', false);
 		}
     }
+}
+
+
+function onGeneSelectionMinusMode() {
+    if (!$('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+    }
+
+    if (!$("#minusMode").hasClass("active")) {
+        $("#minusMode").addClass("active");
+    }
+    else {
+		$("#minusMode.active").removeClass("active");
+	}
+    
+    $("#plusMode.active").removeClass("active");
+    $("#editMode.active").removeClass("active");
+}
+
+function onGeneSelectionPlusMode() {
+    if (!$('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+    }
+
+    if (!$("#plusMode").hasClass("active")) {
+        $("#plusMode").addClass("active");
+    }
+    else {
+		$("#plusMode.active").removeClass("active");
+	}
+    
+    $("#minusMode.active").removeClass("active");
+    $("#editMode.active").removeClass("active");
+}
+
+function onGeneSelectionEditMode() {
+    if ($('#geneIdsSelect').prop('disabled')) {
+        $('#geneIdsSelect').removeAttr('disabled').selectpicker('refresh');
+    }
+
+    if (!$("#editMode").hasClass("active")) {
+        $("#editMode").addClass("active");
+        $('#geneIdsSelect').removeAttr('disabled').selectpicker('refresh');
+    }
+    else {
+		$("#editMode.active").removeClass("active");
+		$('#geneIdsSelect').prop('disabled', true).selectpicker('refresh');
+	}
+    
+    $("#minusMode.active").removeClass("active");
+    $("#plusMode.active").removeClass("active");
 }
 
 function rangeChanged(paramName, nGroup, minThreshold, maxThreshold) {
