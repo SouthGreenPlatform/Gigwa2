@@ -249,6 +249,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
@@ -2502,6 +2503,32 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
 
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + GENES_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<String> searchableGenesLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
+            int project = Integer.parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return ga4ghService.searchGenesLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
+    
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
 	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
