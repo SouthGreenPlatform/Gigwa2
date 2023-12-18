@@ -543,8 +543,7 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "geneName": getSelectedGenesIds(),
 
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
-
-        "discriminate": $('#discriminate').prop('checked'),
+        "discriminate": getDiscriminateArray(),
         "pageSize": 100,
         "pageToken": "0",
         "displayedSequence": displayedSequence,
