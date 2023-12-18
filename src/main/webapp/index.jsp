@@ -136,7 +136,7 @@
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
     var stringVariantIdsFromUploadFile = null;
-    const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc"/*, "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"*/];
+    const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
@@ -2312,8 +2312,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                     <div id="VariantIds" class="margin-top-md">
  										<div style="display:flex; justify-content:left; align-items:center; gap:5px; white-space:nowrap;">
                                                 <input type="checkbox" style="margin:0; width:10px; height:10px;" id="filterIDsCheckbox" name="filterIDsCheckbox" onchange="onFilterByIds(this.checked);">
-                                                <div class="col-xl-6 input-group half-width custom-label" style="float:left; line-height:normal;" id="variantIdsLabel">Filter by variant IDs</div>
-                                            </div>                                       <div class="form-input">
+                                                <label for="filterIDsCheckbox" class="col-xl-6 input-group half-width custom-label" style="float:left; line-height:normal;" id="variantIdsLabel">Filter by variant IDs</label>
+                                            </div>
+                                       	<div class="form-input">
                                             <select id="variantIdsSelect" class="selectpicker select-main" multiple data-live-search="true" disabled data-selected-text-format="count > 0" onchange="onVariantIdsSelect()"></select>
                                         </div>
                                         <div style="margin-top:-25px; text-align:right;">
