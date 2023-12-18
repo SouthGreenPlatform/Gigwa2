@@ -864,7 +864,7 @@ function setGenotypeInvestigationMode(mode) {
 		}
     } else if (mode > count) { // add required groups
         for (var i = count + 1; i <= mode; i++) {
-            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}" style="float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups.\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups"></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
+            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}" style="float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;"" title="Check this box to limit search to variants for which the major genotype differs between selected groups.\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups"></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
             childContainer.append(htmlContent);
             $('#discriminate' + i).selectpicker();
 
@@ -1510,6 +1510,7 @@ function saveQuery() {
 
         "referenceName": getSelectedSequences(),
         "selectedVariantTypes": getSelectedTypes(),
+        "selectedVariantIds": getSelectedVariantIds(),
         "alleleCount": getSelectedNumberOfAlleles(),
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
@@ -1641,31 +1642,30 @@ function listQueries(){
 
                     "referenceName": jsonResult['referenceName'],
                     "selectedVariantTypes": jsonResult['selectedVariantTypes'],
+                    "selectedVariantIds": jsonResult['selectedVariantIds'],
                     "alleleCount": jsonResult['alleleCount'],
                     "start": jsonResult['start'],
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
-                    "geneName": jsonResult['selectedGenesIds'],
+                    "geneName": jsonResult['geneName'],
                     "callSetIds": jsonResult['callSetIds'],
 
                     "discriminate": jsonResult['discriminate'],
                     "pageSize": jsonResult['pageSize'],
                     "sortBy": jsonResult['sortBy'],
-                    "sortDir": jsonResult['sortDir']
+                    "sortDir": jsonResult['sortDir'],
+                    
+	                "additionalCallSetIds": jsonResult["additionalCallSetIds"],
+	                "gtPattern": jsonResult["gtPattern"],
+	                "mostSameRatio": jsonResult["mostSameRatio"],
+	                "minMaf": jsonResult["minMaf"],
+	                "maxMaf": jsonResult["maxMaf"],
+	                "minMissingData": jsonResult["minMissingData"],
+	                "maxMissingData": jsonResult["maxMissingData"],
+	                "minHeZ": jsonResult["minHeZ"],
+	               	"maxHeZ": jsonResult["maxHeZ"],
+	                "annotationFieldThresholds": jsonResult["annotationFieldThresholds"]
                 };
-
-                for (var j = 0; j < $(".genotypeInvestigationDiv").length; i++) {
-                    requestData["additionalCallSetIds"][j] = jsonResult["additionalCallSetIds"][j];
-                    requestData["gtPattern"][j] = jsonResult["gtPattern"][j];
-                    requestData["mostSameRatio"][j] = jsonResult["mostSameRatio"][j];
-                    requestData["minMaf"][j] = jsonResult["minMaf"][j];
-                    requestData["maxMaf"][j] = jsonResult["maxMaf"][j];
-                    requestData["minMissingData"][j] = jsonResult["minMissingData"][j];
-                    requestData["maxMissingData"][j] = jsonResult["maxMissingData"][j];
-                    requestData["minHeZ"][j] = jsonResult["minHeZ"][j];
-                    requestData["maxHeZ"][j] = jsonResult["maxHeZ"][j];
-                    requestData["annotationFieldThresholds"][j] = jsonResult["annotationFieldThresholds"][j];
-                }
 
                 $.ajax({
                     url: saveBookmarkedQueryURL,
@@ -1708,37 +1708,66 @@ function listQueries(){
                 "Authorization": "Bearer " + token
             },
             success: function(jsonResult) {
-                resetFilters(); 
+                resetFilters();
                 
-                if(jsonResult["start"] != -1) // if there is a start position
-                $('#minposition').val(jsonResult["start"]); 
-                
-                if(jsonResult["end"] != -1) // if there is a end position
-                $('#maxposition').val(jsonResult["end"]);
-                
-                if(jsonResult['referenceName'] != ""){
-                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
-                    $('#Sequences div select').val(tabRefs); //change the 'select' values
-                    $('#Sequences div select').trigger('change');//trigger the change event
-                }
-                
-                if(jsonResult['selectedVariantTypes'] != ""){
-                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
-                    $('#variantTypes').selectpicker('val', tabTypes);
-                }
-                
-                if(jsonResult['variantEffect'] != ""){
-                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
-                    $('#variantEffects').selectpicker('val', tabEffects);
-                }
-                
-                var names = jsonResult['selectedGenesIds']; //change gene name value
-                $('#geneIdsSelect').val(names);
-                
-                if(jsonResult['alleleCount'] != ""){
-                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
-                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
-                }
+                var filterByVariantIDs = jsonResult['selectedVariantIds'] != null && jsonResult['selectedVariantIds'] != "";
+                $("#filterIDsCheckbox").prop("checked", !filterByVariantIDs);	// make it the opposite of what we want
+       		    $("#filterIDsCheckbox").click();	// toggle it and let event handlers launch interface update
+				if (filterByVariantIDs) {
+					var optionSB = new StringBuffer();
+			        selectTitle = "Select to enter IDs";
+			        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+			        jsonResult['selectedVariantIds'].split(";").forEach(function (varId) {
+			            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+			        });
+			        $("#variantIdsSelect").append(optionSB.toString());
+			        $('#copyVariantIds').show();
+			        $('#clearVariantIdSelection').hide();
+			   		$('#variantIdsSelect').trigger('change');
+				}
+				else {                
+	                if(jsonResult["start"] != -1) // if there is a start position
+	                $('#minposition').val(jsonResult["start"]); 
+	                
+	                if(jsonResult["end"] != -1) // if there is a end position
+	                $('#maxposition').val(jsonResult["end"]);
+	                
+	                if(jsonResult['referenceName'] != ""){
+	                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
+	                    $('#Sequences div select').val(tabRefs); //change the 'select' values
+	                    $('#Sequences div select').trigger('change');//trigger the change event
+	                }
+	                
+	                if(jsonResult['selectedVariantTypes'] != ""){
+	                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
+	                    $('#variantTypes').selectpicker('val', tabTypes);
+	                }
+	                
+	                if(jsonResult['variantEffect'] != ""){
+	                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
+	                    $('#variantEffects').selectpicker('val', tabEffects);
+	                }
+	                
+	                var names = jsonResult['geneName']; //change gene name value
+	                if (names == "-")
+	                	$('#minusMode').click();
+	                else if (names == "+")
+	                	$('#plusMode').click();
+	                else if (names.trim() != "") {
+	                	$('#editMode').click();
+				        var optionSB = new StringBuffer();
+				        names.split(",").forEach(function (varId) {
+				            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+				        });
+	    				$("#geneIdsSelect").append(optionSB.toString());
+	    				$('#geneIdsSelect').trigger('change');
+	                }
+	                
+	                if(jsonResult['alleleCount'] != ""){
+	                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
+	                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
+	                }
+	            }
 
                 $('#genotypeInvestigationMode').selectpicker('val', jsonResult['gtPattern'].length);
                   $('#genotypeInvestigationMode').trigger('change');
