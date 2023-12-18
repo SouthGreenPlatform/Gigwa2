@@ -146,8 +146,7 @@
 	    	const styleTag = document.createElement('style');
 	    	styleTag.textContent = "." + className + " { background-color: " + color + "; }";
 	    	document.head.appendChild(styleTag);
-	    	if (i > 0)
-				$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' groups</option>');
+			$("#genotypeInvestigationMode").append('<option value="' + (i+1) + '">on ' + (i+1) + ' group' + (i == 0 ? '' : 's') + '</option>');
     	}
 
 		$('#module').on('change', function() {
@@ -2332,7 +2331,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                                     data-style="btn-primary" id="genotypeInvestigationMode"
                                                     onchange="setGenotypeInvestigationMode(parseInt($(this).val()));">
                                                 <option value="0" selected>disabled</option>
-                                                <option value="1">on 1 group</option>
 											</select>
 										</div>
 									</div>
