@@ -159,7 +159,7 @@
     	                previewsContainer: "#dropZonePreviews",
    		           	    dictResponseError: 'Error importing data',
    		           	    parallelUploads: 10,
-   		           	    acceptedFiles: ".fasta,.fasta.gz,.fa,.fa.gz,.gtf,.gtf.gz,.gff,.gff.gz,.gff2,.gff2.gz,.gff3,.gff3.gz,.genbank,.gbk,.genbank.gz,.gbk.gz,.refseq,.refseq.gz,.embl,.embl.gz,.knowngenes,.knowngenes.gz,.kg,.kg.gz",
+   		           	    acceptedFiles: ".fasta,.fasta.gz,.fa,.fa.gz,.fas,.fas.gz,.gtf,.gtf.gz,.gff,.gff.gz,.gff2,.gff2.gz,.gff3,.gff3.gz,.genbank,.gbk,.genbank.gz,.gbk.gz,.refseq,.refseq.gz,.embl,.embl.gz,.knowngenes,.knowngenes.gz,.kg,.kg.gz",
    		           	  	headers: {
    		           	  		"Authorization": "Bearer " + token
    		           	  	},
