@@ -7,7 +7,7 @@
         <project.version>2.7-beta</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<Gigwa2ServiceImpl.version>2.6.2-RELEASE</Gigwa2ServiceImpl.version>
+		<Gigwa2ServiceImpl.version>2.7-RELEASE</Gigwa2ServiceImpl.version>
 		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
