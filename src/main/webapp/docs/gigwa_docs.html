@@ -12,11 +12,11 @@
    <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
       STYLE="border: none; padding: 0in; max-width:1240px;">
       <BR>
-     <a href="javascript:window.print();" alt="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
+     <a href="javascript:window.print();" title="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.5.x &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.6.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -41,22 +41,19 @@
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
+            <P STYLE="margin-bottom: 0.14in">Choosing "Manage data" then "Import data" from the main horizontal menu leads to a page dedicated to data imports, split in two sections accessible via tabs named "Genotype import" and "Metadata import".
+            </P>
+            <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data into temporary databases that remain accessible for 24h. These databases are created as public but hidden (only visible to people knowing their precise URL and to administrators).
+            </P>
+            <P STYLE="margin-bottom: 0.14in">From the second tab, users may thus import metadata (traits, phenotypes...) for a database's individuals. Metadata imported by users with write permissions (administrators, database supervisors, project managers)
+            is considered "official" and therefore made available to all users by default. If specified by any other user, it will by only available for himself (thus completing / overriding the default metadata).
+            </P>
             <UL>
                 <LI>
                     <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                       <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.1/ IMPORTING GENOTYPING DATA</FONT></FONT></FONT>
                     </P>
-                    <P STYLE="margin-bottom: 0.14in">Choosing "Manage
-                        data" then "Import data" from the main horizontal menu leads to a page dedicated to data imports.
-                    </P>
-                    <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data
-                        into temporary databases that remain accessible for 24h. These databases are hidden (only visible to people knowing their precise
-                        URL and to administrators).
-                    </P>
-                    <P STYLE="margin-bottom: 0.14in">From a second tab, users may import metadata for a database's individuals. Metadata imported by users with write permissions (administrators, database supervisors, project managers)
-                    is considered "official" and therefore made available to all users by default. If specified by any other user, it will by only available for himself (thus completing / overriding the default metadata). 
-                    </P>
-                    <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, FlapJack, Intertek, BrAPI) and in various ways:
+                    <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, Intertek, FlapJack, BrAPI) and in various ways:
                     </P>
                     <UL>
                         <LI>
@@ -79,45 +76,42 @@
                            <P STYLE="margin-bottom: 0in; line-height: 100%">Project: a project may contain one or several runs;
                            </P>
                         <LI>
-                           <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up writing a run into a project. Allowing multiple runs in a project is a way of supporting incremental data loading.
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up adding a run to a project. Allowing multiple runs in a project is a way of supporting incremental data loading. 
                            </P>
                      </UL>
+                     <P STYLE="margin-bottom: 0.14in">For each individual referred to from an import file (e.g., VCF), a sample is added to the database. Thus, this allows accounting for multiple samples for a same individual. By default, samples are given an auto-generated name, but it is possible to make Gigwa consider the names featured in import files as sample names rather than individual names (useful when looking at using BrAPI for browsing data). This is achieved by providing the interface with an additional 2-column tabulated file listing ID mappings (with a header featuring 'individual' and 'sample').
+                     </P>
                      <P STYLE="margin-bottom: 0.14in">Specifying a ploidy level is optional (most of the time, the system is able to guess it) but recommended for Flapjack and HapMap formats (will speed-up imports). A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
                      </P>
                      <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
                      <P STYLE="margin-bottom: 0.14in">Genotyping data import progress can be watched in real time from the upload page, or via a dedicated
-                        asynchronous progress page (convenient for large datasets), as imports run as background processes and may not be interrupted by users.
+                        asynchronous progress page (convenient for large datasets), as imports run as background processes.
                      </P>
                 </LI>
                 <LI>
                     <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                       <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.2/ IMPORTING METADATA</FONT></FONT></FONT>
                     </P>
-                    <P STYLE="margin-bottom: 0.14in"><u>Providing individual metadata</u> is only supported for existing databases and aims at enabling users to select
-                    them by filtering on that metadata. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
+                    <P STYLE="margin-bottom: 0.14in"><u>Providing metadata</u> may be done either for existing individuals / samples, or while importing them along with genotypes. Individual-level metadata aims at enabling users to batch-select them by filtering on it. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
+                    Sample-level metadata can also be stored by the system but is currently not reflected in the default Gigwa UI (only accessible via BrAPI).
                     </P>
-                    <P STYLE="margin-bottom: 0.14in">Metadata may be provided as a simple tabulated file containing user-defined columns (only one is enforced, named "individual").
+                    <P STYLE="margin-bottom: 0.14in">Metadata may be provided as a simple tabulated file containing user-defined columns (only one is enforced, named 'individual' or 'sample' depending on the selected target entities).
                     </P>
 
-                    <P STYLE="margin-bottom: 0.14in">Importing metadata via BrAPI v1 or v2 is also supported. To do that, you first have to import a file with at least the 3 following columns (in addition of "individual" column):
+                    <P STYLE="margin-bottom: 0.14in">Importing metadata via BrAPI v1 or v2 is also supported. To do that, you must submit a tabulated metadata file with at least the 2 following columns (in addition to above-mentioned mandatory column):
                     </P>
                     <UL>
                         <LI>
-                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefId</B> which contains the germplasmDbId or sampleDbId (of the BrAPI server);
+                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefSrc</B> which must contain the BrAPI url (e.g. https://test-server.brapi.org/brapi/v2) to pull entity metadata from;
                             </P>
                         </LI>
                         <LI>
-                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefSource</B> which contains the BrAPI url (e.g. https://test-server.brapi.org/brapi/v2);
-                            </P>
-                        </LI>
-                        <LI>
-                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefType</B> which contains either "germplasm" or "sample" (depending on the resource type you want to get information);
+                            <P STYLE="margin-bottom: 0in; line-height: 100%"><B>extRefId</B> which must contain the germplasmDbId or sampleDbId (on the BrAPI server) corresponding to the Gigwa individual or sample respectively referred to on the current line.
                             </P>
                         </LI>
                     </UL>
-                    <P STYLE="margin-bottom: 0.14in"> Then you have to come back to the metadata importing form and click on submit in order to extract data from the BrAPI server(s).
+                    <P STYLE="margin-bottom: 0.14in">As a different extRefSrc may be provided on each line, it is possible to pull data from multiple BrAPI sources at once (user will be prompted for an optional token to use with each of them). In the end, Gigwa will attempt to grab germplasm or sample metadata from BrAPI to supplement user-provided information upon form submission.
                     </P>
-
 
                     <IMG class="fullwidth" SRC="shot01bis_import_md.png" BORDER=0>
                     <P STYLE="margin-bottom: 0.14in">
@@ -168,7 +162,7 @@
                <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:274px; margin-top:50px; margin-left:10px;'>
+               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:278px; margin-top:50px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown button may be used to display one or two additional panels
                   that allow for more advanced filtering features based on one or two subsets of individuals referred to as groups.
                </P>
@@ -188,7 +182,7 @@
                   <LI>
                      <P STYLE="margin-bottom: 0in; line-height: 100%">
                         <IMG SRC="mb2639ac.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>The
-                        <B>magnifier</B> icon (only present when metadata are available)
+                        <B>magnifier</B> icon (only present when individual-level metadata are available)
                         helps selecting individuals according to the metadata attached to
                         them;
                      </P>
@@ -218,31 +212,24 @@
                         the rest of the query;
                      </P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">"Max
-                        missing data" ratio defines how many individuals (among the
-                        selected ones) may have a missing genotype;
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">Ratios of Missing data, Minor Allele Frequency and Heterozygosity can be filtered on via range widgets;
                      </P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">"Minor
-                        allele frequency" can be provided as a range (only
-                        supported for bi-allelic data);
-                     </P>
-                  <LI>
-                     <P  STYLE="margin-bottom: 0.14in; line-height: 100%">The
-                        "Genotype pattern" dropdown provides a list of
+                     <P  STYLE="margin-bottom: 0.14in; line-height: 100%">The "Genotype pattern" dropdown provides a list of
                         genotype patterns that may be applied within the group. Descriptions for those are available via the question-mark icon.
                      </P>
                </UL>
      	    <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
     	        <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within each group but different between them, set both
-    	        groups" genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
-    	        lets users specify how many of the current group"s selected individuals must have the same genotype. Additionally, an extra
-    	        pink panel appears between both group panels, containing a checkbox labelled "Discriminate groups". Checking this
+    	        groups' genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
+    	        lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, checking the "Discriminate groups"
     	        box will ensure that the most frequent genotype in group 1 is different from that in group 2. See online video number 4 for a demonstration.</SPAN>
      	    </P>
      	    <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
-      	      and genotypes treated as missing because of low quality. MAF and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
-      	   </P>
+      	      and genotypes treated as missing because of low quality. MAF &amp; heterozygosity ratios and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
+	  	 	</P>
+     	    <P STYLE="margin-bottom: 0.24in"><u>NB:</u> When working on multi-run projects featuring several samples for a same individual, the following consistency rule had to be defined to be able to apply genotype patterns: for a given individual and variant, if a most frequent genotype exists, it is the one accounted for, otherwise, this data-point is treated as missing.
+      	   	</P>
          </UL>
          <UL>
             <LI>
@@ -291,19 +278,24 @@
                   In the case where data was provided in VCF format containing numeric genotype-level fields (e.g. depth, genotype quality)
                   an additional series can be displayed for each of these fields, on top of the main series;
                </P>
-      	      <IMG class="fullwidth" SRC="shot05_charts.png" BORDER=1 style='margin-top:10px;'>
+      	      <IMG class="fullwidth" SRC="shot05_charts.png" BORDER=1>
       	      <LI>
+           	     <IMG class="fullwidth" SRC="shot05bis_output_tools.png" BORDER=1 style='margin-top:10px;' align='right'>
       	         <P STYLE="margin-bottom: 0in; line-height: 100%">
       	            <IMG SRC="m448bf72b.jpg" ALIGN=BOTTOM HEIGHT=25 BORDER=0> An "External tools" box provides
-      	            means to setup the application for interacting with / pushing data into external
+      	             means to setup the application for interacting with / pushing data into external
          	         tools: an external online genome browser (e.g., GBrowse, JBrowse) can be configured for viewing
-            	      each variant in its genomic context (via an extra icon at the end
-            	      of each table row); a running standalone instance of IGV can be fed with a
-            	      VCF export file (refer to tooltip for details); other online tools
-           		     (e.g. Galaxy, SNiPlay) can also be fed using exported files (click
-            	      online-output-tools icon for details);
-            	      <br><u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favor of the newly embedded IGV.js solution
-            	   </P>
+            	     each variant in its genomic context (via an extra icon at the end
+            	     of each table row); a running standalone instance of IGV can be fed with a
+            	     VCF export file (refer to tooltip for details)
+            	 </P>
+            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
+            	     Other third-party online systems (e.g. Galaxy, SNiPlay) can also be fed using files exported with the 'Keep files on server'
+            	     box ticked (click online-output-tools icon for configuration details).       	     
+            	 </P>
+            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
+				 	<u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favour of the newly embedded IGV.js solution
+            	 </P>
       	      <LI>
       	         <P STYLE="margin-bottom: 0in; line-height: 100%">
       	            <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
@@ -359,7 +351,8 @@
 			<table class="fullwidth" style="width:100%; border:1px #404040 dashed; margin-bottom:10px;" cellpadding='4'>
 				<tr bgcolor="#d0d0d0"><th>Gigwa entity</th><th>GA4GH entity</th><th>BrAPI v1 entity</th><th>BrAPI v2 entity</th></tr>
 				<tr><td bgcolor="#f0f0f0">database or module</td><td>referenceSet or dataset</td><td bgcolor="#f0f0f0">database or map</td><td>program or trial</td></tr>
-				<tr><td bgcolor="#f0f0f0">project</td><td>variantSet</td><td bgcolor="#f0f0f0">genotyping study</td><td>genotyping study or referenceSet</td></tr>
+				<tr><td bgcolor="#f0f0f0">project</td><td>variantSet</td><td bgcolor="#f0f0f0">genotyping study</td><td>genotyping study</td></tr>
+				<tr><td bgcolor="#f0f0f0">assembly</td><td>-</td><td bgcolor="#f0f0f0">-</td><td>referenceSet</td></tr>
 				<tr><td bgcolor="#f0f0f0">run</td><td>-</td><td bgcolor="#f0f0f0">-</td><td>variantSet</td></tr>
 				<tr><td bgcolor="#f0f0f0">sequence</td><td>reference</td><td bgcolor="#f0f0f0">linkageGroup</td><td>reference</td></tr>
 				<tr><td bgcolor="#f0f0f0">variant</td><td>variant</td><td bgcolor="#f0f0f0">marker</td><td>variant</td></tr>
@@ -482,12 +475,14 @@
                <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
                   SIZE=3 class='title2'>B4/ CENTRAL AUTHENTICATION SERVICE COMPATIBILITY</FONT></FONT></FONT>
             </P>
-            <P STYLE="margin-bottom: 0.14in">Single-Sign-On is supported via the implementation of the <a href="https://apereo.github.io/cas/6.0.x/protocol/CAS-Protocol-Specification.html" target="_blank">CAS protocol</a>.
+            <P STYLE="margin-bottom: 0.14in">Single-Sign-On is supported via the implementation of the <a href="https://apereo.github.io/cas/6.5.x/protocol/CAS-Protocol-Specification.html" target="_blank">CAS protocol</a>.
             If your organization is using CAS, making users of your Gigwa instance able to authenticate via their institutional account is as simple as defining the following parameters in WEB-INF/classes/config.properties:
+            </P>
             <ul>
 				<li>casServerURL, pointing to the full authentication URL (including protocol, port number...)
 				<li>enforcedWebapRootUrl, providing the base URL CAS shall redirect to after a successful login
 			</ul>
+            <P STYLE="margin-bottom: 0.14in">Single-Sign-On is supported via the implementation of the <a href="https://apereo.github.io/cas/6.5.x/protocol/CAS-Protocol-Specification.html" target="_blank">CAS protocol</a>.
 			<BR>
 			An optional parameter named casOrganization provides means to specify your organization name, that will then appear on the login page to make things clearer to end users.
 			Enabling CAS authentication does not affect previously created "local" accounts, the system is able to handle both types of accounts simultaneously.
@@ -536,11 +531,11 @@
             <P STYLE="margin-bottom: 0.14in">Administrators can see all
                databases (even if private and/or hidden) and have all privileges on
                them. Only administrators may create permanent databases. This can
-               be done either at import time, or via the main menu"s
+               be done either at import time, or via the main menu's
                "Manage data" link, by subsequently clicking on
                "Manage databases". A simple interface allows then to create an empty
                database on a selected MongoDB host, set the public and hidden flags on existing databases,
-               delete existing projects and databases, and, for administrators and database supervisors, manage dumps.
+               delete existing runs, projects or databases, and, for administrators and database supervisors, manage dumps.
             </P>
             <P STYLE="margin-bottom: 0.14in">The dump/restore functionality was implemented in order to provide means
             to easily generate a copy of an entire database and thus prevent data loss in case of server crash.
@@ -583,7 +578,7 @@
               <IMG SRC="shot07_manage_users.png" BORDER=1 style='margin-top:10px;'>
             </UL>
             <P STYLE="margin-bottom: 0.14in">Thus, a user with the MANAGER role on a project can administer that project in the same way as an
-               administrator, via the main menu"s "Manage data" item also available to him after authentication. The same applies to users with
+               administrator, via the main menu's "Manage data" item also available to him after authentication. The same applies to users with
                the SUPERVISOR role on a database, who can manage all of its contents.
             </P>
       </UL>
@@ -606,39 +601,33 @@
             </P>
       </UL>
       <UL>
-         <UL>
             <LI>
                <P
                   STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-                     SIZE=3>B6.1/ Managing data hosts</FONT></FONT></FONT>
+                     SIZE=3>B7.1/ Managing data hosts</FONT></FONT></FONT>
                </P>
                <P STYLE="margin-bottom: 0.14in">Declaring MongoDB hosts is done
                   via the WEB-INF/classes/applicationContext-data.xml file following
-                  provided examples. Only hosts running with authentication enabled
-                  (refer to MongoDB documentation if needed) must be declared along
-                  with a UserCredentials bean. Note that Gigwa associates them
-                  internally using their IDs: for example, a host named myMongoHost
-                  will expect a UserCredentials bean named myMongoHostCredentials.
+                  provided examples. For hosts running with authentication enabled
+                  (refer to MongoDB documentation if needed) a "credentials" parameter must be supplied for the corresponding mongo:mongoclient tag.
                   Those credentials must be provided for a user declared in MongoDB's
                   admin collection, who has readWriteAnyDatabase and
                   dbAdminAnyDatabase roles. The web-application needs to be reloaded
                   for such changes to be taken into account (please refer to Tomcat
                   documentation if needed).
                </P>
-         </UL>
       </UL>
-      <UL>
       <UL>
       <LI>
          <P
             STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
             <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-               SIZE=3>B6.2/ Setting configuration properties</FONT></FONT></FONT>
+               SIZE=3>B7.2/ Setting configuration properties</FONT></FONT></FONT>
          </P>
-         <P STYLE="margin-bottom: 0.14in">The
-            WEB-INF/classes/config.properties file may be used to set values
-            for the following parameters:
+         <P STYLE="margin-bottom: 0.14in">
+            By default, configuration parameters shall be set via the WEB-INF/classes/config.properties file. But their values may be superseeded by defining environment variables with the same name prefixed with "GIGWA." (particularly useful when using the Docker version).
+            The list of supported parameters as follows:
          </P>
          <UL>
             <LI>
@@ -728,23 +717,14 @@
                   the default one if it exists.
                </P>
             <LI>
-               <P STYLE="margin-bottom: 0in; line-height: 100%">
-                  <B>onlineOutputTool_N</B> - Any property named onlineOutputTool_N
-                  with N being an integer &gt;= 1 is a way for defining an online
-                  output tool for datasets exported to server. N accepts
-                  consecutive values (if only onlineOutputTool_1 and
-                  onlineOutputTool_3 exist then only onlineOutputTool_1 will be
-                  taken into account). The property value must consist in
-                  semi-colon-separated values. The first one is the label to
-                  display for this tool, the second one is the tool URL (in which
-                  any * character will be replaced at run time with the exported
-                  file"s URL). The third value is optional and may contain a
-                  comma-separated list of file-formats (must match some of those
-                  that the Gigwa instance is able to export: BED, DARWIN,
-                  EIGENSTRAT, FLAPJACK, GFF3, HAPMAP, PLINK, VCF), thus defining
-                  those accepted by the tool (if unspecified, files in any format
-                  will be made available for this tool).
-               </P>
+               	<P STYLE="margin-bottom: 0in; line-height: 100%">
+                  <B>onlineOutputTool_N</B> - Any property named onlineOutputTool_N with N being an integer >= 1 is a way for defining an online output tool for datasets exported to server. N accepts consecutive values (if only onlineOutputTool_1 and onlineOutputTool_3 exist then only onlineOutputTool_1 will be taken into account). The property value must consist in semi-colon-separated values:
+               	</P>
+               	<ul>
+                  	<li>The first one is the label to display for this tool</li>
+					<li>The second one is the tool URL. It is dynamic as it supports lowercase-extension-based placeholders like '{ext1|ext2}' that will be replaced at run time with the first file found among the exported ones that has an extension matching one of those mentioned. Alternatively to using a separate parameter for each file, the wildcard placeholder character '*' may also be used and will be replaced at run time with a comma-separated list featuring all available files in random order</li>
+					<li>The third value is optional and may contain an uppercase, comma-separated list of file-formats (must match some of those that the Gigwa instance is able to export: BED, DARWIN, EIGENSTRAT, FASTA, FLAPJACK, GFF3, HAPMAP, NEXUS, PHYLIP, PLINK, VCF), thus defining those accepted by the tool (if unspecified, files in any format will be made available for this tool)</li>
+				</ul>
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
                   <B>maxSearchableBillionGenotypes</B> - Defines the maximum
@@ -805,7 +785,7 @@
                   <B>variantIdLookupMaxSize</B> - Defines the limit number of variant IDs that are returned by the text lookup functionality of the "Variant IDs" widget. Default: 50
                </P>
             <LI>
-               <P STYLE="margin-bottom: 0in; line-height: 100%">
+               <P>
                   <B>igvGenomeConfig_N</B> - Properties named igvGenomeConfig_N with N being an integer >= 1
                   provide sets of online genomes to be displayed as default genome lists for the embedded
                   IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
@@ -815,7 +795,41 @@
                   <B>dumpFolder</B> - Enables the dump management functionality by defining the location where dumps will be stored on the application-server's filesystem
                   <font color="red">(Requires installing MongoDB Command Line Database Tools on the machine running Tomcat)</font>
                </P>
+            <LI>
+	            <P>
+	            <B>allowedOrigins_&lt;PATH&gt;</B> - Properties with prefix "allowedOrigins_" allow tuning CORS behaviour using Ant-style path patterns. The default
+	            <span style='padding:2px; background-color:lightgrey; font-size:10pt; font-family:Courier'>allowedOrigins_/**=*</span>
+	            entry enables CORS from any origin for all URLs starting with [context-path]/rest/
+	            </P>
+				Other examples overriding the default for more specific path patterns:
+				<ul>
+					<li>allowedOrigins_/*/brapi/v1/*=http://domain1:59397, http://domain2:8080
+					<li>allowedOrigins_/brapi/v2/**=http://domain1:59397, http://domain2:8080
+				</ul>
+            <LI>
+               <P>
+                  <B>clearCachedCountsOnStartup</B> - Gigwa caches count values for submitted queries (makes subsequent calls respond faster); this property allows emptying this cache on webapp startup. Default: false
+               </P>
          </UL>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
          <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B8/ MONGODB CACHE CONFIGURATION</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">In production environments with large amounts of RAM, we found it worth to tune the --wiredTigerCacheSizeGB parameter. If left unspecified, it defaults to nearly a half of the available RAM, and essentially aims at reserving memory for manipulating indexes.
+            As Gigwa does not make an enormous use of indexes, we found that <b>in most cases, setting it to <u>10 Gb</u> is more than enough</b>. This leaves the remaining memory available for other operations such as collection-scans, and can significantly improve performance (at least for searches). 
+            </P>
+            <P STYLE="margin-bottom: 0.14in">We did not take the responsibility to enforce this as a default value in our bundles or Docker images because 10 Gb would be far too high on small servers with a total of, say 16 Gb of RAM. This really has to be thought of according to the overall "platform" sizing. Checking the size occupied by indexes on your largest DB's variantRunData collection is probably a good starting point. Multiplying that by 3 or 5 is probably safe enough, although a more thorough benchmarking would be worth doing...
+            </P>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
    </BODY>
 </HTML>

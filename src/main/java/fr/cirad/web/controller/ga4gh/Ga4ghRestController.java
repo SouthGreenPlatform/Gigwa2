@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.ListReferenceBasesRequest;
 import org.ga4gh.methods.ListReferenceBasesResponse;
-import org.ga4gh.methods.SearchCallSetsRequest;
 import org.ga4gh.methods.SearchCallSetsResponse;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
 import org.ga4gh.methods.SearchReferenceSetsResponse;
@@ -47,7 +46,6 @@ import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,6 +53,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
+import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
@@ -63,7 +62,6 @@ import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
-
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -109,10 +107,9 @@ public class Ga4ghRestController extends ControllerInterface {
      * get bases from reference sequence
      *
      * @param request
-     * @param module
-     * @param name
-     * @param start
-     * @param end
+     * @param response
+     * @param id
+     * @param listReferenceBasesRequest
      * @return
      * @throws IOException
      */
@@ -121,14 +118,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = ListReferenceBasesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}" + BASES, method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ListReferenceBasesResponse getReferenceBases(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody ListReferenceBasesRequest listReferenceBasesRequest) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-        	if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
         		return service.getReferenceBases(id, listReferenceBasesRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
@@ -156,14 +152,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no CallSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public CallSet getCallSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            CallSet callSet = service.getCallSet(id);
 	            if (callSet == null) {
 	                build404Response(response);
@@ -194,14 +189,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no VariantSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            VariantSet variantSet = service.getVariantSet(id);
 	            if (variantSet == null) {
 	                build404Response(response);
@@ -232,16 +226,16 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+        	String[] info = id.split(Helper.ID_SEPARATOR);
+        	int projId = Integer.parseInt(info[1]);
+	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
 	            String indHeader = request.getHeader("ind");
 	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
-
 	            if (variant == null) {
 	                build404Response(response);
 	                return null;
@@ -271,17 +265,17 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
-    @CrossOrigin
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-            if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
-//                String indHeader = request.getHeader("ind");
+        	String[] info = id.split(Helper.ID_SEPARATOR);
+        	int projId = Integer.parseInt(info[1]);
+	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
                 List<String> callSetIds = ((List<String>) body.get("callSetIds"));
-                Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(GigwaGa4ghServiceImpl.ID_SEPARATOR))).collect(Collectors.toList()));
+                Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
                 if (variant == null) {
                     build404Response(response);
                     return null;
@@ -311,14 +305,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no Reference with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Reference getReference(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            Reference reference = service.getReference(id);
 	            if (reference == null) {
 	                build404Response(response);
@@ -349,14 +342,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no ReferenceSet with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCESETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ReferenceSet getReferenceSet(HttpServletResponse response, @PathVariable String id, HttpServletRequest request) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            ReferenceSet referenceSet = service.getReferenceSet(id);
 	            if (referenceSet == null) {
 	                build404Response(response);
@@ -387,15 +379,14 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchCallSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchCallSetsRequest callSetsRequest) throws IOException {
-        org.ga4gh.models.Call c;
+    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
         String id = callSetsRequest.getVariantSetId();
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
+	        	callSetsRequest.setRequest(request);
 	            return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
@@ -419,7 +410,6 @@ public class Ga4ghRestController extends ControllerInterface {
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchReferenceSetsResponse.class)
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCESETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferenceSetsResponse searchReferenceSets(HttpServletRequest request, @RequestBody SearchReferenceSetsRequest referenceSetsRequest) throws AvroRemoteException {
 
@@ -448,7 +438,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchReferencesResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + REFERENCES_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -460,7 +449,7 @@ public class Ga4ghRestController extends ControllerInterface {
         
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0]))
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0]))
 	            return service.searchReferences(referencesRequest);
 	        else {
 	            buildForbiddenAccessResponse(token, response);
@@ -485,7 +474,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = SearchVariantSetsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANTSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchVariantSetsResponse searchVariantSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchVariantSetsRequest variantSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -502,7 +490,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        	List<VariantSet> forbiddenVariantSets = new ArrayList<VariantSet>();
 	        	for (VariantSet variantSet : variantSets.getVariantSets())
 	        	{
-	        		int variantSetId = Integer.parseInt(variantSet.getId().split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[1]);
+	        		int variantSetId = Integer.parseInt(variantSet.getId().split(Helper.ID_SEPARATOR)[1]);
 	        		if ((fWillingToWrite && !tokenManager.canUserWriteToProject(token, variantSetsRequest.getDatasetId(), variantSetId)) || !tokenManager.canUserReadProject(token, variantSetsRequest.getDatasetId(), variantSetId))
 	        			forbiddenVariantSets.add(variantSet);
 	        	}
@@ -533,7 +521,6 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 200, message = "Success", response = GigwaSearchVariantsResponse.class),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
-    @CrossOrigin
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
 
@@ -549,7 +536,7 @@ public class Ga4ghRestController extends ControllerInterface {
         }
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            gsvr.setRequest(request);
 				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
 				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)));
@@ -580,14 +567,13 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden"),
         @ApiResponse(code = 404, message = "no VariantAnnotation with this ID")
     })
-    @CrossOrigin
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
     public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
         String token = tokenManager.readToken(request);
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(GigwaGa4ghServiceImpl.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
 	            VariantAnnotation varAnn = service.getVariantAnnotation(id);
 	            if (varAnn == null)
 	                build404Response(response);

@@ -16,13 +16,15 @@
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
-var displayedRangeIntervalCount = 150;
+var displayedRangeIntervalCount = 200;
 var dataBeingLoaded = false;
 let localmin, localmax;
 let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 let progressTimeoutId = null;
+var emptyResponseCountsByProcess = [];
+
 const chartTypes = new Map([
     ["density", {
         displayName: "Density",
@@ -44,12 +46,12 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
-            enableMarker: true,
-            lineWidth: 2
+//            lineWidth: 2,
+            enableMarker: true
         }],
         enableCondition: function (){
-            if (genotypeInvestigationMode != 2 && !gotMetaData){
-                return "Fst is only defined with at least two groups. You need to define investigation groups or upload metadata.";
+            if (getGenotypeInvestigationMode() < 2 && !gotMetaData){
+                return "Fst can only be calculated with several groups of individuals. You need to define investigation groups or upload metadata.";
             } else if (areGroupsOverlapping() && !gotMetaData){
                 return "Investigation groups are overlapping";
             } else if (ploidy != 2){
@@ -62,7 +64,7 @@ const chartTypes = new Map([
             return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
                      + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
                      + '<div id="plotMetadata" style="display: none" class="col-md-3">'
-                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="5" style="min-width:150px;"></select>'
+                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
                      + '</div>');
         },
         buildRequestPayload: function (payload){
@@ -114,13 +116,13 @@ const chartTypes = new Map([
         series: [
             {
                 name: "Tajima's D",
-                enableMarker: true,
-                lineWidth: 2
+//            	lineWidth: 2,
+            	enableMarker: true
             },
             {
                 name: "Segregating sites",
-                enableMarker: false,
-                lineWidth: 1
+//            	lineWidth: 1,
+            	enableMarker: true
             },
         ],
         enableCondition: function (){
@@ -133,7 +135,7 @@ const chartTypes = new Map([
     }]
 ]);
 
-function initializeAndShowDensityChart(){
+function initializeChartDisplay(){
     if (distinctSequencesInSelectionURL == null)
     {
         alert("distinctSequencesInSelectionURL is not defined!");
@@ -176,15 +178,13 @@ function initializeAndShowDensityChart(){
     $.ajax({
         url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
         type: "GET",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
         	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
         		selectedSequences = jsonResult;
         	feedSequenceSelectAndLoadVariantTypeList(
                     selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-                    selectedTypes == "" ? $('#variantTypes option').map(option => option.value).get() : selectedTypes);
+                    selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -194,14 +194,16 @@ function initializeAndShowDensityChart(){
 
 function onManualIndividualSelection() {
 	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " selected)"));
-	$('.showHideSeriesBox').attr('checked', false);
+	$('.showHideSeriesBox').prop('checked', false);
 	$('.showHideSeriesBox').change();
 }
 
 function getGroupingOptions() {
     let options = ""
-    if (getGenotypeInvestigationMode() == 2 && !areGroupsOverlapping())
+    if (getGenotypeInvestigationMode() > 1 && !areGroupsOverlapping())
         options += '<option value="__">Investigated groups</option>';
+    else if (areGroupsOverlapping())
+    	alert("Investigated groups are overlapping, you may not use them for Fst calculation!"); 
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -254,9 +256,9 @@ function buildCustomisationDiv(chartInfo) {
     
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 300)';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
-        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions() + '</select> <span id="indSelectionCount"></span></div>';
+        customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -283,10 +285,10 @@ function showSelectedIndCount(selectionObj, selectionLabelObj) {
 	if (chooseMode)
 		selectionLabelObj.text("");
 	else if (selectedOption.val() == "")
-		selectionLabelObj.text(" (" + indCount + " selected)");
+		selectionLabelObj.text(" (" + indOpt.length + " selected)");
 	else {
-		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : parseInt(selectedOption.val()))).length;
-		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indCount : selectedIndCount) + " selected)");
+		var selectedIndCount = Object.keys(getSelectedIndividuals(selectedOption.val() == "12" ? null : [parseInt(selectedOption.val())])).length;
+		selectionLabelObj.text(" (" + (selectedIndCount == 0 ? indOpt.length : selectedIndCount) + " selected)");
 	}
 }
 
@@ -329,16 +331,6 @@ function setChartType(typeSelect) {
 
 function buildDataPayLoad(displayedSequence, displayedVariantType) {
     const chartInfo = chartTypes.get(currentChartType);
-
-	var annotationFieldThresholds = {}, annotationFieldThresholds2 = {};
-	$('#vcfFieldFilterGroup1 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
-	$('#vcfFieldFilterGroup2 input').each(function() {
-		if (parseInt($(this).val()) > 0)
-			annotationFieldThresholds2[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-	});
 	
 	let plotIndividuals = null;
 	if (chartInfo.selectIndividuals) {
@@ -346,22 +338,21 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	        case "choose":
 	            plotIndividuals = $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val();
 	            break;
-	        case "12":
+	        case "allGroups":
 	            plotIndividuals = getSelectedIndividuals();
 	            break;
-	        case "1":
-	            plotIndividuals = getSelectedIndividuals(1);
-	            break;
-	        case "2":
-	            plotIndividuals = getSelectedIndividuals(2);
+	        case "":
+				plotIndividuals = [];
 	            break;
 	        default:
-	            plotIndividuals = [];
+	            plotIndividuals = getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())]);
 	            break;
 	    }
 	}
-	
-	return {         	
+
+
+    let activeGroups = $(".genotypeInvestigationDiv").length;
+	let query = {
         "variantSetId": $('#project :selected').data("id"),
         "searchMode": 0,
         "getGT": false,
@@ -372,25 +363,9 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": $('#geneName').val().trim().replace(new RegExp(' , ', 'g'), ','),
-
-        "callSetIds": getSelectedIndividuals(1),
-        "gtPattern": $('#Genotypes1').val(),
-        "mostSameRatio": $('#mostSameRatio1').val(),
-        "minmaf": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf1').val()),
-        "maxmaf": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf1').val()),
-        "missingData": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata1').val()),
-		"annotationFieldThresholds": annotationFieldThresholds,
-
-        "callSetIds2": getSelectedIndividuals(2),
-        "gtPattern2": $('#Genotypes2').val(),
-        "mostSameRatio2": $('#mostSameRatio2').val(),
-        "minmaf2": $('#minmaf1').val() === null ? 0 : parseFloat($('#minmaf2').val()),
-        "maxmaf2": $('#maxmaf1').val() === null ? 50 : parseFloat($('#maxmaf2').val()),
-        "missingData2": $('#missingdata1').val() === null ? 100 : parseInt($('#missingdata2').val()),
-        "annotationFieldThresholds2": annotationFieldThresholds2,
-
-        "discriminate": $('#discriminate').prop('checked'),
+        "geneName": getSelectedGenesIds(),
+        "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
+        "discriminate": getDiscriminateArray(),
         "pageSize": 100,
         "pageToken": "0",
         "displayedSequence": displayedSequence,
@@ -400,6 +375,48 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
     };
+
+    let genotypes = [];
+    let mostsameratio = [];
+    let minmaf = [];
+    let maxmaf = [];
+    let minmissingdata = [];
+    let maxmissingdata = [];
+    let minhez = [];
+    let maxhez = [];
+    let callsetids = [];
+    var annotationFieldThresholds = [];
+    for (let i = 0; i < activeGroups; i++) {
+        var threshold = {};
+        $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
+            if (parseInt($(this).val()) > 0)
+                threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+        });
+        if (i !== 0)
+            callsetids.push(getSelectedIndividuals([i + 1], true));
+        annotationFieldThresholds.push(threshold);
+        genotypes.push($(`#Genotypes${i + 1}`).val());
+        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
+        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
+        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
+        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
+        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
+        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
+        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
+    }
+
+    query["gtPattern"] = genotypes;
+    query["mostSameRatio"] = mostsameratio;
+    query["minMaf"] = minmaf;
+    query["maxMaf"] = maxmaf;
+    query["minMissingData"] = minmissingdata;
+    query["maxMissingData"] = maxmissingdata;
+    query["minHeZ"] = minhez;
+    query["maxHeZ"] = maxhez;
+    query["annotationFieldThresholds"] = annotationFieldThresholds;
+    query["additionalCallSetIds"] = callsetids;
+
+    return query;
 }
 
 function loadChart(minPos, maxPos) {    
@@ -435,9 +452,9 @@ function displayChart(minPos, maxPos) {
     // Set the interval count until the next chart reload
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        displayedRangeIntervalCount = 150;
-    else if (tempValue > 300)
-        displayedRangeIntervalCount = 300;
+        displayedRangeIntervalCount = 200;
+    else if (tempValue > 500)
+        displayedRangeIntervalCount = 500;
     else if (tempValue < 50)
         displayedRangeIntervalCount = 50;
     else
@@ -454,9 +471,7 @@ function displayChart(minPos, maxPos) {
         url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
@@ -581,7 +596,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     var displayedVariantType = $("select#chartVariantTypeList").val();   
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
-    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "12" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "1" ? getSelectedIndividuals(1) : ($('#plotIndividualSelectionMode').val() == "2" ? getSelectedIndividuals(2) : null)))
+    dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
     
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
@@ -621,7 +636,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
                 color: colorTab[colorIndex],
                 yAxis: fieldName,
 				marker: {
-		                enabled: false
+		        	enabled: false
 		        },
                 data: jsonValues
             });
@@ -679,11 +694,11 @@ function abortOngoingOperation() {
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult) {
-            if (!jsonResult.processAborted) {
+            if (!jsonResult.processAborted)
                 console.log("Unable to abort!");
-            } else {
-                finishProcess();
-            }
+            else
+				processAborted = true;
+            finishProcess();
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -696,24 +711,44 @@ function checkChartLoadingProgress() {
         url: progressUrl,
         type: "GET",
         contentType: "application/json;charset=utf-8",
+        //buildHeader(token, $('#assembly').val())
         headers: {
             "Authorization": "Bearer " + token
         },
-        success: function(jsonResult) {
-            if (jsonResult == null) {
+        success: function (jsonResult, textStatus, jqXHR) {
+            if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted)) {
+				if (emptyResponseCountsByProcess[token] == null)
+					emptyResponseCountsByProcess[token] = 1;
+				else
+					emptyResponseCountsByProcess[token]++;
+				if (emptyResponseCountsByProcess[token] > 10) {
+					console.log("Giving up requesting progress for process " + token);
+					emptyResponseCountsByProcess[token] = null;
+				}
+				else
+                	setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
+            }
+            else if (jsonResult != null && jsonResult['complete'] == true) {
+               	emptyResponseCountsByProcess[token] = null;
+                $('#progress').modal('hide');
                 finishProcess();
             }
-            else
-            {
-                dataBeingLoaded = true;	// still running
-                if (jsonResult['error'] != null) {
+            else if (jsonResult != null && jsonResult['aborted'] == true) {
+                processAborted = true;
+                emptyResponseCountsByProcess[token] = null;
+                $('#progress').modal('hide');
+                finishProcess();
+            }
+            else {
+                if (jsonResult != null && jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
-                    alert("Error occured:\n\n" + jsonResult['error']);
+                    alert("Error occurred:\n\n" + jsonResult['error']);
                     finishProcess();
                     $('#density').modal('hide');
-                }
-                else {
-                    $('div#densityLoadProgress').html(jsonResult['progressDescription']);
+                    emptyResponseCountsByProcess[token] = null;
+                } else {
+					if (jsonResult != null)
+                    	$('div#densityLoadProgress').html(jsonResult['progressDescription']);
                     setTimeout(checkChartLoadingProgress, minimumProcessQueryIntervalUnit);
                 }
             }
@@ -774,9 +809,9 @@ function displayOrHideThreshold(isChecked) {
 function changeIntervalCount() {
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        $("#intervalCount").val(150);
-    else if (tempValue > 300)
-        $("#intervalCount").val(300);
+        $("#intervalCount").val(200);
+    else if (tempValue > 500)
+        $("#intervalCount").val(500);
     else if (tempValue < 50)
         $("#intervalCount").val(50);
 }
@@ -806,9 +841,11 @@ function setFstGroupingOption() {
             selectOptions += '<option value="' + value + '">' + value + '</option>';
         });
         $("#plotGroupingMetadataValues").html(selectOptions);
+        $("#plotGroupingMetadataValues").change();
         $("#plotMetadata").css("display", "block");
     } else {
         $("#plotMetadata").css("display", "none");
+        $('#showChartButton').prop('disabled', false);
     }
 }
 

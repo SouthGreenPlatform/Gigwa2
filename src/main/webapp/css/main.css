@@ -47,8 +47,19 @@
  #loadedQueries {
  	display: block;
  }
+ 
  .glyphicon-ok {
  	color: green;
+ } 
+ .glyphicon-remove {
+ 	color: red;
+ }
+ 
+ .metadataToPull-no {
+ 	color: #ee8800;
+ }
+ .metadataToPull-yes {
+ 	color: #008800;
  }
  
  #menu1 {
@@ -126,7 +137,7 @@ div.modal-sm {
 }
 
 .modal-content {
-    max-height: 90vh;
+    max-height: 95vh;
     overflow-y: auto;
 }
 
@@ -224,7 +235,7 @@ form#importDropzone .form-group {
 }
 
 .dropzone .dz-default.dz-message {
-	height:145px;
+	height:142px;
 }
 
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {
@@ -257,11 +268,10 @@ form#importDropzone .form-group {
     white-space: nowrap;
 }
 
-div#Sequences, div#Individuals1, div#Individuals2 {
+div#Sequences, .indListBox {
 	padding-right:110px;
 	width:100%;
 }
-
 .dropdown-toggle {
     padding:3px 15px;
     width:100%;
@@ -436,8 +446,12 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
     right:8px;
 }
 
-div#VariantIds .bootstrap-select.btn-group .dropdown-menu {
-	min-width:150px;
+div#VariantIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
+}
+
+div#GeneIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
 }
 
 .bootstrap-select div.status {
@@ -661,18 +675,6 @@ div#variantDetailPanel thead th {
     box-shadow:2px 2px 3px #000; 
 }
 
-.group1 {
-    background-color:#bcd4f2;
-}
-
-.group2 {
-    background-color:#efecb1;
-}
-
-.groups1and2 {
-	background: repeating-linear-gradient(to right, #bcd4f2, #bcd4f2 10px, #efecb1 10px, #efecb1 20px);
-}
-
 table#individualFilteringTable th {
 	padding:3px;
 	border-left:1px solid white;
@@ -735,6 +737,10 @@ table#individualFilteringTable td {
 
 .margin-icon {
     margin-right:10px; 
+}
+
+.padding {
+	padding: 8px;
 }
 
 .padding-bottom {
@@ -877,6 +883,26 @@ div#countResultPanel {
     color:#ff8c00;
     font-size:12px;
     text-align:center;
+}
+
+input:focus::placeholder {
+  color: transparent;
+}
+
+.d-flex {
+	display: flex;
+}
+
+.flex-row {
+	flex-direction: row;
+}
+
+.flex-column {
+	flex-direction: column;
+}
+
+.justify-between {
+	justify-content: space-between;
 }
 
 @keyframes spin-a {

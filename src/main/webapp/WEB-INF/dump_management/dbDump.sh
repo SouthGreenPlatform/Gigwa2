@@ -82,7 +82,7 @@ FILENAME="$OUTPUT/$DUMPNAME.gz"
 logged_part(){
 	echo "Name : $DUMPNAME"
 	set -x
-	mongodump -vv $CREDENTIAL_OPTIONS --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --host=$HOST --db=$DATABASE --archive=$FILENAME --gzip <&0
+	mongodump -vv $CREDENTIAL_OPTIONS --db=$DATABASE --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --excludeCollection=variants_without_runs --host=$HOST --archive=$FILENAME --gzip <&0
 	return $?
 }
 

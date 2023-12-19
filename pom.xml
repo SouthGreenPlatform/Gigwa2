@@ -1,53 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
-
-	<groupId>fr.cirad</groupId>
-	<artifactId>gigwa2</artifactId>
-	<version>2.5-RELEASE</version>
-	<packaging>war</packaging>
-
-	<name>gigwa2</name>
-
 	<properties>
+        <project.version>2.6.2-beta</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<Gigwa2ServiceImpl.version>2.5-RELEASE</Gigwa2ServiceImpl.version>
-		<bundle.dir>target/bundles</bundle.dir>
+		<Gigwa2ServiceImpl.version>2.6.2-RELEASE</Gigwa2ServiceImpl.version>
+		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
 		<bundle.dir.windows>${bundle.dir}/Gigwa_V${project.version}-Windows</bundle.dir.windows>
-		<path.to.ubuntu.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/jre-8u321-linux-x64.tar.gz</path.to.ubuntu.jre>
-		<path.to.osx.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/jre-8u321-macosx-x64.tar.gz</path.to.osx.jre>
-		<path.to.windows.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/jre-8u321-windows-x64.tar.gz</path.to.windows.jre>
-<!-- 		ubuntu https://javadl.oracle.com/webapps/download/GetFile/1.8.0_321-b07/df5ad55fdd604472a86a45a217032c7d/linux-i586/jre-8u321-linux-x64.tar.gz -->
-<!-- 		macos	https://javadl.oracle.com/webapps/download/GetFile/1.8.0_321-b07/df5ad55fdd604472a86a45a217032c7d/unix-i586/jre-8u321-macosx-x64.tar.gz -->
-<!-- 		win		https://javadl.oracle.com/webapps/download/GetFile/1.8.0_321-b07/df5ad55fdd604472a86a45a217032c7d/windows-i586/jre-8u321-windows-x64.tar.gz -->
-		<tomcat.version>8.5.75</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.18</mongodb.linux.file>
-		<mongodb.windows.file>win32-x86_64-2012plus-4.2.18</mongodb.windows.file>
-		<mongodb.osx.file>macos-x86_64-4.2.18</mongodb.osx.file>
-		<mongodb.osx.folder>macos-x86_64-4.2.18</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<path.to.ubuntu.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz</path.to.ubuntu.jre>
+		<path.to.osx.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz</path.to.osx.jre>
+		<path.to.windows.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-win_x64.tar.gz</path.to.windows.jre>
+<!-- 		ubuntu	https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz -->
+<!-- 		macos	https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz -->
+<!-- 		win		https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-win_x64.tar.gz -->
+		<tomcat.version>9.0.64</tomcat.version>
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.24</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.24</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.24</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.24</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
-	<dependencies>
+	<groupId>fr.cirad</groupId>
+	<artifactId>Gigwa2</artifactId>
+	<version>${project.version}</version>
+	<packaging>war</packaging>
+	<name>Gigwa</name>
+
+	<dependencies>		
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>role_manager</artifactId>
-			<version>1.3-RELEASE</version>
+			<version>1.3.6-RELEASE</version>
 		</dependency>
 
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2BrapiImpl</artifactId>
-			<version>1.1.2-RELEASE</version>
+			<version>1.1.6-RELEASE</version>
 		</dependency>
 		
    		<dependency>
 		    <groupId>fr.cirad</groupId>
 		    <artifactId>Mgdb2BrapiV2Impl</artifactId>
-		    <version>2.0.2-RELEASE</version>
+		    <version>2.0.6-RELEASE</version>
 		    <exclusions>
 		    	<exclusion>
 				    <groupId>org.slf4j</groupId>
@@ -65,7 +65,7 @@
 		<dependency>
 			<groupId>javax</groupId>
 			<artifactId>javaee-web-api</artifactId>
-			<version>7.0</version>
+			<version>8.0</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -109,31 +109,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-webmvc</artifactId>
-            <version>5.3.17</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-jcl</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-web</artifactId>
-			<version>5.6.2</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-taglibs</artifactId>
-			<version>5.6.2</version>
-			<scope>compile</scope>
+			<version>5.6.10</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework</groupId>
@@ -148,7 +126,7 @@
 		<dependency>
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-cas</artifactId>
-		    <version>5.6.2</version>
+		    <version>5.6.10</version>
 		    <exclusions>
 		    	<exclusion>
 				    <groupId>org.slf4j</groupId>
@@ -192,7 +170,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.12.0</version>
+			<version>2.13.4.1</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.fasterxml.jackson.core</groupId>
@@ -203,7 +181,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>2.12.0</version>
+			<version>2.13.4</version>
 		</dependency>
 
 		<dependency>
@@ -218,7 +196,57 @@
 			</exclusions>
 		</dependency>
 		
+		<dependency>
+		    <groupId>com.github.jmchilton.blend4j</groupId>
+		    <artifactId>blend4j</artifactId>
+		    <version>0.2.0</version>
+		    <exclusions>
+	            <exclusion>
+	                <groupId>com.fasterxml.jackson.core</groupId>
+	                <artifactId>jackson-core</artifactId>
+	            </exclusion>
+	            <exclusion>
+	                <groupId>io.grpc</groupId>
+	                <artifactId>grpc-all</artifactId>
+	            </exclusion>
+	            <exclusion>
+	                <groupId>org.apache.commons</groupId>
+	                <artifactId>commons-compress</artifactId>
+	            </exclusion>
+	            <exclusion>
+	                <groupId>org.mortbay.jetty</groupId>
+	                <artifactId>servlet-api</artifactId>
+	            </exclusion>
+			    <exclusion>
+			      <groupId>org.codehaus.jackson</groupId>
+			      <artifactId>jackson-core-asl</artifactId>
+			    </exclusion>
+			    <exclusion>
+			      <groupId>org.codehaus.jackson</groupId>
+			      <artifactId>jackson-mapper-asl</artifactId>
+			    </exclusion>
+			    <exclusion>
+			      <groupId>com.google.code.findbugs</groupId>
+			      <artifactId>jsr305</artifactId>
+			    </exclusion>
+			</exclusions>
+		</dependency>
 	</dependencies>
+	
+	<repositories>
+		<repository>
+			<id>REDHAT_GA</id>
+			<url>https://maven.repository.redhat.com/ga/</url>
+		</repository>
+		<repository>
+			<id>central</id>
+			<url>http://central.maven.org/maven2/</url>
+		</repository>
+		<repository>
+			<id>sonatype</id>
+			<url>https://oss.sonatype.org/content/repositories/releases/</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>
@@ -241,13 +269,14 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.9.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>17</source>
+					<target>17</target>
 					<compilerArguments>
 						<endorseddirs>${endorsed.dir}</endorseddirs>
 					</compilerArguments>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
@@ -258,10 +287,11 @@
 						<manifestEntries>
 							<Implementation-version>${project.version}</Implementation-version>
 						</manifestEntries>
-						<manifestFile>src/main/webapp/META-INF/MANIFEST.MF</manifestFile>
+						<manifestFile>src/main/resources/MANIFEST.MF</manifestFile>
 					</archive>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -277,9 +307,9 @@
 							<silent>true</silent>
 							<artifactItems>
 								<artifactItem>
-									<groupId>javax</groupId>
-									<artifactId>javaee-endorsed-api</artifactId>
-									<version>7.0</version>
+								    <groupId>javax</groupId>
+								    <artifactId>javaee-api</artifactId>
+								    <version>8.0</version>
 									<type>jar</type>
 								</artifactItem>
 							</artifactItems>
@@ -328,6 +358,24 @@
 							</arguments>
 						</configuration>
 					</execution>
+					
+					<execution>
+						<id>update-manifest-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/Implementation-version:.*/Implementation-version: ${project.version}/g</argument>
+								<argument>${project.basedir}/src/main/webapp/META-INF/MANIFEST.MF</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					
 				</executions>
 			</plugin>
 			
@@ -463,7 +511,7 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
+									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
 								</configuration>
@@ -475,7 +523,7 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
+									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.osx}</outputDirectory>
 								</configuration>
@@ -487,7 +535,7 @@
 									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-8/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
+									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
 									<unpack>true</unpack>
 									<outputDirectory>${bundle.dir.windows}</outputDirectory>
 								</configuration>
@@ -770,7 +818,7 @@
 									<arguments>
 										<argument>xvzf</argument>
 										<argument>${path.to.osx.jre}</argument>
-										<argument>--strip-components=3</argument>
+										<argument>--strip-components=1</argument>
 									</arguments>
 								</configuration>
 							</execution>

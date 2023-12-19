@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.access.vote.GigwaAccessDecisionManager;
 import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
@@ -14,7 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import fr.cirad.security.base.IRoleDefinition;
 
 public class GigwaUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
-	private static final Logger LOG = Logger.getLogger(GigwaAccessDecisionManager.class);
+	private static final Logger LOG = Logger.getLogger(GigwaUserDetailsWrapper.class);
 	
 	public static final String METHOD_CAS = "CAS";
 	

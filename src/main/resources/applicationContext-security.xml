@@ -12,6 +12,10 @@
     <context:component-scan base-package="fr.cirad.mgdb.model.mongodao,fr.cirad.tools">
 	    <context:exclude-filter type="regex" expression="^fr.cirad.tools.GlobalExceptionHandler$"/>
     </context:component-scan>
+    
+    <bean id="corsSource" class="fr.cirad.tools.security.CustomCorsConfigurationSource">
+		<constructor-arg ref="appConfig" />
+    </bean>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     	<property name="location" value="classpath:config.properties" />
@@ -44,6 +48,7 @@
         <secur:intercept-url pattern="/**" access="isAnonymous() or isRememberMe() or isFullyAuthenticated()" />
 
         <secur:form-login login-page="/login.do" authentication-failure-url="/login.do?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" authentication-success-handler-ref="authenticationSuccessHandler" />
+
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />
 
         <secur:logout success-handler-ref="logoutDispatchHandler" invalidate-session="true"/>
@@ -51,13 +56,42 @@
         <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
         <secur:custom-filter before="LOGOUT_FILTER" ref="requestSingleLogoutFilter" />
         <secur:custom-filter before="CAS_FILTER" ref="singleLogoutFilter" />
+        
+        <secur:cors configuration-source-ref="corsSource" />
     </secur:http>
 
 
+    <bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" />
 
-<!-- Only one passwordEncoder bean should be enabled at a time -->
-	<bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder" />
-    <!--<bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" /> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -106,6 +140,7 @@
 
     <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
     	<constructor-arg value="/login.do" />
+   		<property name="forceHttps" value="true" />
     </bean>
 
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
@@ -155,16 +190,11 @@
         </constructor-arg>
     </bean>
 
-    <bean id="applicationConfig" class="fr.cirad.tools.AppConfig" />
-
     <bean class="org.springframework.web.context.support.ServletContextAttributeExporter">
         <property name="attributes">
             <map>
                 <entry key="userDao">
                     <ref bean="userDetailsService" />
-                </entry>
-                <entry key="appConfig">
-                	<ref bean="applicationConfig" />
                 </entry>
             </map>
         </property>

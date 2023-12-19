@@ -40,12 +40,10 @@
 		function watchProgress()
 		{
 	    	$.ajax({
-		        url: progressUrl,
+		        url: progressUrl<c:if test="${param.process != null}">+'?progressToken=${param.process}'</c:if>,
 		        type: "GET",
 		        async: false,
-		        headers: {
-		            "Authorization": "Bearer ${param.token}"
-		        },
+		        <c:if test="${param.token != null}">headers: { "Authorization": "Bearer ${param.token}" },</c:if>
 		        success: function (jsonResult) {
 		            if (jsonResult == null)
 		            	$('body').append('<center><p style="margin-top:60px;" class="bold">No such process is running at the moment.</p><p>Refresh to try again or use the link below to access resulting data in case the process has already finished:<br/><br/><a style="cursor:pointer;" href="' + destinationLink + '">' + (fileName == '?' ? destinationLink : fileName) + '</a></p></center>');
@@ -53,7 +51,7 @@
 		            {
 		        		$('#progress').modal({backdrop: 'static', keyboard: false, show: true});
 		        		$('.modal-backdrop.in').css('opacity', '0.1');
-		        		displayProcessProgress(5, '${param.token}');
+		        		displayProcessProgress(5, <c:choose><c:when test="${param.token != null}">'${param.token}'</c:when><c:otherwise>null</c:otherwise></c:choose>, '${param.process}');
 		        		
 		                $('#progress').on('hidden.bs.modal', function () {
 		                	if (processAborted)
@@ -75,11 +73,11 @@
 
 <body style='background-color:#f0f0f0;' onload="$('button#abortButton').css('display', ${param.abortable eq 'true'} ? 'inline' : 'none'); watchProgress();">
 	<div style='background-color:white; width:100%; padding:5px;'><img src="<c:url value='/images/logo.png' />" height="25"></div>
-	<div id='progress' style='margin-top:50px; width:100%; display:block; text-align:center; display:none;'>
+	<div id='progress' style='margin-top:50px; margin-left:20%; width:60%; display:block; text-align:center; display:none;'>
 		<p>This process is running as a background task.</p>
 		<p>You may leave the main Gigwa page and either keep this one open or copy its URL to check again later.</p>
 		<h2 id="progressText" class="loading-message" style='margin-top:50px'>Please wait...</h2>
-		<button class="btn btn-danger btn-sm" id="abortButton" style="display:none;" type="button" name="abort" onclick="abort('${param.token}');">Abort</button>
+		<button class="btn btn-danger btn-sm" id="abortButton" style="display:none;" type="button" name="abort" onclick="if (confirm('Are you sure?')) abort('${param.process}');">Abort</button>
 	</div>
 </body>
 

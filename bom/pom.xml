@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>fr.cirad</groupId>
+    <artifactId>Gigwa2bom</artifactId>
+    <version>1.0-RELEASE</version>
+    <packaging>pom</packaging>
+	
+ 	<modules>
+	    <module>../../GenotypeFileManipulation</module>
+   	    <module>../../Mgdb2BrapiModel</module>
+        <module>../../Mgdb2</module>
+	    <module>../../Mgdb2Export</module>
+		<module>../../role_manager</module>
+		<module>../../Mgdb2BrapiImpl</module>
+		<module>../../Mgdb2BrapiV2Impl</module>
+		<module>../../Gigwa2ServiceImpl</module>
+		<module>../../Gigwa2ServiceInterface</module>
+		<module>..</module>
+	</modules>
+</project>
