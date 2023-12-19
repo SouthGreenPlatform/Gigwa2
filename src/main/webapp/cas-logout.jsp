@@ -19,18 +19,13 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
-<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
-
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
 	String appVersion = prop.getProperty("Implementation-version");
 	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
-	String casOrganization = appConfig.get("casOrganization");
-	if (casOrganization == null) casOrganization = "organization";
 %>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+
 
 <!DOCTYPE html>
 <html>
@@ -51,6 +46,10 @@
 </head>
 <body>
 	<%@include file="navbar.jsp"%>
+<%
+	String casOrganization = appConfig.get("casOrganization");
+	if (casOrganization == null) casOrganization = "organization";
+%>
 	<main style="max-width:700px; margin: 0 auto;">
 		<h3>You have successfully logged out of Gigwa</h3>
 		<p>
