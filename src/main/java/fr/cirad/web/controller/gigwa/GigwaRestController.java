@@ -36,11 +36,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -60,6 +59,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -70,6 +70,9 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.ga4gh.methods.SearchReferenceSetsRequest;
+import org.ga4gh.methods.SearchReferenceSetsResponse;
+import org.ga4gh.models.ReferenceSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -88,6 +91,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -152,10 +156,13 @@ import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.SessionAttributeAwareThread;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
+import fr.cirad.tools.mgdb.VariantQueryBuilder;
+import fr.cirad.tools.mgdb.VariantQueryWrapper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.utils.Constants;
+import fr.cirad.web.controller.ga4gh.Ga4ghRestController;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import fr.cirad.web.controller.security.UserPermissionController;
@@ -184,6 +191,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private AppConfig appConfig;
 	
 	@Autowired private GigwaGa4ghServiceImpl ga4ghService;
+	
+	@Autowired private Ga4ghRestController ga4ghController;
 	
 	@Autowired private VisualizationService vizService;
 
@@ -247,7 +256,10 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
+
+	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
 	 * get a unique processID
@@ -810,7 +822,8 @@ public class GigwaRestController extends ControllerInterface {
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
-		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], Integer.parseInt(info[1]), gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+		int projId = Integer.parseInt(info[1]);
+		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], projId, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
 		
 		Map<String, Integer> individualPositions = new LinkedHashMap<>();
 		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
@@ -819,8 +832,9 @@ public class GigwaRestController extends ControllerInterface {
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
-        Collection<BasicDBList> variantQueryDBListColl = ga4ghService.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
-        BasicDBList variantQueryDBList = variantQueryDBListColl.iterator().next();
+        
+        VariantQueryWrapper varQueryWrapper = VariantQueryBuilder.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
+        BasicDBList variantQueryDBList = varQueryWrapper.getVariantDataQueries().iterator().next();
 
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
 
@@ -867,12 +881,28 @@ public class GigwaRestController extends ControllerInterface {
 	                            if (gtCode == null)
                                     continue;   // skip genotype
 
-	                            if (!gir.getAnnotationFieldThresholds().isEmpty() || !gir.getAnnotationFieldThresholds2().isEmpty()) {
-    	                            List<String> indList1 = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-    	                            List<String> indList2 = gir.getCallSetIds2() == null ? new ArrayList<>() : gir.getCallSetIds2().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-    								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, indList1, gir.getAnnotationFieldThresholds(), indList2, gir.getAnnotationFieldThresholds2()))
-    									continue;	// skip genotype
-	                            }
+								List<Collection<String>> indlists = new ArrayList<>();
+								for (HashMap<String, Float> entry : gir.getAnnotationFieldThresholds()) {
+									if (!entry.isEmpty()) {
+										List<String> indList = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+										indlists.add(indList);
+									}
+								}
+								
+								
+						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
+						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
+						        List<List<String>> callsetIds = gir.getAllCallSetIds();
+						        for (int i = 0; i < callsetIds.size(); i++)
+						        	try {
+							            individualsByPop.put("Group" + (i+1), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+							            annotationFieldThresholdsByPop.put("Group" + (i+1), gir.getAnnotationFieldThresholds(i));
+							        }
+						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
+						        	{}
+
+								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individualsByPop, annotationFieldThresholdsByPop))
+    								continue;
 
 								if (individualGenotypes[individualIndex] == null)
 									individualGenotypes[individualIndex] = new ArrayList<String>();
@@ -918,7 +948,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 		};
 
-		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? new Document("$and", variantQueryDBList) : new Document(), samples, true, 100, writingThread, null, null, progress);
+		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList(), samples, true, 100, writingThread, null, null, progress);
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
@@ -952,7 +982,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * get VCF field plot data
 	 *
 	 * @param request
-	 * @param gdr
+	 * @param gvfpr
 	 * @param variantSetId
 	 * @return Map<String, Map<Long, Long>> containing plot data in JSON format
 	 * @throws Exception
@@ -1073,7 +1103,7 @@ public class GigwaRestController extends ControllerInterface {
 	/**
 	 *
 	 * @param request
-	 * @param variantSetId
+	 * @param resp
 	 * @return
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getExportFormat", notes = "get available exports formats and descriptions")
@@ -1639,7 +1669,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sProjectDescription the project description
 	 * @param sTechnology the technology
 	 * @param fClearProjectData whether or not to clear project data
-	 * @param skipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
+	 * @param fSkipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
 	 * @param dataUri1 URI-provided data file 1
 	 * @param dataUri2 URI-provided data file 2
 	 * @param dataUri3 URI-provided data file 3
@@ -2463,5 +2493,74 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
+
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
+	@ApiResponse(code = 400, message = "wrong parameters"),
+	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+    @RequestMapping(value = BASE_URL + GENES_LOOKUP, method = RequestMethod.GET, produces = "application/json")
+    public List<String> searchableGenesLookup(
+            HttpServletRequest request, HttpServletResponse resp,
+            @RequestParam("projectId") String projectId,
+            @RequestParam("q") String lookupText) throws Exception {
+        
+        String token = tokenManager.readToken(request);
+
+        try {
+            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
+            int project = Integer.parseInt(info[1]);
+            if (tokenManager.canUserReadDB(token, info[0])) {            
+                return ga4ghService.searchGenesLookup(info[0], project, lookupText);
+            }
+                
+        } catch (UnsupportedEncodingException ex) {
+            LOG.debug("Error decoding projectId: " + projectId, ex);
+        }
+        
+        return null;
+    }
     
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
+	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
+		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
+
+		Map<String, Object> resultObjects = new LinkedHashMap<String, Object>();
+		int i = 1;
+		while (dbIterator.hasNext()) {
+			String dbName = dbIterator.next().getName();
+
+			Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
+
+			resultObject.put("database", dbName);
+			resultObject.put("individuals", Helper.estimDocCount(dbName, Individual.class));
+			resultObject.put("markers", Helper.estimDocCount(dbName, VariantData.class));
+			resultObject.put("samples", Helper.estimDocCount(dbName, GenotypingSample.class));
+
+			Query query = new Query();
+        	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
+					.include(GenotypingProject.FIELDNAME_NAME)
+					.include(GenotypingProject.FIELDNAME_DESCRIPTION)
+					.include(GenotypingProject.FIELDNAME_RUNS)
+					.include(GenotypingProject.FIELDNAME_VARIANT_TYPES);
+			MongoTemplate mt = MongoTemplateManager.get(dbName);
+			List<GenotypingProject> projects = mt.find(query, GenotypingProject.class);
+			int j = 1;
+			for (GenotypingProject project : projects) {
+				Map<String, Object> pj = new LinkedHashMap<String, Object>();
+				pj.put("name", project.getName());
+				pj.put("description", project.getDescription());
+				pj.put("variantType", project.getVariantTypes());
+				pj.put("ploidy", project.getPloidyLevel());
+				pj.put("runNumber", project.getRuns().size());
+				resultObject.put("Project" + j, pj);
+				j++;
+			}
+			resultObjects.put("Database" + i, resultObject);
+
+			i++;
+		}
+		return resultObjects;
+	}
 }
