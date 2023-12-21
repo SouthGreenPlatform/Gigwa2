@@ -1274,7 +1274,13 @@ function areGroupsOverlapping(firstGroup, secondGroup) {
     if (groups.length < 2)
     	return false;
 
-	const seen = firstGroup == null || firstGroup == '' ? new Set() : new Set(getSelectedIndividuals([groups.splice(firstGroup - 1, 1)]));
+	var seen;
+	if (firstGroup == null || firstGroup == '')
+		seen = new Set();
+	else {
+		var groupIndividuals = getSelectedIndividuals([groups.splice(firstGroup - 1, 1)]);
+		seen = new Set(groupIndividuals.length == 0 ? indOpt : groupIndividuals);
+	}
 	if (firstGroup != null && secondGroup != null && firstGroup != '' && secondGroup != '')
 		groups = [[secondGroup]];
 
