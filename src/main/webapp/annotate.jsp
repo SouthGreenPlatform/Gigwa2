@@ -465,7 +465,8 @@
                 $('#progress').data('error', true);
                 $('#progress').off('hidden.bs.modal');
                 $("#installDialog").modal('hide');
-                displayProcessProgress(5, token, () => loadGenomes());
+                //displayProcessProgress(5, token, () => loadGenomes());
+				displayProcessProgress(5, token, "progress_download_genome");
             }
         </script>
     </head>
