@@ -258,7 +258,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
     static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
-
+	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
+	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
@@ -702,13 +703,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionDensity(gdr);
+				return vizService.selectionDensity(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -737,13 +738,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionFst(gdr);
+				return vizService.selectionFst(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -772,13 +773,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionTajimaD(gdr);
+				return vizService.selectionTajimaD(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -993,13 +994,13 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
+	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
-				return vizService.selectionVcfFieldPlotData(gvfpr);
+				return vizService.selectionVcfFieldPlotData(gvfpr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -2493,6 +2494,18 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
+
+    @ApiIgnore
+	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public LinkedHashMap<String, ArrayList<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), projID, (Collection<String>) reqBody.get("individuals"));
+	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public List<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, ArrayList<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+		return MgdbDao.getInstance().filterIndividualMetadata(module, projID, null, filters);
+	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),

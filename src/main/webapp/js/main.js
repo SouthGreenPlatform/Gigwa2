@@ -1026,7 +1026,7 @@ var filtersToColumns = new Array();
 
 function updateFilteredIndividualCount()
 {
-    $("span#filtered indCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
+    $("span#filteredIndCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
 }
 
 function addSelectionDropDownsToHeaders(tableObj)
@@ -1034,46 +1034,40 @@ function addSelectionDropDownsToHeaders(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-	columnCount = tableObj.rows[0].cells.length;
-	mainLoop : for (c=0; c<columnCount; c++)
-	{
-		distinctValuesForColumn = new Array();
-		for (r=1; r<tableObj.rows.length; r++)
-			if (tableObj.rows[r].cells[c] != null)
-			{
-				if (containsHtmlTags(tableObj.rows[r].cells[c].innerHTML))
-					continue mainLoop;	// we don't create filter drop-downs for HTML contents
-				if (!distinctValuesForColumn.includes(tableObj.rows[r].cells[c].innerHTML))
-					distinctValuesForColumn[distinctValuesForColumn.length] = tableObj.rows[r].cells[c].innerHTML;
-			}
+    $.ajax({
+        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        type: "POST",
+        data : "{}",
+        contentType: "application/json;charset=utf-8",
+        headers: buildHeader(token, $('#assembly').val()),
+        success: function (jsonResult) {
+            columnCount = tableObj.rows[0].cells.length;
+            for (c=2; c<columnCount; c++) {
+                distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
+                distinctValuesForColumn.sort();
 
-        distinctValuesForColumn.sort();
+                dropDown = document.createElement("select");
+                dropDown.multiple = 'multiple';
+                dropDown.className = "selectpicker btn-sm";
+                $(dropDown).attr('data-actions-box', "true");
+                $(dropDown).attr('data-none-selected-text', "Any");
+                $(dropDown).attr('data-select-all-text', "All");
+                $(dropDown).attr('data-deselect-all-text', "None");
+                $(dropDown).attr('data-selected-text-format', "count>2");
+                $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
+                $(dropDown).on('change', function () {
+                    applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+                });
+                for (i = 0; i < distinctValuesForColumn.length; i++)
+                    dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
 
-        if (distinctValuesForColumn.length < tableObj.rows.length - 1)
-        {
-            dropDown = document.createElement("select");
-            dropDown.multiple = 'multiple';
-            dropDown.className = "selectpicker btn-sm";
-            $(dropDown).attr('data-actions-box', "true");
-            $(dropDown).attr('data-none-selected-text', "Any");
-            $(dropDown).attr('data-select-all-text', "All");
-            $(dropDown).attr('data-deselect-all-text', "None");
-            $(dropDown).attr('data-selected-text-format', "count>2");
-            $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
-            $(dropDown).on('change', function() {
-                applyDropDownFiltersToTable(document.getElementById(tableObj.id));
-                updateFilteredIndividualCount();
-            });
-            for (i=0; i<distinctValuesForColumn.length; i++)
-                  dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
-
-            tableObj.rows[0].cells[c].appendChild(dropDown);
-            filtersToColumns[c] = dropDown;
+                tableObj.rows[0].cells[c].appendChild(dropDown);
+                filtersToColumns[c] = dropDown;
+            }
+            applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+            $(tableObj).find("th select.selectpicker").selectpicker();
         }
-    }
-
-    applyDropDownFiltersToTable(document.getElementById(tableObj.id));
-    $(tableObj).find("th select.selectpicker").selectpicker();
+    });
 }
 
 function applyDropDownFiltersToTable(tableObj)
@@ -1081,25 +1075,42 @@ function applyDropDownFiltersToTable(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-	columnCount = tableObj.rows[0].cells.length;
-	for (r=1; r<tableObj.rows.length; r++)
-	{
-		displayVal = "";
-		for (c=0; c<columnCount; c++)
-		{
-			if (filtersToColumns[c] != null)
-			{
-				var selection = $(filtersToColumns[c]).val();
-				if (selection != null && tableObj.rows[r].cells[c] != null && !selection.includes(tableObj.rows[r].cells[c].innerHTML))
-				{
-					displayVal = "none";
-					if (r > 1)
-						break;
-				}
-			}
-		}
-		tableObj.rows[r].style.display = displayVal;
-	}
+    var headers = [];
+    var filters = {};
+    for (var i = 2; i < tableObj.rows[0].cells.length; i++) {
+        var selectElement = tableObj.rows[0].cells[i].querySelector('select');
+        var columnName = tableObj.rows[0].cells[i].innerHTML.split('<')[0]
+        var selectedOptions = selectElement.selectedOptions;
+        headers.push(columnName);
+        var values = [];
+        for (var j = 0; j < selectedOptions.length; j++) {
+            values.push(selectedOptions[j].value);
+        }
+        filters[columnName] = values;
+    }
+
+    $.ajax({
+        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        type: "POST",
+        contentType: "application/json;charset=utf-8",
+        headers: buildHeader(token, $('#assembly').val()),
+        data: JSON.stringify(filters),
+        success: function (jsonResult) {
+            var dataRows = new StringBuffer();
+            for (var ind in jsonResult) {
+                dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + jsonResult[ind].id + "</span></td>");
+                for (var i in headers) {
+                    var value = jsonResult[ind].additionalInfo[headers[i]];
+                    dataRows.append("<td>" + value + "</td>");
+                }
+                dataRows.append("</tr>");
+            }
+            var ifTable = $("table#individualFilteringTable");
+            ifTable.find("tr:gt(0)").remove();
+            ifTable.append(dataRows.toString());
+            updateFilteredIndividualCount();
+        }
+    });
 }
 
 function resetDropDownFilterTable(tableObj)
@@ -1108,8 +1119,7 @@ function resetDropDownFilterTable(tableObj)
         $(this).val([]);
         $(this).selectpicker('refresh');
     });
-    $(tableObj).find("tr").show();
-    updateFilteredIndividualCount();
+    applyDropDownFiltersToTable(tableObj);
 }
 
 function selectGroupUsingMetadata(groupNumber) {
@@ -1118,7 +1128,6 @@ function selectGroupUsingMetadata(groupNumber) {
 
     $("span#filteredGroupNumber").html(groupNumber);
     $("table#individualFilteringTable tr:eq(0)").attr("class", "group" + groupNumber);
-    updateFilteredIndividualCount();
     $("#individualFiltering").modal({
         opacity: 80,
         overlayCss: {
