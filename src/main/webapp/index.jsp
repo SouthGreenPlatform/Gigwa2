@@ -724,8 +724,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var deleteBookmarkedQueryURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DELETE_QUERY_URL%>" />';
 	var listBookmarkedQueriesURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LIST_SAVED_QUERIES_URL%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
+	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
+	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
 	var downloadURL;
-	var callSetResponse = [];
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
@@ -1236,10 +1237,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 "pageToken": null
             }),
             success: function (jsonResult) {
-                callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
+                var callSetResponse = jsonResult.callSets === null ? [] : jsonResult.callSets;
 
                 indOpt = [];
-		gotMetaData = false;
+				gotMetaData = false;
 
                 // first pass to compile an exhaustive field list
                 var headers = new Array();
@@ -1292,19 +1293,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
-                        var dataRows = new StringBuffer();
-                        for (var ind in callSetResponse) {
-                            dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + callSetResponse[ind].name + "</span></td>");
-                            for (var i in headers) {
-                                var value = callSetResponse[ind].info[headers[i]];
-                                dataRows.append("<td>" + (value == null ? "" : value[0].trim()) + "</td>");
-                            }
-                            dataRows.append("</tr>");
-                        }
                         var ifTable = $("table#individualFilteringTable");
                         if (headerRow != "")
                             ifTable.prepend(headerRow + "</tr>");
-                        ifTable.append(dataRows.toString());
 
                         var tableObj = document.getElementById("individualFilteringTable");
                         addSelectionDropDownsToHeaders(tableObj);

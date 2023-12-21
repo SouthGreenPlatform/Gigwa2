@@ -63,39 +63,38 @@ const chartTypes = new Map([
         buildCustomisation: function (){
             return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
                      + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
-                     + '<div id="plotMetadata" style="display: none" class="col-md-3">'
-                     +   '<b>... values defining groups</b> (2 or more)<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
+                     + '<div id="plotMetadata" style="display: none" class="col-md-2">'
+                     +   '<b>... values defining populations</b><br/>(2 or more)<img style="cursor:pointer; cursor:hand; margin-left:50px;" src="images/magnifier.gif" title="Individuals in each population will be the intersection of Gigwa\ngroups union with the set defined by the metadata value"/><br/><select id="plotGroupingMetadataValues" multiple size="6" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
                      + '</div>');
         },
         buildRequestPayload: function (payload){
             const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
             if (groupOption != "__"){
                 const selectedValues = $("#plotGroupingMetadataValues").val();
-                if (selectedValues === null || selectedValues.length < 2){
+                if (selectedValues === null || selectedValues.length < 2)
                     return null;
-                }
-                
-                let groups = new Map();
-                callSetResponse.forEach(function (callset) {
-                    if (callset.info === undefined) return;
                     
-                    const field = callset.info[groupOption];
-                    if (field === undefined || field.length <= 0) return;
-                    
-                    const fieldValue = callset.info[groupOption][0];
-                    if (fieldValue !== undefined) {
-                        let valueGroup = groups.get(fieldValue);
-                        if (valueGroup !== undefined) {
-                            valueGroup.push(callset.name);
-                        } else if (selectedValues.includes(fieldValue)) {
-                            groups.set(fieldValue, [callset.name]);
-                        }
-                    }
-                });
-
-                payload.displayedAdditionalGroups = [];
-                for (const group of groups.values())
-                    payload.displayedAdditionalGroups.push(group);
+				payload.displayedAdditionalGroups = [];
+                let selectedIndividuals = getSelectedIndividuals();
+				for (var i in selectedValues) {
+					var filters = {};
+					payload.displayedAdditionalGroups[i] = [];
+					filters[groupOption] = [selectedValues[i]];
+				    $.ajax({
+				        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+				        type: "POST",
+				        async: false,
+				        contentType: "application/json;charset=utf-8",
+				        headers: buildHeader(token, $('#assembly').val()),
+				        data: JSON.stringify(filters),
+				        success: function (callSetResponse) {
+			                callSetResponse.forEach(function (callset) {
+			                    if (selectedIndividuals.includes(callset.id))
+									payload.displayedAdditionalGroups[i].push(callset.id)
+			                });
+				        }
+				    });
+				 }
             }
             return payload;
         },
@@ -416,7 +415,6 @@ function buildCustomisationDiv(chartInfo) {
     const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
     
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
-    customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; margin-top:40px; margin-left:-60px;" disabled>Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
     if (hasVcfMetadata || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
@@ -451,6 +449,8 @@ function buildCustomisationDiv(chartInfo) {
         customisationDivHTML += chartInfo.buildCustomisation();
     customisationDivHTML += '</div>'
     
+    customisationDivHTML += '<div class="col-md-1"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="margin-top:40px;" disabled>Show</button></div>';
+
     $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
     if (hasVcfMetadata || chartInfo.selectIndividuals)
     	showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
@@ -601,7 +601,7 @@ function loadChart(minPos, maxPos) {
     
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
-        displayAllChart(minPos, maxPos, null);
+        displayChart(minPos, maxPos);
     else
         $("div#chartContainer div#additionalCharts").show();
 }
@@ -892,12 +892,14 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
             $('.showHideSeriesBox').prop('disabled', false);
             //finishProcess(i);
         },
-        error: function (xhr, ajaxOptions, thrownError) {
+        error: function(xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
+
             finishProcess(i, fieldName);
         }
     });
+    startProcess();
 }
 
 function startProcess(i, fieldName) {
@@ -1090,22 +1092,31 @@ function setFstGroupingOption() {
     const option = $("#plotGroupingSelectionMode").find(":selected").val();
     if (option != "__"){
         let fieldValues = new Set();
-        callSetResponse.forEach(function (callset){
-            if (callset.info[option] !== undefined && callset.info[option].length > 0){
-                fieldValues.add(callset.info[option][0]);
-            }
-        });
-        
-        let selectOptions = "";
-        let orderedValues = Array.from(fieldValues.values());
-        orderedValues.sort();
-        orderedValues.forEach(function (value){
-            selectOptions += '<option value="' + value + '">' + value + '</option>';
-        });
-        $("#plotGroupingMetadataValues").html(selectOptions);
-        $("#plotGroupingMetadataValues").change();
-        $("#plotMetadata").css("display", "block");
-    } else {
+        let selectedIndividuals = getSelectedIndividuals();
+        $.ajax({
+	        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+	        type: "POST",
+	        data: JSON.stringify({"individuals" : selectedIndividuals.length == 0 ? null : selectedIndividuals}),
+	        contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+	        success: function (metaDataValues) {
+		        metaDataValues[option].forEach(function (mdVal) {
+	                fieldValues.add(mdVal);
+		        });
+
+		        let selectOptions = "";
+		        let orderedValues = Array.from(fieldValues.values());
+		        orderedValues.sort();
+		        orderedValues.forEach(function (value){
+		            selectOptions += '<option value="' + value + '">' + value + '</option>';
+		        });
+		        $("#plotGroupingMetadataValues").html(selectOptions);
+		        $("#plotGroupingMetadataValues").change();
+		        $("#plotMetadata").css("display", "block");
+	        }
+	    });
+    }
+    else {
         $("#plotMetadata").css("display", "none");
         $("#plotGroupingMetadataValues").change();
     }

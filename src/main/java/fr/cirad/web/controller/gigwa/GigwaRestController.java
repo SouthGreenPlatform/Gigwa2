@@ -251,7 +251,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
     static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
-
+	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
+	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
@@ -2489,6 +2490,18 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
+
+    @ApiIgnore
+	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public LinkedHashMap<String, ArrayList<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), projID, (Collection<String>) reqBody.get("individuals"));
+	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public List<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, ArrayList<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+		return MgdbDao.getInstance().filterIndividualMetadata(module, projID, null, filters);
+	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
