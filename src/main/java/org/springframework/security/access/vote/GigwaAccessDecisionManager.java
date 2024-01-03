@@ -33,6 +33,7 @@ import org.springframework.security.web.FilterInvocation;
 import org.springframework.stereotype.Component;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
+import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.security.UserPermissionController;
@@ -45,9 +46,6 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
 {
 	@SuppressWarnings("unused")
 	private static final Logger LOG = Logger.getLogger(GigwaAccessDecisionManager.class);
-	
-	/** The role admin. */
-	static public String ROLE_ADMIN = "ROLE_ADMIN";
 
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
 	@Autowired private TokenManager tokenManager;
@@ -74,7 +72,7 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     		if (sModule != null && MongoTemplateManager.get(sModule) != null && !MongoTemplateManager.isModulePublic(sModule))
     		{
     			boolean fIsAnonymous = authorities != null && authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
-    			boolean fIsAdmin = authorities != null && authorities.contains(new SimpleGrantedAuthority(ROLE_ADMIN));
+    			boolean fIsAdmin = authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
     			boolean fHasRequiredRole;
     			
     			// deal with specific URLs
