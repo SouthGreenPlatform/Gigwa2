@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -1278,7 +1279,7 @@ public class GigwaRestController extends ControllerInterface {
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
 		    		: 
-		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")));
@@ -1551,7 +1552,7 @@ public class GigwaRestController extends ControllerInterface {
 		                	storeSessionAttributes(session);	// in case external source info was just added
 		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 	                        if (metadataType.equals("individual")) {
-	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null).values();
+	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
 	                                if (individual.getAdditionalInfo() != null) {
 		                                String extRefIdValue = (String) individual.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -1620,13 +1621,13 @@ public class GigwaRestController extends ControllerInterface {
 		                }
 		
 		                if (progress.getError() == null) {
-		                    if (nModifiedRecords.get() <= 0) {    // no changes applied
-		                        if (brapiUrlList.size() == 0 && nModifiedRecords.get() == -1)
-		                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
-		                        else
-		                            progress.setError("Pulling metadata using BrAPI did not lead to any changes!");
-		                    } else {
-		                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
+	                        if (nModifiedRecords.get() == -1)
+	                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
+	                        else if (nModifiedRecords.get() <= 0 && !brapiUrlList.isEmpty())
+	                            progress.setError("Pulling metadata using BrAPI did not lead to any changes!");
+	                        else {
+			                    if (nModifiedRecords.get() > 0)
+			                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
 		                        progress.markAsComplete();
 		                    }
 		                }
@@ -2493,14 +2494,18 @@ public class GigwaRestController extends ControllerInterface {
 
     @ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public LinkedHashMap<String, ArrayList<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
-		return MgdbDao.getInstance().distinctIndividualMetadata(module, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), projID, (Collection<String>) reqBody.get("individuals"));
+	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
 	}
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public List<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, ArrayList<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
-		return MgdbDao.getInstance().filterIndividualMetadata(module, projID, null, filters);
+	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
