@@ -1064,7 +1064,6 @@ function addSelectionDropDownsToHeaders(tableObj)
                 tableObj.rows[0].cells[c].appendChild(dropDown);
                 filtersToColumns[c] = dropDown;
             }
-            applyDropDownFiltersToTable(document.getElementById(tableObj.id));
             $(tableObj).find("th select.selectpicker").selectpicker();
         }
     });
