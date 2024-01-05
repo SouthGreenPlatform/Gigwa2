@@ -358,6 +358,57 @@
 							</arguments>
 						</configuration>
 					</execution>
+
+					<execution>
+						<id>update-bundle-linux-project-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>
+								<argument>${project.basedir}/misc/linux_bundle.sh</argument>
+							</arguments>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>update-bundle-macos-project-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>
+								<argument>${project.basedir}/misc/macos_bundle.command</argument>
+							</arguments>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>update-bundle-windows-project-version</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>sed</executable>
+							<arguments>
+								<argument>-i</argument>
+								<argument>-E</argument>
+								<argument>s/(\$project_version =.*)/$project_version = "${project.version}"/g</argument>
+								<argument>${project.basedir}/misc/win_bundle.ps1</argument>
+							</arguments>
+						</configuration>
+					</execution>
 					
 					<execution>
 						<id>update-manifest-version</id>
