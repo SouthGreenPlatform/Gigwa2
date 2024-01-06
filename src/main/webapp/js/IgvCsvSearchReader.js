@@ -220,8 +220,8 @@ function parseFeatures(data, dataHeader){
 	});
 	
 	let individualCols = new Map();
-	dataHeader.callSets.forEach(function (callset){
-		individualCols.set(callset.id, cols.get(callset.name));
+	dataHeader.callSetIds.forEach(function (callsetId){
+		individualCols.set(callsetId, cols.get(callsetId.split(idSep)[2]));
 	})
 	
 	// Parse the actual data
@@ -272,11 +272,10 @@ class GigwaSearchReader {
 	}
 	
 	// Retrieve the "header" data (the callsets)
-	async updateHeader(){
+	async updateHeader() {
 		this.header = {};
-		this.header.callSets = callSetResponse.filter(callset => (this.selectedIndividuals.includes(callset.name) || this.selectedIndividuals.length == 0));
-		this.header.callSetIds = this.header.callSets.map(callset => callset.id);
-		
+		this.header.callSetIds = this.selectedIndividuals.map(ind => getProjectId() + idSep + ind);
+		this.header.callSets = this.selectedIndividuals.map(ind => { return {"id" : getProjectId() + idSep + ind, "name" : ind}; });
 		this.header.callSets.sort(function (a, b){
 			if (a.id < b.id) return -1;
 			if (a.id > b.id) return 1;
