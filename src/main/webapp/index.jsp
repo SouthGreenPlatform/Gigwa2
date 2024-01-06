@@ -724,6 +724,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
 	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
+	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var downloadURL;
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
@@ -1220,7 +1221,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             individualSubSet = null;
 
         $.ajax({
-            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />',
+            url: searchCallSetsUrl,
             type: "POST",
             dataType: "json",
             async: false,
@@ -2727,25 +2728,28 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		igvUpdateVariants();
 	}
 	
-	// Get the list of individuals to display in IGV
-	// Return an empty array for all individuals
+	// Build the list of individuals to display in IGV
     function igvSelectedIndividuals() {
         let group = $('input[name="igvGroupsButton"]:checked').val();
         let trackIndividuals;
         switch (group) {
             case "selected":
-                trackIndividuals = [getSelectedIndividuals(null, false)];
+            	var groupInds = getSelectedIndividuals(null, false);
+            	trackIndividuals = [groupInds.length == 0 ? indOpt : groupInds];
                 break;
             case "separate":
                 trackIndividuals = [];
-                for (var i = 1; i <= $(".genotypeInvestigationDiv").length; i++)
-                    trackIndividuals.push(getSelectedIndividuals([i], false));
+                for (var i = 1; i <= $(".genotypeInvestigationDiv").length; i++) {
+                	var groupInds = getSelectedIndividuals([i], false);
+                    trackIndividuals.push(groupInds.length == 0 ? indOpt : groupInds);
+                }
                 break;
             case "all":
-                trackIndividuals = [[]];
+                trackIndividuals = [indOpt];
                 break;
-            default:
-                trackIndividuals = [getSelectedIndividuals([group.replace("group", "")], false)];
+            default:	// single group
+            	var groupInds = getSelectedIndividuals([group.replace("group", "")], false);
+         	   	trackIndividuals = [groupInds.length == 0 ? indOpt : groupInds];
             	break;
         }
         return trackIndividuals;
