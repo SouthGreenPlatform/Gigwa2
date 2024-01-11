@@ -18,7 +18,6 @@
 <%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));

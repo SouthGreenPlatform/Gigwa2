@@ -968,7 +968,6 @@ function checkChartLoadingProgress(i, fieldName) {
         url: progressUrl + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "GET",
         contentType: "application/json;charset=utf-8",
-        //buildHeader(token, $('#assembly').val())
         headers: {
             "Authorization": "Bearer " + token
         },
