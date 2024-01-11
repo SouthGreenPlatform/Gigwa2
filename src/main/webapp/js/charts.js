@@ -183,7 +183,8 @@ function initializeChartDisplay(){
         		selectedSequences = jsonResult;
         	feedSequenceSelectAndLoadVariantTypeList(
                     selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-                selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
+                    selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
+    		applyChartType();
         },
         error: function (xhr, ajaxOptions, thrownError) {
             handleError(xhr, thrownError);
@@ -340,7 +341,7 @@ function getSelectedItems() {
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     var customSelect = createCustomSelect(sequences);
     const headerHtml = ('<form><div id="headerGraphPage" style="padding:3px; width:100%; background-color:#f0f0f0;">' +
-                            'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="setChartType(this);"></select>' + 
+                            'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="applyChartType();"></select>' + 
                             'Choose sequences: <div id="customSelectContainer"></div>' +
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                             '<button id="exportButton" style="float: right; display: none" onclick="captureCharts()" type="button">Export all graphs</button>' +
@@ -476,7 +477,8 @@ function displayOrAbort() {
     }
 }
 
-function setChartType(typeSelect) {
+function applyChartType() {
+	var typeSelect = document.getElementById("chartTypeList");
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
     const chartInfo = chartTypes.get(currentChartType);
     
