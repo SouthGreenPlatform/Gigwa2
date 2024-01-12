@@ -701,7 +701,7 @@ public class GigwaRestController extends ControllerInterface {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
+			if (tokenManager.canUserReadDB(token.split("::")[0], info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionDensity(gdr, token);
 			} else {
@@ -736,7 +736,7 @@ public class GigwaRestController extends ControllerInterface {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
+			if (tokenManager.canUserReadDB(token.split("::")[0], info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionFst(gdr, token);
 			} else {
@@ -771,7 +771,7 @@ public class GigwaRestController extends ControllerInterface {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
+			if (tokenManager.canUserReadDB(token.split("::")[0], info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionTajimaD(gdr, token);
 			} else {
@@ -992,7 +992,7 @@ public class GigwaRestController extends ControllerInterface {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
+			if (tokenManager.canUserReadDB(token.split("::")[0], info[0])) {
 				gvfpr.setRequest(request);
 				return vizService.selectionVcfFieldPlotData(gvfpr, token);
 			} else {

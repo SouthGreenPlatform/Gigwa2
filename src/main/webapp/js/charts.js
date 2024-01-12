@@ -422,7 +422,8 @@ function buildCustomisationDiv(chartInfo) {
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
-    customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
+    customisationDivHTML += '<div class="col-md-3"><p align="center">'
+
     $.ajax({    // load searchable annotations
         url: searchableVcfFieldListURL + '/' + encodeURIComponent(getProjectId()),
         type: "GET",
@@ -434,6 +435,10 @@ function buildCustomisationDiv(chartInfo) {
         },
         success: function (jsonResult) {
             i = 0;
+            if (jsonResult.length !== 0)
+                customisationDivHTML += 'Additional series based on VCF genotype metadata:</p>';
+            else
+                customisationDivHTML += '</p>';
             for (var key in jsonResult) {
                 let fieldName = jsonResult[key];
                 customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (i + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
@@ -732,7 +737,7 @@ async function displayChart(minPos, maxPos, i, alreadyCreated) {
         $(`div#densityLoadProgressContainer`).append($(loadDiv));
 
         $.ajax({
-            url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
+            url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + currentChartType + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
             type: "POST",
             contentType: "application/json;charset=utf-8",
             headers: buildHeader(token, $('#assembly').val()),
@@ -852,7 +857,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex, i) {
     const loadDiv = `<div id="densityLoadProgress_${$(`#densityChartArea${i + 1}`).data('sequence')}${field}"></div>`;
     $(`div#densityLoadProgressContainer`).append($(loadDiv));
     $.ajax({
-        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
+        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
@@ -965,7 +970,7 @@ function abortOngoingOperation() {
 function checkChartLoadingProgress(i, fieldName) {
     const field = fieldName !== null ? "_" + fieldName : "";
     $.ajax({
-        url: progressUrl + "?progressToken=" + token + "_" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
+        url: progressUrl + "?progressToken=" + token + "::" + currentChartType + field + "_" + $(`#densityChartArea${i + 1}`).data('sequence'),
         type: "GET",
         contentType: "application/json;charset=utf-8",
         headers: {
