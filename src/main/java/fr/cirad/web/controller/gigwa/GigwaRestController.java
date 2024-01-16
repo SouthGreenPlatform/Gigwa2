@@ -2627,7 +2627,7 @@ public class GigwaRestController extends ControllerInterface {
 					baseName = baseName.substring(0, extensionPosition);
 				}
 
-				if (extension.equals("fa") || extension.equals("fasta")) {
+				if (extension.equals("fa") || extension.equals("fas") || extension.equals("fasta")) {
 					if (baseName.toLowerCase().equals("cds")) {
 						transferSnpEffImport(file, cdsFile, gzipped, progress);
 						cdsFound = true;

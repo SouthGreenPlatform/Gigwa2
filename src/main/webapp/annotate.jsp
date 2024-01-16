@@ -56,6 +56,8 @@
         	var availableGenomes = [];
         	var downloadableGenomes = [];
 
+			var importDropzone;
+
 
             $(function () {
                 $('#moduleExistingG').on('change', function () {
@@ -108,6 +110,7 @@
             });
 
             $(document).ready(function () {
+				Dropzone.autoDiscover = false;
     	        $('#moduleProjectNavbar').hide();
                 $('[data-toggle="tooltip"]').tooltip({delay: {"show": 300, "hide": 100}});
            		getToken();
@@ -154,7 +157,7 @@
     	                handleError(xhr, thrownError);
     	            }
     	        }).then(function() {
-    	            $("#importDropzone").dropzone({
+					importDropzone = new Dropzone("#importDropzone", {
     	                url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
     	                previewsContainer: "#dropZonePreviews",
    		           	    dictResponseError: 'Error importing data',
@@ -411,7 +414,6 @@
 					        $("#progress").modal("hide");
 					        return;
 					    }
-					    const importDropzone = new Dropzone("#importDropzone");
 					    if (importDropzone.getRejectedFiles().length > 0) {
 		                    alert("Please remove any rejected files before submitting!");
 		                    $('#progress').modal('hide');
