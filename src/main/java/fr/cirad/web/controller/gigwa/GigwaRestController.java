@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -251,7 +252,8 @@ public class GigwaRestController extends ControllerInterface {
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
     static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
-
+	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
+	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 		
 	/**
@@ -695,13 +697,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionDensity(gdr);
+				return vizService.selectionDensity(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -730,13 +732,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionFst(gdr);
+				return vizService.selectionFst(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -765,13 +767,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId) throws Exception {
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionTajimaD(gdr);
+				return vizService.selectionTajimaD(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -986,13 +988,13 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> geVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId) throws Exception {
+	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
-				return vizService.selectionVcfFieldPlotData(gvfpr);
+				return vizService.selectionVcfFieldPlotData(gvfpr, token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -1277,7 +1279,7 @@ public class GigwaRestController extends ControllerInterface {
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
 		    		: 
-		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")));
@@ -1550,7 +1552,7 @@ public class GigwaRestController extends ControllerInterface {
 		                	storeSessionAttributes(session);	// in case external source info was just added
 		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 	                        if (metadataType.equals("individual")) {
-	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null).values();
+	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
 	                                if (individual.getAdditionalInfo() != null) {
 		                                String extRefIdValue = (String) individual.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -1619,13 +1621,13 @@ public class GigwaRestController extends ControllerInterface {
 		                }
 		
 		                if (progress.getError() == null) {
-		                    if (nModifiedRecords.get() <= 0) {    // no changes applied
-		                        if (brapiUrlList.size() == 0 && nModifiedRecords.get() == -1)
-		                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
-		                        else
-		                            progress.setError("Pulling metadata using BrAPI did not lead to any changes!");
-		                    } else {
-		                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
+	                        if (nModifiedRecords.get() == -1)
+	                            progress.setError("Unsupported file format or extension: " + filesByExtension.values().toArray(new String[1])[0]);
+	                        else if (nModifiedRecords.get() <= 0 && !brapiUrlList.isEmpty())
+	                            progress.setError("Pulling metadata using BrAPI did not lead to any changes!");
+	                        else {
+			                    if (nModifiedRecords.get() > 0)
+			                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
 		                        progress.markAsComplete();
 		                    }
 		                }
@@ -2502,6 +2504,22 @@ public class GigwaRestController extends ControllerInterface {
         
         return null;
     }
+
+    @ApiIgnore
+	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
+	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
+	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),

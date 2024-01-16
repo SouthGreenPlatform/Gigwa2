@@ -339,6 +339,13 @@ function getSelectedVariantIds() {
     return selectedVariantIds.join(";");
 }
 
+function getDiscriminateArray() {
+	var result = [];
+	for (var i = 1; i <= $(".genotypeInvestigationDiv").length; i++)
+		result.push($('#discriminate' + i).val() == "" ? null : parseInt($('#discriminate' + i).val()));
+	return result;
+}
+
 function getSelectedGenesIds() {
     var mode = "";
     if ($('#plusMode').hasClass('active')) {
@@ -470,7 +477,8 @@ function updateGtPatterns() {
         $('#Genotypes' + i).change();
     }
 
-    igvUpdateIndividuals();
+    if ($('input[name="igvGroupsButton"]:checked').val() != null)	// otherwise we are probably removing groups
+	    igvUpdateIndividuals();
 }
 
 function browsingBoxChanged()
@@ -512,7 +520,7 @@ function buildSearchQuery(searchMode, pageToken) {
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
         "geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
-        "discriminate": $('#discriminate').prop('checked'),
+        "discriminate": getDiscriminateArray(),
         "pageSize": 100,
         "pageToken": pageToken,
         "sortBy": sortBy,
@@ -838,32 +846,34 @@ function setGenotypeInvestigationMode(mode) {
         data: indOpt,
         placeholder: 'Lookup'
     }
-
-    if (mode <= 1) {
-        $('#discriminationDiv').hide(300);
-        $('#discriminate').prop('checked', false);
-    } else {
-        $('#discriminationDiv').show(300);
-    }
     
-    if (mode > 1) {
-    	$("#igvGroupsMenu ul").html('<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();" checked="checked" /> All groups</label></a></li>');
-    	$("#igvGroupsMenu ul").append('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
+    if (mode == 0) {
+	    $("#igvGroupsMenu ul").html('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();"/> All individuals</label></a></li>');
+	    igvUpdateVariants();
+	}
+    else if (mode > 1) {
+    	$("#igvGroupsMenu ul").html('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
+    	$("#igvGroupsMenu ul").append('<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();"/> All groups</label></a></li>');
     }
     else
-	    $("#igvGroupsMenu ul").html('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();" checked="checked" /> All individuals</label></a></li>');
+	    $("#igvGroupsMenu ul").html('');
 
     if (mode < count) {	// remove unwanted groups
     	let toDitch = elements.slice(mode);
 		for (let i=0; i<toDitch.length; i++) {
 			$("button#groupMemorizer" + (i+1)).removeClass('active');
-			$(toDitch[i]).find(".indListBox").selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
+			var indListBox = $(toDitch[i]).find(".indListBox");
+			indListBox.off('change');
+			indListBox.selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
 			toDitch[i].remove();
 		}
-    } else if (mode > count) { // add required groups
-        for (var i = count + 1; i <= mode; i++) {
-            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"></span><br/><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="100%" data-live-search="true" name="Genotypes${i}"></select></div></form></div></div></div>`;
+    }
+
+    for (var i = 1; i <= mode; i++) {
+		if (i >= count + 1) {
+            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><span style="float:right; margin:3px; font-style:italic; font-weight:bold;">Group ${i}</span><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals</div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"  style="cursor:pointer; cursor:hand; float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Select another group here to limit search to variants for which the major genotype differs between both groups.\n\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups."></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
             childContainer.append(htmlContent);
+            $('#discriminate' + i).selectpicker();
 
             if (gotMetaData)
                 $("button#groupSelector" + i).removeClass("hidden");
@@ -878,8 +888,9 @@ function setGenotypeInvestigationMode(mode) {
             var individualsElement = $('#Individuals' + i);
             individualsElement.selectmultiple(multipleSelectOpts);
             individualsElement.on('change', function (e) {
-                applyGroupMemorizing(this.id.replace("Individuals", ""));
-                checkGroupOverlap();
+				var groupNumber = this.id.replace("Individuals", "");
+                applyGroupMemorizing(groupNumber);
+				checkGroupOverlap(groupNumber);
             });
 
             $('#individualsLabel' + i).html("Individuals (" +  indOpt.length + "/" +  indOpt.length + ")");
@@ -900,19 +911,40 @@ function setGenotypeInvestigationMode(mode) {
 	        });
 	        
 	        $("#genotypeInvestigationDiv" + i).show(300);
-	        $("#igvGroupsMenu ul").append('<li id="igvGroups' + i + '"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group' + i + '" onchange="igvSelectGroup();" /> Group ' + i + '</label></a></li>');
         }
-        
+        $("#igvGroupsMenu ul").append('<li id="igvGroups' + i + '"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group' + i + '" onchange="igvSelectGroup();" /> Group ' + i + '</label></a></li>');
+    }
+    
+    $('#igvGroupsMenu ul li:first input').prop("checked", true);
+    
+    if (mode > count) {
         $('.indListBox').on('multiple_select_change', function () {
             var i = this.id.replace("Individuals", "");
             var nCount = $('#Individuals' + i).selectmultiple('count');
             $('#individualsLabel' + i).html("Individuals (" + (nCount == 0 ?  indOpt.length : nCount) + "/" +  indOpt.length + ")");
             updateGtPatterns();
         });
+	}
+    updateGtPatterns();
+    loadGenotypePatterns();
 
-        updateGtPatterns();
-        loadGenotypePatterns();
-    }
+   for (var i = 1; i <= mode; i++) {
+	   var previousVal = $('#discriminate' + i).val();
+		$('#discriminate' + i).html("<option value=''>(none)</option>");
+    	for (var j = 1; j <= mode; j++)
+			if (j != i)
+				$('#discriminate' + i).append("<option value='" + j + "'>Group " + j + "</option>");
+	
+		$('#discriminate' + i).selectpicker('val', previousVal).selectpicker('refresh');
+		if ($('#discriminate' + i).val() == '')
+			$('#overlapWarning' + i).hide();
+	}
+	  	
+    if (mode <= 1)
+        $('.discriminationDiv').hide(300);
+    else
+        $('.discriminationDiv').show(300);
+
 
     loadSearchableVcfFields();
     $('#exportedIndividuals').html(getExportIndividualSelectionModeOptions(mode));
@@ -961,21 +993,6 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
         previousSibling.parent().find('div.individualSelectionDiv').hide(200, function() { previousSibling.parent().find('div.individualSelectionDiv').remove() });
 }
 
-function groupHasFilters(jsonResult, grpNumber){
-    // var e = grpNumber;
-    // if (grpNumber == 1) var e = '';
-    if(jsonResult['callSetIds'].length != 0) return true;
-    if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['DP'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['DP'].length != 0) return true;
-    if(typeof jsonResult['annotationFieldThresholds'][grpNumber]['GQ'] != 'undefined' && jsonResult['annotationFieldThresholds'][grpNumber]['GQ'].length != 0) return true;
-    if(jsonResult['minMissingData'][grpNumber] != 0) return true;
-    if(jsonResult['maxMissingData'][grpNumber] != 100) return true;
-    if(jsonResult['minHeZ'][grpNumber] != 0) return true;
-    if(jsonResult['maxHeZ'][grpNumber] != 100) return true;
-    if(jsonResult['minMaf'][grpNumber] != 0) return true;
-    if(jsonResult['maxMaf'][grpNumber] != 50) return true;
-    if(jsonResult['gtPattern'][grpNumber] != 'Any') return true;
-}
-
 function getToken() {
     $.ajax({
         url: tokenURL,
@@ -1021,7 +1038,7 @@ var filtersToColumns = new Array();
 
 function updateFilteredIndividualCount()
 {
-    $("span#filtered indCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
+    $("span#filteredIndCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
 }
 
 function addSelectionDropDownsToHeaders(tableObj)
@@ -1029,46 +1046,39 @@ function addSelectionDropDownsToHeaders(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-	columnCount = tableObj.rows[0].cells.length;
-	mainLoop : for (c=0; c<columnCount; c++)
-	{
-		distinctValuesForColumn = new Array();
-		for (r=1; r<tableObj.rows.length; r++)
-			if (tableObj.rows[r].cells[c] != null)
-			{
-				if (containsHtmlTags(tableObj.rows[r].cells[c].innerHTML))
-					continue mainLoop;	// we don't create filter drop-downs for HTML contents
-				if (!distinctValuesForColumn.includes(tableObj.rows[r].cells[c].innerHTML))
-					distinctValuesForColumn[distinctValuesForColumn.length] = tableObj.rows[r].cells[c].innerHTML;
-			}
+    $.ajax({
+        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        type: "POST",
+        data : "{}",
+        contentType: "application/json;charset=utf-8",
+        headers: buildHeader(token, $('#assembly').val()),
+        success: function (jsonResult) {
+            columnCount = tableObj.rows[0].cells.length;
+            for (c=2; c<columnCount; c++) {
+                distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
+                distinctValuesForColumn.sort();
 
-        distinctValuesForColumn.sort();
+                dropDown = document.createElement("select");
+                dropDown.multiple = 'multiple';
+                dropDown.className = "selectpicker btn-sm";
+                $(dropDown).attr('data-actions-box', "true");
+                $(dropDown).attr('data-none-selected-text', "Any");
+                $(dropDown).attr('data-select-all-text', "All");
+                $(dropDown).attr('data-deselect-all-text', "None");
+                $(dropDown).attr('data-selected-text-format', "count>2");
+                $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
+                $(dropDown).on('change', function () {
+                    applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+                });
+                for (i = 0; i < distinctValuesForColumn.length; i++)
+                    dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
 
-        if (distinctValuesForColumn.length < tableObj.rows.length - 1)
-        {
-            dropDown = document.createElement("select");
-            dropDown.multiple = 'multiple';
-            dropDown.className = "selectpicker btn-sm";
-            $(dropDown).attr('data-actions-box', "true");
-            $(dropDown).attr('data-none-selected-text', "Any");
-            $(dropDown).attr('data-select-all-text', "All");
-            $(dropDown).attr('data-deselect-all-text', "None");
-            $(dropDown).attr('data-selected-text-format', "count>2");
-            $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
-            $(dropDown).on('change', function() {
-                applyDropDownFiltersToTable(document.getElementById(tableObj.id));
-                updateFilteredIndividualCount();
-            });
-            for (i=0; i<distinctValuesForColumn.length; i++)
-                  dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
-
-            tableObj.rows[0].cells[c].appendChild(dropDown);
-            filtersToColumns[c] = dropDown;
+                tableObj.rows[0].cells[c].appendChild(dropDown);
+                filtersToColumns[c] = dropDown;
+            }
+            $(tableObj).find("th select.selectpicker").selectpicker();
         }
-    }
-
-    applyDropDownFiltersToTable(document.getElementById(tableObj.id));
-    $(tableObj).find("th select.selectpicker").selectpicker();
+    });
 }
 
 function applyDropDownFiltersToTable(tableObj)
@@ -1076,25 +1086,42 @@ function applyDropDownFiltersToTable(tableObj)
     if (tableObj.rows.length < 1)
         return;
 
-	columnCount = tableObj.rows[0].cells.length;
-	for (r=1; r<tableObj.rows.length; r++)
-	{
-		displayVal = "";
-		for (c=0; c<columnCount; c++)
-		{
-			if (filtersToColumns[c] != null)
-			{
-				var selection = $(filtersToColumns[c]).val();
-				if (selection != null && tableObj.rows[r].cells[c] != null && !selection.includes(tableObj.rows[r].cells[c].innerHTML))
-				{
-					displayVal = "none";
-					if (r > 1)
-						break;
-				}
-			}
-		}
-		tableObj.rows[r].style.display = displayVal;
-	}
+    var headers = [];
+    var filters = {};
+    for (var i = 2; i < tableObj.rows[0].cells.length; i++) {
+        var selectElement = tableObj.rows[0].cells[i].querySelector('select');
+        var columnName = tableObj.rows[0].cells[i].innerHTML.split('<')[0]
+        var selectedOptions = selectElement.selectedOptions;
+        headers.push(columnName);
+        var values = [];
+        for (var j = 0; j < selectedOptions.length; j++) {
+            values.push(selectedOptions[j].value);
+        }
+        filters[columnName] = values;
+    }
+
+    $.ajax({
+        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        type: "POST",
+        contentType: "application/json;charset=utf-8",
+        headers: buildHeader(token, $('#assembly').val()),
+        data: JSON.stringify(filters),
+        success: function (jsonResult) {
+            var dataRows = new StringBuffer();
+            for (var ind in jsonResult) {
+                dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + jsonResult[ind].id + "</span></td>");
+                for (var i in headers) {
+                    var value = jsonResult[ind].additionalInfo[headers[i]];
+                    dataRows.append("<td>" + value + "</td>");
+                }
+                dataRows.append("</tr>");
+            }
+            var ifTable = $("table#individualFilteringTable");
+            ifTable.find("tr:gt(0)").remove();
+            ifTable.append(dataRows.toString());
+            updateFilteredIndividualCount();
+        }
+    });
 }
 
 function resetDropDownFilterTable(tableObj)
@@ -1103,8 +1130,7 @@ function resetDropDownFilterTable(tableObj)
         $(this).val([]);
         $(this).selectpicker('refresh');
     });
-    $(tableObj).find("tr").show();
-    updateFilteredIndividualCount();
+    applyDropDownFiltersToTable(tableObj);
 }
 
 function selectGroupUsingMetadata(groupNumber) {
@@ -1113,7 +1139,6 @@ function selectGroupUsingMetadata(groupNumber) {
 
     $("span#filteredGroupNumber").html(groupNumber);
     $("table#individualFilteringTable tr:eq(0)").attr("class", "group" + groupNumber);
-    updateFilteredIndividualCount();
     $("#individualFiltering").modal({
         opacity: 80,
         overlayCss: {
@@ -1166,7 +1191,7 @@ function onPasteIndividuals(groupNumber, textarea) {
     });
     $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray, true]);
     applyGroupMemorizing(groupNumber);
-    checkGroupOverlap();
+	checkGroupOverlap(groupNumber);
     $("button#pasteIndividuals" + groupNumber).click();
 }
 
@@ -1250,28 +1275,48 @@ function displayProjectInfo(projName)
     });
 }
 
-// Check whether any individuals are found in several groups
-function areGroupsOverlapping() {
-    const seen = new Set();
+/*	Three cases supported:
+	- If firstGroup and secondGroup specified, check whether any individuals are found in both
+	- If only firstGroup specified, check whether any individuals are found in that group and any other
+	- If both unspecified, check overlapping among all active groups.
+*/
+function areGroupsOverlapping(firstGroup, secondGroup) {
     let groups = Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
     if (groups.length < 2)
     	return false;
+
+	var seen;
+	if (firstGroup == null || firstGroup == '')
+		seen = new Set();
+	else {
+		var groupIndividuals = getSelectedIndividuals([groups.splice(firstGroup - 1, 1)]);
+		seen = new Set(groupIndividuals.length == 0 ? indOpt : groupIndividuals);
+	}
+	if (firstGroup != null && secondGroup != null && firstGroup != '' && secondGroup != '')
+		groups = [[secondGroup]];
+
     for (const group of groups) {
         const individuals = getSelectedIndividuals([group]);
         if (individuals.length == 0)
-       	 return true;
+       		return true;
 
         for (const individual of individuals) {
             if (seen.has(individual))
-                return true; // Found overlapping individual in more than one group
-            seen.add(individual);
+                return true;
+            
+            if (firstGroup == null || firstGroup == '')
+            	seen.add(individual);
         }
     }
     return false;
 }
 
-function checkGroupOverlap() {
-	$('#overlapWarning').toggle($("#discriminate").prop('checked') && areGroupsOverlapping());
+function checkGroupOverlap(groupNumber) {
+	$('#overlapWarning' + groupNumber).toggle($("#discriminate" + groupNumber).val() != "" && areGroupsOverlapping(groupNumber, $("#discriminate" + groupNumber).val()));
+	$(".discriminationDiv select option:selected[value='" + groupNumber + "']").each(function() {
+		var id = $(this).parent().attr('id').replace(/[^0-9.]/g, '');
+		$('#overlapWarning' + id).toggle(areGroupsOverlapping(groupNumber, id));
+	});
 }
 
 function sendToGalaxy(archivedDataFiles) {
@@ -1491,13 +1536,14 @@ function saveQuery() {
 
         "referenceName": getSelectedSequences(),
         "selectedVariantTypes": getSelectedTypes(),
+        "selectedVariantIds": getSelectedVariantIds(),
         "alleleCount": getSelectedNumberOfAlleles(),
         "start": getSearchMinPosition(),
         "end": getSearchMaxPosition(),
         "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
 		"geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
-        "discriminate": $('#discriminate').prop('checked'),
+        "discriminate": getDiscriminateArray(),
         "pageSize": 100,
         "sortBy": sortBy,
         "sortDir": sortDesc === true ? 'desc' : 'asc'
@@ -1622,31 +1668,30 @@ function listQueries(){
 
                     "referenceName": jsonResult['referenceName'],
                     "selectedVariantTypes": jsonResult['selectedVariantTypes'],
+                    "selectedVariantIds": jsonResult['selectedVariantIds'],
                     "alleleCount": jsonResult['alleleCount'],
                     "start": jsonResult['start'],
                     "end": jsonResult['end'],
                     "variantEffect": jsonResult['variantEffect'],
-                    "geneName": jsonResult['selectedGenesIds'],
+                    "geneName": jsonResult['geneName'],
                     "callSetIds": jsonResult['callSetIds'],
 
                     "discriminate": jsonResult['discriminate'],
                     "pageSize": jsonResult['pageSize'],
                     "sortBy": jsonResult['sortBy'],
-                    "sortDir": jsonResult['sortDir']
+                    "sortDir": jsonResult['sortDir'],
+                    
+	                "additionalCallSetIds": jsonResult["additionalCallSetIds"],
+	                "gtPattern": jsonResult["gtPattern"],
+	                "mostSameRatio": jsonResult["mostSameRatio"],
+	                "minMaf": jsonResult["minMaf"],
+	                "maxMaf": jsonResult["maxMaf"],
+	                "minMissingData": jsonResult["minMissingData"],
+	                "maxMissingData": jsonResult["maxMissingData"],
+	                "minHeZ": jsonResult["minHeZ"],
+	               	"maxHeZ": jsonResult["maxHeZ"],
+	                "annotationFieldThresholds": jsonResult["annotationFieldThresholds"]
                 };
-
-                for (var j = 0; j < $(".genotypeInvestigationDiv").length; i++) {
-                    requestData["additionalCallSetIds"][j] = jsonResult["additionalCallSetIds"][j];
-                    requestData["gtPattern"][j] = jsonResult["gtPattern"][j];
-                    requestData["mostSameRatio"][j] = jsonResult["mostSameRatio"][j];
-                    requestData["minMaf"][j] = jsonResult["minMaf"][j];
-                    requestData["maxMaf"][j] = jsonResult["maxMaf"][j];
-                    requestData["minMissingData"][j] = jsonResult["minMissingData"][j];
-                    requestData["maxMissingData"][j] = jsonResult["maxMissingData"][j];
-                    requestData["minHeZ"][j] = jsonResult["minHeZ"][j];
-                    requestData["maxHeZ"][j] = jsonResult["maxHeZ"][j];
-                    requestData["annotationFieldThresholds"][j] = jsonResult["annotationFieldThresholds"][j];
-                }
 
                 $.ajax({
                     url: saveBookmarkedQueryURL,
@@ -1689,72 +1734,94 @@ function listQueries(){
                 "Authorization": "Bearer " + token
             },
             success: function(jsonResult) {
-                resetFilters(); 
+                resetFilters();
                 
-                if(jsonResult["start"] != -1) // if there is a start position
-                $('#minposition').val(jsonResult["start"]); 
-                
-                if(jsonResult["end"] != -1) // if there is a end position
-                $('#maxposition').val(jsonResult["end"]);
-                
-                if(jsonResult['referenceName'] != ""){
-                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
-                    $('#Sequences div select').val(tabRefs); //change the 'select' values
-                    $('#Sequences div select').trigger('change');//trigger the change event
-                }
-                
-                if(jsonResult['selectedVariantTypes'] != ""){
-                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
-                    $('#variantTypes').selectpicker('val', tabTypes);
-                }
-                
-                if(jsonResult['variantEffect'] != ""){
-                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
-                    $('#variantEffects').selectpicker('val', tabEffects);
-                }
-                
-                var names = jsonResult['selectedGenesIds']; //change gene name value
-                $('#geneIdsSelect').val(names);
-                
-                if(jsonResult['alleleCount'] != ""){
-                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
-                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
-                }
+                var filterByVariantIDs = jsonResult['selectedVariantIds'] != null && jsonResult['selectedVariantIds'] != "";
+                $("#filterIDsCheckbox").prop("checked", !filterByVariantIDs);	// make it the opposite of what we want
+       		    $("#filterIDsCheckbox").click();	// toggle it and let event handlers launch interface update
+				if (filterByVariantIDs) {
+					var optionSB = new StringBuffer();
+			        selectTitle = "Select to enter IDs";
+			        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+			        jsonResult['selectedVariantIds'].split(";").forEach(function (varId) {
+			            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+			        });
+			        $("#variantIdsSelect").append(optionSB.toString());
+			        $('#copyVariantIds').show();
+			        $('#clearVariantIdSelection').hide();
+			   		$('#variantIdsSelect').trigger('change');
+				}
+				else {                
+	                if(jsonResult["start"] != -1) // if there is a start position
+	                $('#minposition').val(jsonResult["start"]); 
+	                
+	                if(jsonResult["end"] != -1) // if there is a end position
+	                $('#maxposition').val(jsonResult["end"]);
+	                
+	                if(jsonResult['referenceName'] != ""){
+	                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
+	                    $('#Sequences div select').val(tabRefs); //change the 'select' values
+	                    $('#Sequences div select').trigger('change');//trigger the change event
+	                }
+	                
+	                if(jsonResult['selectedVariantTypes'] != ""){
+	                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
+	                    $('#variantTypes').selectpicker('val', tabTypes);
+	                }
+	                
+	                if(jsonResult['variantEffect'] != ""){
+	                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
+	                    $('#variantEffects').selectpicker('val', tabEffects);
+	                }
+	                
+	                var names = jsonResult['geneName']; //change gene name value
+	                if (names == "-")
+	                	$('#minusMode').click();
+	                else if (names == "+")
+	                	$('#plusMode').click();
+	                else if (names.trim() != "") {
+	                	$('#editMode').click();
+				        var optionSB = new StringBuffer();
+				        names.split(",").forEach(function (varId) {
+				            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+				        });
+	    				$("#geneIdsSelect").append(optionSB.toString());
+	    				$('#geneIdsSelect').trigger('change');
+	                }
+	                
+	                if(jsonResult['alleleCount'] != ""){
+	                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
+	                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
+	                }
+	            }
+
+                $('#genotypeInvestigationMode').selectpicker('val', jsonResult['gtPattern'].length);
+                  $('#genotypeInvestigationMode').trigger('change');
 
                 for (var i= 0 ; i < jsonResult['gtPattern'].length ; i++) {
-                    var e = i==1 ? "" : i;
-
-                    if(groupHasFilters(jsonResult, i)){
-                        $('#genotypeInvestigationMode').selectpicker('val', i + 1);
-                          $('#genotypeInvestigationMode').trigger('change');
-                          
-                          var tabIds = i == 0 ? jsonResult['callSetIds'] : jsonResult['additionalCallSetIds'][i - 1];
-                          if(tabIds.length != 0) {
-                            $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
-                                return x.split(idSep)[2];
-                            }));
-                            $('#Individuals'+ (i + 1) +' div select').trigger('change');
-                          }
-                          
-                          let groupThresholds = jsonResult['annotationFieldThresholds'][i];
-                          for (var key in groupThresholds)
-                              $('#vcfFieldFilterGroup'+ (i + 1) +' #' + key + '_threshold' + (i + 1)).val(groupThresholds[key]);
-                          $('#minMissingData'+ (i + 1)).val(jsonResult['minMissingData'][i]);
-                          $('#maxMissingData'+ (i + 1)).val(jsonResult['maxMissingData'][i]);
-                          $('#minHeZ'+ (i + 1)).val(jsonResult['minHeZ'][i]);
-                          $('#maxHeZ'+ (i + 1)).val(jsonResult['maxHeZ'][i]);
-                          $('#minMaf'+ (i + 1)).val(jsonResult['minMaf'][i]);
-                          $('#maxMaf'+ (i + 1)).val(jsonResult['maxMaf'][i]);
-                          $('#Genotypes'+ (i + 1)).selectpicker('val',jsonResult['gtPattern'][i]);
-                          $('#mostSameRatio'+ (i + 1)).val(jsonResult['mostSameRatio'][i]);
-                          $('#Genotypes'+ (i + 1)).trigger('change');
-                    }
+	                  var tabIds = i == 0 ? jsonResult['callSetIds'] : jsonResult['additionalCallSetIds'][i - 1];
+	                  if(tabIds.length != 0) {
+	                    $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
+	                        return x.split(idSep)[2];
+	                    }));
+	                    $('#Individuals'+ (i + 1) +' div select').trigger('change');
+	                  }
+	                  
+	                  let groupThresholds = jsonResult['annotationFieldThresholds'][i];
+	                  for (var key in groupThresholds)
+	                      $('#vcfFieldFilterGroup'+ (i + 1) +' #' + key + '_threshold' + (i + 1)).val(groupThresholds[key]);
+	                  $('#minMissingData'+ (i + 1)).val(jsonResult['minMissingData'][i]);
+	                  $('#maxMissingData'+ (i + 1)).val(jsonResult['maxMissingData'][i]);
+	                  $('#minHeZ'+ (i + 1)).val(jsonResult['minHeZ'][i]);
+	                  $('#maxHeZ'+ (i + 1)).val(jsonResult['maxHeZ'][i]);
+	                  $('#minMaf'+ (i + 1)).val(jsonResult['minMaf'][i]);
+	                  $('#maxMaf'+ (i + 1)).val(jsonResult['maxMaf'][i]);
+	                  $('#Genotypes'+ (i + 1)).selectpicker('val', jsonResult['gtPattern'][i]);
+	                  $('#mostSameRatio'+ (i + 1)).val(jsonResult['mostSameRatio'][i]);
+	                  $('#Genotypes'+ (i + 1)).trigger('change');
+	                  $('#discriminate' + (i + 1)).selectpicker('val', jsonResult['discriminate'][i]);
+	                  $('#discriminate'+ (i + 1)).trigger('change');
                 }
-               
-                if(jsonResult['discriminate']){
-                    $('#discriminationDiv').show();
-                    $('#discriminate').prop('checked', true);
-                  }
                
                 $('#queryManager').modal("hide");
             },

@@ -17,18 +17,7 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="UTF-8" language="java" import="fr.cirad.tools.Helper,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.ga4gh.Ga4ghRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 
-<%
-    java.util.Properties prop = new java.util.Properties();
-    prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
-    String appVersion = prop.getProperty("Implementation-version");
-    String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
-%>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
-<c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
 <html>
 <head>
 <title>Summary Table</title>

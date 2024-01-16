@@ -16,7 +16,7 @@
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.6.x &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.7.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -134,7 +134,7 @@
                <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot02_variant_filters.png" BORDER=0 style='float:right; width:274px; margin-top:-30px; margin-left:10px;'>
+               <IMG SRC="shot02_variant_filters.png" BORDER=0 style='float:right; width:275px; margin-top:-30px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">By default, a single grey filter panel appears, providing means to select variants based on their inherent attributes:
                </P>
                <UL>
@@ -148,11 +148,11 @@
                      <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, number of known alleles (when several are represented);
                      </P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file).
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file), with gene selection eased by a lookup functionality.
                      </P>
                </UL>
                <P STYLE="margin-bottom: 0.14in">
-               From version 2.5, users may also choose to select variants by IDs, by switching into a mode which is an alternative to using a combination of other filters (accessible from a checkbox in the hamburger menu). Variant selection is then supported via a dropdown with text lookup, clipboard pasting, or the providing of a local file.
+               Users may also choose to select variants by IDs, by switching into a mode which is an alternative to using a combination of other filters. Variant selection is then supported via a dropdown with text lookup, clipboard pasting, or the providing of a local file.
                <br/><br/>
                As a general rule, a filter widget where no selection has been made will behave as if all its items were selected (no filtering applied on that field).
                </P>
@@ -162,15 +162,14 @@
                <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:278px; margin-top:50px; margin-left:10px;'>
-               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown button may be used to display one or two additional panels
-                  that allow for more advanced filtering features based on one or two subsets of individuals referred to as groups.
+               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:273px; margin-top:50px; margin-left:10px;'>
+               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown may be used to display up to ten additional panels
+                  that allow for more advanced filtering features based on subsets of individuals referred to as groups.
                </P>
-               <P STYLE="margin-bottom: 0.14in">Both of these panels have the
+               <P STYLE="margin-bottom: 0.14in">All of these panels have the
                   same contents and each one lets users select a list of individuals
-                  (thus defining groups 1 and 2). Additionally, some handy tools are
-                  available on the right side of the "Individuals" drop
-                  down menu as tooltipped icons:
+                  (thus defining group contents). Additionally, some handy tools are
+                  available on the right side of the "Individuals" dropdown via tooltipped icons:
                </P>
                <UL>
                   <LI>
@@ -220,15 +219,15 @@
                      </P>
                </UL>
      	    <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
-    	        <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within each group but different between them, set both
+    	        <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within groups but different between two of them, set both
     	        groups' genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
-    	        lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, checking the "Discriminate groups"
-    	        box will ensure that the most frequent genotype in group 1 is different from that in group 2. See online video number 4 for a demonstration.</SPAN>
+    	        lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, setting the "Discriminate with" widget to point to another group
+    	        will ensure that the most frequent genotype in the first group is different from that in the second one. See online video number 4 for a demonstration.</SPAN>
      	    </P>
      	    <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
       	      and genotypes treated as missing because of low quality. MAF &amp; heterozygosity ratios and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
 	  	 	</P>
-     	    <P STYLE="margin-bottom: 0.24in"><u>NB:</u> When working on multi-run projects featuring several samples for a same individual, the following consistency rule had to be defined to be able to apply genotype patterns: for a given individual and variant, if a most frequent genotype exists, it is the one accounted for, otherwise, this data-point is treated as missing.
+     	    <P STYLE="margin-bottom: 0.24in"><u>NB:</u> When working on multi-run projects featuring several samples for a same individual, the following consistency rule had to be defined to be able to apply genotype patterns: for a given individual and variant, if a single most frequent genotype exists, it is the one accounted for, otherwise, this data-point is treated as missing.
       	   	</P>
          </UL>
          <UL>
@@ -236,7 +235,7 @@
                <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.3/ BOOKMARKING QUERIES</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot03bis_bookmarks.png" BORDER=0 style='float:right; width:471px; margin-top:-30px; margin-left:10px;'>
+               <IMG SRC="shot03bis_bookmarks.png" BORDER=0 style='float:right; width:479px; margin-top:-30px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">After executing a query, any logged-in user may bookmark it from the hamburger menu. Each bookmarked query needs to be given a name and thus users may:
                </P>
                <UL style="height:240px;">
@@ -630,6 +629,10 @@
             The list of supported parameters as follows:
          </P>
          <UL>
+            <LI>
+               <P>
+                  <B>customHomepageParagraph</B> - Allows inserting a custom HTML block in Gigwa homepage, right above institutional logos
+               </P>
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
                   <B>dbServerCleanup</B> - You may specify under this property, a
