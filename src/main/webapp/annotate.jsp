@@ -16,6 +16,9 @@
 --%>
 <!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
+<%@ page import="org.brapi.v2.api.ServerinfoApi" %>
+<%@ page import="org.brapi.v2.api.ReferencesetsApi" %>
+<%@ page import="fr.cirad.tools.Helper" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
@@ -26,6 +29,7 @@
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 <html>
@@ -291,6 +295,7 @@
                         handleError(xhr, thrownError);
                     }
                 });
+				loadAssembly();
             }
 
             function loadRuns() {
@@ -315,6 +320,35 @@
                     }
                 });
             }
+
+			function loadAssembly() {
+				$("#grpAsmAnnotate").hide();
+
+				$.ajax({	// load assemblies
+					url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
+					type: "POST",
+					dataType: "json",
+					async: false,
+					contentType: "application/json;charset=utf-8",
+					headers: buildHeader(token, $('#assemblyAnnotate').val()),
+					data: JSON.stringify({
+						"studyDbIds": [$('#projectExisting :selected').data("id")]
+					}),
+					success: function(jsonResult) {
+						$('#assemblyAnnotate').html("");
+						jsonResult.result.data.forEach(refSet => {
+							var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
+							$('#assemblyAnnotate').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
+						});
+						if (jsonResult.result.data.length > 1)
+							$("#grpAsmAnnotate").show();
+						$('#assemblyAnnotate').selectpicker('refresh');
+					},
+					error: function(xhr, ajaxOptions, thrownError) {
+						handleError(xhr, thrownError);
+					}
+				});
+			}
 
             function loadGenomes() {
                 $.ajax({
@@ -367,9 +401,7 @@
 				$.ajax({
 				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />",
 				    method: "POST",
-				    headers: {
-				        "Authorization": "Bearer " + token,
-				    },
+				    headers: buildHeader(token, $('#assemblyAnnotate').val()),
 				    processData: false,
 				    contentType: false,
 				    data: data,
@@ -519,6 +551,10 @@
                                             </div>
                                         </div>
                                     </div>
+									<div class="form-group" id="grpAsmAnnotate" style="display:none;">
+										&nbsp;<label for="assemblyAnnotate" class="label-light">Assembly </label>
+										<select class="selectpicker" id="assemblyAnnotate" data-actions-box="true" name="assemblyAnnotate"></select>
+									</div>
 
                                     <!-- Default genomes selector -->
                                     <div id="genomeSelectContainer" class="form-group text-left">
