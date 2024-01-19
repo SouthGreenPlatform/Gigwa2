@@ -1054,8 +1054,14 @@ function addSelectionDropDownsToHeaders(tableObj)
         headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
             columnCount = tableObj.rows[0].cells.length;
+            let colsToIgnore = [];
             for (c=2; c<columnCount; c++) {
                 distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
+                if (distinctValuesForColumn.length <= 1) {
+					colsToIgnore.push(c - 1);
+					console.log("Ignoring metadata field filter because it contains less than 2 values: " + tableObj.rows[0].cells[c].innerText);
+	            }
+
                 distinctValuesForColumn.sort();
 
                 dropDown = document.createElement("select");
@@ -1076,12 +1082,18 @@ function addSelectionDropDownsToHeaders(tableObj)
                 tableObj.rows[0].cells[c].appendChild(dropDown);
                 filtersToColumns[c] = dropDown;
             }
+            
+			var ifTable = $("table#individualFilteringTable");
+			colsToIgnore.forEach(function (c) {
+		        ifTable.find("tr:eq(0) th:eq(" + c + ")").remove();
+		    });
+
             $(tableObj).find("th select.selectpicker").selectpicker();
         }
     });
 }
 
-function applyDropDownFiltersToTable(tableObj)
+function applyDropDownFiltersToTable(tableObj, reset)
 {
     if (tableObj.rows.length < 1)
         return;
@@ -1091,15 +1103,20 @@ function applyDropDownFiltersToTable(tableObj)
     for (var i = 2; i < tableObj.rows[0].cells.length; i++) {
         var selectElement = tableObj.rows[0].cells[i].querySelector('select');
         var columnName = tableObj.rows[0].cells[i].innerHTML.split('<')[0]
-        var selectedOptions = selectElement.selectedOptions;
         headers.push(columnName);
         var values = [];
-        for (var j = 0; j < selectedOptions.length; j++) {
-            values.push(selectedOptions[j].value);
-        }
+        if (!reset) {	// if resetting we ingore filter contents because dropdowns are being reset synchronouusly
+	        var selectedOptions = selectElement.selectedOptions;
+        	for (var j = 0; j < selectedOptions.length; j++)
+	            values.push(selectedOptions[j].value);
+	    }
         filters[columnName] = values;
     }
-
+    
+	let ifTable = $("table#individualFilteringTable");
+	ifTable.find("tr:gt(0)").remove();
+	ifTable.append("<tr><th style='padding:50px; background-color:#eeeeee;' colspan='" + (1 + ifTable.find("tr:eq(0)").children().length) + "'>Loading...<br/><br/><img src='images/progress.gif' /></th></tr>");
+	
     $.ajax({
         url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
         type: "POST",
@@ -1116,9 +1133,7 @@ function applyDropDownFiltersToTable(tableObj)
                 }
                 dataRows.append("</tr>");
             }
-            var ifTable = $("table#individualFilteringTable");
-            ifTable.find("tr:gt(0)").remove();
-            ifTable.append(dataRows.toString());
+            $("table#individualFilteringTable tr:eq(1)").replaceWith(dataRows.toString());
             updateFilteredIndividualCount();
         }
     });
@@ -1126,11 +1141,14 @@ function applyDropDownFiltersToTable(tableObj)
 
 function resetDropDownFilterTable(tableObj)
 {
-    $(tableObj).find("th select.selectpicker").each(function() {
-        $(this).val([]);
-        $(this).selectpicker('refresh');
-    });
-    applyDropDownFiltersToTable(tableObj);
+	setTimeout(function() {
+	    $(tableObj).find("th select.selectpicker").each(function() {
+	        $(this).val([]);
+	        $(this).selectpicker('refresh');
+	    });
+	}, 1);
+
+    applyDropDownFiltersToTable(tableObj, true);
 }
 
 function selectGroupUsingMetadata(groupNumber) {

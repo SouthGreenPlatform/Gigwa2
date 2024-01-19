@@ -252,31 +252,49 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 }
 
 function buildCustomisationDiv(chartInfo) {
-    const hasVcfMetadata = $("#vcfFieldFilterGroup1 input").length > 0;
-    
+	var vcfMetadataSelectionHTML = "";
+    $.ajax({    // load searchable annotations
+        url: searchableVcfFieldListURL + '/' + encodeURIComponent(getProjectId()),
+        type: "GET",
+        dataType: "json",
+        async: false,
+        contentType: "application/json;charset=utf-8",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        success: function (jsonResult) {
+            i = 0;
+            for (var key in jsonResult) {
+                let fieldName = jsonResult[key];
+                if (i == 0)
+              		vcfMetadataSelectionHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
+                vcfMetadataSelectionHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (i + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
+                i++;
+            }
+            if (i > 0)
+          		vcfMetadataSelectionHTML += '</div>';
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
     customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
-    if (hasVcfMetadata || chartInfo.selectIndividuals)
+    if (vcfMetadataSelectionHTML != "" || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
     
     customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
-    if (hasVcfMetadata) {
-        customisationDivHTML += '<div class="col-md-3"><p align="center">Additional series based on VCF genotype metadata:</p>';
-        $("#vcfFieldFilterGroup1 input").each(function(index) {
-            let fieldName = this.id.substring(0, this.id.lastIndexOf("_"));
-            customisationDivHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (index + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
-        });
-        customisationDivHTML += "</div>"
-    }
+	customisationDivHTML += vcfMetadataSelectionHTML;
 
     if (chartInfo.buildCustomisation !== undefined)
         customisationDivHTML += chartInfo.buildCustomisation();
     customisationDivHTML += '</div>'
     
     $("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
-    if (hasVcfMetadata || chartInfo.selectIndividuals)
+    if (vcfMetadataSelectionHTML != "" || chartInfo.selectIndividuals)
     	showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
 }
 
@@ -608,9 +626,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+		headers: buildHeader(token, $('#assembly').val()),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)
@@ -696,9 +712,7 @@ function abortOngoingOperation() {
     $.ajax({
         url: abortUrl,
         type: "DELETE",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+		headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
             if (!jsonResult.processAborted)
                 console.log("Unable to abort!");
@@ -717,10 +731,7 @@ function checkChartLoadingProgress() {
         url: progressUrl,
         type: "GET",
         contentType: "application/json;charset=utf-8",
-        //buildHeader(token, $('#assembly').val())
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult, textStatus, jqXHR) {
             if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted)) {
 				if (emptyResponseCountsByProcess[token] == null)
