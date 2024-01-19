@@ -1,7 +1,7 @@
 # Variables
-$project_version = "2.7-beta"
+$project_version = "2.7-RELEASE"
 $tomcat_version = "9.0.64"
-$mongodb_windows_file = "win32-x86_64-2012plus-4.2.24"
+$mongodb_windows_file = "win32-x86_64-2012plus-4.2.25"
 $path_to_windows_jre = "zulu17.40.19-ca-jre17.0.6-win_x64.zip"
 
 $bundle_dir_win = "Gigwa_V${project_version}-Windows"
@@ -50,12 +50,12 @@ Add-Content -Path "${bundle_dir_win}\tomcat\bin\setenv.bat" -Value 'set "JAVA_OP
 # Copy additional files to bundles
 Set-Location -Path $bundle_dir_win
 
-echo "Downloading LICENCE.txt..."
-$rawUrl = "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/$project_version/bundle_files/windows/LICENSE.txt"
+echo "Downloading LICENSE.txt..."
+$rawUrl = "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/$project_version/bundle_files/LICENSE.txt"
 Invoke-WebRequest -Uri $rawUrl -OutFile "LICENSE.txt"
 
 echo "Downloading README.txt..."
-$rawUrl = "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/$project_version/bundle_files/windows/README.txt"
+$rawUrl = "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/$project_version/bundle_files/README.txt"
 Invoke-WebRequest -Uri $rawUrl -OutFile "README.txt"
 
 echo "Downloading startGigwa.bat..."
