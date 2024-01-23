@@ -34,7 +34,12 @@ jobs:
         release_name: "${{ steps.grep_release_version.outputs.release_version }}"
         draft: false
         prerelease: false
-    - name: Upload Release Asset
+    - name: Copy additional release files
+      run: |
+        cp misc/linux_bundle.sh $GITHUB_WORKSPACE
+        cp misc/macos_bundle.command $GITHUB_WORKSPACE
+        cp misc/win_bundle.ps1 $GITHUB_WORKSPACE
+    - name: Upload Main Release Asset (webapp zip)
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1.0.2
       env:
@@ -44,3 +49,22 @@ jobs:
         asset_path: Gigwa2/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
         asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
         asset_content_type: application/zip
+    - name: Upload Additional Release Assets (bundle creation scripts)
+      id: upload-release-assets
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: |
+          $GITHUB_WORKSPACE/linux_bundle.sh
+          $GITHUB_WORKSPACE/macos_bundle.command
+          $GITHUB_WORKSPACE/win_bundle.ps1
+        asset_name: |
+          linux_bundle.sh
+          macos_bundle.command
+          win_bundle.ps1
+        asset_content_type: |
+          application/x-sh
+          application/x-sh
+          application/powershell
