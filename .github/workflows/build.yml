@@ -59,7 +59,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: $GITHUB_WORKSPACE/linux_bundle.sh
+        asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
         asset_name: linux_bundle.sh
         asset_content_type: application/x-sh
     # - name: Upload Additional Release Assets (bundle creation scripts)
