@@ -59,9 +59,10 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: |
-          ${{ github.event.repository.name }}/misc/linux_bundle.sh
-          ${{ github.event.repository.name }}/misc/macos_bundle.command
-          ${{ github.event.repository.name }}/misc/win_bundle.ps1
+          ls -la ${{ github.event.repository.name }}/target
+          # ${{ github.event.repository.name }}/misc/linux_bundle.sh
+          # ${{ github.event.repository.name }}/misc/macos_bundle.command
+          # ${{ github.event.repository.name }}/misc/win_bundle.ps1
         asset_name: |
           linux_bundle.sh
           macos_bundle.command
