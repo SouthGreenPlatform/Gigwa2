@@ -36,9 +36,9 @@ jobs:
         prerelease: false
     - name: Copy additional release files
       run: |
-        # cp ${{ github.event.repository.name }}/misc/linux_bundle.sh $GITHUB_WORKSPACE
-        # cp ${{ github.event.repository.name }}/misc/macos_bundle.command $GITHUB_WORKSPACE
-        # cp ${{ github.event.repository.name }}/misc/win_bundle.ps1 $GITHUB_WORKSPACE
+        cp ${{ github.event.repository.name }}/misc/linux_bundle.sh $GITHUB_WORKSPACE
+        cp ${{ github.event.repository.name }}/misc/macos_bundle.command $GITHUB_WORKSPACE
+        cp ${{ github.event.repository.name }}/misc/win_bundle.ps1 $GITHUB_WORKSPACE
         # echo $GITHUB_WORKSPACE
         # ls -la $GITHUB_WORKSPACE
         tree
@@ -49,9 +49,21 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-        asset_content_type: application/zip
+        asset_path: |
+          ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          $GITHUB_WORKSPACE/linux_bundle.sh
+          $GITHUB_WORKSPACE/macos_bundle.command
+          $GITHUB_WORKSPACE/win_bundle.ps1
+        asset_name: |
+          Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          linux_bundle.sh
+          macos_bundle.command
+          win_bundle.ps1
+        asset_content_type: |
+          application/zip
+          application/x-sh
+          application/x-sh
+          application/powershell
     # - name: Upload Additional Release Assets (bundle creation scripts)
     #   id: upload-release-assets
     #   uses: actions/upload-release-asset@v1.0.2
