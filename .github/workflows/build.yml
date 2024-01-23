@@ -15,7 +15,7 @@ jobs:
         java-version: 17
     - name: Run build script
       run: |
-        wget https://raw.githubusercontent.com/SouthGreenPlatform/${{ github.repository }}/master/misc/build.sh
+        wget https://raw.githubusercontent.com/${{ github.repository }}/master/misc/build.sh
         chmod +x build.sh
         ./build.sh -P prod
     - name: Grep release version
