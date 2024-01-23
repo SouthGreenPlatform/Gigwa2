@@ -36,6 +36,7 @@ jobs:
         prerelease: false
     - name: Copy additional release files
       run: |
+        tree
         cp misc/linux_bundle.sh $GITHUB_WORKSPACE
         cp misc/macos_bundle.command $GITHUB_WORKSPACE
         cp misc/win_bundle.ps1 $GITHUB_WORKSPACE
