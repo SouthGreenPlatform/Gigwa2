@@ -2,7 +2,7 @@
 $project_version = "2.7-RELEASE"
 $tomcat_version = "9.0.64"
 $mongodb_windows_file = "win32-x86_64-2012plus-4.2.25"
-$path_to_windows_jre = "zulu17.40.19-ca-jre17.0.6-win_x64.zip"
+$path_to_windows_jre = "zulu17.40.19-ca-jre17.0.6-win_x64"
 
 $bundle_dir_win = "Gigwa_V${project_version}-Windows"
 
@@ -19,7 +19,7 @@ New-Item -ItemType Directory -Path $bundle_dir_win -Force
 
 # Download JRE
 echo "Downloading JRE..."
-Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/${path_to_windows_jre}" -OutFile "${path_to_windows_jre}"
+Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/${path_to_windows_jre}.zip" -OutFile "${path_to_windows_jre}.zip"
 
 # Download and unzip Tomcat
 echo "Downloading Tomcat..."
@@ -78,7 +78,7 @@ New-Item -ItemType Directory -Path "${bundle_dir_win}\logs" -Force
 
 # Add JRE to bundles
 New-Item -ItemType Directory -Path "${bundle_dir_win}\jre" -Force
-Expand-Archive -Path $path_to_windows_jre -DestinationPath "${bundle_dir_win}\jre"
+Expand-Archive -Path "${path_to_windows_jre}.zip" -DestinationPath "${bundle_dir_win}\jre"
 Move-Item -Path "${bundle_dir_win}\jre\zulu17.40.19-ca-jre17.0.6-win_x64\*" -Destination "${bundle_dir_win}\jre"
 Remove-Item -Path "${bundle_dir_win}\jre\zulu17.40.19-ca-jre17.0.6-win_x64"
 
@@ -86,7 +86,7 @@ Remove-Item -Path "${bundle_dir_win}\jre\zulu17.40.19-ca-jre17.0.6-win_x64"
 Remove-Item -Path "${bundle_dir_win}\tomcat\webapps\examples" -Recurse -Force
 
 # Delete JRE
-Remove-Item -Path "${path_to_windows_jre}" -Force
+Remove-Item -Path "${path_to_windows_jre}.zip" -Force
 
 # Copy Gigwa webapp into Tomcat
 echo "Downloading Gigwa Webapp..."
