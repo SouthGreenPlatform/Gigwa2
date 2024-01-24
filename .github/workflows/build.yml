@@ -56,7 +56,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.event.repository.name }}/misc/macos_bundle.command
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_osx_bundle.command
+        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
         asset_content_type: application/x-sh
     - name: Upload Additional Release Asset (linux bundle creation script)
       id: upload-linux-bundle-asset
@@ -66,7 +66,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_ubuntu_bundle.sh
+        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
         asset_content_type: application/x-sh
     - name: Upload Additional Release Asset (windows bundle creation script)
       id: upload-win-bundle-asset
@@ -76,5 +76,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_win_bundle.ps1
+        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
         asset_content_type: application/powershell
