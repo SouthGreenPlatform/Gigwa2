@@ -68,6 +68,16 @@ jobs:
         asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
         asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
         asset_content_type: application/x-sh
+    - name: Upload Additional Release Asset (windows bundle creation script)
+      id: upload-win-bundle-asset
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
+        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
+        asset_content_type: application/powershell
     - name: Upload Additional Release Asset (docker-compose file)
       id: upload-win-bundle-asset
       uses: actions/upload-release-asset@v1.0.2
