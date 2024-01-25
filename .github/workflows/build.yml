@@ -79,7 +79,7 @@ jobs:
         asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
         asset_content_type: application/powershell
     - name: Upload Additional Release Asset (docker-compose file)
-      id: upload-win-bundle-asset
+      id: upload-docker-compose-asset
       uses: actions/upload-release-asset@v1.0.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
