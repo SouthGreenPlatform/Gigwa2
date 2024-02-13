@@ -309,7 +309,10 @@ public class TokenManager extends AbstractTokenManager {
 			Map<String, Collection<Comparable>> customRolesOnProjects = customRolesByEntityType.get(ENTITY_PROJECT);
 			if (customRolesOnProjects != null)
 			{
-				Collection<Comparable> projectCustomRoles = customRolesOnProjects.get(ROLE_READER);
+				Collection<Comparable> projectCustomRoles = customRolesOnProjects.get(ENTITY_READER_ROLE);
+				Collection<Comparable> snpClustEditionRoles = customRolesOnProjects.get(ENTITY_SNPCLUST_EDITOR_ROLE);
+				if (snpClustEditionRoles != null)
+					projectCustomRoles.addAll(snpClustEditionRoles);
 				if (projectCustomRoles == null)
 					projectCustomRoles = customRolesOnProjects.get(IRoleDefinition.ENTITY_MANAGER_ROLE);
 				if (projectCustomRoles != null && projectCustomRoles.contains(projectId))

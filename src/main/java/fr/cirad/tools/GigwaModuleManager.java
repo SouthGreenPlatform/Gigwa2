@@ -161,7 +161,10 @@ public class GigwaModuleManager implements IModuleManager {
         		throw new Exception("Invalid project ID: " + parentEntityIDs[0]);
         	}
         }
-        else
+	    else if ("project.snpclust".equals(entityType)) {
+	    	subEntityIdToNameMap.put("snpclust", "https://www.google.com");
+	    }
+    	else
             throw new Exception("Not managing entities of type " + entityType);
 
         return subEntityIdToNameMap;
