@@ -460,6 +460,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
+
+	<div class="modal fade" tabindex="-1" role="dialog" id="jeeGalaxyFrameContainer" aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="display: flex; justify-content: center; width:99%">
+			<div class="modal-content" style="padding:10px; overflow:hidden">
+				<iframe id="jeeGalaxyFrame" style="width: 770px; border:0; min-height:90vh;"></iframe>
+			</div>
+		</div>
+	</div>
+
 	<!-- modal which displays a box for configuring online output tools -->
 	<div id="outputToolConfigDiv" class="modal" role="dialog">
 		<div class="modal-dialog modal-large" role="document">

@@ -1417,6 +1417,11 @@ function checkIfOuputToolConfigChanged() {
     $("#applyOutputToolConfig").prop('disabled', changed ? false : 'disabled');
 }
 
+function openGalaxyFrame(filesURLs) {
+    $('#jeeGalaxyFrame').attr('src', filesURLs);
+    $('#jeeGalaxyFrameContainer').modal('show');
+}
+
 function showServerExportBox()
 {
 	$("div#exportPanel").hide();
@@ -1437,14 +1442,20 @@ function showServerExportBox()
 		exportFormatExtensions.push("tsv");
 	for (var key in exportFormatExtensions)
 		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-	
-	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-	if (galaxyInstanceUrl.startsWith("http")) {
-		var fileURLs = "";
-		for (key in archivedDataFiles)
-			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-		$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
-	}
+
+    const galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+    if (galaxyInstanceUrl.startsWith("http")) {
+        let fileURLs = "";
+        let fileSrc = "";
+		for (key in archivedDataFiles) {
+			fileURLs += (fileURLs === "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+            fileSrc += archivedDataFiles[key] + ",";
+        }
+        const iframeSrc = 'galaxyClient/index.do?filesURLs=' + encodeURIComponent(fileSrc);
+        const serverExportBox = $('#serverExportBox');
+        serverExportBox.append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');
+        serverExportBox.append(`<br/><br/>&nbsp;<input type="button" value="Search workflow compatible with these files in Galaxy" onclick="openGalaxyFrame('${iframeSrc}');" />`);
+    }
 
 	if (onlineOutputTools != null)
 		for (var toolName in onlineOutputTools) {

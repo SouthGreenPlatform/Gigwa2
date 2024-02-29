@@ -196,6 +196,7 @@
 			</exclusions>
 		</dependency>
 		
+<!--
 		<dependency>
 		    <groupId>com.github.jmchilton.blend4j</groupId>
 		    <artifactId>blend4j</artifactId>
@@ -229,6 +230,43 @@
 			      <groupId>com.google.code.findbugs</groupId>
 			      <artifactId>jsr305</artifactId>
 			    </exclusion>
+			</exclusions>
+		</dependency>
+-->
+
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>JEEGalaxyClient</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>io.grpc</groupId>
+					<artifactId>grpc-all</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.commons</groupId>
+					<artifactId>commons-compress</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.codehaus.jackson</groupId>
+					<artifactId>jackson-core-asl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.codehaus.jackson</groupId>
+					<artifactId>jackson-mapper-asl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.google.code.findbugs</groupId>
+					<artifactId>jsr305</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 	</dependencies>
