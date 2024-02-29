@@ -1451,7 +1451,7 @@ function showServerExportBox()
 			fileURLs += (fileURLs === "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
             fileSrc += archivedDataFiles[key] + ",";
         }
-        const iframeSrc = 'galaxyClient/index.do?filesURLs=' + encodeURIComponent(fileSrc);
+        const iframeSrc = galaxyMainPageUrl + '?filesURLs=' + encodeURIComponent(fileSrc);
         const serverExportBox = $('#serverExportBox');
         serverExportBox.append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');
         serverExportBox.append(`<br/><br/>&nbsp;<input type="button" value="Search workflow compatible with these files in Galaxy" onclick="openGalaxyFrame('${iframeSrc}');" />`);
