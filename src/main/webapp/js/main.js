@@ -1058,7 +1058,7 @@ function addSelectionDropDownsToHeaders(tableObj)
             for (c=2; c<columnCount; c++) {
                 distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
                 if (distinctValuesForColumn.length <= 1) {
-					colsToIgnore.push(c - 1);
+					colsToIgnore.push(c - 1 - colsToIgnore.length);
 					console.log("Ignoring metadata field filter because it contains less than 2 values: " + tableObj.rows[0].cells[c].innerText);
 	            }
 
