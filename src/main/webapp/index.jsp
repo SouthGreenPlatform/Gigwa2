@@ -734,7 +734,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
 	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
-	var galaxyMainPageUrl = '<c:url value="<%=GalaxyClientController.MAIN_PAGE_URL%>" />';
+	var galaxyMainPageUrl = '<c:url value="<%=GalaxyClientController.ROOT + GalaxyClientController.MAIN_PAGE_URL%>" />';
 	var downloadURL;
 	var callSetMetadataFields = [];
 	var gotMetaData = false;
