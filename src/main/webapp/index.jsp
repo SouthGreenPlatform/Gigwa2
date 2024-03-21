@@ -990,7 +990,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
  	   	$('div.modal div.modal-lg div.modal-content').css({ "max-height": ($(window).height() - 80) + 'px'});
 		$('#igvPanel div.modal-lg div.modal-content').css('height', parseInt($(window).height()*0.9 - 20) + "px");
  		$("div.modal iframe#fjBytesFrame").css({height: ($(window).height() - 80) + 'px'});	// force the dialog to occupy all available height
- 	   	$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
+ 	   	//$('div.modal iframe').css({width: ($(window).width() - 30) + 'px'});
 	}
 	
 	function markCurrentProcessAsAborted() {
