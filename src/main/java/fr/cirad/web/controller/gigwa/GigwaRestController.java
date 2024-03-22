@@ -1743,10 +1743,10 @@ public class GigwaRestController extends ControllerInterface {
 						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
 						File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
 						if (uploadedFile != null)
-						    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+						    file = new File(uploadedFile.getAbsolutePath() + "§§§" + mpf.getOriginalFilename());
 					}
 					if (file == null) {
-                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                        file = File.createTempFile("importByUpload_", "§§§" + mpf.getOriginalFilename());
                         LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
 					}
 					mpf.transferTo(file);
@@ -2011,11 +2011,6 @@ public class GigwaRestController extends ControllerInterface {
 						}
 						
 						Serializable sampleMappingFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : filesByExtension.get("csv");
-						Serializable s = filesByExtension.values().iterator().next();
-						boolean fIsGenotypingFileLocal = s instanceof File;
-						Scanner scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-						if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,"))
-							sampleMappingFile = null;
 						boolean fIsSampleMappingFileLocal = sampleMappingFile != null && sampleMappingFile instanceof File;
 
 						if (sampleMappingFile != null) {
@@ -2099,14 +2094,11 @@ public class GigwaRestController extends ControllerInterface {
 												genotypeImporter.set(new FlapjackImport(processId));
 												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
-											else if (filesByExtension.containsKey("csv")) {
+											else if (filesByExtension.containsKey("dart")) {
 												Serializable s = filesByExtension.values().iterator().next();
 												boolean fIsGenotypingFileLocal = s instanceof File;
-												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("*,*,")) {
-													genotypeImporter.set(new DartImport(processId));
-													newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-												}
+												genotypeImporter.set(new DartImport(processId));
+												newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
@@ -2117,7 +2109,7 @@ public class GigwaRestController extends ControllerInterface {
 													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 												}
 												else
-													throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+													throw new Exception("Unsupported format or extension for genotyping data file: " + s.toString().split("§§§")[1]);
 											}
 										}
 										else { // looks like a compressed file
