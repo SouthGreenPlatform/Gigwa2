@@ -257,7 +257,7 @@ $(document).ready(function () {
   		parallelUploads: 5,
   		previewsContainer: "#dropZonePreviewsG",
   	    dictResponseError: 'Error importing data',
-  	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.tsv,.csv",
+  	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.dart,.tsv,.csv",
   	  	headers: {
   	  		"Authorization": "Bearer " + token
   	  	},

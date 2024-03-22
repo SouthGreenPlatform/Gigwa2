@@ -241,6 +241,7 @@
 														<div><u>PLINK format:</u> .ped + .map</div>
 			                                            <div><u>Intertek format:</u> .intertek</div>
 														<div><u>Flapjack format:</u> .genotype + .map</div>
+														<div><u>DArTseq format:</u> .dart</div>
 														<div><u>Sample file:</u> .tsv or .csv (tab-separated)</div>
 													</div>
 		       									</div>
