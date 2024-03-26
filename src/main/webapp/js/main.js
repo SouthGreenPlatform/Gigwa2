@@ -1446,12 +1446,13 @@ function showServerExportBox()
     const galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
     if (galaxyInstanceUrl.startsWith("http")) {
         let fileURLs = "";
-        let fileSrc = "";
+        let tabFiles = [];
 		for (key in archivedDataFiles) {
 			fileURLs += (fileURLs === "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-            fileSrc += archivedDataFiles[key] + ",";
+            tabFiles.push(archivedDataFiles[key]);
         }
-        const iframeSrc = galaxyMainPageUrl + '?filesURLs=' + encodeURIComponent(fileSrc);
+        const filesURLs = tabFiles.join('&filesURLs=');
+        const iframeSrc = galaxyMainPageUrl + '?filesURLs=' + filesURLs;
         const serverExportBox = $('#serverExportBox');
         serverExportBox.append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');
         serverExportBox.append(`<br/><br/>&nbsp;<input type="button" value="Search workflow compatible with these files in Galaxy" onclick="openGalaxyFrame('${iframeSrc}');" />`);
