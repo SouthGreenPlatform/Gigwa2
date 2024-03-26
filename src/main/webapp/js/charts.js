@@ -64,17 +64,17 @@ const chartTypes = new Map([
             return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
                      + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
                      + '<div id="plotMetadata" style="display: none" class="col-md-3">'
-                     +   '<b>... values defining groups</b> (2 or more)<img style="cursor:pointer; cursor:hand; position:absolute; margin-left:-30px; margin-top:20px;" src="images/magnifier.gif" title="Individuals in each population will be the intersection of Gigwa\ngroups union with the set defined by the metadata value"/><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
+                     +   '<b>... values defining groups</b> (2 or more)<img style="cursor:pointer; cursor:hand; position:absolute; margin-left:-30px; margin-top:20px;" src="images/magnifier.gif" title="Individuals in each population will be the intersection of Gigwa\ngroups union with the set defined by the metadata value"/><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="fstGroupsChanged();"></select>'
                      + '</div>');
         },
         buildRequestPayload: function (payload){
             const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
-            if (groupOption != "__"){
-                const selectedValues = $("#plotGroupingMetadataValues").val();
-                if (selectedValues === null || selectedValues.length < 2)
-                    return null;
-                    
-				payload.displayedAdditionalGroups = [];
+            const selectedValues = $("#plotGroupingMetadataValues").val();
+            if (selectedValues === null || selectedValues.length < 2)
+                return null;
+
+			payload.displayedAdditionalGroups = [];
+            if (groupOption != "__") {
                 let selectedIndividuals = getSelectedIndividuals();
 				for (var i in selectedValues) {
 					var filters = {};
@@ -96,6 +96,11 @@ const chartTypes = new Map([
 				    });
 				 }
             }
+            else {
+				payload.displayedAdditionalGroups = [];
+				for (var i in selectedValues)
+					payload.displayedAdditionalGroups[i] = getSelectedIndividuals([selectedValues[i]]);
+			}
             return payload;
         },
         onLoad: function (){
@@ -133,6 +138,18 @@ const chartTypes = new Map([
         },
     }]
 ]);
+
+function fstGroupsChanged() {
+	let groups = $("select#plotGroupingMetadataValues").val();
+	if (groups == null || groups.length < 2)
+		$('#showChartButton').prop('disabled', true);
+	else if ($("#plotGroupingSelectionMode").find(":selected").val() == "__" && areGroupsOverlapping($("select#plotGroupingMetadataValues").val())) {
+		alert("Fst groups are overlapping, please change selection!");
+		$('#showChartButton').prop('disabled', true);
+	}
+	else
+		$('#showChartButton').prop('disabled', false);
+}
 
 function initializeChartDisplay(){
     if (distinctSequencesInSelectionURL == null)
@@ -199,11 +216,7 @@ function onManualIndividualSelection() {
 }
 
 function getGroupingOptions() {
-    let options = ""
-    if (getGenotypeInvestigationMode() > 1 && !areGroupsOverlapping())
-        options += '<option value="__">Investigated groups</option>';
-    else if (areGroupsOverlapping())
-    	alert("Investigated groups are overlapping, you may not use them for Fst calculation!"); 
+    let options = '<option value="__">Investigated groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -843,9 +856,10 @@ function setFstThreshold(){
 
 function setFstGroupingOption() {
     const option = $("#plotGroupingSelectionMode").find(":selected").val();
-    if (option != "__"){
-        let fieldValues = new Set();
-        let selectedIndividuals = getSelectedIndividuals();
+    let fieldValues = new Set();
+    let selectedIndividuals = getSelectedIndividuals();
+    $("#plotMetadata").css("display", "block");
+    if (option != "__")
         $.ajax({
 	        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
 	        type: "POST",
@@ -865,14 +879,15 @@ function setFstGroupingOption() {
 		        });
 		        $("#plotGroupingMetadataValues").html(selectOptions);
 		        $("#plotGroupingMetadataValues").change();
-		        $("#plotMetadata").css("display", "block");
 	        }
 	    });
-    }
-    else {
-        $("#plotMetadata").css("display", "none");
-        $('#showChartButton').prop('disabled', false);
-    }
+	else {
+		let selectOptions = "";
+		for (var i=1; i<=getGenotypeInvestigationMode(); i++)
+			selectOptions += '<option value="' + i + '">Investigation group #' + i + '</option>';
+		$("#plotGroupingMetadataValues").html(selectOptions);
+		$("#plotGroupingMetadataValues").change();
+	}
 }
 
 $(document).on("ready", function() {
