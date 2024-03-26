@@ -139,6 +139,7 @@ import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
+import fr.cirad.mgdb.model.mongo.subtypes.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.VisualizationService;
@@ -262,6 +263,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
 	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
+	static final public String snpclustEditionURL = "/snpclustEditionURL";
 		
 	/**
 	 * get a unique processID
@@ -1198,7 +1200,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + GALAXY_HISTORY_PUSH, method = RequestMethod.GET, produces = "application/json")
 	public void pushFileToGalaxyHistory(HttpServletRequest request, HttpServletResponse response, @RequestParam("galaxyUrl") String galaxyInstanceUrl, @RequestParam("galaxyApiKey") String galaxyApiKey, @RequestParam("fileUrl") String fileUrl)
 	{
-      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, false);
+      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, true);
       	HistoriesClient hc = gi.getHistoriesClient();
       	String targetHistName = "GIGWA-" + request.getServerName();
       	History targetHist = null;
@@ -1218,9 +1220,19 @@ public class GigwaRestController extends ControllerInterface {
 	      	}
 
 	      	HistoryUrlFeeder huf = new HistoryUrlFeeder(gi);
-	      	ClientResponse resp = huf.historyUrlFeedRequest(new HistoryUrlFeeder.UrlFileUploadRequest(targetHist.getId(), fileUrl));
+	      	ClientResponse resp = huf.historyUrlFeedRequest(new HistoryUrlFeeder.UrlFileUploadRequest(targetHist.getId(), fileUrl));	      	
+	      	
 	      	if (resp.getStatus() >= HttpServletResponse.SC_TEMPORARY_REDIRECT + 3)	// "Too many Redirects" or 4xx / 5xx error
 				throw new Exception("Remote error - " + resp.toString());
+	      	
+	      	
+	        final Map<String, Object> responseObjects = resp.getEntity(Map.class);
+	        List<Map<String, Object>> outputs = (List<Map<String, Object>>) responseObjects.get("outputs");
+	        for (Map<String, Object> output : outputs)
+	        	System.err.println(output.get("id"));
+	        
+//		    HistoryDatasetAssociation hda = read(resp, com.github.jmchilton.blend4j.galaxy.HistoriesClientImpl.HDA_TYPE_REFERENCE);
+//		    hda.getOutputs().iterator().next().getid()
 	    }
 	    catch (Exception e) {
 	    	exp = e;
@@ -1382,6 +1394,33 @@ public class GigwaRestController extends ControllerInterface {
         HashSet<String> result = new HashSet<>(endpointByIndividualOrSample.values());
         result.remove("");
         return result;
+	}
+	
+    @ApiIgnore
+	@GetMapping(value = BASE_URL + snpclustEditionURL)
+	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		if (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId))) {
+			String url = appConfig.get("snpclustLink");
+			if (url == null)
+				return "";
+
+	        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(projId));
+	        q.limit(3);
+	        q.fields().include(VariantRunData.FIELDNAME_SAMPLEGENOTYPES);
+	        Iterator<VariantRunData> it = mongoTemplate.find(q, VariantRunData.class).iterator();
+	        while (it.hasNext())
+	        {
+	            VariantRunData vrd = it.next();
+	            Collection<SampleGenotype> spGTs = vrd.getSampleGenotypes().size() > 100 ? new ArrayList<>(vrd.getSampleGenotypes().values()).subList(0, 100) : vrd.getSampleGenotypes().values();
+	            for (HashMap<String, Object> annotationMap : spGTs.stream().map(sg -> sg.getAdditionalInfo()).collect(Collectors.toList()))
+	                for (String aiKey : annotationMap.keySet())
+	                    if (VariantData.GT_FIELD_FI.equals(aiKey)/* && !Number.class.isAssignableFrom(annotationMap.get(aiKey).getClass())*/)
+	            			return url;
+	        }
+		}
+		return "";
 	}
 
 //	@ApiIgnore

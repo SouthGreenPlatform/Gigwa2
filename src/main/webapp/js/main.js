@@ -393,7 +393,7 @@ function fillWidgets() {
     loadSequences();
     fillExportFormat();
     loadVariantEffects();
-    loadSearchableVcfFields();
+//    loadSearchableVcfFields();
     loadVcfFieldHeaders();
     loadIndividuals();
     loadNumberOfAlleles();
@@ -925,8 +925,11 @@ function setGenotypeInvestigationMode(mode) {
             updateGtPatterns();
         });
 	}
-    updateGtPatterns();
-    loadGenotypePatterns();
+	
+	if (mode > 0) {
+	    updateGtPatterns();
+	    loadGenotypePatterns();
+    }
 
    for (var i = 1; i <= mode; i++) {
 	   var previousVal = $('#discriminate' + i).val();
