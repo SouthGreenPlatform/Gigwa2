@@ -310,6 +310,8 @@ public class TokenManager extends AbstractTokenManager {
 			if (customRolesOnProjects != null)
 			{
 				Collection<Comparable> projectCustomRoles = customRolesOnProjects.get(ENTITY_READER_ROLE);
+				if (projectCustomRoles == null)
+					projectCustomRoles = new HashSet<>();
 				Collection<Comparable> snpClustEditionRoles = customRolesOnProjects.get(ENTITY_SNPCLUST_EDITOR_ROLE);
 				if (snpClustEditionRoles != null)
 					projectCustomRoles.addAll(snpClustEditionRoles);
