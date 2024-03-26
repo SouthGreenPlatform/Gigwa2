@@ -15,6 +15,7 @@
         <module>../../Mgdb2</module>
 	    <module>../../Mgdb2Export</module>
 		<module>../../role_manager</module>
+		<module>../../JEEGalaxyClient</module>
 		<module>../../Mgdb2BrapiImpl</module>
 		<module>../../Mgdb2BrapiV2Impl</module>
 		<module>../../Gigwa2ServiceImpl</module>
