@@ -1312,6 +1312,7 @@ function areGroupsOverlapping(specificGroups) {
         for (const individual of individuals) {
             if (seen.has(individual))
                 return true;
+			seen.add(individual);
         }
     }
     return false;
