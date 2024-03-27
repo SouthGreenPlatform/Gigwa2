@@ -73,12 +73,16 @@ const chartTypes = new Map([
             if (selectedValues === null || selectedValues.length < 2)
                 return null;
 
-			payload.displayedAdditionalGroups = [];
-            if (groupOption != "__") {
+			payload.additionalCallSetIds = []; // override default group selection
+			if (groupOption != "__") {
                 let selectedIndividuals = getSelectedIndividuals();
+
+				payload.callSetIds = []; // override default group selection
 				for (var i in selectedValues) {
 					var filters = {};
-					payload.displayedAdditionalGroups[i] = [];
+					if (i > 0)
+						payload.additionalCallSetIds.push([]);
+					var targetGroup = i == 0 ? payload.callSetIds : payload.additionalCallSetIds[i - 1];
 					filters[groupOption] = [selectedValues[i]];
 				    $.ajax({
 				        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
@@ -90,17 +94,18 @@ const chartTypes = new Map([
 				        success: function (callSetResponse) {
 			                callSetResponse.forEach(function (callset) {
 			                    if (selectedIndividuals.includes(callset.id))
-									payload.displayedAdditionalGroups[i].push(callset.id)
+									targetGroup.push(callset.id)
 			                });
 				        }
 				    });
 				 }
-            }
-            else {
-				payload.displayedAdditionalGroups = [];
-				for (var i in selectedValues)
-					payload.displayedAdditionalGroups[i] = getSelectedIndividuals([selectedValues[i]]);
 			}
+			else 
+				for (var i in selectedValues)
+					if (i == 0)
+						payload.callSetIds = getSelectedIndividuals([selectedValues[i]]); // override default group selection
+					else
+						payload.additionalCallSetIds.push(getSelectedIndividuals([selectedValues[i]]));
             return payload;
         },
         onLoad: function (){
@@ -382,35 +387,19 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	    }
 	}
 
-//	let callSetIds, additionalCallSetIds = [];
-//    const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
-//    if (groupOption != "__"){
-//        const selectedValues = $("#plotGroupingMetadataValues").val();
-//$("#plotGroupingMetadataValues")
-
     let activeGroups = $(".genotypeInvestigationDiv").length;
 	let query = {
         "variantSetId": $('#project :selected').data("id"),
-        "searchMode": 0,
-        "getGT": false,
-
-        "referenceName": getSelectedSequences(),
-        "selectedVariantTypes": getSelectedTypes(),
-        "alleleCount": getSelectedNumberOfAlleles(),
-        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-        "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": getDiscriminateArray(),
-        "pageSize": 100,
-        "pageToken": "0",
         "displayedSequence": displayedSequence,
         "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
         "displayedRangeMin": localmin,
         "displayedRangeMax": localmax,
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
+        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
+        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())
     };
 
     let genotypes = [];
@@ -432,24 +421,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         if (i !== 0)
             callsetids.push(getSelectedIndividuals([i + 1], true));
         annotationFieldThresholds.push(threshold);
-        genotypes.push($(`#Genotypes${i + 1}`).val());
-        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
-        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
-        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
-        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
-        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
-        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
-        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
     }
 
-    query["gtPattern"] = genotypes;
-    query["mostSameRatio"] = mostsameratio;
-    query["minMaf"] = minmaf;
-    query["maxMaf"] = maxmaf;
-    query["minMissingData"] = minmissingdata;
-    query["maxMissingData"] = maxmissingdata;
-    query["minHeZ"] = minhez;
-    query["maxHeZ"] = maxhez;
     query["annotationFieldThresholds"] = annotationFieldThresholds;
     query["additionalCallSetIds"] = callsetids;
 
@@ -859,6 +832,7 @@ function setFstGroupingOption() {
     let fieldValues = new Set();
     let selectedIndividuals = getSelectedIndividuals();
     $("#plotMetadata").css("display", "block");
+    const groupSelect = $("select#plotGroupingMetadataValues");
     if (option != "__")
         $.ajax({
 	        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
@@ -877,16 +851,18 @@ function setFstGroupingOption() {
 		        orderedValues.forEach(function (value){
 		            selectOptions += '<option value="' + value + '">' + value + '</option>';
 		        });
-		        $("#plotGroupingMetadataValues").html(selectOptions);
-		        $("#plotGroupingMetadataValues").change();
+		        groupSelect.html(selectOptions);
+		        groupSelect.change();
 	        }
 	    });
 	else {
 		let selectOptions = "";
 		for (var i=1; i<=getGenotypeInvestigationMode(); i++)
 			selectOptions += '<option value="' + i + '">Investigation group #' + i + '</option>';
-		$("#plotGroupingMetadataValues").html(selectOptions);
-		$("#plotGroupingMetadataValues").change();
+		groupSelect.html(selectOptions);
+		if (!areGroupsOverlapping(groupSelect.val()))
+			groupSelect.find('option').prop('selected', true);
+		groupSelect.change();
 	}
 }
 
