@@ -1400,7 +1400,7 @@ public class GigwaRestController extends ControllerInterface {
 	@GetMapping(value = BASE_URL + snpclustEditionURL)
 	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
-		if (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId))) {
+		if (auth != null && (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId)))) {
 			String url = appConfig.get("snpclustLink");
 			if (url == null)
 				return "";
