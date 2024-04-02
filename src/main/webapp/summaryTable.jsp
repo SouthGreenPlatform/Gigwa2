@@ -18,12 +18,14 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="UTF-8" language="java" import="fr.cirad.tools.Helper,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.ga4gh.Ga4ghRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
+
 <html>
 <head>
 <title>Summary Table</title>
-    <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
-    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
-    <link type="text/css" rel="stylesheet" href="css/main.css">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap-select.min.css ">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
 	<style type="text/css">
 	    #moduleProjectNavbar {
 	    	display:none;

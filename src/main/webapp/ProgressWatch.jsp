@@ -17,6 +17,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.gigwa.GigwaRestController"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
+
 <html>
 
 <head>
@@ -24,8 +26,8 @@
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="<c:url value="/js/main.js" />"></script>
 	<link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
-	<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
-    <link type="text/css" rel="stylesheet" href="css/main.css">
+	<link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
 	<script type="text/javascript">
 		var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 		var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
