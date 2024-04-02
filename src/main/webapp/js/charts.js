@@ -38,6 +38,27 @@ const chartTypes = new Map([
             lineWidth: 2
         }],
     }],
+    ["maf", {
+        displayName: "MAF distribution",
+        queryURL: selectionMafDataURL,
+        title: "MAF values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "MAF values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+        xAxisTitle: "Positions on selected sequence",
+        selectIndividuals: true,
+        series: [
+            {
+                name: "MAF * 100",
+            	enableMarker: true
+            }
+        ],
+        enableCondition: function (){
+            if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
+            } else {
+                return null;
+            }
+        },
+    }],
     ["fst", {
         displayName: "Fst",
         queryURL: selectionFstDataURL,
@@ -46,7 +67,6 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
-//            lineWidth: 2,
             enableMarker: true
         }],
         enableCondition: function (){
@@ -118,21 +138,20 @@ const chartTypes = new Map([
     ["tajimad", {
         displayName: "Tajima's D",
         queryURL: selectionTajimaDDataURL,
-        title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-        subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
+        title: "Tajima's D values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "Tajima's D values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
         xAxisTitle: "Positions on selected sequence",
         selectIndividuals: true,
         series: [
             {
                 name: "Tajima's D",
-//            	lineWidth: 2,
             	enableMarker: true
             },
             {
                 name: "Segregating sites",
 //            	lineWidth: 1,
             	enableMarker: true
-            },
+            }
         ],
         enableCondition: function (){
             if (ploidy != 2){
@@ -492,10 +511,9 @@ function displayChart(minPos, maxPos) {
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
             
             let totalVariantCount = 0;
-            if (currentChartType == "density"){
+            if (currentChartType == "density")
                 for (let key of chartJsonKeys)
                     totalVariantCount += jsonResult[key];
-            }
             
             chart = Highcharts.chart('densityChartArea', {
                 chart: {

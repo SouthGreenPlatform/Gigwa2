@@ -236,6 +236,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DENSITY_DATA_PATH = "/densityData";
 	static public final String FST_DATA_PATH = "/fstData";
 	static public final String TAJIMAD_DATA_PATH = "/tajimaDData";
+	static public final String MAF_DATA_PATH = "/mafData";
 	static public final String IGV_DATA_PATH = "/igvData";
 	static public final String IGV_GENOME_CONFIG_PATH = "/igvGenomeConfig";
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
@@ -730,8 +731,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param resp
 	 * @param gdr
 	 * @param variantSetId
-	 * @return Map<Long, Long> containing density data in JSON
-	 *         format
+	 * @return Map<Long, Double> containing Fst data in JSON format
 	 * @throws Exception
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = FST_DATA_PATH, notes = "get Fst data from selected variants")
@@ -765,8 +765,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param resp
 	 * @param gdr
 	 * @param variantSetId
-	 * @return Map<Long, Long> containing density data in JSON
-	 *         format
+	 * @return List<Map<Long, Double>> containing TajimaD data in JSON format
 	 * @throws Exception
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = TAJIMAD_DATA_PATH, notes = "get Tajima's D data from selected variants")
@@ -783,6 +782,41 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionTajimaD(gdr, token);
+			} else {
+				build403Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get MAF data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @param variantSetId
+	 * @return Map<Long, Float> containing density data in JSON
+	 *         format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = MAF_DATA_PATH, notes = "get MAF data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + MAF_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp,
+			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return vizService.selectionMaf(gdr, token);
 			} else {
 				build403Response(resp);
 				return null;
