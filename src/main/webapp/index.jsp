@@ -239,7 +239,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<div style="float:right;"><button class="col btn btn-primary btn-sm" type="button" id="next" onclick="iteratePages(true);"> &gt; </button></div>
 							<div id="currentPage"></div>
 						</div>
-						<div style="float:right; margin-top:-5px; width: 380px;" class="row text-nowrap">
+						<div style="float:right; margin-top:-5px;" class="row text-nowrap">
 							<div class="col-md-5" style='text-align:right;'>
 								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
@@ -296,11 +296,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<span class="glyphicon btn-glyphicon glyphicon-save img-circle text-muted"></span>
 								</a>
 							</div>
-							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 0;">
+							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 10px;">
 								External tools
 								<a target="_blank" id="snpclust"><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Edit genotypes with SnpClust" src="images/logo_snpclust.png" height="20" width="20" /></a>
 								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
-								<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="20" width="20" title="(DEPRECATED in favor of using the embedded IGV.js) You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
 						</div>
@@ -476,15 +475,19 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<br/>
 			(You will need to provide an API key to be able to push exported files there)
 			<hr />
+			<b>Standalone IGV</b> (DEPRECATED in favor of using the embedded IGV.js) 
+			<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="25" width="25" title="You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
+			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
 			<br />Online tool URL (any * will be replaced with exported file location)<br />
 			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
 			<p>
-				<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
 				<br/>
 				(Set URL blank to revert to default)
 			</p>
+			<hr />
+			<input type="button" style="float:right; margin:10px;" class="btn btn-sm btn-primary" disabled id="applyOutputToolConfig" value="Apply" onclick='applyOutputToolConfig();' />
 		</div>
 		</div>
 	</div>
