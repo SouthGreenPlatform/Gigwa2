@@ -393,7 +393,7 @@ function fillWidgets() {
     loadSequences();
     fillExportFormat();
     loadVariantEffects();
-    loadSearchableVcfFields();
+//    loadSearchableVcfFields();
     loadVcfFieldHeaders();
     loadIndividuals();
     loadNumberOfAlleles();
@@ -925,8 +925,11 @@ function setGenotypeInvestigationMode(mode) {
             updateGtPatterns();
         });
 	}
-    updateGtPatterns();
-    loadGenotypePatterns();
+	
+	if (mode > 0) {
+	    updateGtPatterns();
+	    loadGenotypePatterns();
+    }
 
    for (var i = 1; i <= mode; i++) {
 	   var previousVal = $('#discriminate' + i).val();
@@ -1293,26 +1296,14 @@ function displayProjectInfo(projName)
     });
 }
 
-/*	Three cases supported:
-	- If firstGroup and secondGroup specified, check whether any individuals are found in both
-	- If only firstGroup specified, check whether any individuals are found in that group and any other
-	- If both unspecified, check overlapping among all active groups.
-*/
-function areGroupsOverlapping(firstGroup, secondGroup) {
-    let groups = Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
+function areGroupsOverlapping(specificGroups) {
+    let groups = specificGroups != null ? specificGroups : Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
     if (groups.length < 2)
     	return false;
 
-	var seen;
-	if (firstGroup == null || firstGroup == '')
-		seen = new Set();
-	else {
-		var groupIndividuals = getSelectedIndividuals([groups.splice(firstGroup - 1, 1)]);
-		seen = new Set(groupIndividuals.length == 0 ? indOpt : groupIndividuals);
-	}
-	if (firstGroup != null && secondGroup != null && firstGroup != '' && secondGroup != '')
-		groups = [[secondGroup]];
-
+	var groupIndividuals = getSelectedIndividuals([groups[0]]);
+	groups = groups.splice(1);
+	seen = new Set(groupIndividuals.length == 0 ? indOpt : groupIndividuals);
     for (const group of groups) {
         const individuals = getSelectedIndividuals([group]);
         if (individuals.length == 0)
@@ -1321,19 +1312,17 @@ function areGroupsOverlapping(firstGroup, secondGroup) {
         for (const individual of individuals) {
             if (seen.has(individual))
                 return true;
-            
-            if (firstGroup == null || firstGroup == '')
-            	seen.add(individual);
+			seen.add(individual);
         }
     }
     return false;
 }
 
 function checkGroupOverlap(groupNumber) {
-	$('#overlapWarning' + groupNumber).toggle($("#discriminate" + groupNumber).val() != "" && areGroupsOverlapping(groupNumber, $("#discriminate" + groupNumber).val()));
+	$('#overlapWarning' + groupNumber).toggle($("#discriminate" + groupNumber).val() != "" && areGroupsOverlapping([groupNumber, $("#discriminate" + groupNumber).val()]));
 	$(".discriminationDiv select option:selected[value='" + groupNumber + "']").each(function() {
 		var id = $(this).parent().attr('id').replace(/[^0-9.]/g, '');
-		$('#overlapWarning' + id).toggle(areGroupsOverlapping(groupNumber, id));
+		$('#overlapWarning' + id).toggle(areGroupsOverlapping([groupNumber, id]));
 	});
 }
 

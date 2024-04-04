@@ -777,7 +777,7 @@ div#navigationDiv {
 	width:190px;
 	position:absolute;
 	margin-top:-5px;
-	right:343px;
+	right:360px;
 	background-image:radial-gradient(#2fa4e7, white);
 }
 
@@ -805,6 +805,7 @@ pre {
 }
 
 div#currentPage {
+	margin-top:5px;
     font-size:13px;
     font-weight:bold;
 }

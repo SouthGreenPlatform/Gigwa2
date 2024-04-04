@@ -9,8 +9,7 @@
       <link rel="stylesheet" media="screen" href="screen.css" type="text/css" />
      <link rel="stylesheet" media="print" href="print.css" type="text/css" />
    </HEAD>
-   <BODY LANG="en-US" TEXT="#000000" DIR="LTR"
-      STYLE="border: none; padding: 0in; max-width:1240px;">
+   <BODY LANG="en-US" TEXT="#000000" DIR="LTR" STYLE="border: none; padding: 0in; max-width:1240px;">
       <BR>
      <a href="javascript:window.print();" title="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER
@@ -401,7 +400,7 @@
                <LI>
                   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
                      <SPAN LANG="en-US">The bin/setenv.bat or bin/setenv.sh
-                     (depending on the platform) script must contain a line as follows
+                     (depending on the platform) script must contain a line is as follows
                      in order to dedicate enough RAM to Tomcat:<BR></SPAN>
                      <FONT STYLE="font-size: 9pt">
                      <SPAN LANG="en-US"><B>export CATALINA_OPTS=&quot;$CATALINA_OPTS -Xms512m -Xmx2048m&quot; (Ubuntu / OSX)</B></SPAN><br/>
@@ -812,6 +811,10 @@
             <LI>
                <P>
                   <B>clearCachedCountsOnStartup</B> - Gigwa caches count values for submitted queries (makes subsequent calls respond faster); this property allows emptying this cache on webapp startup. Default: false
+               </P>
+            <LI>
+               <P>
+                  <B>snpclustLink</B> - URL pointing to a <a href="https://github.com/jframi/snpclust" target="_blank">SnpClust</a> instance (for editing SNP genotypes based on fluorescence intensity values) 
                </P>
          </UL>
       </UL>

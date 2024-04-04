@@ -38,6 +38,27 @@ const chartTypes = new Map([
             lineWidth: 2
         }],
     }],
+    ["maf", {
+        displayName: "MAF distribution",
+        queryURL: selectionMafDataURL,
+        title: "MAF values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "MAF values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+        xAxisTitle: "Positions on selected sequence",
+        selectIndividuals: true,
+        series: [
+            {
+                name: "MAF * 100",
+            	enableMarker: true
+            }
+        ],
+        enableCondition: function (){
+            if (ploidy != 2){
+                return "Ploidy levels other than 2 are not supported";
+            } else {
+                return null;
+            }
+        },
+    }],
     ["fst", {
         displayName: "Fst",
         queryURL: selectionFstDataURL,
@@ -46,7 +67,6 @@ const chartTypes = new Map([
         xAxisTitle: "Positions on selected sequence",
         series: [{
             name: "Fst estimate",
-//            lineWidth: 2,
             enableMarker: true
         }],
         enableCondition: function (){
@@ -64,21 +84,25 @@ const chartTypes = new Map([
             return ('<div id="fstThresholdGroup" class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />'
                      + '<div class="margin-top"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="setFstGroupingOption();">' + getGroupingOptions() + '</select></div></div>'
                      + '<div id="plotMetadata" style="display: none" class="col-md-3">'
-                     +   '<b>... values defining groups</b> (2 or more)<img style="cursor:pointer; cursor:hand; position:absolute; margin-left:-30px; margin-top:20px;" src="images/magnifier.gif" title="Individuals in each population will be the intersection of Gigwa\ngroups union with the set defined by the metadata value"/><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="let groups = $(this).val(); $(\'#showChartButton\').prop(\'disabled\', groups == null || groups.length < 2);"></select>'
+                     +   '<b>... values defining groups</b> (2 or more)<img style="cursor:pointer; cursor:hand; position:absolute; margin-left:-30px; margin-top:20px;" src="images/magnifier.gif" title="Individuals in each population will be the intersection of Gigwa\ngroups union with the set defined by the metadata value"/><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="fstGroupsChanged();"></select>'
                      + '</div>');
         },
         buildRequestPayload: function (payload){
             const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
-            if (groupOption != "__"){
-                const selectedValues = $("#plotGroupingMetadataValues").val();
-                if (selectedValues === null || selectedValues.length < 2)
-                    return null;
-                    
-				payload.displayedAdditionalGroups = [];
+            const selectedValues = $("#plotGroupingMetadataValues").val();
+            if (selectedValues === null || selectedValues.length < 2)
+                return null;
+
+			payload.additionalCallSetIds = []; // override default group selection
+			if (groupOption != "__") {
                 let selectedIndividuals = getSelectedIndividuals();
+
+				payload.callSetIds = []; // override default group selection
 				for (var i in selectedValues) {
 					var filters = {};
-					payload.displayedAdditionalGroups[i] = [];
+					if (i > 0)
+						payload.additionalCallSetIds.push([]);
+					var targetGroup = i == 0 ? payload.callSetIds : payload.additionalCallSetIds[i - 1];
 					filters[groupOption] = [selectedValues[i]];
 				    $.ajax({
 				        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
@@ -90,12 +114,18 @@ const chartTypes = new Map([
 				        success: function (callSetResponse) {
 			                callSetResponse.forEach(function (callset) {
 			                    if (selectedIndividuals.includes(callset.id))
-									payload.displayedAdditionalGroups[i].push(callset.id)
+									targetGroup.push(callset.id)
 			                });
 				        }
 				    });
 				 }
-            }
+			}
+			else 
+				for (var i in selectedValues)
+					if (i == 0)
+						payload.callSetIds = getSelectedIndividuals([selectedValues[i]]); // override default group selection
+					else
+						payload.additionalCallSetIds.push(getSelectedIndividuals([selectedValues[i]]));
             return payload;
         },
         onLoad: function (){
@@ -108,21 +138,20 @@ const chartTypes = new Map([
     ["tajimad", {
         displayName: "Tajima's D",
         queryURL: selectionTajimaDDataURL,
-        title: "Tajima's D value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-        subtitle: "Tajima's D value calculated in an interval of size {{intervalSize}} around each point (excluding missing and more than multi-allelic variants)",
+        title: "Tajima's D values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+        subtitle: "Tajima's D values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
         xAxisTitle: "Positions on selected sequence",
         selectIndividuals: true,
         series: [
             {
                 name: "Tajima's D",
-//            	lineWidth: 2,
             	enableMarker: true
             },
             {
                 name: "Segregating sites",
 //            	lineWidth: 1,
             	enableMarker: true
-            },
+            }
         ],
         enableCondition: function (){
             if (ploidy != 2){
@@ -133,6 +162,18 @@ const chartTypes = new Map([
         },
     }]
 ]);
+
+function fstGroupsChanged() {
+	let groups = $("select#plotGroupingMetadataValues").val();
+	if (groups == null || groups.length < 2)
+		$('#showChartButton').prop('disabled', true);
+	else if ($("#plotGroupingSelectionMode").find(":selected").val() == "__" && areGroupsOverlapping($("select#plotGroupingMetadataValues").val())) {
+		alert("Fst groups are overlapping, please change selection!");
+		$('#showChartButton').prop('disabled', true);
+	}
+	else
+		$('#showChartButton').prop('disabled', false);
+}
 
 function initializeChartDisplay(){
     if (distinctSequencesInSelectionURL == null)
@@ -199,11 +240,7 @@ function onManualIndividualSelection() {
 }
 
 function getGroupingOptions() {
-    let options = ""
-    if (getGenotypeInvestigationMode() > 1 && !areGroupsOverlapping())
-        options += '<option value="__">Investigated groups</option>';
-    else if (areGroupsOverlapping())
-    	alert("Investigated groups are overlapping, you may not use them for Fst calculation!"); 
+    let options = '<option value="__">Investigated groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -369,35 +406,19 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 	    }
 	}
 
-//	let callSetIds, additionalCallSetIds = [];
-//    const groupOption = $("#plotGroupingSelectionMode").find(":selected").val();
-//    if (groupOption != "__"){
-//        const selectedValues = $("#plotGroupingMetadataValues").val();
-//$("#plotGroupingMetadataValues")
-
     let activeGroups = $(".genotypeInvestigationDiv").length;
 	let query = {
         "variantSetId": $('#project :selected').data("id"),
-        "searchMode": 0,
-        "getGT": false,
-
-        "referenceName": getSelectedSequences(),
-        "selectedVariantTypes": getSelectedTypes(),
-        "alleleCount": getSelectedNumberOfAlleles(),
-        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
-        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val()),
-        "variantEffect": $('#variantEffects').val() === null ? "" : $('#variantEffects').val().join(","),
-        "geneName": getSelectedGenesIds(),
         "callSetIds": getSelectedIndividuals(activeGroups !== 0 ? [1] : null, true),
         "discriminate": getDiscriminateArray(),
-        "pageSize": 100,
-        "pageToken": "0",
         "displayedSequence": displayedSequence,
         "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
         "displayedRangeMin": localmin,
         "displayedRangeMax": localmax,
         "displayedRangeIntervalCount": displayedRangeIntervalCount,
         "plotIndividuals": plotIndividuals,
+        "start": $('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()),
+        "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())
     };
 
     let genotypes = [];
@@ -419,24 +440,8 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         if (i !== 0)
             callsetids.push(getSelectedIndividuals([i + 1], true));
         annotationFieldThresholds.push(threshold);
-        genotypes.push($(`#Genotypes${i + 1}`).val());
-        mostsameratio.push($(`#mostSameRatio${i + 1}`).val());
-        minmaf.push($(`#minMaf${i + 1}`).val() === null ? 0 : parseFloat($(`#minMaf${i + 1}`).val()));
-        maxmaf.push($(`#maxMaf${i + 1}`).val() === null ? 50 : parseFloat($(`#maxMaf${i + 1}`).val()));
-        minmissingdata.push($(`#minMissingData${i + 1}`).val() === null ? 0 : parseFloat($(`#minMissingData${i + 1}`).val()));
-        maxmissingdata.push($(`#maxMissingData${i + 1}`).val() === null ? 100 : parseFloat($(`#maxMissingData${i + 1}`).val()));
-        minhez.push($(`#minHeZ${i + 1}`).val() === null ? 0 : parseFloat($(`#minHeZ${i + 1}`).val()));
-        maxhez.push($(`#maxHeZ${i + 1}`).val() === null ? 100 : parseFloat($(`#maxHeZ${i + 1}`).val()));
     }
 
-    query["gtPattern"] = genotypes;
-    query["mostSameRatio"] = mostsameratio;
-    query["minMaf"] = minmaf;
-    query["maxMaf"] = maxmaf;
-    query["minMissingData"] = minmissingdata;
-    query["maxMissingData"] = maxmissingdata;
-    query["minHeZ"] = minhez;
-    query["maxHeZ"] = maxhez;
     query["annotationFieldThresholds"] = annotationFieldThresholds;
     query["additionalCallSetIds"] = callsetids;
 
@@ -506,10 +511,9 @@ function displayChart(minPos, maxPos) {
             var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
             
             let totalVariantCount = 0;
-            if (currentChartType == "density"){
+            if (currentChartType == "density")
                 for (let key of chartJsonKeys)
                     totalVariantCount += jsonResult[key];
-            }
             
             chart = Highcharts.chart('densityChartArea', {
                 chart: {
@@ -843,9 +847,11 @@ function setFstThreshold(){
 
 function setFstGroupingOption() {
     const option = $("#plotGroupingSelectionMode").find(":selected").val();
-    if (option != "__"){
-        let fieldValues = new Set();
-        let selectedIndividuals = getSelectedIndividuals();
+    let fieldValues = new Set();
+    let selectedIndividuals = getSelectedIndividuals();
+    $("#plotMetadata").css("display", "block");
+    const groupSelect = $("select#plotGroupingMetadataValues");
+    if (option != "__")
         $.ajax({
 	        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
 	        type: "POST",
@@ -863,16 +869,19 @@ function setFstGroupingOption() {
 		        orderedValues.forEach(function (value){
 		            selectOptions += '<option value="' + value + '">' + value + '</option>';
 		        });
-		        $("#plotGroupingMetadataValues").html(selectOptions);
-		        $("#plotGroupingMetadataValues").change();
-		        $("#plotMetadata").css("display", "block");
+		        groupSelect.html(selectOptions);
+		        groupSelect.change();
 	        }
 	    });
-    }
-    else {
-        $("#plotMetadata").css("display", "none");
-        $('#showChartButton').prop('disabled', false);
-    }
+	else {
+		let selectOptions = "";
+		for (var i=1; i<=getGenotypeInvestigationMode(); i++)
+			selectOptions += '<option value="' + i + '">Investigation group #' + i + '</option>';
+		groupSelect.html(selectOptions);
+		if (!areGroupsOverlapping(groupSelect.val()))
+			groupSelect.find('option').prop('selected', true);
+		groupSelect.change();
+	}
 }
 
 $(document).on("ready", function() {
