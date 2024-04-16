@@ -286,7 +286,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning"></div>
+											<div id="serverExportWarning" style="white-space: initial"></div>
 										</div>
 									</div>
 								</div>
