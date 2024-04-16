@@ -2645,6 +2645,7 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
 				pj.put("runNumber", project.getRuns().size());
+				pj.put("samples", MgdbDao.countSamplesByProject(mt, j));
 				resultObject.put("Project" + j, pj);
 				j++;
 			}

@@ -110,9 +110,9 @@
                 currentcell.textContent = "# Individuals";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
-                currentcell.textContent = "# Samples";
-                currentcell.className = "cellStyle";
-                currentcell = currentrow.insertCell();
+                // currentcell.textContent = "# Samples";
+                // currentcell.className = "cellStyle";
+                // currentcell = currentrow.insertCell();
                 currentcell.textContent = "Projects";
                 currentcell.className = "cellStyle";
                 currentrow = jsonTable.insertRow();
@@ -142,10 +142,10 @@
                         currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["individuals"];
                         currentcell.className = "cellStyle";
-                        currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = rowSpan;
-                        currentcell.textContent = db["samples"];
-                        currentcell.className = "cellStyle";
+                        // currentcell = currentrow.insertCell();
+                        // currentcell.rowSpan = rowSpan;
+                        // currentcell.textContent = db["samples"];
+                        // currentcell.className = "cellStyle";
 
                         if (keys.length - 4 < 1)
                         {
@@ -177,6 +177,8 @@
                                 currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
                                 currentcell.appendChild(document.createElement('br'));
                                 currentcell.appendChild(document.createTextNode("# Runs: " + db["Project" + j]["runNumber"]));
+                                currentcell.appendChild(document.createElement('br'));
+                                currentcell.appendChild(document.createTextNode("# Samples: " + db["Project" + j]["samples"]));
                                 currentcell.className = "cellStyle";
                                 currentrow = jsonTable.insertRow();
                             }
