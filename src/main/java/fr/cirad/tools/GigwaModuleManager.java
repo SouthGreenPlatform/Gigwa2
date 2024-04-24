@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -55,6 +56,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -78,6 +80,7 @@ import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
+import fr.cirad.web.controller.security.UserPermissionController;
 
 @Component
 public class GigwaModuleManager implements IModuleManager {
@@ -161,7 +164,10 @@ public class GigwaModuleManager implements IModuleManager {
         		throw new Exception("Invalid project ID: " + parentEntityIDs[0]);
         	}
         }
-        else
+	    else if ("project.snpclust".equals(entityType)) {
+	    	subEntityIdToNameMap.put("snpclust", "https://www.google.com");
+	    }
+    	else
             throw new Exception("Not managing entities of type " + entityType);
 
         return subEntityIdToNameMap;
@@ -603,5 +609,14 @@ public class GigwaModuleManager implements IModuleManager {
 		}
 
 		throw new Exception("Not managing entities of type " + sEntityType);
+	}
+
+	@Override
+	public Collection<? extends String> getLevel1Roles(String level1Type, ResourceBundle bundle) {
+		List<String> result = new ArrayList<>();
+		for (String role : StringUtils.tokenizeToStringArray(bundle.getString(UserPermissionController.LEVEL1_ROLES + "_" + level1Type), ","))
+			if (!role.equals(AbstractTokenManager.ENTITY_SNPCLUST_EDITOR_ROLE) || appConfig.get("snpclustLink") != null)
+				result.add(role);
+		return result;
 	}
 }

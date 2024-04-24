@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-        <project.version>2.7-beta</project.version>
+        <project.version>2.7-RELEASE</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<Gigwa2ServiceImpl.version>2.7-RELEASE</Gigwa2ServiceImpl.version>
@@ -19,10 +19,10 @@
 <!-- 		macos	https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz -->
 <!-- 		win		https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-win_x64.tar.gz -->
 		<tomcat.version>9.0.64</tomcat.version>
-		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.24</mongodb.linux.file>
-		<mongodb.windows.file>win32-x86_64-2012plus-4.2.24</mongodb.windows.file>
-		<mongodb.osx.file>macos-x86_64-4.2.24</mongodb.osx.file>
-		<mongodb.osx.folder>macos-x86_64-4.2.24</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.25</mongodb.linux.file>
+		<mongodb.windows.file>win32-x86_64-2012plus-4.2.25</mongodb.windows.file>
+		<mongodb.osx.file>macos-x86_64-4.2.25</mongodb.osx.file>
+		<mongodb.osx.folder>macos-x86_64-4.2.25</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
 	<groupId>fr.cirad</groupId>

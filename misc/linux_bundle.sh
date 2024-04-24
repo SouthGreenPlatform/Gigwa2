@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variables
-project_version="2.7-beta"
+project_version="2.7-RELEASE"
 tomcat_version="9.0.64"
-mongodb_linux_file="linux-x86_64-ubuntu1804-4.2.24"
+mongodb_linux_file="linux-x86_64-ubuntu1804-4.2.25"
 path_to_ubuntu_jre="zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz"
 
 bundle_dir_ubuntu="Gigwa_V${project_version}-Ubuntu"
@@ -47,10 +47,10 @@ echo -e "LC_ALL=\nexport CATALINA_OPTS=\"\$CATALINA_OPTS -Xms512m -Xmx2048m\"\ne
 
 # Copy additional files to bundles
 cd ${bundle_dir_ubuntu}
-echo "Downloading LICENCE.txt..."
-curl -o  LICENCE.txt "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/${project_version}/bundle_files/ubuntu/LICENCE.txt"
+echo "Downloading LICENSE.txt..."
+curl -o  LICENSE.txt "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/${project_version}/bundle_files/LICENSE.txt"
 echo "Downloading README.txt..."
-curl -o  README.txt "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/${project_version}/bundle_files/ubuntu/README.txt"
+curl -o  README.txt "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/${project_version}/bundle_files/README.txt"
 echo "Downloading startGigwa.sh..."
 curl -o  startGigwa.sh "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2/${project_version}/bundle_files/ubuntu/startGigwa.sh"
 echo "Downloading stopGigwa.sh..."

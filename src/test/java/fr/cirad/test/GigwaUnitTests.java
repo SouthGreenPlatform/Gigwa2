@@ -633,6 +633,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingDataWithIndex(20f, 0);
 		svr.setGtPatternWithIndex(GigwaSearchVariantsRequest.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 0);
 		svr.setMostSameRatioWithIndex(75, 0);
+		svr.setDiscriminateWithIndex(2, 0);
 
 		List<List<String>> additionalCallSetIds = new ArrayList<List<String>>();
 		additionalCallSetIds.add(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
@@ -641,9 +642,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingDataWithIndex(20f, 1);
 		svr.setGtPatternWithIndex(GigwaSearchVariantsRequest.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 1);
 		svr.setMostSameRatioWithIndex(75, 1);
-		
-		svr.setDiscriminateWithIndex(2, 1);
-		
+
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
