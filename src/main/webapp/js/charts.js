@@ -16,7 +16,7 @@
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
-var displayedRangeIntervalCount = 200;
+var displayedRangeIntervalCount = 1000;
 var dataBeingLoaded = false;
 let localmin, localmax;
 let chartJsonKeys;
@@ -24,6 +24,7 @@ let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A'
 var currentChartType = null;
 let progressTimeoutId = null;
 var emptyResponseCountsByProcess = [];
+var cachedResults;
 
 const chartTypes = new Map([
     ["density", {
@@ -318,7 +319,7 @@ function buildCustomisationDiv(chartInfo) {
     });
     let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 80%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization'>";
     customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:40px; margin-left:-60px;">Show</button></div>';
-    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="3" size="3" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 500)';
+    customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="4" size="4" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 1000)';
     if (vcfMetadataSelectionHTML != "" || chartInfo.selectIndividuals)
         customisationDivHTML += '<div id="plotIndividuals" class="margin-top-md"><b>Individuals accounted for</b> <img style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="... in calculating Tajima\'s D or cumulating VCF metadata values"/> <select id="plotIndividualSelectionMode" onchange="onManualIndividualSelection(); toggleIndividualSelector($(\'#plotIndividuals\'), \'choose\' == $(this).val(), 10, \'onManualIndividualSelection\'); showSelectedIndCount($(this), $(\'#indSelectionCount\'));">' + getExportIndividualSelectionModeOptions($('select#genotypeInvestigationMode').val()) + '</select> <span id="indSelectionCount"></span></div>';
     customisationDivHTML += '</div>';
@@ -356,6 +357,7 @@ function displayOrAbort() {
 }
 
 function applyChartType() {
+	cachedResults = {};
 	var typeSelect = document.getElementById("chartTypeList");
     currentChartType = typeSelect.options[typeSelect.selectedIndex].value;
     const chartInfo = chartTypes.get(currentChartType);
@@ -481,9 +483,9 @@ function displayChart(minPos, maxPos) {
     // Set the interval count until the next chart reload
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        displayedRangeIntervalCount = 200;
-    else if (tempValue > 500)
-        displayedRangeIntervalCount = 500;
+        displayedRangeIntervalCount = 1000;
+    else if (tempValue > 1000)
+        displayedRangeIntervalCount = 1000;
     else if (tempValue < 50)
         displayedRangeIntervalCount = 50;
     else
@@ -494,126 +496,160 @@ function displayChart(minPos, maxPos) {
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     if (chartInfo.buildRequestPayload !== undefined)
         dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
-        if (dataPayLoad === null) return;
+    if (dataPayLoad === null) return;
 
-    $.ajax({
-        url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
-        type: "POST",
-        contentType: "application/json;charset=utf-8",
-        headers: buildHeader(token, $('#assembly').val()),
-        data: JSON.stringify(dataPayLoad),
-        success: function(jsonResult) {
-            if (jsonResult.length == 0)
-                return; // probably aborted
-            
-            // TODO : Key to the middle of the interval ?
-            chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
-            var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
-            
-            let totalVariantCount = 0;
-            if (currentChartType == "density")
-                for (let key of chartJsonKeys)
-                    totalVariantCount += jsonResult[key];
-            
-            chart = Highcharts.chart('densityChartArea', {
-                chart: {
-                    type: 'spline',
-                    zoomType: 'x'
+    calculateObjectHash(dataPayLoad)
+      .then(hash => {
+        let cachedResult = cachedResults[hash];
+        if (cachedResult != null)
+            displayResult(chartInfo, cachedResult, displayedVariantType, displayedSequence);
+        else {
+            $.ajax({
+                url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
+                type: "POST",
+                contentType: "application/json;charset=utf-8",
+                headers: buildHeader(token, $('#assembly').val()),
+                data: JSON.stringify(dataPayLoad),
+                success: function(jsonResult) {
+                    if (jsonResult.length == 0)
+                        return; // probably aborted
+    
+                    if (localmin == null && localmax == null)    // FIXME: for now since we can't zoom out progressively, we only cache the totally unzoomed region's data
+                        cachedResults[hash] = jsonResult;
+                    displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence);
                 },
-                title: {
-                    text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
-                },
-                subtitle: {
-                    text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
-                },
-                xAxis: {
-                    categories: chartJsonKeys,
-                    title: {
-                        text: chartInfo.xAxisTitle,
-                    },
-                    events: {
-                        afterSetExtremes: function(e) {
-                            if ("zoom" == e.trigger)
-                            {   // reload for best resolution
-                                var xAxisDataArray = this.chart.series[0].data;
-                                var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
-                                var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
-                                displayChart(xMin, xMax);
-                                e.preventDefault();
-                            }
-                        }
-                    }
-                },
-                yAxis: {
-                    text: undefined,
-                    visible: false,
-                },
-                tooltip: {
-                    shared: true,
-                    crosshairs: true
-                },
-                plotOptions: {
-                    line: {
-                        dataLabels: {
-                            enabled: false
-                        },
-                        enableMouseTracking: true
-			        }
-                },
-                exporting: {
-                    enabled: true,
-					buttons: {
-					      contextButton: {
-					        menuItems: ["viewFullscreen", "printChart",
-					                    "separator",
-					                    "downloadPNG", "downloadPDF", "downloadSVG",
-					                    "separator",
-					                    "downloadCSV", "downloadXLS"]
-					      }
-				    }
+                error: function(xhr, ajaxOptions, thrownError) {
+                    handleError(xhr, thrownError);
                 }
             });
-            
-            for (let seriesIndex in chartInfo.series) {
-                const series = chartInfo.series[seriesIndex];
-                const seriesData = (chartInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
-                const seriesValues = new Array();
-                for (let key of chartJsonKeys)
-                    seriesValues.push(seriesData[key]);
-                
-                chart.addAxis({
-                    id: series.name,
-                    title: {
-                        text: undefined,  //series.yAxisTitle,
-                    },
-                    lineWidth: 3,
-                    lineColor: colorTab[seriesIndex],
-                });
-                
-                chart.addSeries({
-                    name: series.name,
-                    marker: {
-                        enabled: series.enableMarker,
-                    },
-                    lineWidth: series.lineWidth,
-                    color: colorTab[seriesIndex],
-                    data: seriesValues,
-                    yAxis: series.name,
-                });
-            }
-            
-            $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
-            if (!isNaN(intervalSize))
-                $('.showHideSeriesBox').change();
-            
-            if (chartInfo.onDisplay !== undefined)
-                chartInfo.onDisplay();
+            startProcess();
+        }
+      })
+      .catch(error => {
+        console.error(error);
+    });
+}
+
+async function calculateObjectHash(obj) {
+  const utf8Encoder = new TextEncoder();
+  const data = utf8Encoder.encode(JSON.stringify(obj));
+
+  const buffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(buffer));
+  const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
+    //console.log(Object.keys(cachedResults));
+
+    // TODO : Key to the middle of the interval ?
+    chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+    var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
+    
+    let totalVariantCount = 0;
+    if (currentChartType == "density")
+        for (let key of chartJsonKeys)
+            totalVariantCount += jsonResult[key];
+    
+    chart = Highcharts.chart('densityChartArea', {
+        chart: {
+            type: 'spline',
+            zoomType: 'x'
         },
-        error: function(xhr, ajaxOptions, thrownError) {
-            handleError(xhr, thrownError);
+        title: {
+            text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
+        },
+        subtitle: {
+            text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+        },
+        xAxis: {
+            categories: chartJsonKeys,
+            title: {
+                text: chartInfo.xAxisTitle,
+            },
+            events: {
+                afterSetExtremes: function(e) {
+                    if ("zoom" == e.trigger)
+                    {   // reload for best resolution
+                        var xAxisDataArray = this.chart.series[0].data;
+                        var xMin = e.min == null ? null : xAxisDataArray[parseInt(e.min)].category;
+                        var xMax = e.max == null ? null : xAxisDataArray[parseInt(e.max)].category;
+                        displayChart(xMin, xMax);
+                        e.preventDefault();
+                    }
+                }
+            }
+        },
+        yAxis: {
+            text: undefined,
+            visible: false,
+        },
+        tooltip: {
+            shared: true,
+            crosshairs: true
+        },
+        plotOptions: {
+            series: {
+                marker: {
+                    radius: 3
+                }
+            },
+            line: {
+                dataLabels: {
+                    enabled: false
+                },
+                enableMouseTracking: true
+            }
+        },
+        exporting: {
+            enabled: true,
+            buttons: {
+                  contextButton: {
+                    menuItems: ["viewFullscreen", "printChart",
+                                "separator",
+                                "downloadPNG", "downloadPDF", "downloadSVG",
+                                "separator",
+                                "downloadCSV", "downloadXLS"]
+                  }
+            }
         }
     });
-    startProcess();
+    
+    for (let seriesIndex in chartInfo.series) {
+        const series = chartInfo.series[seriesIndex];
+        const seriesData = (chartInfo.series.length == 1) ? jsonResult : jsonResult[seriesIndex];
+        const seriesValues = new Array();
+        for (let key of chartJsonKeys)
+            seriesValues.push(seriesData[key]);
+        
+        chart.addAxis({
+            id: series.name,
+            title: {
+                text: undefined,  //series.yAxisTitle,
+            },
+            lineWidth: 3,
+            lineColor: colorTab[seriesIndex],
+        });
+        
+        chart.addSeries({
+            name: series.name,
+            marker: {
+                enabled: series.enableMarker,
+            },
+            lineWidth: series.lineWidth,
+            color: colorTab[seriesIndex],
+            data: seriesValues,
+            yAxis: series.name,
+        });
+    }
+    
+    $("div#chartContainer div#additionalCharts").toggle(!isNaN(intervalSize));
+    if (!isNaN(intervalSize))
+        $('.showHideSeriesBox').change();
+    
+    if (chartInfo.onDisplay !== undefined)
+        chartInfo.onDisplay();
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
@@ -830,9 +866,9 @@ function displayOrHideThreshold(isChecked) {
 function changeIntervalCount() {
     let tempValue = parseInt($('#intervalCount').val());
     if (isNaN(tempValue))
-        $("#intervalCount").val(200);
-    else if (tempValue > 500)
-        $("#intervalCount").val(500);
+        $("#intervalCount").val(1000);
+    else if (tempValue > 1000)
+        $("#intervalCount").val(1000);
     else if (tempValue < 50)
         $("#intervalCount").val(50);
 }
