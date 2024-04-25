@@ -26,7 +26,6 @@ var cachedResults;
 var currentQueries = new Set();
 var abortedQueries;
 const maxSelections = 5;
-const maxVisibleOptions = 10;
 
 const chartTypes = new Map([
     ["density", {
@@ -286,13 +285,10 @@ function createCustomSelect(sequences) {
     selectedSeqs.style.display = "none";
     selectedSeqs.style.maxHeight = "auto";
 
-    const totalOptions = Object.keys(sequences).length;
+	selectedSeqs.style.maxHeight = "590px";
+	selectedSeqs.style.overflowY = "auto";
 
-    if (totalOptions > maxVisibleOptions) {
-        selectedSeqs.style.maxHeight = (maxVisibleOptions * 27.5) + "px";
-        selectedSeqs.style.overflowY = "auto";
-    }
-
+	let totalOptions = Object.keys(sequences).length;
     for (let key in sequences) {
         var input = document.createElement("input");
         input.type = "checkbox";
@@ -303,7 +299,7 @@ function createCustomSelect(sequences) {
         var label = document.createElement("label");
         label.setAttribute("for", sequences[key]);
         label.textContent = sequences[key];
-        label.style.marginLeft = "2px";
+        label.style.margin = "0 5px";
 
         selectedSeqs.appendChild(input);
         selectedSeqs.appendChild(label);
@@ -765,6 +761,7 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, i, resolve) 
     var highchart = Highcharts.chart(`densityChartArea${i}`, {
         chart: {
 	        type: 'spline',
+	        height: 350,
 	        zoomType: 'x',
 		    borderColor: '#EBBA95',
 			borderWidth: 2,
@@ -782,7 +779,7 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, i, resolve) 
             shared: true,
             crosshairs: true,
 	        style: {
-	             fontSize: 9
+	             fontSize: 12
 	        }
 	    },
         xAxis: {
@@ -991,7 +988,7 @@ function checkChartLoadingProgress(i, fieldName) {
 		                finishProcess();
 				}
 				else
-                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit);
+                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit * getSelectedSeqs().length);
             }
             else if (jsonResult != null && jsonResult['complete'] == true) {
 				document.getElementById(`densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
@@ -1024,7 +1021,7 @@ function checkChartLoadingProgress(i, fieldName) {
                 } else {
 					if (jsonResult != null)
                     	document.getElementById(`densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
-                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit);
+                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit * getSelectedSeqs().length);
                 }
             }
         },
@@ -1089,7 +1086,7 @@ function setFstThreshold(){
     Object.values(chart).forEach(x => series.push(x.get("threshold")));
     for (let i = 0; i < series.length; i++) {
         if (series[i] !== undefined) {
-            series.setData(chartJsonKeys[i].map(val => threshold), true, true)
+            series[i].setData(chartJsonKeys[i].map(val => threshold), true, true)
         }
     }
 }
