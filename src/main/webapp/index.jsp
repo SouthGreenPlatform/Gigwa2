@@ -418,10 +418,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-md-12">
-							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
+					<div style="display: flex; position: relative; justify-content: center;" >
+						<div style="position: absolute; top: 0; left: 0">
+							<b>Quick variant stats</b>
+							<div id="missingDataPercentage"></div>
+							<div id="heterozygousPercentage"></div>
+							<div id="minorAlleleFrequency"></div>
 						</div>
+							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
 				</div>
 			</div>
@@ -1678,32 +1682,85 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
     }
 
-    function buildGenotypeTableContents(jsonResult) {
-        var before = new Date().getTime();
-        var knownAlleles = jsonResult.alternateBases;
-        knownAlleles.unshift(jsonResult.referenceBases);
+	function buildGenotypeTableContents(jsonResult) {
+		const knownAlleles = jsonResult.alternateBases;
+		knownAlleles.unshift(jsonResult.referenceBases);
+		const gtTable = [];
+		const headerPositions = [];
+		let missingDataCount = 0;
+		let heterozygousCount = 0;
+		let firstAlleleCount = 0;
+		let secondAlleleCount = 0;
+		let minorAlleleFrequency = null;
+		const totalAlleles = 2 * jsonResult.calls.length;
+		const totalCalls = jsonResult.calls.length;
 
-        var gtTable = new Array();
-        var headerPositions = new Array();
-        for (var call in jsonResult.calls) {
-            var individual = splitId(jsonResult.calls[call].callSetId, 2);
-            var gtRow = new Array();
-            gtRow.push(individual);
-            var gt = '';
-            for (var allele in jsonResult.calls[call].genotype)
-                gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
-            gtRow.push(gt);
-            for (var header in jsonResult.calls[call].info) {
-                var headerPos = headerPositions[header];
-                if (headerPos == null) {
-                    headerPos = Object.keys(headerPositions).length;
-                    headerPositions[header] = headerPos;
-                }
-                gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-            }
-            gtTable.push(gtRow);
-        }
-        var tableHeader = new Array(2);
+		for (const call in jsonResult.calls) {
+			const individual = splitId(jsonResult.calls[call].callSetId, 2);
+			const gtRow = [individual];
+			let gt = '';
+			const alleles = [];
+
+			for (const allele in jsonResult.calls[call].genotype) {
+				const alleleIndex = jsonResult.calls[call].genotype[allele];
+				alleles.push(knownAlleles[alleleIndex]);
+			}
+
+			if (alleles.length === 0) {
+				missingDataCount++;
+			} else if (alleles.length === 2) {
+				if (alleles[0] !== alleles[1]) {
+					heterozygousCount++;
+				}
+				if (alleles[0] === knownAlleles[0]) {
+					firstAlleleCount++;
+				} else if (alleles[0] === knownAlleles[1]) {
+					secondAlleleCount++;
+				}
+				if (alleles[1] === knownAlleles[0]) {
+					firstAlleleCount++;
+				} else if (alleles[1] === knownAlleles[1]) {
+					secondAlleleCount++;
+				}
+			}
+
+			alleles.forEach(function(allele) {
+				gt += '<div class="allele">' + allele + '</div>';
+			});
+
+			gtRow.push(gt);
+
+			for (const header in jsonResult.calls[call].info) {
+				let headerPos = headerPositions[header];
+				if (headerPos == null) {
+					headerPos = Object.keys(headerPositions).length;
+					headerPositions[header] = headerPos;
+				}
+				gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
+			}
+			gtTable.push(gtRow);
+		}
+
+		if (knownAlleles.length === 2) {
+			minorAlleleFrequency = Math.min(firstAlleleCount, secondAlleleCount) / totalAlleles * 100;
+		}
+
+		const displayPercentage = (value, total) => {
+			const percentage = (value / total) * 100;
+			return percentage.toFixed(2) + "%";
+		};
+
+		$("#missingDataPercentage").text("Percentage of missing data : " + displayPercentage(missingDataCount, totalCalls));
+		$("#heterozygousPercentage").text("Percentage of heterozygotes : " + displayPercentage(heterozygousCount, totalCalls));
+
+		if (minorAlleleFrequency !== null) {
+			$("#minorAlleleFrequency").text("Minor allele frequency : " + minorAlleleFrequency.toFixed(2) + "%");
+		}
+		else {
+			$("#minorAlleleFrequency").text("");
+		}
+
+		var tableHeader = new Array(2);
         for (var header in headerPositions)
             tableHeader[headerPositions[header] + 2] = header;
         
