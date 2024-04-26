@@ -421,9 +421,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<div style="display: flex; position: relative; justify-content: center;" >
 						<div style="position: absolute; top: 0; left: 0">
 							<b>Quick variant stats</b>
-							<div id="missingDataPercentage"></div>
-							<div id="heterozygousPercentage"></div>
-							<div id="minorAlleleFrequency"></div>
+							<div id="quickvariantsstats"></div>
 						</div>
 							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
@@ -1687,13 +1685,19 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		knownAlleles.unshift(jsonResult.referenceBases);
 		const gtTable = [];
 		const headerPositions = [];
-		let missingDataCount = 0;
-		let heterozygousCount = 0;
-		let firstAlleleCount = 0;
-		let secondAlleleCount = 0;
-		let minorAlleleFrequency = null;
-		const totalAlleles = 2 * jsonResult.calls.length;
-		const totalCalls = jsonResult.calls.length;
+
+		const nGroupCount = getGenotypeInvestigationMode() + 1;
+		const groupsContent = [null];
+		const missingDataCount = new Array(nGroupCount).fill(0);
+		const heterozygousCount = new Array(nGroupCount).fill(0);
+		const firstAlleleCount = new Array(nGroupCount).fill(0);
+		const secondAlleleCount = new Array(nGroupCount).fill(0);
+		const totalCalls = new Array(nGroupCount).fill(0);
+
+
+		for (let k = 1; k < nGroupCount; k++)
+			groupsContent.push(getSelectedIndividuals([k]));
+
 
 		for (const call in jsonResult.calls) {
 			const individual = splitId(jsonResult.calls[call].callSetId, 2);
@@ -1706,21 +1710,25 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				alleles.push(knownAlleles[alleleIndex]);
 			}
 
-			if (alleles.length === 0) {
-				missingDataCount++;
-			} else if (alleles.length === 2) {
-				if (alleles[0] !== alleles[1]) {
-					heterozygousCount++;
-				}
-				if (alleles[0] === knownAlleles[0]) {
-					firstAlleleCount++;
-				} else if (alleles[0] === knownAlleles[1]) {
-					secondAlleleCount++;
-				}
-				if (alleles[1] === knownAlleles[0]) {
-					firstAlleleCount++;
-				} else if (alleles[1] === knownAlleles[1]) {
-					secondAlleleCount++;
+			for (let i = 0; i < groupsContent.length; i++) {
+				if (i === 0 || groupsContent[i].includes(individual)) {
+					totalCalls[i]++
+					if (alleles.length === 0) {
+						missingDataCount[i]++;
+					}
+					if (knownAlleles.length === 2) {
+						let uniqueAlleles = new Set(alleles);
+						if (uniqueAlleles.size === 2) {
+							heterozygousCount[i]++;
+						}
+						for (const allele in alleles) {
+							if (alleles[allele] === knownAlleles[0]) {
+								firstAlleleCount[i]++;
+							} else if (alleles[allele] === knownAlleles[1]) {
+								secondAlleleCount[i]++;
+							}
+						}
+					}
 				}
 			}
 
@@ -1741,23 +1749,21 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			gtTable.push(gtRow);
 		}
 
-		if (knownAlleles.length === 2) {
-			minorAlleleFrequency = Math.min(firstAlleleCount, secondAlleleCount) / totalAlleles * 100;
-		}
 
 		const displayPercentage = (value, total) => {
 			const percentage = (value / total) * 100;
 			return percentage.toFixed(2) + "%";
 		};
-
-		$("#missingDataPercentage").text("Percentage of missing data : " + displayPercentage(missingDataCount, totalCalls));
-		$("#heterozygousPercentage").text("Percentage of heterozygotes : " + displayPercentage(heterozygousCount, totalCalls));
-
-		if (minorAlleleFrequency !== null) {
-			$("#minorAlleleFrequency").text("Minor allele frequency : " + minorAlleleFrequency.toFixed(2) + "%");
-		}
-		else {
-			$("#minorAlleleFrequency").text("");
+		$("#quickvariantsstats").html('');
+		for (let i = 0; i < groupsContent.length; i++) {
+			const missingDataPercentage = displayPercentage(missingDataCount[i], totalCalls[i]);
+			const heterozygousPercentage = ploidy === 1 ? "" : displayPercentage(heterozygousCount[i], totalCalls[i] - missingDataCount[i]);
+			const minorAlleleFrequency = knownAlleles.length === 2 ? (Math.min(firstAlleleCount[i], secondAlleleCount[i]) / ((totalCalls[i] - missingDataCount[i]) * ploidy) * 100).toFixed(2) + "%" : "";
+			const div1 = $("<div>").text("Percentage of missing data : " + missingDataPercentage);
+			const div2 = $("<div>").text("Percentage of heterozygotes : " + heterozygousPercentage);
+			const div3 = $("<div>").text("Minor allele frequency : " + minorAlleleFrequency);
+			const div = $("<div>").append(div1, div2, div3).addClass("group" + i).css("padding", "10px");
+			$("#quickvariantsstats").append(div);
 		}
 
 		var tableHeader = new Array(2);
