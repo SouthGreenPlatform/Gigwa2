@@ -16,7 +16,7 @@
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
-var displayedRangeIntervalCount = 1000;
+var displayedRangeIntervalCount = getIntervalCountFromLocalStorage();
 var dataBeingLoaded = false;
 let localmin, localmax;
 let chartJsonKeys;
@@ -252,9 +252,9 @@ function getGroupingOptions() {
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
     const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayChart();">' +
-                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
+                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' +
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
-                            'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="applyChartType();"></select>' + 
+                            'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
                             'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadChart();"></select>' + 
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                         '</div></form>');
@@ -353,7 +353,19 @@ function displayOrAbort() {
         abortOngoingOperation();
     } else {
         displayChart();
+        setIntervalCountInLocalStorage();
     }
+}
+
+function setIntervalCountInLocalStorage() {
+    localStorage.setItem("intervalCount", $('#intervalCount').val());
+}
+
+function getIntervalCountFromLocalStorage() {
+    if (localStorage.getItem("intervalCount") != null)
+        return localStorage.getItem("intervalCount");
+    else
+        return 1000;
 }
 
 function applyChartType() {

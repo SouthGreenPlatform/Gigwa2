@@ -286,7 +286,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning"></div>
+											<div id="serverExportWarning" style="white-space: initial"></div>
 										</div>
 									</div>
 								</div>
@@ -412,10 +412,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-md-12">
-							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
+					<div style="display: flex; position: relative; justify-content: center;" >
+						<div style="position: absolute; top: 0; left: 0">
+							<b>Quick variant stats</b>
+							<div id="quickvariantsstats"></div>
 						</div>
+							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
 				</div>
 			</div>
@@ -1669,32 +1671,93 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
     }
 
-    function buildGenotypeTableContents(jsonResult) {
-        var before = new Date().getTime();
-        var knownAlleles = jsonResult.alternateBases;
-        knownAlleles.unshift(jsonResult.referenceBases);
+	function buildGenotypeTableContents(jsonResult) {
+		const knownAlleles = jsonResult.alternateBases;
+		knownAlleles.unshift(jsonResult.referenceBases);
+		const gtTable = [];
+		const headerPositions = [];
 
-        var gtTable = new Array();
-        var headerPositions = new Array();
-        for (var call in jsonResult.calls) {
-            var individual = splitId(jsonResult.calls[call].callSetId, 2);
-            var gtRow = new Array();
-            gtRow.push(individual);
-            var gt = '';
-            for (var allele in jsonResult.calls[call].genotype)
-                gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
-            gtRow.push(gt);
-            for (var header in jsonResult.calls[call].info) {
-                var headerPos = headerPositions[header];
-                if (headerPos == null) {
-                    headerPos = Object.keys(headerPositions).length;
-                    headerPositions[header] = headerPos;
-                }
-                gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-            }
-            gtTable.push(gtRow);
-        }
-        var tableHeader = new Array(2);
+		const nGroupCount = getGenotypeInvestigationMode() + 1;
+		const groupsContent = [null];
+		const missingDataCount = new Array(nGroupCount).fill(0);
+		const heterozygousCount = new Array(nGroupCount).fill(0);
+		const firstAlleleCount = new Array(nGroupCount).fill(0);
+		const secondAlleleCount = new Array(nGroupCount).fill(0);
+		const totalCalls = new Array(nGroupCount).fill(0);
+
+
+		for (let k = 1; k < nGroupCount; k++)
+			groupsContent.push(getSelectedIndividuals([k]));
+
+
+		for (const call in jsonResult.calls) {
+			const individual = splitId(jsonResult.calls[call].callSetId, 2);
+			const gtRow = [individual];
+			let gt = '';
+			const alleles = [];
+
+			for (const allele in jsonResult.calls[call].genotype) {
+				const alleleIndex = jsonResult.calls[call].genotype[allele];
+				alleles.push(knownAlleles[alleleIndex]);
+			}
+
+			for (let i = 0; i < groupsContent.length; i++) {
+				if (i === 0 || groupsContent[i].includes(individual)) {
+					totalCalls[i]++
+					if (alleles.length === 0) {
+						missingDataCount[i]++;
+					}
+					if (knownAlleles.length === 2) {
+						let uniqueAlleles = new Set(alleles);
+						if (uniqueAlleles.size === 2) {
+							heterozygousCount[i]++;
+						}
+						for (const allele in alleles) {
+							if (alleles[allele] === knownAlleles[0]) {
+								firstAlleleCount[i]++;
+							} else if (alleles[allele] === knownAlleles[1]) {
+								secondAlleleCount[i]++;
+							}
+						}
+					}
+				}
+			}
+
+			alleles.forEach(function(allele) {
+				gt += '<div class="allele">' + allele + '</div>';
+			});
+
+			gtRow.push(gt);
+
+			for (const header in jsonResult.calls[call].info) {
+				let headerPos = headerPositions[header];
+				if (headerPos == null) {
+					headerPos = Object.keys(headerPositions).length;
+					headerPositions[header] = headerPos;
+				}
+				gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
+			}
+			gtTable.push(gtRow);
+		}
+
+
+		const displayPercentage = (value, total) => {
+			const percentage = (value / total) * 100;
+			return percentage.toFixed(2) + "%";
+		};
+		$("#quickvariantsstats").html('');
+		for (let i = 0; i < groupsContent.length; i++) {
+			const missingDataPercentage = displayPercentage(missingDataCount[i], totalCalls[i]);
+			const heterozygousPercentage = ploidy === 1 ? "" : displayPercentage(heterozygousCount[i], totalCalls[i] - missingDataCount[i]);
+			const minorAlleleFrequency = knownAlleles.length === 2 ? (Math.min(firstAlleleCount[i], secondAlleleCount[i]) / ((totalCalls[i] - missingDataCount[i]) * ploidy) * 100).toFixed(2) + "%" : "";
+			const div1 = $("<div>").text("Percentage of missing data : " + missingDataPercentage);
+			const div2 = $("<div>").text("Percentage of heterozygotes : " + heterozygousPercentage);
+			const div3 = $("<div>").text("Minor allele frequency : " + minorAlleleFrequency);
+			const div = $("<div>").append(div1, div2, div3).addClass("group" + i).css("padding", "10px");
+			$("#quickvariantsstats").append(div);
+		}
+
+		var tableHeader = new Array(2);
         for (var header in headerPositions)
             tableHeader[headerPositions[header] + 2] = header;
         

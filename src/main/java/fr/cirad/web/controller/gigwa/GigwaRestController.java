@@ -2620,7 +2620,7 @@ public class GigwaRestController extends ControllerInterface {
     
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
-	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException, ObjectNotFoundException {		
 		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
 		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
 
@@ -2652,6 +2652,7 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
 				pj.put("runNumber", project.getRuns().size());
+				pj.put("samples", MgdbDao.getSamplesForProject(dbName, j, null).size());
 				resultObject.put("Project" + j, pj);
 				j++;
 			}
