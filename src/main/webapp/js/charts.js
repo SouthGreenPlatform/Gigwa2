@@ -496,7 +496,7 @@ function displayChart(minPos, maxPos) {
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     if (chartInfo.buildRequestPayload !== undefined)
         dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
-        if (dataPayLoad === null) return;
+    if (dataPayLoad === null) return;
 
     calculateObjectHash(dataPayLoad)
       .then(hash => {
