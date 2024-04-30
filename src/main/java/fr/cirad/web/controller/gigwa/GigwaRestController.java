@@ -221,6 +221,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String EFFECT_ANNOTATION_PATH = "/effectAnnotations";
 	static public final String SEARCHABLE_ANNOTATION_FIELDS_URL = "/searchableAnnotationFields";
 	static public final String PROGRESS_PATH = "/progress";
+	static public final String MULTIPLE_PROGRESS_PATH = "/multipleProgress";
 	static public final String SEQUENCE_FILTER_COUNT_PATH = "/sequencesFilterCount";
 	static public final String CLEAR_SELECTED_SEQUENCE_LIST_PATH = "/clearSelectedSequenceList";
 	static public final String ABORT_PROCESS_PATH = "/abortProcess";
@@ -561,6 +562,23 @@ public class GigwaRestController extends ControllerInterface {
 		if (progress == null)
 			response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 		return progress;
+	}
+	
+	/**
+	 * get the progress indicator
+	 *
+	 * @param request
+	 * @return Map<String, ProgressIndicator>
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a multiple processes from their tokens")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), 
+							@ApiResponse(code = 204, message = "No progress indicator") })
+	@RequestMapping(value = BASE_URL + MULTIPLE_PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
+	public Map<String, ProgressIndicator> getMultipleProcessProgress(HttpServletRequest request, HttpServletResponse response, @RequestParam final String progressTokenCsv) {
+		Map<String, ProgressIndicator> result = new HashMap<>();
+		for (String progressToken : progressTokenCsv.split(","))
+			result.put(progressToken, ga4ghService.getProgressIndicator(progressToken));
+		return result;
 	}
 
 	/**
