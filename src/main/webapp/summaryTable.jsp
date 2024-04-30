@@ -18,6 +18,15 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="UTF-8" language="java" import="fr.cirad.tools.Helper,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.ga4gh.Ga4ghRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<%
+	java.util.Properties prop = new java.util.Properties();
+	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
+	String appVersion = prop.getProperty("Implementation-version");
+	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+%>
+<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+
 <html>
 <head>
 <title>Summary Table</title>
@@ -110,9 +119,6 @@
                 currentcell.textContent = "# Individuals";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
-                currentcell.textContent = "# Samples";
-                currentcell.className = "cellStyle";
-                currentcell = currentrow.insertCell();
                 currentcell.textContent = "Projects";
                 currentcell.className = "cellStyle";
                 currentrow = jsonTable.insertRow();
@@ -141,10 +147,6 @@
                         currentcell = currentrow.insertCell();
                         currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["individuals"];
-                        currentcell.className = "cellStyle";
-                        currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = rowSpan;
-                        currentcell.textContent = db["samples"];
                         currentcell.className = "cellStyle";
 
                         if (keys.length - 4 < 1)
@@ -177,6 +179,8 @@
                                 currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
                                 currentcell.appendChild(document.createElement('br'));
                                 currentcell.appendChild(document.createTextNode("# Runs: " + db["Project" + j]["runNumber"]));
+                                currentcell.appendChild(document.createElement('br'));
+                                currentcell.appendChild(document.createTextNode("# Samples: " + db["Project" + j]["samples"]));
                                 currentcell.className = "cellStyle";
                                 currentrow = jsonTable.insertRow();
                             }

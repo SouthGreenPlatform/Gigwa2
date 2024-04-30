@@ -259,7 +259,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
-		
+
 	/**
 	 * get a unique processID
 	 *
@@ -1641,7 +1641,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		                if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
 		                	storeSessionAttributes(session);	// in case external source info was just added
-		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
+		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, Set<String> /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 	                        if (metadataType.equals("individual")) {
 	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
@@ -1659,13 +1659,16 @@ public class GigwaRestController extends ControllerInterface {
 		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
 		
-		                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+		                                HashMap<String, Set<String>> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
 		                                if (individualsCurrentEndpointHasDataFor == null) {
 		                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
 		                                }
 		
-		                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, individual.getId());
+                                                if (individualsCurrentEndpointHasDataFor.get(extRefIdValue) == null) {
+                                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, new HashSet<>());
+                                                }
+		                                individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(individual.getId());
 		                            }
 	                        }
 	                        else {
@@ -1685,13 +1688,16 @@ public class GigwaRestController extends ControllerInterface {
 	                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
 	
-	                                    HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+	                                    HashMap<String, Set<String>> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
 	                                    if (individualsCurrentEndpointHasDataFor == null) {
 	                                        individualsCurrentEndpointHasDataFor = new HashMap<>();
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
 	                                    }
 	
-	                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
+	                                    if (individualsCurrentEndpointHasDataFor.get(extRefIdValue) == null) {
+                                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, new HashSet<>());
+                                            }
+                                            individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(sample.getSampleName());
 	                                }
 	                        }
 		
@@ -1834,10 +1840,10 @@ public class GigwaRestController extends ControllerInterface {
 						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
 						File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
 						if (uploadedFile != null)
-						    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
+						    file = new File(uploadedFile.getAbsolutePath() + "§§§" + mpf.getOriginalFilename());
 					}
 					if (file == null) {
-                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+                        file = File.createTempFile("importByUpload_", "§§§" + mpf.getOriginalFilename());
                         LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
 					}
 					mpf.transferTo(file);
@@ -2186,6 +2192,12 @@ public class GigwaRestController extends ControllerInterface {
 												genotypeImporter.set(new FlapjackImport(processId));
 												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
+											else if (filesByExtension.containsKey("dart")) {
+												Serializable s = filesByExtension.values().iterator().next();
+												boolean fIsGenotypingFileLocal = s instanceof File;
+												genotypeImporter.set(new DartImport(processId));
+												newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
+											}
 											else {
 												Serializable s = filesByExtension.values().iterator().next();                                                                                
 												boolean fIsGenotypingFileLocal = s instanceof File;
@@ -2195,7 +2207,7 @@ public class GigwaRestController extends ControllerInterface {
 													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 												}
 												else
-													throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+													throw new Exception("Unsupported format or extension for genotyping data file: " + s.toString().split("§§§")[1]);
 											}
 										}
 										else { // looks like a compressed file
@@ -2627,7 +2639,7 @@ public class GigwaRestController extends ControllerInterface {
     
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
-	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException, ObjectNotFoundException {		
 		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
 		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
 
@@ -2659,6 +2671,7 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
 				pj.put("runNumber", project.getRuns().size());
+				pj.put("samples", MgdbDao.getSamplesForProject(dbName, j, null).size());
 				resultObject.put("Project" + j, pj);
 				j++;
 			}

@@ -14,10 +14,10 @@
  * See <http://www.gnu.org/licenses/agpl.html> for details about GNU General
  * Public License V3.
  *******************************************************************************/
-var minimumProcessQueryIntervalUnit = 200;
 var chart = {};
 let localmin = {}, localmax = {};
-let chartJsonKeys = []
+let chartJsonKeys = [];
+var minimumProcessQueryIntervalUnit = 300;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
 var emptyResponseCountsByProcess = [];
@@ -484,6 +484,8 @@ function buildCustomisationDiv(chartInfo) {
     $("div#chartContainer div#customisationDiv").html(customisationDivHTML + "</div></div>");
     if (vcfMetadataSelectionHTML != "" || chartInfo.selectIndividuals)
         showSelectedIndCount($('#plotIndividualSelectionMode'), $('#indSelectionCount'));
+        
+	getIntervalCountFromLocalStorage();
 }
 
 function showSelectedIndCount(selectionObj, selectionLabelObj) {
@@ -499,9 +501,9 @@ function showSelectedIndCount(selectionObj, selectionLabelObj) {
 }
 
 function displayOrAbort() {
-    if (currentQueries != null && currentQueries.size > 0) {
+    if (currentQueries != null && currentQueries.size > 0)
         abortOngoingOperations();
-    } else {
+    else {
 		let nContigs = getSelectedSeqs().length, nSeriesPerContig = ($("#chartTypeCustomisationOptions input").length + ($("#chartTypeList").val() == "density" ? 0 : 1)), nGraphs = nSeriesPerContig * nContigs, selectedIndividuals = getSelectedIndividuals(), nGenotypes = count * (selectedIndividuals.length != 0 ? selectedIndividuals.length : indOpt.length) * nGraphs / $("#customSelectContainer input").length;
 		console.log(nGenotypes);
 		if (nContigs > 1 && nGenotypes > 1000000000) {
@@ -517,7 +519,22 @@ function displayOrAbort() {
 	    var displayedSequences = getSelectedSeqs();
 	    for (var i=0; i<displayedSequences.length; i++)
 	     	displayChart(i).then((result) => onDisplayChart(result));
+
+        setIntervalCountInLocalStorage();
     }
+}
+
+function setIntervalCountInLocalStorage() {
+    localStorage.setItem("intervalCount", $('#intervalCount').val());
+}
+
+function getIntervalCountFromLocalStorage() {
+    try {
+		$('#intervalCount').val(parseInt(localStorage.getItem("intervalCount")));
+	}
+	catch (err) {
+		// keep default value as defined in interface
+	}
 }
 
 function applyChartType() {
@@ -672,6 +689,7 @@ async function displayChart(i) {
             const zoomButton = `<input type="button" id="resetZoom${i}" value="Reset zoom" style="display:none; position:absolute; right:60px; margin-top:12px; height:24px; z-index:5;" onclick="localmin[${i}]=null; localmax[${i}]=null; displayChart(${i}).then((result) => onDisplayChart(result));">`;
             $(zoomButton).insertBefore(document.getElementById(`densityChartArea${i}`));
         }
+
         $(`input#resetZoom${i}`).toggle(zoomApplied);
 
         var displayedSequences = getSelectedSeqs();
@@ -1010,10 +1028,8 @@ function checkChartLoadingProgress(/*i, fieldName*/) {
 	                    $('#density').modal('hide');
 	                    emptyResponseCountsByProcess[key] = null;
 	                } else {
-						if (jsonResult != null) {
+						if (jsonResult != null)
 							getProgressDiv(finalIndex, finalFieldName).show().html(jsonResult['progressDescription']);
-							console.log(finalIndex + " / " + finalFieldName + " -> " + jsonResult['progressDescription']);
-						}
 	                }
 	            }
 	        }
