@@ -1623,7 +1623,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		                if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
 		                	storeSessionAttributes(session);	// in case external source info was just added
-		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
+		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, Set<String> /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
 	                        if (metadataType.equals("individual")) {
 	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
@@ -1641,13 +1641,16 @@ public class GigwaRestController extends ControllerInterface {
 		                                if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
 		
-		                                HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+		                                HashMap<String, Set<String>> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
 		                                if (individualsCurrentEndpointHasDataFor == null) {
 		                                    individualsCurrentEndpointHasDataFor = new HashMap<>();
 		                                    brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
 		                                }
 		
-		                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, individual.getId());
+                                                if (individualsCurrentEndpointHasDataFor.get(extRefIdValue) == null) {
+                                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, new HashSet<>());
+                                                }
+		                                individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(individual.getId());
 		                            }
 	                        }
 	                        else {
@@ -1667,13 +1670,16 @@ public class GigwaRestController extends ControllerInterface {
 	                                    if (brapiUrlToIndividualsMap.get(endPointUrl) == null)
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, new HashMap<>());
 	
-	                                    HashMap<String, String> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
+	                                    HashMap<String, Set<String>> individualsCurrentEndpointHasDataFor = brapiUrlToIndividualsMap.get(endPointUrl);
 	                                    if (individualsCurrentEndpointHasDataFor == null) {
 	                                        individualsCurrentEndpointHasDataFor = new HashMap<>();
 	                                        brapiUrlToIndividualsMap.put(endPointUrl, individualsCurrentEndpointHasDataFor);
 	                                    }
 	
-	                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
+	                                    if (individualsCurrentEndpointHasDataFor.get(extRefIdValue) == null) {
+                                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, new HashSet<>());
+                                            }
+                                            individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(sample.getSampleName());
 	                                }
 	                        }
 		
