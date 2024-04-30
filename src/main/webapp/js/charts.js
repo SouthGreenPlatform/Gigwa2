@@ -24,8 +24,8 @@ let progressTimeoutId = null;
 var emptyResponseCountsByProcess = [];
 var cachedResults;
 var currentQueries = new Set();
-var abortedQueries;
-const maxSelections = 5;
+var abortCurrentQueries = false;
+const maxSelections = 50;
 
 const chartTypes = new Map([
     ["density", {
@@ -503,7 +503,13 @@ function displayOrAbort() {
     if (currentQueries.size > 0) {
         abortOngoingOperations();
     } else {
-		abortedQueries = null;
+		let nContigs = getSelectedSeqs().length, nSeriesPerContig = ($("#chartTypeCustomisationOptions input").length + ($("#chartTypeList").val() == "density" ? 0 : 1)), nGraphs = nSeriesPerContig * nContigs, selectedIndividuals = getSelectedIndividuals(), nGenotypes = count * (selectedIndividuals.length != 0 ? selectedIndividuals.length : indOpt.length) * nGraphs / $("#customSelectContainer input").length;
+		console.log(nGenotypes);
+		if (nContigs > 1 && nGenotypes > 1000000000) {
+			alert(nGraphs + " You are trying to compute too much data at once, please select " + parseInt(1000000000 * nGraphs / (nGenotypes * nSeriesPerContig)) + " sequences maximum!");
+			return;
+		}
+		abortCurrentQueries = false;
 		$("div#dynamicChartZones").html();
 		Object.values(chart).forEach(x => x.destroy());
 		chart = {};
@@ -653,7 +659,6 @@ function onDisplayChart(result) {
             yAxis: series.name,
         });
     }
-//    $("div#chartContainer div#dynamicChartZones").toggle(!isNaN(result.intervalSize));
 
     if (result.chartInfo.onDisplay !== undefined)
         result.chartInfo.onDisplay();
@@ -696,7 +701,6 @@ async function displayChart(i) {
         if (dataPayLoad === null) return;
         const loadDiv = `<div id="densityLoadProgress_${getSelectedSeqs()[i]}"></div>`;
         $(`div#densityLoadProgressContainer`).append($(loadDiv));
-       	startProcess(i, null);
 	    calculateObjectHash(dataPayLoad)
 	      .then(hash => {
 	        let cachedResult = cachedResults[hash];
@@ -732,7 +736,8 @@ async function displayChart(i) {
 	                    handleError(xhr, thrownError);
 	                }
 	            });
-	        }
+	            setTimeout("startProcess(" + i + ", null);", minimumProcessQueryIntervalUnit);
+	      	}
 	      })
 	      .catch(error => {
 	        console.error(error);
@@ -860,8 +865,6 @@ function addMetadataSeries(fieldName, colorIndex, i) {
     else
     	$("#" + progressDivId).show();
 
-    startProcess(i, fieldName);
-
     $.ajax({
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + currentChartType + field + "_" + getSelectedSeqs()[i],
         type: "POST",
@@ -911,6 +914,8 @@ function addMetadataSeries(fieldName, colorIndex, i) {
             finishProcess(i, fieldName);
         }
     });
+
+	setTimeout("startProcess(" + i + ", '" + fieldName + "');", minimumProcessQueryIntervalUnit);
 }
 
 function startProcess(i, fieldName) {
@@ -947,7 +952,7 @@ function checkChartLoadingProgress(i, fieldName) {
 	let finalIndex = i, finalFieldName = fieldName;
     const field = finalFieldName !== null ? "_" + finalFieldName : "", chrToken = token + "::" + currentChartType + field + "_" + $("#densityChartArea" + finalIndex).data("sequence");
 
-	if (abortedQueries != null)	// the fact that it's not null means all current queries need to be aborted
+	if (abortCurrentQueries)	// true means all current queries need to be aborted
 		$.ajax({
 	        url: abortUrl,
 	        async: false,
@@ -958,7 +963,6 @@ function checkChartLoadingProgress(i, fieldName) {
 	        success: function (jsonResult) {
 	            if (!jsonResult.processAborted)
 	                console.log("Unable to abort!");
-			    abortedQueries.add(chrToken);
 	        },
 	        error: function (xhr, ajaxOptions, thrownError) {
 	            handleError(xhr, thrownError);
@@ -973,7 +977,7 @@ function checkChartLoadingProgress(i, fieldName) {
             "Authorization": "Bearer " + token
         },
         success: function (jsonResult, textStatus, jqXHR) {
-            if (jsonResult == null && abortedQueries == null) {
+            if (jsonResult == null) {
 				if (emptyResponseCountsByProcess[chrToken] == null)
 					emptyResponseCountsByProcess[chrToken] = 1;
 				else
@@ -981,14 +985,17 @@ function checkChartLoadingProgress(i, fieldName) {
 				if (emptyResponseCountsByProcess[chrToken] > 10) {
 					console.log("Giving up requesting progress for process " + chrToken);
 					emptyResponseCountsByProcess[chrToken] = null;
-					if (abortedQueries != null && abortedQueries.has(chrToken))
-						abortedQueries.delete(chrToken);
 	               	currentQueries.delete(finalIndex + "_" + finalFieldName);
 	               	if (currentQueries.size == 0)
 		                finishProcess();
 				}
 				else
                 	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit * getSelectedSeqs().length);
+            }
+            else if (jsonResult != null && jsonResult['aborted'] == true) {
+				currentQueries.delete(finalIndex +"_" + finalFieldName);
+				if (currentQueries.size == 0)
+	                finishProcess();
             }
             else if (jsonResult != null && jsonResult['complete'] == true) {
 				document.getElementById(`densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
@@ -1000,19 +1007,10 @@ function checkChartLoadingProgress(i, fieldName) {
 					document.getElementById('exportButton').style.display = getSelectedSeqs().length > 1 ? "block" : "none";
 	            }
             }
-            else if (jsonResult != null && jsonResult['aborted'] == true) {
-				if (abortedQueries != null && abortedQueries.has(chrToken))
-					abortedQueries.delete(chrToken);
-				currentQueries.delete(finalIndex +"_" + finalFieldName);
-				if (currentQueries.size == 0)
-	                finishProcess();
-            }
             else {
                 if (jsonResult != null && jsonResult['error'] != null) {
                     parent.totalRecordCount = 0;
                     alert("Error occurred:\n\n" + jsonResult['error']);
-					if (abortedQueries != null && abortedQueries.has(chrToken))
-						abortedQueries.delete(chrToken);
 	               	currentQueries.delete(finalIndex +"_" + finalFieldName);
 	               	if (currentQueries.size == 0)
 						finishProcess();
@@ -1032,12 +1030,12 @@ function checkChartLoadingProgress(i, fieldName) {
 }
 
 function abortOngoingOperations() {
-	abortedQueries = new Set();	// the fact that it's not null means all current queries need to be aborted
+	abortCurrentQueries = true;	// true means all current queries need to be aborted
 }
 
 function displayOrHideSeries(fieldName, isChecked, colorIndex) {
 	if (isChecked)
-		abortedQueries = null;
+		abortCurrentQueries = false;
 	var chartIndex = 0;
     Object.values(chart).forEach(function (x) {
 		if (isChecked)
