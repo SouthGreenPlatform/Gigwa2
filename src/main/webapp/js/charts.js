@@ -20,10 +20,9 @@ let localmin = {}, localmax = {};
 let chartJsonKeys = []
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
-let progressTimeoutId = null;
 var emptyResponseCountsByProcess = [];
 var cachedResults;
-var currentQueries = new Set();
+var currentQueries = null;
 var abortCurrentQueries = false;
 const maxSelections = 50;
 
@@ -210,9 +209,9 @@ function initializeChartDisplay(){
         alert("selectionDensityDataURL is not defined!");
         return;
     }
-    if (progressUrl == null)
+    if (multipleProgressUrl == null)
     {
-        alert("progressUrl is not defined!");
+        alert("multipleProgressUrl is not defined!");
         return;
     }
     if (token == null)
@@ -500,13 +499,13 @@ function showSelectedIndCount(selectionObj, selectionLabelObj) {
 }
 
 function displayOrAbort() {
-    if (currentQueries.size > 0) {
+    if (currentQueries != null && currentQueries.size > 0) {
         abortOngoingOperations();
     } else {
 		let nContigs = getSelectedSeqs().length, nSeriesPerContig = ($("#chartTypeCustomisationOptions input").length + ($("#chartTypeList").val() == "density" ? 0 : 1)), nGraphs = nSeriesPerContig * nContigs, selectedIndividuals = getSelectedIndividuals(), nGenotypes = count * (selectedIndividuals.length != 0 ? selectedIndividuals.length : indOpt.length) * nGraphs / $("#customSelectContainer input").length;
 		console.log(nGenotypes);
 		if (nContigs > 1 && nGenotypes > 1000000000) {
-			alert(nGraphs + " You are trying to compute too much data at once, please select " + parseInt(1000000000 * nGraphs / (nGenotypes * nSeriesPerContig)) + " sequences maximum!");
+			alert(" You are trying to compute too much data at once, please select " + parseInt(1000000000 * nGraphs / (nGenotypes * nSeriesPerContig)) + " sequences maximum!");
 			return;
 		}
 		abortCurrentQueries = false;
@@ -680,7 +679,7 @@ async function displayChart(i) {
         if (Object.keys(chart).length === displayedSequences.length && i === null) {
             if (zoomApplied) {
                 chart[i].showLoading("Zooming in...");
-            } else if (currentQueries.size == 0) {
+            } else if (currentQueries == null || currentQueries.size == 0) {
 				Object.values(chart).forEach(x => x.destroy());
                 chart = {};
             }
@@ -699,8 +698,6 @@ async function displayChart(i) {
         if (chartInfo.buildRequestPayload !== undefined)
             dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
         if (dataPayLoad === null) return;
-        const loadDiv = `<div id="densityLoadProgress_${getSelectedSeqs()[i]}"></div>`;
-        $(`div#densityLoadProgressContainer`).append($(loadDiv));
 	    calculateObjectHash(dataPayLoad)
 	      .then(hash => {
 	        let cachedResult = cachedResults[hash];
@@ -713,7 +710,7 @@ async function displayChart(i) {
 			}
 	        else {
 	            $.ajax({
-	                url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + currentChartType + "_" + getSelectedSeqs()[i],
+	                url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::_" + getSelectedSeqs()[i],
            			type: "POST",
 	                contentType: "application/json;charset=utf-8",
 	                headers: buildHeader(token, $('#assembly').val()),
@@ -736,7 +733,7 @@ async function displayChart(i) {
 	                    handleError(xhr, thrownError);
 	                }
 	            });
-	            setTimeout("startProcess(" + i + ", null);", minimumProcessQueryIntervalUnit);
+	            setTimeout("watchProcess(" + i + ", null);", minimumProcessQueryIntervalUnit);
 	      	}
 	      })
 	      .catch(error => {
@@ -859,14 +856,9 @@ function addMetadataSeries(fieldName, colorIndex, i) {
     dataPayLoad["vcfField"] = fieldName;
     dataPayLoad["plotIndividuals"] = $('#plotIndividualSelectionMode').val() == "choose" ? $('#plotIndividualSelectionMode').parent().parent().find("select.individualSelector").val() : ($('#plotIndividualSelectionMode').val() == "allGroups" ? getSelectedIndividuals() : ($('#plotIndividualSelectionMode').val() == "" || $('#plotIndividualSelectionMode').val() == undefined ? [] : getSelectedIndividuals([parseInt($('#plotIndividualSelectionMode').val())])))
     const field = fieldName !== null ? "_" + fieldName : "";
-    let progressDivId = `densityLoadProgress_${getSelectedSeqs()[i]}${field}`;
-    if ($("#" + progressDivId).length == 0)
-	    $(`div#densityLoadProgressContainer`).append($(`<div id=` + progressDivId + `></div>`));
-    else
-    	$("#" + progressDivId).show();
 
     $.ajax({
-        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + currentChartType + field + "_" + getSelectedSeqs()[i],
+        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + "?progressToken=" + token + "::" + field + "_" + getSelectedSeqs()[i],
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
@@ -911,26 +903,26 @@ function addMetadataSeries(fieldName, colorIndex, i) {
             handleError(xhr, thrownError);
             $('.showHideSeriesBox').prop('disabled', false);
 
-            finishProcess(i, fieldName);
+            finishProcess();
         }
     });
 
-	setTimeout("startProcess(" + i + ", '" + fieldName + "');", minimumProcessQueryIntervalUnit);
+	setTimeout("watchProcess(" + i + ", '" + fieldName + "');", minimumProcessQueryIntervalUnit);
 }
 
-function startProcess(i, fieldName) {
-    // This is probably unnecessary in most cases, but it may avoid conflicts in certain synchronisation edge cases
-    if (progressTimeoutId != null)
-        clearTimeout(progressTimeoutId);
+function watchProcess(i, fieldName) {
+	let needToLaunchProgressRequests = currentQueries == null;
+	if (needToLaunchProgressRequests) {
+		currentQueries = new Set();
+	    $("#chartTypeList").prop("disabled", true);
+	    $("#chartVariantTypeList").prop("disabled", true);
+	    $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
+	}
         
-    currentQueries.add(i + "_" + fieldName);
-
-    $("#chartTypeList").prop("disabled", true);
-    $("#chartVariantTypeList").prop("disabled", true);
+    currentQueries.add(getSelectedSeqs()[i] + "_" + (fieldName == null ? "" : fieldName));
     
-    $("#showChartButton").removeClass("btn-success").addClass("btn-danger").html("Abort");
-    
-    progressTimeoutId = checkChartLoadingProgress(i, fieldName);
+    if (needToLaunchProgressRequests)
+    	checkChartLoadingProgress();
 }
 
 function finishProcess() {
@@ -939,94 +931,111 @@ function finishProcess() {
     $("#chartVariantTypeList").prop("disabled", false);
     
     $("#densityLoadProgressContainer div").remove();
-
-    if (progressTimeoutId != null) {
-        clearTimeout(progressTimeoutId);
-        progressTimeoutId = null;
-    }
+    currentQueries = null;
 
     $("#showChartButton").addClass("btn-success").removeClass("btn-danger").html("Show");
 }
 
-function checkChartLoadingProgress(i, fieldName) {
-	let finalIndex = i, finalFieldName = fieldName;
-    const field = finalFieldName !== null ? "_" + finalFieldName : "", chrToken = token + "::" + currentChartType + field + "_" + $("#densityChartArea" + finalIndex).data("sequence");
+function checkChartLoadingProgress(/*i, fieldName*/) {
+	
+	if (currentQueries.size == 0) {
+		finishProcess();
+		return;
+	}
+	
+	let queryIDs = "";
+	for (var q of currentQueries) {
+		let splitQuery = q.split("_")
+		let finalIndex = splitQuery[0], finalFieldName = splitQuery[1];
+	    const field = finalFieldName !== "" ? "_" + finalFieldName : "", chrToken = token + "::" + field + "_" + finalIndex;
 
-	if (abortCurrentQueries)	// true means all current queries need to be aborted
-		$.ajax({
-	        url: abortUrl,
-	        async: false,
-	        type: "DELETE",
-	        headers: {
-	            "Authorization": "Bearer " + chrToken
-	        },
-	        success: function (jsonResult) {
-	            if (!jsonResult.processAborted)
-	                console.log("Unable to abort!");
-	        },
-	        error: function (xhr, ajaxOptions, thrownError) {
-	            handleError(xhr, thrownError);
-	        }
-	    });
+		if (abortCurrentQueries)	// true means all current queries need to be aborted
+			$.ajax({
+		        url: abortUrl,
+		        async: false,
+		        type: "DELETE",
+		        headers: {
+		            "Authorization": "Bearer " + chrToken
+		        },
+		        success: function (jsonResult) {
+		            if (!jsonResult.processAborted)
+		                console.log("Unable to abort!");
+					currentQueries.delete(finalIndex +"_" + finalFieldName);
+		        },
+		        error: function (xhr, ajaxOptions, thrownError) {
+		            handleError(xhr, thrownError);
+		        }
+		    });
+		else 
+		    queryIDs += (queryIDs == "" ? "" : ",") + chrToken;
+	}
 
     $.ajax({
-        url: progressUrl + "?progressToken=" + chrToken,
+        url: multipleProgressUrl + "?progressTokenCsv=" + queryIDs,
         type: "GET",
         contentType: "application/json;charset=utf-8",
         headers: {
             "Authorization": "Bearer " + token
         },
-        success: function (jsonResult, textStatus, jqXHR) {
-            if (jsonResult == null) {
-				if (emptyResponseCountsByProcess[chrToken] == null)
-					emptyResponseCountsByProcess[chrToken] = 1;
-				else
-					emptyResponseCountsByProcess[chrToken]++;
-				if (emptyResponseCountsByProcess[chrToken] > 10) {
-					console.log("Giving up requesting progress for process " + chrToken);
-					emptyResponseCountsByProcess[chrToken] = null;
-	               	currentQueries.delete(finalIndex + "_" + finalFieldName);
-	               	if (currentQueries.size == 0)
-		                finishProcess();
-				}
-				else
-                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit * getSelectedSeqs().length);
-            }
-            else if (jsonResult != null && jsonResult['aborted'] == true) {
-				currentQueries.delete(finalIndex +"_" + finalFieldName);
-				if (currentQueries.size == 0)
-	                finishProcess();
-            }
-            else if (jsonResult != null && jsonResult['complete'] == true) {
-				document.getElementById(`densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
-				$(`#densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).fadeOut(1000);
-               	emptyResponseCountsByProcess[chrToken] = null;
-               	currentQueries.delete(finalIndex +"_" + finalFieldName);
-               	if (currentQueries.size == 0) {
-	                finishProcess();
-					document.getElementById('exportButton').style.display = getSelectedSeqs().length > 1 ? "block" : "none";
+        success: function (jsonResults, textStatus, jqXHR) {
+			for (var key in jsonResults) {
+				let splitQuery = key.split("::")[1].split("_");
+				let finalIndex = splitQuery[splitQuery.length - 1], finalFieldName = splitQuery[splitQuery.length - 2];
+				let jsonResult = jsonResults[key];
+	            if (jsonResult == null) {
+					if (emptyResponseCountsByProcess[key] == null)
+						emptyResponseCountsByProcess[key] = 1;
+					else
+						emptyResponseCountsByProcess[key]++;
+					if (emptyResponseCountsByProcess[key] > 10) {
+						console.log("Giving up requesting progress for process " + key);
+						emptyResponseCountsByProcess[key] = null;
+		               	currentQueries.delete(finalIndex + "_" + finalFieldName);
+					}
 	            }
-            }
-            else {
-                if (jsonResult != null && jsonResult['error'] != null) {
-                    parent.totalRecordCount = 0;
-                    alert("Error occurred:\n\n" + jsonResult['error']);
+	            else if (jsonResult != null && jsonResult['complete'] == true) {
+					getProgressDiv(finalIndex, finalFieldName).show().html(jsonResult['progressDescription']);
+					getProgressDiv(finalIndex, finalFieldName).fadeOut(1000);
+	               	emptyResponseCountsByProcess[key] = null;
 	               	currentQueries.delete(finalIndex +"_" + finalFieldName);
-	               	if (currentQueries.size == 0)
-						finishProcess();
-                    $('#density').modal('hide');
-                    emptyResponseCountsByProcess[chrToken] = null;
-                } else {
-					if (jsonResult != null)
-                    	document.getElementById(`densityLoadProgress_${$(`#densityChartArea${finalIndex}`).attr('data-sequence')}${field}`).innerHTML = jsonResult['progressDescription'];
-                	setTimeout("checkChartLoadingProgress(" + finalIndex + ", " + (finalFieldName != null ? "'" + finalFieldName + "'" : null) + ");", minimumProcessQueryIntervalUnit * getSelectedSeqs().length);
-                }
-            }
+	               	if (currentQueries.size == 0) {
+						document.getElementById('exportButton').style.display = getSelectedSeqs().length > 1 ? "block" : "none";
+		            }
+	            }
+	            else {
+	                if (jsonResult != null && jsonResult['error'] != null) {
+	                    parent.totalRecordCount = 0;
+	                    alert("Error occurred:\n\n" + jsonResult['error']);
+		               	currentQueries.delete(finalIndex +"_" + finalFieldName);
+	                    $('#density').modal('hide');
+	                    emptyResponseCountsByProcess[key] = null;
+	                } else {
+						if (jsonResult != null) {
+							getProgressDiv(finalIndex, finalFieldName).show().html(jsonResult['progressDescription']);
+							console.log(finalIndex + " / " + finalFieldName + " -> " + jsonResult['progressDescription']);
+						}
+	                }
+	            }
+	        }
+	        
+	      	if (currentQueries.size == 0)
+		    	finishProcess();
+		    else
+		    	setTimeout("checkChartLoadingProgress();", minimumProcessQueryIntervalUnit);
         },
         error: function(xhr, thrownError) {
             handleError(xhr, thrownError);
         }
     });
+}
+
+function getProgressDiv(i, fieldName) {
+	const divId = `densityLoadProgress_${i}` + (fieldName == null || fieldName == "" ? "" : ("_" + fieldName));
+	if ($("#" + divId).length == 0) {
+	    const loadDiv = `<div id="${divId}"></div>`;
+        $(`div#densityLoadProgressContainer`).append($(loadDiv));
+    }
+    return $("#" + divId);
 }
 
 function abortOngoingOperations() {
