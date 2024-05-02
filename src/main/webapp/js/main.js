@@ -861,10 +861,11 @@ function setGenotypeInvestigationMode(mode) {
     if (mode < count) {	// remove unwanted groups
     	let toDitch = elements.slice(mode);
 		for (let i=0; i<toDitch.length; i++) {
-			$("button#groupMemorizer" + (i+1)).removeClass('active');
-			var indListBox = $(toDitch[i]).find(".indListBox");
-			indListBox.off('change');
-			indListBox.selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
+			$(toDitch[i]).find("form button.glyphicon-floppy-save").removeClass('active');
+//			var indListBox = $(toDitch[i]).find(".indListBox");
+//			indListBox.off('change');
+//			indListBox.selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
+			applyGroupMemorizing(parseInt(toDitch[i].id.replace("genotypeInvestigationDiv", "")));
 			toDitch[i].remove();
 		}
     }
