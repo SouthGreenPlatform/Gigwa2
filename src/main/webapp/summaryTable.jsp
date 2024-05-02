@@ -71,7 +71,7 @@
                 if (dbNames.length > 0)
                 	buildSummaryTable(dbNames);
                 else
-                	$("body").append("<center style='font-size:14px; margin-top:30px;'>No data is currently available to you on this instance</center>");
+                	$("div#mainContents").html("<center style='font-size:14px; margin-top:30px;'>No data is currently available to you on this instance</center>");
 		    },
             error: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
@@ -90,7 +90,6 @@
             },
             success: function(jsonResult) {
                 var jsonTable = document.createElement("table");
-                document.body.appendChild(jsonTable);
                 jsonTable.style.borderCollapse = 'collapse';
                 jsonTable.style.display = 'flex';
                 jsonTable.style.justifyContent = 'center';
@@ -188,8 +187,9 @@
                         i++;
                     }
                 }
+                $("div#mainContents img").replaceWith(jsonTable);
             },
-            erlistModulesror: function(xhr, ajaxOptions, thrownError) {
+            error: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
             }
         });
@@ -204,5 +204,6 @@
 <body>
 <%@include file="navbar.jsp"%>
 <h3 style="display: flex; justify-content: center">Summary of instance contents</h3>
+<div id="mainContents"style="text-align:center;"><img src='images/progress.gif' /> </div>
 </body>
 </html>
