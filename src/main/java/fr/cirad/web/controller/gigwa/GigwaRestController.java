@@ -2608,7 +2608,7 @@ public class GigwaRestController extends ControllerInterface {
 		ProgressIndicator.registerProgressIndicator(progress);
 		progress.setPercentageEnabled(false);
 
-		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(genomeName)) {
+		if (!SnpEffAnnotationService.getAvailableGenomes(dataPath).contains(genomeName)) {
 			progress.setError("Unknown genome, you must install it first");
 			return null;
 		}
@@ -2633,7 +2633,7 @@ public class GigwaRestController extends ControllerInterface {
     	String configFile = appConfig.get("snpEffConfigFile");
     	String dataPath = appConfig.get("snpEffDataRepository");
 
-    	result.put("availableGenomes", SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath));
+    	result.put("availableGenomes", SnpEffAnnotationService.getAvailableGenomes(dataPath));
     	result.put("downloadableGenomes", SnpEffAnnotationService.getDownloadableGenomes(configFile, dataPath));
 
     	return result;
@@ -2658,7 +2658,6 @@ public class GigwaRestController extends ControllerInterface {
 
     	ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
 		ProgressIndicator.registerProgressIndicator(progress);
-		progress.setPercentageEnabled(false);
 
 		HashMap<String, Object> result = new HashMap<>();
 		result.put("log", null);
@@ -2667,7 +2666,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<String, MultipartFile> fileMap = request.getFileMap();
 
     	if (genomeName != null) {
-    		if (!SnpEffAnnotationService.getAvailableGenomes(configFile, dataPath).contains(genomeName)) {
+    		if (!SnpEffAnnotationService.getAvailableGenomes(dataPath).contains(genomeName)) {
 				SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeName, progress);
 				result.put("success", true);
 			}

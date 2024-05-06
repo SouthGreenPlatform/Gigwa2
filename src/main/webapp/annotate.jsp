@@ -62,22 +62,23 @@
 
 			var importDropzone;
 
-
             $(function () {
-                $('#moduleExistingG').on('change', function () {
+                $('#moduleExisting').on('change', function () {
                     clearFields();
                     if ($(this).val() !== '- Select -' && $(this).val() !== null) {
                         loadProjects($(this).val());
-                        $('#projectExisting').change();
+                       	$('#projectExisting').change();
                     } else {
-                        $('#projectExisting').html('<option>Nothing selected</option>').selectpicker('refresh');
-                        $('#runExisting').html('<option>Nothing selected</option>').selectpicker('refresh');
+                        $('#projectExisting').html('<option value="">Nothing selected</option>').selectpicker('refresh');
                     }
                 });
                 $('#projectExisting').on('change', function () {
-                	$('#emptyBeforeImportDiv').toggle();
-                    loadRuns();
-                    $('#emptyBeforeImportDiv').show(100);
+                    $('#runExisting').html('<option value="">Nothing selected</option>').selectpicker('refresh');
+                    if ($("#projectExisting").val() != null) {
+	                	$('#emptyBeforeImportDiv').toggle();
+	                    loadRuns();
+	                    $('#emptyBeforeImportDiv').show(100);
+                    }
                 });
 
                 // check if entered char is valid
@@ -163,6 +164,7 @@
     	        }).then(function() {
 					importDropzone = new Dropzone("#importDropzone", {
     	                url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
+    	                maxFiles: 4,
     	                previewsContainer: "#dropZonePreviews",
    		           	    dictResponseError: 'Error importing data',
    		           	    parallelUploads: 10,
@@ -170,7 +172,7 @@
    		           	  	headers: {
    		           	  		"Authorization": "Bearer " + token
    		           	  	},
-   		           	  	previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n <div class=\"dz-details\">\n  <div class=\"dz-filename\"><span data-dz-name></span></div>\n  <div class=\"dz-size\"><span data-dz-size></span></div>\n  <a style=\"float:right;\" class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>Remove file</a>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Check</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n   </g>\n  </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n  <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n   <title>Error</title>\n   <defs></defs>\n   <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n    <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#ff9999\" fill-opacity=\"0.816519475\">\n     <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path></g></g></svg></div></div>",
+   		           	  	previewTemplate: "<div class='dz-preview dz-file-preview'>\n <div class='dz-details' style='width:260px;'>\n  <div class='dz-filename' style='max-height:45px;'><span data-dz-name style='overflow-wrap:anywhere; text-align:left;'></span></div>\n  <div class='dz-size'><span data-dz-size></span></div>\n  <a style='float:right;' class='dz-remove' href='javascript:undefined;' data-dz-remove>Remove file</a>\n  </div>\n  <div class='dz-progress'><span class='dz-upload' data-dz-uploadprogress></span></div>\n  <div class='dz-error-message'><span data-dz-errormessage></span></div>\n  <div class='dz-success-mark'>\n  <svg width='54px' height='54px' viewBox='0 0 54 54' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:sketch='http://www.bohemiancoding.com/sketch/ns'>\n   <title>Check</title>\n   <defs></defs>\n   <g id='Page-1' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd' sketch:type='MSPage'>\n    <path d='M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z' id='Oval-2' stroke-opacity='0.198794158' stroke='#747474' fill-opacity='0.816519475' fill='#FFFFFF' sketch:type='MSShapeGroup'></path>\n   </g>\n  </svg>\n  </div>\n  <div class='dz-error-mark'>\n  <svg width='54px' height='54px' viewBox='0 0 54 54' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:sketch='http://www.bohemiancoding.com/sketch/ns'>\n   <title>Error</title>\n   <defs></defs>\n   <g id='Page-1' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd' sketch:type='MSPage'>\n    <g id='Check-+-Oval-2' sketch:type='MSLayerGroup' stroke='#747474' stroke-opacity='0.198794158' fill='#ff9999' fill-opacity='0.816519475'>\n     <path d='M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z' id='Oval-2' sketch:type='MSShapeGroup'></path>\n    </g>\n   </g>\n  </svg>\n </div>\n</div>",
    		           	    init: function() {
    							var self = this;
    							self.options.maxFilesize = maxUploadSizeInMb;
@@ -217,16 +219,16 @@
                         "pageToken": null
                     }),
                     success: function (jsonResult) {
-                        $('#moduleExistingG').html("<option>- Select -</option>").selectpicker('refresh');
+                        $('#moduleExisting').html("<option value=''>- Select -</option>").selectpicker('refresh');
 
                         var options = "";
                         for (var set in jsonResult.referenceSets)
                             options += '<option>' + jsonResult.referenceSets[set].name + '</option>';
 
-                        $('#moduleExistingG').append(options).selectpicker('refresh');
+                        $('#moduleExisting').append(options).selectpicker('refresh');
                         <c:if test="${!(empty param.module)}">
-	                        $('#moduleExistingG').val('${param.module}').selectpicker('refresh');
-	                        $('#moduleExistingG').change();
+	                        $('#moduleExisting').val('${param.module}').selectpicker('refresh');
+	                        $('#moduleExisting').change();
                         </c:if>
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
@@ -323,6 +325,9 @@
 
 			function loadAssembly() {
 				$("#grpAsmAnnotate").hide();
+				
+				if ($("#projectExisting").val() == null)
+					return;
 
 				$.ajax({	// load assemblies
 					url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
@@ -361,15 +366,15 @@
 					contentType: "application/json;charset=utf-8",
 					success: function (jsonResult) {
 					    availableGenomes = jsonResult.availableGenomes.sort();
-					    downloadableGenomes = jsonResult.downloadableGenomes.sort();
+					    downloadableGenomes = jsonResult.downloadableGenomes;
 
 					    let availableOptions = "";
 					    for (let genome of availableGenomes)
 					        availableOptions += '<option value="' + genome + '">' + genome + '</option>';
 
 					    let downloadableOptions = "";
-					    for (let genome of downloadableGenomes)
-					        downloadableOptions += '<option value="' + genome + '">' + genome + '</option>';
+					    for (let genomeKey in downloadableGenomes)
+					        downloadableOptions += '<option value="' + genomeKey + '">' + downloadableGenomes[genomeKey] + '</option>';
 
 						$("#availableGenomes").html(availableOptions).selectpicker('refresh');
 						$("#downloadableGenomeList").html(downloadableOptions);
@@ -386,17 +391,39 @@
 
             function annotateVariants() {
                 const data = new FormData();
-                data.set("module", $("#moduleExistingG").val());
-                data.set("project", $("#projectExisting").val());
-                data.set("run", $("#runExisting").val());
-
-                const genomeName = $("#availableGenomes").val();
-			    if (!genomeName) {
+	    		let value = $("#moduleExisting").val();
+			    if (!value) {
+				    alert("You must select a database");
+                    $('#progress').modal('hide');
+                    return;
+			    }
+			    data.set("module", value);
+			    
+			    value = $("#projectExisting").val();
+			    if (!value) {
+				    alert("You must select a project");
+                    $('#progress').modal('hide');
+                    return;
+			    }
+			    data.set("project", value);
+			    
+                value = $("#runExisting").val();
+			    if (!value) {
+				    alert("You must select a run");
+                    $('#progress').modal('hide');
+                    return;
+			    }
+			    data.set("run", value);
+			    
+                value = $("#availableGenomes").val();
+			    if (!value) {
 				    alert("You must select a genome");
                     $('#progress').modal('hide');
                     return;
 			    }
-			    data.set("genome", genomeName);
+			    data.set("genome", value);
+			    
+			    
 
 				$.ajax({
 				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />",
@@ -414,7 +441,7 @@
                         $('.importFormDiv input').prop('disabled', true);
                         $('.importFormDiv button').prop('disabled', true);
                         $('.importFormDiv textarea').prop('disabled', true);
-						var link1 = "<c:url value='/' />?module=" + $("#moduleExistingG").val() + "&project=" + $("#projectExisting").val();
+						var link1 = "<c:url value='/' />?module=" + $("#moduleExisting").val() + "&project=" + $("#projectExisting").val();
 						$('#progressContents').html('<p class="bold panel" style="padding:10px;">Annotation complete.<br/>The annotated data is <a style="cursor:pointer;" href="' + link1 + '">available here</a></p>');
 						$('#progress').modal('show');
                     }
@@ -480,7 +507,6 @@
 				    data: data,
 				    dataType: "json",
 				    success: function (jsonResult) {
-						console.log(jsonResult);
 				        if (jsonResult == null)
 						    return;
 
@@ -492,6 +518,7 @@
 						}
 
 						$("#importResultLog").text(jsonResult.log);
+						loadGenomes();
 				    },
 				});
 
@@ -499,22 +526,20 @@
                 $('#progress').data('error', true);
                 $('#progress').off('hidden.bs.modal');
                 $("#installDialog").modal('hide');
-                //displayProcessProgress(5, token, () => loadGenomes());
-				displayProcessProgress(5, token, "progress_download_genome");
+				displayProcessProgress(5, token);
             }
         </script>
     </head>
     <body>
         <%@include file="../../../navbar.jsp" %>
         <div class="container margin-top-md">
-            <form autocomplete="off" id="importDropzoneG" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />" method="post">
                 <div class="panel panel-default importFormDiv">
                     <div class="panel-body panel-grey">
                         <div class="form text-center">
                             <div class ="row">
                                 <div class="col-md-1" style="text-align:right;"></div>
                                 <div class="col-md-10">
-                                    <h4>Annotate data</h4>
+                                    <h4>Add functional annotations to variants using SnpEff</h4>
 							<p class="margin-top-md text-red">Properties followed by * are required</p>
                                 </div>
                             </div>
@@ -524,10 +549,10 @@
                                     <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
                                         <div class="row" id="rowModuleExisting">
                                      	<div class="col-md-2" style="text-align:right;">
-                                          <label for="moduleExistingG">Database <span class="text-red">*</span></label>
+                                          <label for="moduleExisting">Database <span class="text-red">*</span></label>
                                          </div>
                                             <div class="col-md-3">
-                                                <select class="selectpicker" id="moduleExistingG" class="moduleExisting" name="moduleExistingG" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                                <select class="selectpicker" id="moduleExisting" class="moduleExisting" name="moduleExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
                                         </div>
                                     </div>
@@ -562,15 +587,16 @@
 	                                     	<div class="col-md-2" style="text-align:right;">
 	                                            <label for="availableGenomes">Select a genome<span class="text-red">*</span></label>
 	                                      	</div>
-	                                      	<div class="col-md-4">
-	                                      		<select id="availableGenomes" name="availableGenomes" class="selectpicker col-md-6" title="Select a genome" data-live-search="true"></select>
+	                                      	<div class="col-md-4" style="width:450px; margin-left:-15px;">
+	                                      		<select id="availableGenomes" name="availableGenomes" class="selectpicker col-md-6" title="Select an available genome" data-live-search="true"></select>
 	                                      	</div>
-                                            <button class="col-md-2 btn btn-primary btn-sm" type="button" data-toggle="modal" data-target="#installDialog">Install a new genome</button>
+                                            <button class="col-md-2 btn btn-default btn-sm" type="button" data-toggle="modal" data-target="#installDialog">Install a new genome</button>
                                         </div>
                                     </div>
                               <div class ="row">
+                              	  <div class="col-md-2"></div>
                                   <div class="col-md-1">
-                                   <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start</button>
+                                   <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start annotation process</button>
                                   </div>
                               </div>
                                 </div>
@@ -586,14 +612,7 @@
             <div class="modal-dialog modal-sm margin-top-lg">
                 <div class="modal-content modal-progress">
                     <div class="loading text-center" id="progressContents">
-<!--                         <div> -->
-<!--                             <div class="c1"></div> -->
-<!--                             <div class="c2"></div> -->
-<!--                             <div class="c3"></div> -->
-<!--                             <div class="c4"></div> -->
-<!--                         </div> -->
                         <h3 id="progressText" class="loading-message">Please wait...</h3>
-                        <button class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?token=' + token + '&successURL=' + escape('<c:url value='/' />?' + 'module=' + $('#moduleToImport').val() + '&project=' + $('#projectToImport').val()));" title="This will open a separate page allowing to watch import progress at any time. Leaving the current page will not abort the import process.">Open async progress watch page</button>
                     </div>
                 </div>
             </div>
@@ -602,7 +621,7 @@
         <!-- Genome install modal -->
         <div class="modal fade" role="dialog" id="installDialog" aria-hidden="true">
         	<div class="modal-dialog modal-lg">
-        		<div class="modal-content">
+        		<div class="modal-content" style="height:550px;">
         			<div class="modal-header">
 	        			Install a new genome
 	        		</div>
@@ -613,54 +632,60 @@
 				           	</div>
 			                <div class="col-md-6">
 			                	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
-			                		<option value="select">Default genomes</option>
-			                		<option value="url">Download from URL</option>
-			                		<option value="files">Upload genome</option>
+			                		<option value="select">Default SnpEff genomes</option>
+			                		<option value="url">Download from specific URL</option>
+			                		<option value="files">Build from local genome files</option>
 			                	</select>
 			                </div>
 			            </div>
 
 			            <!-- Default genomes selector -->
-			            <div class="row" id="downloadableGenomesContainer">
+			            <div class="row margin-top-md" id="downloadableGenomesContainer">
 			            	<div class="col-md-3" style="text-align:right;">
 				                 <label for="downloadableGenomes">Downloadable genomes</label>
 				           	</div>
-		            		<input class="col-md-9" list="downloadableGenomeList" name="downloadableGenomes" id="downloadableGenomes"/>
+		            		<div class="col-md-9">
+		            			<input list="downloadableGenomeList" style="width: 500px;" name="downloadableGenomes" id="downloadableGenomes" placeholder="(Please select)"/>
+		            		</div>
                             <datalist id="downloadableGenomeList"></datalist>
 			            </div>
 
 			            <!-- Download from URL -->
-			            <div class="row" id="downloadURLContainer">
+			            <div class="row margin-top-md" id="downloadURLContainer">
 			            	<div class="col-md-3" style="text-align:right;">
 			            		<label for="genomeURL">SnpEff database URL (.zip)</label>
 			            	</div>
-			            	<input type="url" class="col-md-9" id="genomeURL" name="genomeURL" />
+			            	<div class="col-md-9">
+			            		<input type="url" style="width:calc(100% - 20px);" id="genomeURL" name="genomeURL" />
+			            	</div>
 			            </div>
 
 			            <!-- Upload files -->
-			            <div class="row" id="uploadContainer">
-			            	<form action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
+			            <div class="row margin-top-md" id="uploadContainer">
+			            	<form class="dropzone" style="background-color:#ffffff; overflow: hidden;" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
 			            		<div class="row">
 			            			<div class="col-md-3" style="text-align:right;">
 			            				<label for="newGenomeID">New genome identifier</label>
 			            			</div>
-			            			<input type="text" class="col-md-9" id="newGenomeID" name="newGenomeID" />
-			            		</div>
-			            		<div class="row">
-			            			<div class="col-md-3" style="text-align:right;">
-			            				<label for="newGenomeName">New genome real name</label>
+			            			<div class="col-md-9">
+			            				<input type="text" style="width:300px;" id="newGenomeID" name="newGenomeID" />
 			            			</div>
-			            			<input type="text" class="col-md-9" id="newGenomeName" name="newGenomeName" />
 			            		</div>
-			            		<div class="row">
-                                	<div class="col-md-3">Upload a genome</div>
-                                    <div class="col-md-5" id="dropZonePreviews"></div>
-                                    <div class="col-md-4" style="padding-right:0;">
-										<div class="dz-default dz-message" style="background-color:#e8e8e8;">
-	       									<h5>... or drop files here or click to upload <div style='font-style:italic; display:inline'></div></h5>
-	       									<div>
-	       										<b>Necessary files :</b>
-	       										<br/>FASTA sequence and one of
+			            		<div class="row margin-top-md">
+			            			<div class="col-md-3" style="text-align:right;">
+			            				<label for="newGenomeName">New genome name</label>
+			            			</div>
+			            			<div class="col-md-9">
+			            				<input type="text" style="width:300px;" id="newGenomeName" name="newGenomeName" />
+			            			</div>
+			            		</div>
+			            		<div class="row margin-top">
+			            			<div class="col-md-1"></div>
+                                    <div class="col-md-5" style="padding-right:0;">
+										<div class="dz-default dz-message" style="margin-left:10px; height:270px; background-color:#e8e8e8; padding:5px; border:2px dashed lightblue;">
+	       									<h4>&nbsp;Please drop files here or click to upload</h4>
+	       									<div style="font-size:13px; margin:25px;">
+	       										<b><u>Required files:</u> FASTA</b> sequence <b>plus</b> one of
 	       										<ul>
 	       											<li>.gtf</li>
 	       											<li>.gff</li>
@@ -673,8 +698,10 @@
 											</div>
        									</div>
                                     </div>
+                                    <div class="col-md-5" id="dropZonePreviews" style="padding-left:30px;">
+                                    </div>
+                                    <div class="col-md-1"></div>
                                 </div>
-			            	</form>
 			            </div>
 			        </div>
 			        <div class="modal-footer">
