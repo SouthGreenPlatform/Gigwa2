@@ -546,7 +546,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</li>
 							<li class="dropdown" id="igvGroupsMenu" hidden="true">
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-									Groups <span class="caret"></span>
+									Displayed genotypes <span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
 							</li>
@@ -2739,6 +2739,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     sourceType: "file",
                     order: Number.MAX_SAFE_INTEGER,
                     visibilityWindow: 100000,
+//                     showGenotypes: false,
                     reader: new GigwaSearchReader(
                         individuals, token,
                         "<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
@@ -2814,9 +2815,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	// Build the list of individuals to display in IGV
     function igvSelectedIndividuals() {
-        let group = $('input[name="igvGroupsButton"]:checked').val();
-        let trackIndividuals;
+        let trackIndividuals, group = $('input[name="igvGroupsButton"]:checked').val();
         switch (group) {
+	        case "none":
+	        	trackIndividuals = [[]];
+	            break;
             case "selected":
             	var groupInds = getSelectedIndividuals(null, false);
             	trackIndividuals = [groupInds.length == 0 ? indOpt : groupInds];

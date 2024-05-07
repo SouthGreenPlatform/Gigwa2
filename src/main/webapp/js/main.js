@@ -847,24 +847,20 @@ function setGenotypeInvestigationMode(mode) {
         placeholder: 'Lookup'
     }
     
+	$("#igvGroupsMenu ul").html('<li id="igvGroupsNone"><a href="#"><label><input checked type="radio" name="igvGroupsButton" value="none" onchange="igvSelectGroup();" /> None</label></a></li>');
     if (mode == 0) {
-	    $("#igvGroupsMenu ul").html('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();"/> All individuals</label></a></li>');
+	    $("#igvGroupsMenu ul").append('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();"/> All individuals '+ (indOpt.length > 500 ? '(may be slow!)' : '') + '</label></a></li>');
 	    igvUpdateVariants();
 	}
     else if (mode > 1) {
-    	$("#igvGroupsMenu ul").html('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
+    	$("#igvGroupsMenu ul").append('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
     	$("#igvGroupsMenu ul").append('<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();"/> All groups</label></a></li>');
     }
-    else
-	    $("#igvGroupsMenu ul").html('');
 
     if (mode < count) {	// remove unwanted groups
     	let toDitch = elements.slice(mode);
 		for (let i=0; i<toDitch.length; i++) {
 			$(toDitch[i]).find("form button.glyphicon-floppy-save").removeClass('active');
-//			var indListBox = $(toDitch[i]).find(".indListBox");
-//			indListBox.off('change');
-//			indListBox.selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
 			applyGroupMemorizing(parseInt(toDitch[i].id.replace("genotypeInvestigationDiv", "")));
 			toDitch[i].remove();
 		}
