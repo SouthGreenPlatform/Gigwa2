@@ -54,6 +54,9 @@
     </head>
     <body>
         <div class ="container">
+			<c:forEach var="registration" items="${oauth2Providers}" >			    
+			    <a href='<c:out value="${registration.providerDetails.authorizationUri}" />?response_type=code&scope=openid&client_id=${registration.clientId}&redirect_uri=${registration.redirectUri}'>Authenticate with <c:out value="${registration.registrationId}" /></a><br/>
+			</c:forEach>
             <div class="row margin-top">
                 <div class="col-md-4"></div>
                 <div class="col-md-4">
