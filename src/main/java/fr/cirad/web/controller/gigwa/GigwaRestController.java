@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -68,6 +69,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.brapi.v2.api.ServerinfoApi;
 import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -167,6 +169,7 @@ import fr.cirad.utils.Constants;
 import fr.cirad.web.controller.ga4gh.Ga4ghRestController;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
+import fr.cirad.web.controller.rest.BrapiRestController;
 import fr.cirad.web.controller.security.UserPermissionController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import io.swagger.annotations.ApiOperation;
@@ -927,7 +930,6 @@ public class GigwaRestController extends ControllerInterface {
 									}
 								}
 								
-								
 						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
 						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
 						        List<List<String>> callsetIds = gir.getAllCallSetIds();
@@ -1344,11 +1346,17 @@ public class GigwaRestController extends ControllerInterface {
 		String metadataFile = null;
         Scanner scanner = null;
         HashMap<String, String> filesByExtension = null;
+        boolean fDirectSingleEndpointImport = false;
         try {
         	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 			String extensionLessFile = filesByExtension.get("");
-			if (extensionLessFile != null)
-				throw new Exception("File has no extension: " + extensionLessFile);
+			if (extensionLessFile != null) {
+				if (!extensionLessFile.endsWith(BrapiRestController.URL_BASE_PREFIX) && !extensionLessFile.endsWith(ServerinfoApi.URL_BASE_PREFIX))
+					throw new Exception("Invalid file extension or BrAPI endpoint URL: " + extensionLessFile);
+				
+				fDirectSingleEndpointImport = true;
+				endpointByIndividualOrSample.put("", extensionLessFile.trim().replaceAll("/+$", ""));
+			}
 
 			metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
 	        if (metadataFile != null) {    // deal with individuals' metadata
@@ -1771,10 +1779,12 @@ public class GigwaRestController extends ControllerInterface {
 			@RequestParam(value = "dataFile1", required = false) final String dataUri1, @RequestParam(value = "dataFile2", required = false) final String dataUri2, @RequestParam(value = "dataFile3", required = false) final String dataUri3,
 			@RequestParam(value = "brapiParameter_mapDbId", required = false) final String sBrapiMapDbId, @RequestParam(value = "brapiParameter_studyDbId", required = false) final String sBrapiStudyDbId,
 			@RequestParam(value = "brapiParameter_token", required = false) final String sBrapiToken,
+			@RequestParam(value = "providingSamples", required = false) final Boolean providingSampleIDs,
 			@RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
 			@RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
 			@RequestParam(value = "file[2]", required = false) MultipartFile uploadedFile3,
 			@RequestParam(value = "file[3]", required = false) MultipartFile uploadedFile4,
+			@RequestParam(value = "useBrapiMdEndpoint", required = false) final Boolean directlyPullMdFromBrAPI,
             @RequestParam(value = "metadataFile1", required = false) final String metadataUri1,
             @RequestParam(value = "metadataType", required = false) final String metadataType,
             @RequestParam(value = "brapiURLs", required = false) final String brapiURLs,
@@ -1789,12 +1799,22 @@ public class GigwaRestController extends ControllerInterface {
             return null;
 		}
 		
-		Object metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
-		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
+		boolean providingSamples = Boolean.TRUE.equals(providingSampleIDs);
+		boolean useBrapiMdEndpoint = Boolean.TRUE.equals(directlyPullMdFromBrAPI);
 
 		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
         ProgressIndicator.registerProgressIndicator(progress);
+
+		Object metadataFile = null;
+		try {
+			metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
+		}
+		catch (MalformedURLException mue) {
+			progress.setError("Malformed URL: " + mue.getMessage());
+			return processId;
+		}
+		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
 		if (!MongoTemplateManager.isModuleAvailableForWriting(sNormalizedModule))
@@ -1968,9 +1988,10 @@ public class GigwaRestController extends ControllerInterface {
 				progress.setError("Found no data to import!");
 		}
 
+		int nMaxAllowedMappingFiles = providingSamples ? 1 : 0;
 		int nSampleMappingFileCount = 0 + (filesByExtension.containsKey("tsv") ? 1 : 0) + (filesByExtension.containsKey("csv") ? 1 : 0);
-		if (nSampleMappingFileCount > 1)
-			progress.setError("You may only provide a single sample-mappping file per import!");
+		if (nSampleMappingFileCount > nMaxAllowedMappingFiles)
+			progress.setError("Too many sample-mapping files provided (" + nSampleMappingFileCount + " > " + nMaxAllowedMappingFiles + ")!");
 
 		final AtomicReference<String> metadataImportError = new AtomicReference<>();
 		AtomicBoolean fDatasourceAlreadyExisted = new AtomicBoolean();
@@ -2146,6 +2167,8 @@ public class GigwaRestController extends ControllerInterface {
 										        return;
 											}
 									    }
+										if (providingSamples && sampleToIndividualMapping == null)
+											sampleToIndividualMapping = new HashMap<>();	 // empty means no mapping file but sample names provided: individuals shall be named same just like samples
 
 										if (!filesByExtension.containsKey("gz")) {
 											if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
@@ -2300,33 +2323,47 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFile != null) {
+				if (useBrapiMdEndpoint && metadataFile instanceof URL) {
+					String brapiEndPoint = ((URL) metadataFile).toString();
+					if (!brapiEndPoint.endsWith(BrapiRestController.URL_BASE_PREFIX) && !brapiEndPoint.endsWith(ServerinfoApi.URL_BASE_PREFIX)) {
+						progress.setError("Wrong BrAPI endpoint: " + brapiEndPoint);
+						return processId;
+					}
+				}
+
 				while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
 					Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
 
 				if (progress.getError() != null || progress.isAborted())
 					LOG.warn("Unable to process metadata during mixed import!");
 				else {
-					metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, finalMetadataFile instanceof URL ? ((URL) finalMetadataFile).toString() : null, null, false, finalMetadataFile instanceof URL ? null : (MultipartFile) finalMetadataFile, null, metadataType, brapiURLs, brapiTokens));
-					
-					// watch metadata import progress so we are aware of errors if any
-					Timer timer = new Timer();
-					timer.schedule(new TimerTask() {
-					    public void run() {
-							ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
-							if (mdImportProgress == null)
-								return;
-							
-							if (mdImportProgress.isComplete() || !mdImportProgress.isAborted() || mdImportProgress.getError() != null) {
-								if (mdImportProgress.getError() != null)
-									metadataImportError.set(mdImportProgress.getError());
-								cancel();
-								timer.cancel();
-							}
-							else
-								progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
-
-					    }
-					}, 0, 1000); 
+					if (!useBrapiMdEndpoint) {
+						metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, finalMetadataFile instanceof URL ? ((URL) finalMetadataFile).toString() : null, null, false, finalMetadataFile instanceof URL ? null : (MultipartFile) finalMetadataFile, null, metadataType, brapiURLs, brapiTokens));
+						
+						// watch metadata import progress so we are aware of errors if any
+						Timer timer = new Timer();
+						timer.schedule(new TimerTask() {
+						    public void run() {
+								ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
+								if (mdImportProgress == null)
+									return;
+								
+								if (mdImportProgress.isComplete() || !mdImportProgress.isAborted() || mdImportProgress.getError() != null) {
+									if (mdImportProgress.getError() != null)
+										metadataImportError.set(mdImportProgress.getError());
+									cancel();
+									timer.cancel();
+								}
+								else
+									progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
+	
+						    }
+						}, 0, 1000);
+					}
+					else {
+						metadataImportProcessId.set("dummy");
+						System.err.println("Import directly from " + ((URL) metadataFile).toString());	//FIXME: do it
+					}
 				}
 			}
 		}
