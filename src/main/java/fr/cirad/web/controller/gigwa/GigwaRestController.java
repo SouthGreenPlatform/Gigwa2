@@ -1346,15 +1346,14 @@ public class GigwaRestController extends ControllerInterface {
 		String metadataFile = null;
         Scanner scanner = null;
         HashMap<String, String> filesByExtension = null;
-        boolean fDirectSingleEndpointImport = false;
         try {
         	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 			String extensionLessFile = filesByExtension.get("");
 			if (extensionLessFile != null) {
-				if (!extensionLessFile.endsWith(BrapiRestController.URL_BASE_PREFIX) && !extensionLessFile.endsWith(ServerinfoApi.URL_BASE_PREFIX))
+				String fixedPossibleEndpointUrl = !extensionLessFile.endsWith("/") ? extensionLessFile + "/" : extensionLessFile;
+				if (!fixedPossibleEndpointUrl.endsWith(BrapiRestController.URL_BASE_PREFIX + "/") && !fixedPossibleEndpointUrl.endsWith(ServerinfoApi.URL_BASE_PREFIX + "/"))
 					throw new Exception("Invalid file extension or BrAPI endpoint URL: " + extensionLessFile);
 				
-				fDirectSingleEndpointImport = true;
 				endpointByIndividualOrSample.put("", extensionLessFile.trim().replaceAll("/+$", ""));
 			}
 
@@ -1567,7 +1566,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 
 		final String processId = (request == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", "");
-        final ProgressIndicator progress = new ProgressIndicator(processId, new String[]{"Checking submitted data"});
+        final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Checking submitted data"});
         ProgressIndicator.registerProgressIndicator(progress);
 
         String username = null;
@@ -1806,9 +1805,9 @@ public class GigwaRestController extends ControllerInterface {
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
         ProgressIndicator.registerProgressIndicator(progress);
 
-		Object metadataFile = null;
+		Object metadataFileOrEndpoint = null;
 		try {
-			metadataFile = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
+			metadataFileOrEndpoint = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
 		}
 		catch (MalformedURLException mue) {
 			progress.setError("Malformed URL: " + mue.getMessage());
@@ -1828,13 +1827,13 @@ public class GigwaRestController extends ControllerInterface {
 			if (mpf != null && !mpf.isEmpty()) {
 				String fileExtension = FilenameUtils.getExtension(mpf.getOriginalFilename()).toLowerCase();
 				boolean fIsMetadataFile = "phenotype".equals(fileExtension);
-				if (fIsMetadataFile && metadataFile != null)
+				if (fIsMetadataFile && metadataFileOrEndpoint != null)
 					progress.setError("Only one metadata file may be provided at a time!");
 				else if (filesByExtension.containsKey(fileExtension))
 					progress.setError("Each provided datasource entry must be of a different kind!");
 				else {
 					if (fIsMetadataFile) {	// this one will be passed on to the metadata import procedure
-						metadataFile = mpf;
+						metadataFileOrEndpoint = mpf;
 						continue;
 					}
 
@@ -1976,10 +1975,10 @@ public class GigwaRestController extends ControllerInterface {
 		boolean fDatasourceExists = mongoTemplate != null;
 		final GenotypingProject project = !fDatasourceExists ? null : mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
 		boolean fGotProjectDesc = sProjectDescription != null && sProjectDescription.trim().length() > 0;
-		boolean fBrapiImport = sBrapiMapDbId != null && sBrapiMapDbId.length() > 0 && sBrapiStudyDbId != null && sBrapiStudyDbId.length() > 0 && dataUri1.trim().toLowerCase().startsWith("http");
-		if (fBrapiImport)
+		boolean fBrapGenotypeiImport = sBrapiMapDbId != null && sBrapiMapDbId.length() > 0 && sBrapiStudyDbId != null && sBrapiStudyDbId.length() > 0 && dataUri1.trim().toLowerCase().startsWith("http");
+		if (fBrapGenotypeiImport)
 			filesByExtension.remove("");	// shall not be treated as a submitted flat-file
-		boolean fGotDataToImport = filesByExtension.size() > 0 || fBrapiImport;
+		boolean fGotDataToImport = filesByExtension.size() > 0 || fBrapGenotypeiImport;
 		if (!fGotDataToImport)
 		{
 			boolean fProjectDescRemainsEmpty = !fGotProjectDesc && (project == null || project.getDescription() == null || project.getDescription().trim().length() == 0);
@@ -2000,7 +1999,7 @@ public class GigwaRestController extends ControllerInterface {
 				fileToDelete.delete();		
 		else {
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
-			final Object finalMetadataFile = metadataFile;
+			final Object finalMetadataFileOrEndpoint = metadataFileOrEndpoint;
 			if (!fGotDataToImport)	{	// we're only updating a project description
 				mongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 				MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
@@ -2119,7 +2118,7 @@ public class GigwaRestController extends ControllerInterface {
 						        return processId;
 						    }
 							
-							if (fBrapiImport) {
+							if (fBrapGenotypeiImport) {
 						        progress.setError("Sample-mapping file is not supported for BrAPI imports (sample names are already provided as markerprofiles in this case)!");
 						        return processId;
 						    }
@@ -2147,20 +2146,23 @@ public class GigwaRestController extends ControllerInterface {
 		
 						final AtomicInteger createdProjectId = new AtomicInteger(-1);
 						final SecurityContext securityContext = SecurityContextHolder.getContext();
+						boolean retrieveIndNamesViaBrapi = providingSamples && useBrapiMdEndpoint && sampleMappingFile == null;
 						new SessionAttributeAwareThread(request.getSession()) {
 							public void run() {
 								Scanner scanner = null;
 								try {
 									Integer newProjId = null;
-									if (fBrapiImport) {
+									if (fBrapGenotypeiImport) {
 										genotypeImporter.set(new BrapiImport(processId));
+										if (retrieveIndNamesViaBrapi)
+											genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 										newProjId = ((BrapiImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, dataUri1.trim(), sBrapiStudyDbId, sBrapiMapDbId, sBrapiToken, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 									}
 									else {
 										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
 										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
 											Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
-											if (Boolean.TRUE.equals(fClearProjectData))
+											if (project != null && Boolean.TRUE.equals(fClearProjectData))
 												crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
 											if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
 										        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
@@ -2175,24 +2177,32 @@ public class GigwaRestController extends ControllerInterface {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new PlinkImport(processId));
+												if (retrieveIndNamesViaBrapi)
+													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
 												Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
 												boolean fIsGenotypingFileLocal = s instanceof File;
 												genotypeImporter.set(new VcfImport(processId));
+												if (retrieveIndNamesViaBrapi)
+													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 		                                    else if (filesByExtension.containsKey("intertek")) {
 		                                        Serializable s = filesByExtension.get("intertek");                                                                               
 		                                        boolean fIsGenotypingFileLocal = s instanceof File;
 		                                        genotypeImporter.set(new IntertekImport(processId));
+												if (retrieveIndNamesViaBrapi)
+													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 		                                    }
 											else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
 												Serializable mapFile = filesByExtension.get("map");
 												boolean fIsGenotypingFileLocal = mapFile instanceof File;
 												genotypeImporter.set(new FlapjackImport(processId));
+												if (retrieveIndNamesViaBrapi)
+													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 											}
 											else {
@@ -2201,6 +2211,8 @@ public class GigwaRestController extends ControllerInterface {
 												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
 												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
 													genotypeImporter.set(new HapMapImport(processId));
+													if (retrieveIndNamesViaBrapi)
+														genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 												}
 												else
@@ -2216,20 +2228,21 @@ public class GigwaRestController extends ControllerInterface {
 												LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
 											
 											genotypeImporter.set(new VcfImport(processId));
+											if (retrieveIndNamesViaBrapi)
+												genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
 											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
 										}
 									}
 
 									createdProjectId.set(newProjId != null ? newProjId : -1);
 									if (progress.getError() == null && !progress.isAborted()) {	// looks like a successful import
-										
 										if (fGotProjectDesc)
 											finalMongoTemplate.updateFirst(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), new Update().set(GenotypingProject.FIELDNAME_DESCRIPTION, fGotProjectDesc ? sProjectDescription : null), GenotypingProject.class);
 			
 										if (newProjId != null)
 											MongoTemplateManager.updateDatabaseLastModification(sNormalizedModule);
 
-										while (finalMetadataFile != null && metadataImportProcessId.get() == null)
+										while (finalMetadataFileOrEndpoint != null && metadataImportProcessId.get() == null)
 											sleep(2000);
 										
 										String sCompletionMessage = null;
@@ -2322,52 +2335,79 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			}
 			
-			if (metadataFile != null) {
-				if (useBrapiMdEndpoint && metadataFile instanceof URL) {
-					String brapiEndPoint = ((URL) metadataFile).toString();
-					if (!brapiEndPoint.endsWith(BrapiRestController.URL_BASE_PREFIX) && !brapiEndPoint.endsWith(ServerinfoApi.URL_BASE_PREFIX)) {
-						progress.setError("Wrong BrAPI endpoint: " + brapiEndPoint);
-						return processId;
-					}
+			if (metadataFileOrEndpoint != null) {
+				if (!useBrapiMdEndpoint) {
+					while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
+						Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
+					
+					if (progress.getError() != null || progress.isAborted())
+						LOG.warn("Unable to process metadata during mixed import!");
+					else
+						metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's null then we want imported metadata to be official */, response, sModule, finalMetadataFileOrEndpoint instanceof URL ? ((URL) finalMetadataFileOrEndpoint).toString() : null, null, false, finalMetadataFileOrEndpoint instanceof URL ? null : (MultipartFile) finalMetadataFileOrEndpoint, null, metadataType, brapiURLs, brapiTokens));
 				}
+				else {	// IDs provided with the genotyping data should directly match those in the BrAPI endpoint at metadataFile, we can import via BrAPI without the need for a metadata file					
+					if (metadataFileOrEndpoint instanceof URL) {
+						String brapiEndPoint = ((URL) metadataFileOrEndpoint).toString();
+						if (!brapiEndPoint.endsWith(BrapiRestController.URL_BASE_PREFIX) && !brapiEndPoint.endsWith(ServerinfoApi.URL_BASE_PREFIX)) {
+							progress.setError("Wrong BrAPI endpoint: " + brapiEndPoint);
+							return processId;
+						}
+					}
+					
+					new SessionAttributeAwareThread(request.getSession()) {	//FIXME: make sure request and session are always valid once passed to importBrapiMetadata
+						public void run() {
+							try {
+								while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
+									Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
 
-				while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
-					Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
-
-				if (progress.getError() != null || progress.isAborted())
-					LOG.warn("Unable to process metadata during mixed import!");
-				else {
-					if (!useBrapiMdEndpoint) {
-						metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's new then we want imported metadata to be official */, response, sModule, finalMetadataFile instanceof URL ? ((URL) finalMetadataFile).toString() : null, null, false, finalMetadataFile instanceof URL ? null : (MultipartFile) finalMetadataFile, null, metadataType, brapiURLs, brapiTokens));
-						
-						// watch metadata import progress so we are aware of errors if any
-						Timer timer = new Timer();
-						timer.schedule(new TimerTask() {
-						    public void run() {
-								ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
-								if (mdImportProgress == null)
-									return;
-								
-								if (mdImportProgress.isComplete() || !mdImportProgress.isAborted() || mdImportProgress.getError() != null) {
-									if (mdImportProgress.getError() != null)
-										metadataImportError.set(mdImportProgress.getError());
-									cancel();
-									timer.cancel();
+								metadataImportProcessId.set((request == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", ""));
+								ProgressIndicator metadataImportProgress = new ProgressIndicator(metadataImportProcessId.get(), new String[] {"Checking submitted data"});
+						        ProgressIndicator.registerProgressIndicator(metadataImportProgress);						
+								String username = MongoTemplateManager.isModuleTemporary(sModule) || tokenManager.canUserWriteToDB(authToken, sModule) ? null : auth.getName(), brapiToken = "".equals(brapiTokens) ? null : brapiTokens;
+								if (!providingSamples)
+									LOG.info("Importing only germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString());	//FIXME: do it
+								else {
+									if (nSampleMappingFileCount == 0)
+										LOG.info("Importing sample and germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString() + ", guessing germplasm IDs using BrAPI");	//FIXME: do it
+									else
+										LOG.info("Importing sample and germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString() + ", using only identifiers found in the mapping file");	//FIXME: do it
 								}
-								else
-									progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
-	
-						    }
-						}, 0, 1000);
-					}
-					else {
-						metadataImportProcessId.set("dummy");
-						System.err.println("Import directly from " + ((URL) metadataFile).toString());	//FIXME: do it
-					}
+								int nModifiedSampleCount = !providingSamples ? 0 : IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), brapiURLs, null, username, brapiToken, metadataImportProgress, "sample");
+								int nModifiedGermplasmCount = IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), brapiURLs, null, username, brapiToken, metadataImportProgress, "individual");
+		
+								LOG.info("Direct BrAPI metadata import lead to update " + nModifiedGermplasmCount + " individuals and " + nModifiedSampleCount + " samples");
+			                    if (nModifiedGermplasmCount > 0 || nModifiedSampleCount > 0)
+			                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
+			                    metadataImportProgress.markAsComplete();
+							}
+							catch (Exception e) {
+								progress.setError("Error while importing data : " + e.getMessage());
+							}
+						}
+					}.start();
 				}
+				
+				// watch metadata import progress so we are aware of errors if any
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+				    public void run() {
+						ProgressIndicator mdImportProgress = ProgressIndicator.get(metadataImportProcessId.get());
+						if (mdImportProgress == null)
+							return;
+						
+						if (mdImportProgress.isComplete() || !mdImportProgress.isAborted() || mdImportProgress.getError() != null) {
+							if (mdImportProgress.getError() != null)
+								metadataImportError.set(mdImportProgress.getError());
+							cancel();
+							timer.cancel();
+						}
+						else
+							progress.setProgressDescription("Waiting for metadata import to complete: " + mdImportProgress.getProgressDescription());
+
+				    }
+				}, 0, 1000);
 			}
 		}
-
 		return processId;
 	}
 

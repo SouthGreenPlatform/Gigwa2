@@ -215,20 +215,20 @@
 		                           <div class="text-left">
 		                           	<label>
 		                           		Biological material identifiers
-				                        <img style="margin-left:10px;" src="images/lightbulb.gif" title="By default, names designating biological material in genotyping data files are assigned to individuals (i.e., germplasm in BrAPI). If the 'Sample IDs provided' box is checked then names will be assigned to samples, in which case it recommended to either provide a sample-to-individual mapping file or use a BrAPI endpoint (in Metadata tab) to let the system know how to name individuals. If you don't, individuals will be named identically to samples.">
+				                        <img style="margin-left:10px;" src="images/lightbulb.gif" title="By default, names designating biological material in genotyping data files are assigned to individuals (i.e., germplasm in BrAPI). If the box below is checked then names will be assigned to samples, in which case it recommended to either provide a sample-to-individual mapping file or use a BrAPI endpoint (in 'Metadata import' tab) to let the system know how to name individuals. If you don't, individuals will be named identically to samples.">
 		                           	</label>
 		                           </div>	
 		                           <div class="row form-group">
-			                        <div class="col-md-2 text-info text-right text-nowrap">
+			                        <div class="col-md-2 text-info text-nowrap">
+				                     	<label style='float:right; margin-top:3px; font-weight:normal; font-size:.9em;' for="providingSamples">&nbsp;&nbsp;&nbsp;Genotypes provided<br/>&nbsp;for samples, not individuals</label>
 				                     	<input type='checkbox' onchange="providingSamplesChanged();" id='providingSamples' name='providingSamples'>
-				                     	<label style='font-weight:normal; font-size:.9em;' for="providingSamples">Sample IDs provided</label>
 			                    	</div>
 			                    	<div class="col-md-4" style="margin-bottom:10px;">
 				                        <input id="dataFile3" style="width: calc(100% - 25px);" disabled class="form-control input-sm mandatoryGtField" type="text" name="dataFile3" placeholder="Optional sample / individual mapping file (tabulated)" onchange="updateMdEntityTypeDiv();">
 			                    	</div>
 			                    	<div class="col-md-6 text-left">
 				                        <div class='text-red margin-top-md mappingFileDesc' style='margin-top:-25px; display:none; font-size:11px;'>
-				                         If genotyping is provided with sample IDs rather than individual IDs you may supply a tab-delimited file (.tsv or .csv) providing a mapping based on columns labelled 'individual' and 'sample' (not supported for BrAPI genotype imports) that will be used for naming individuals and assigning samples to them.
+				                         If genotyping data is provided with sample IDs rather than individual IDs you may supply a tab-delimited file (.tsv or .csv) containing a mapping based on columns labelled 'individual' and 'sample' that will be used for naming individuals and assigning samples to them (not supported for BrAPI genotype imports).
 				                         <br/>Alternatively, <span style="font-size:11px; text-decoration:underline;">BrAPI users may also directly pull all info from a BrAPI endpoint via the Metadata tab</span>.
 				                        </div>
 			                        </div>

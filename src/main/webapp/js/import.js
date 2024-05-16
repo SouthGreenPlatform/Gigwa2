@@ -600,7 +600,7 @@ function importGenotypes(importMetadataToo) {
 				file.upload.filename = file.name + ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
         }
         
-        $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").val());
+        $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").is(":checked") );
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
         
