@@ -1350,9 +1350,12 @@ public class GigwaRestController extends ControllerInterface {
         	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 			String extensionLessFile = filesByExtension.get("");
 			if (extensionLessFile != null) {
+				if (!metadataType.isEmpty())
+					throw new Exception("Invalid file extension: " + extensionLessFile);
+
 				String fixedPossibleEndpointUrl = !extensionLessFile.endsWith("/") ? extensionLessFile + "/" : extensionLessFile;
 				if (!fixedPossibleEndpointUrl.endsWith(BrapiRestController.URL_BASE_PREFIX + "/") && !fixedPossibleEndpointUrl.endsWith(ServerinfoApi.URL_BASE_PREFIX + "/"))
-					throw new Exception("Invalid file extension or BrAPI endpoint URL: " + extensionLessFile);
+					throw new Exception("Invalid BrAPI endpoint URL: " + extensionLessFile);
 				
 				endpointByIndividualOrSample.put("", extensionLessFile.trim().replaceAll("/+$", ""));
 			}
@@ -1526,25 +1529,6 @@ public class GigwaRestController extends ControllerInterface {
         return filesByExtension;
 	}
 	
-	
-    /**
-     * Import metadata for individuals
-     * 
-     * @param session
-     * @param request
-     * @param response
-     * @param sModule
-     * @param dataUri1
-     * @param dataUri2
-     * @param fClearProjectSeqData
-     * @param uploadedFile1
-     * @param uploadedFile2
-     * @param metadataType
-     * @param brapiURLs
-     * @param brapiTokens
-     * @return
-     * @throws Exception
-     */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataImportSubmissionURL, notes = "Import metadata for individuals.")
     @RequestMapping(value = BASE_URL + metadataImportSubmissionURL, method = RequestMethod.POST)
     public @ResponseBody String importMetaData(HttpSession session, HttpServletRequest request, HttpServletResponse response,
@@ -1554,30 +1538,67 @@ public class GigwaRestController extends ControllerInterface {
             @RequestParam(value = "clearProjectSequences", required = false) final Boolean fClearProjectSeqData,
             @RequestParam(value = "file[0]", required = false) MultipartFile uploadedFile1,
             @RequestParam(value = "file[1]", required = false) MultipartFile uploadedFile2,
+			@RequestParam(value = "useBrapiMdEndpoint", required = false) final Boolean directlyPullMdFromBrAPI,
             @RequestParam(value = "metadataType", required = false) final String metadataType,
             @RequestParam(value = "brapiURLs", required = false) final String brapiURLs,
             @RequestParam(value = "brapiTokens", required = false) final String brapiTokens) throws Exception {
-        final String authToken = request == null ? null /* when request is null we consider we have admin role (used when importing into a new DB to which no permissions have been assigned yet) */: tokenManager.readToken(request);
-        Authentication auth = request == null ? null : tokenManager.getAuthenticationFromToken(authToken);
-		if (auth == null && request != null) {
+		
+        final String authToken = request == null ? null : tokenManager.readToken(request);
+		
+		return importMetaData(session, authToken, response,
+    		sModule,
+            dataUri1,
+            dataUri2,
+            fClearProjectSeqData,
+            uploadedFile1,
+            uploadedFile2,
+			directlyPullMdFromBrAPI,
+            metadataType,
+            brapiURLs,
+            brapiTokens);
+	}
+    /**
+     * Import metadata for individuals
+     * 
+     * @param session
+     * @param authToken
+     * @param response
+     * @param sModule
+     * @param dataUri1
+     * @param dataUri2
+     * @param fClearProjectSeqData
+     * @param uploadedFile1
+     * @param uploadedFile2
+     * @param useBrapiMdEndpoint
+     * @param metadataType either individual, sample or null (meaning both)
+     * @param brapiURLs
+     * @param brapiTokens
+     * @return
+     * @throws Exception
+     */
+    public String importMetaData(HttpSession session, String authToken, HttpServletResponse response, final String sModule, final String dataUri1, final String dataUri2, final Boolean fClearProjectSeqData, MultipartFile uploadedFile1, MultipartFile uploadedFile2, Boolean directlyPullMdFromBrAPI, String metadataType, String brapiURLs, String brapiTokens) throws Exception {
+        Authentication auth = authToken == null ? null : tokenManager.getAuthenticationFromToken(authToken);
+		if (auth == null && authToken != null) {
 		    build401Response(response);
 //		    progress.setError("You must pass a valid token to be allowed to import.");
             return null;
 		}
 
-		final String processId = (request == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", "");
+		boolean useBrapiMdEndpoint = Boolean.TRUE.equals(directlyPullMdFromBrAPI);
+		
+		final String processId = (authToken == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", "");
         final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Checking submitted data"});
         ProgressIndicator.registerProgressIndicator(progress);
 
         String username = null;
-        if (request != null && !tokenManager.canUserWriteToDB(authToken, sModule)) {
+        if (authToken != null && !tokenManager.canUserWriteToDB(authToken, sModule)) {	
             if (auth != null)
                 username = auth.getName();
             else {
                 progress.setError("You need to be logged in");
                 return processId;
             }
-        }
+        }	// when authToken is null we consider we have admin role (used when importing into a new DB to which no permissions have been assigned yet)
 
         List<String> brapiUrlList = brapiURLs.trim().isEmpty() ? new ArrayList<>() : Helper.split(brapiURLs, " ; ");
         List<String> brapiTokenArray = brapiTokens.trim().isEmpty() ? (brapiUrlList.size() == 1 ? Arrays.asList("") : new ArrayList<>()) : Helper.split(brapiTokens, " ; ");
@@ -1587,8 +1608,12 @@ public class GigwaRestController extends ControllerInterface {
         }
 
         String sFinalUsername = MongoTemplateManager.isModuleTemporary(sModule) ? null : username;	// any metadata is considered global for temp DBs
-        new SessionAttributeAwareThread(session) {
-			public void run() {
+        
+        boolean fAlreadyInASessionAttributeAwareThread = SessionAttributeAwareThread.class.isAssignableFrom(Thread.currentThread().getClass());
+        
+        SessionAttributeAwareThread sessionThread= fAlreadyInASessionAttributeAwareThread ? new SessionAttributeAwareThread((SessionAttributeAwareThread) Thread.currentThread()) : new SessionAttributeAwareThread(session);
+        new SessionAttributeAwareThread(sessionThread) {
+            public void run() {
 		        HashMap<String, String> filesByExtension = null;
 		        try {
 		        	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
@@ -1612,7 +1637,7 @@ public class GigwaRestController extends ControllerInterface {
 		                }
 		
 		                String metadataFile = filesByExtension.containsKey("tsv") ? filesByExtension.get("tsv") : (filesByExtension.containsKey("csv") ? filesByExtension.get("csv") : (filesByExtension.containsKey("phenotype") ? filesByExtension.get("phenotype") : null));
-		                if (metadataFile != null) {    // deal with individuals' metadata
+		                if (metadataFile != null) {    // deal with file-provided metadata
 		                    boolean fIsFtp = metadataFile.startsWith("ftp://");
 		                    boolean fIsRemote = fIsFtp || metadataFile.startsWith("http://") || metadataFile.startsWith("https://");
 		                    try {
@@ -1624,7 +1649,7 @@ public class GigwaRestController extends ControllerInterface {
 		                        }
 		                        progress.addStep("Importing metadata for " + metadataType + "s");
 		                        progress.moveToNextStep();
-		                        nModifiedRecords.set(IndividualMetadataImport.importIndividualOrSampleMetadata(sModule, session, url, metadataType, null, sFinalUsername));
+		                        nModifiedRecords.set(IndividualMetadataImport.importIndividualOrSampleMetadataByFile(sModule, session, url, metadataType, null, sFinalUsername));
 		                    } catch (Exception ioe) {
 		                        if (ioe instanceof FileNotFoundException)
 		                            progress.setError("File not found: " + metadataFile);
@@ -1636,9 +1661,17 @@ public class GigwaRestController extends ControllerInterface {
 		                }
 
 		                if (brapiUrlList.size() > 0) {    // we've got BrAPI endpoints to pull metadata from
-		                	storeSessionAttributes(session);	// in case external source info was just added
+		                	
+		                	// in case external source info was just added
+		                	if (fAlreadyInASessionAttributeAwareThread)
+		                		storeSessionAttributes((SessionAttributeAwareThread) Thread.currentThread());
+		                	else
+		                		storeSessionAttributes(session);
+
 		                    HashMap<String /*BrAPI url*/, HashMap<String /*remote germplasmDbId*/, String /*individual*/>> brapiUrlToIndividualsMap = new HashMap<>();
-	                        if (metadataType.equals("individual")) {
+		                    if (useBrapiMdEndpoint)
+		                    	brapiUrlToIndividualsMap.put(brapiURLs, null);	// simply need the unique endpoint to be added to the list, for the endpointLoop code to remain generic, null map means directly use Gigwa IDs to match BrAPI IDs
+		                    else if ("individual".equals(metadataType)) {
 	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
 	                                if (individual.getAdditionalInfo() != null) {
@@ -1664,7 +1697,7 @@ public class GigwaRestController extends ControllerInterface {
 		                                individualsCurrentEndpointHasDataFor.put(extRefIdValue, individual.getId());
 		                            }
 	                        }
-	                        else {
+	                        else if ("sample".equals(metadataType)) {
 	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null).values();
 	                            for (GenotypingSample sample : genotypingSamples)
 	                                if (sample.getAdditionalInfo() != null) {
@@ -1690,16 +1723,21 @@ public class GigwaRestController extends ControllerInterface {
 	                                    individualsCurrentEndpointHasDataFor.put(extRefIdValue, sample.getSampleName());
 	                                }
 	                        }
+	                        else
+	                        	throw new Exception("Don't know what metadata to import!");
 		
 		                    nModifiedRecords.set(0);
-		                    for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet()) {
+		                    endpointLoop: for (String sBrapiUrl : brapiUrlToIndividualsMap.keySet()) {
 		                        int tokenIndex = brapiUrlList.indexOf(sBrapiUrl);
 		                        if (tokenIndex == -1) {
 		                            LOG.debug("User chose to skip BrAPI source " + sBrapiUrl);
 		                        } else
 		                            try {
 			                            String sToken = brapiTokenArray.get(tokenIndex);
-			                            nModifiedRecords.addAndGet(IndividualMetadataImport.importBrapiMetadata(sModule, session, sBrapiUrl, brapiUrlToIndividualsMap.get(sBrapiUrl), sFinalUsername, "".equals(sToken) ? null : sToken, progress, metadataType));
+			                            List<String> mdTypes = "".equals(metadataType) /* empty string means both */? Arrays.asList("sample", "individual") : Arrays.asList(metadataType);
+			                            for (String mdType : mdTypes) {
+			                            	nModifiedRecords.addAndGet(IndividualMetadataImport.importBrapiMetadata(sModule, session, sBrapiUrl, "".equals(sToken) ? null : sToken, brapiUrlToIndividualsMap.get(sBrapiUrl), sFinalUsername, progress, mdType));
+			                            }
 			                        } catch (Throwable err) {
 			                            progress.setError("Error importing BrAPI metadata from " + sBrapiUrl + " - " + err.getMessage());
 			                            LOG.error("Error importing BrAPI metadata", err);
@@ -1730,8 +1768,8 @@ public class GigwaRestController extends ControllerInterface {
 		        	for (String uri : filesByExtension.values())
 		        		new File(uri).delete();
 		        }
-			}
-		}.start();
+            }
+        }.start();
 
         return processId;
     }
@@ -1752,9 +1790,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param sTechnology the technology
 	 * @param fClearProjectData whether or not to clear project data
 	 * @param fSkipMonomorphic whether or not to skip variants for which no polymorphism is found in the imported data
+	 * @param providingSamples if true, IDs passed with genotyping data are sample IDs rather than individual IDs
 	 * @param dataUri1 URI-provided data file 1
 	 * @param dataUri2 URI-provided data file 2
 	 * @param dataUri3 URI-provided data file 3
+     * @param useBrapiMdEndpoint if true, attempt to pull all metadata at once from a single BrAPI endpoint, without using files (IDs supposed to match with those of the BrAPI datasource)
 	 * @param sBrapiMapDbId BrAPI map id for the server to pull genotypes from
 	 * @param sBrapiStudyDbId BrAPI study id for the server to pull genotypes from
 	 * @param sBrapiToken BrAPI token for the server to pull genotypes from
@@ -2336,57 +2376,35 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFileOrEndpoint != null) {
-				if (!useBrapiMdEndpoint) {
-					while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
-						Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
-					
-					if (progress.getError() != null || progress.isAborted())
-						LOG.warn("Unable to process metadata during mixed import!");
-					else
-						metadataImportProcessId.set(importMetaData(request.getSession(), fDatasourceAlreadyExisted.get() ? request : null /* if it's null then we want imported metadata to be official */, response, sModule, finalMetadataFileOrEndpoint instanceof URL ? ((URL) finalMetadataFileOrEndpoint).toString() : null, null, false, finalMetadataFileOrEndpoint instanceof URL ? null : (MultipartFile) finalMetadataFileOrEndpoint, null, metadataType, brapiURLs, brapiTokens));
-				}
-				else {	// IDs provided with the genotyping data should directly match those in the BrAPI endpoint at metadataFile, we can import via BrAPI without the need for a metadata file					
-					if (metadataFileOrEndpoint instanceof URL) {
-						String brapiEndPoint = ((URL) metadataFileOrEndpoint).toString();
-						if (!brapiEndPoint.endsWith(BrapiRestController.URL_BASE_PREFIX) && !brapiEndPoint.endsWith(ServerinfoApi.URL_BASE_PREFIX)) {
-							progress.setError("Wrong BrAPI endpoint: " + brapiEndPoint);
-							return processId;
+				new SessionAttributeAwareThread(request.getSession()) {
+					public void run() {
+						try {
+							while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
+								Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
+							
+							if (progress.getError() != null || progress.isAborted())
+								LOG.warn("Unable to process metadata during mixed import!");
+							else
+								metadataImportProcessId.set(importMetaData(	request.getSession(),
+																			fDatasourceAlreadyExisted.get() ? authToken : null /* if it's null then we want imported metadata to be official */, 
+																			response, 
+																			sModule, 
+																			finalMetadataFileOrEndpoint instanceof URL ? ((URL) finalMetadataFileOrEndpoint).toString() : null, 
+																			null, 
+																			false, 
+																			finalMetadataFileOrEndpoint instanceof URL ? null : (MultipartFile) finalMetadataFileOrEndpoint, 
+																			null, 
+																			useBrapiMdEndpoint, 
+																			providingSamples && useBrapiMdEndpoint ? "" /* empty string means import both types */ : metadataType, 
+																			brapiURLs, 
+																			brapiTokens) );
+						}
+						catch (Exception e) {
+							progress.setError("Error while importing data : " + e.getMessage());
 						}
 					}
-					
-					new SessionAttributeAwareThread(request.getSession()) {	//FIXME: make sure request and session are always valid once passed to importBrapiMetadata
-						public void run() {
-							try {
-								while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
-									Thread.sleep(2000);	// wait for samples to be stored in the DB so we can attach metadata to them
+				}.start();
 
-								metadataImportProcessId.set((request == null ? IRoleDefinition.ROLE_ADMIN : auth.getName()) + "::" + UUID.randomUUID().toString().replaceAll("-", ""));
-								ProgressIndicator metadataImportProgress = new ProgressIndicator(metadataImportProcessId.get(), new String[] {"Checking submitted data"});
-						        ProgressIndicator.registerProgressIndicator(metadataImportProgress);						
-								String username = MongoTemplateManager.isModuleTemporary(sModule) || tokenManager.canUserWriteToDB(authToken, sModule) ? null : auth.getName(), brapiToken = "".equals(brapiTokens) ? null : brapiTokens;
-								if (!providingSamples)
-									LOG.info("Importing only germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString());	//FIXME: do it
-								else {
-									if (nSampleMappingFileCount == 0)
-										LOG.info("Importing sample and germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString() + ", guessing germplasm IDs using BrAPI");	//FIXME: do it
-									else
-										LOG.info("Importing sample and germplasm metadata directly from " + ((URL) finalMetadataFileOrEndpoint).toString() + ", using only identifiers found in the mapping file");	//FIXME: do it
-								}
-								int nModifiedSampleCount = !providingSamples ? 0 : IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), brapiURLs, null, username, brapiToken, metadataImportProgress, "sample");
-								int nModifiedGermplasmCount = IndividualMetadataImport.importBrapiMetadata(sModule, request.getSession(), brapiURLs, null, username, brapiToken, metadataImportProgress, "individual");
-		
-								LOG.info("Direct BrAPI metadata import lead to update " + nModifiedGermplasmCount + " individuals and " + nModifiedSampleCount + " samples");
-			                    if (nModifiedGermplasmCount > 0 || nModifiedSampleCount > 0)
-			                    	MongoTemplateManager.updateDatabaseLastModification(sModule);
-			                    metadataImportProgress.markAsComplete();
-							}
-							catch (Exception e) {
-								progress.setError("Error while importing data : " + e.getMessage());
-							}
-						}
-					}.start();
-				}
-				
 				// watch metadata import progress so we are aware of errors if any
 				Timer timer = new Timer();
 				timer.schedule(new TimerTask() {
