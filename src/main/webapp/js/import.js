@@ -600,7 +600,7 @@ function importGenotypes(importMetadataToo) {
 				file.upload.filename = file.name + ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
         }
         
-        $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").is(":checked") );
+        $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").is(":checked"));
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
         
@@ -929,5 +929,9 @@ function updateMdEntityTypeDiv() {
 			text += "<p>Germplasm metadata will be pulled from the specified datasource, assuming that identifiers provided " + (providingMappingFile ? "in the mapping file" : "with the genotyping data") + " match BrAPI germplasmDbIds.</p>";
 
 		$('#mdImportTargetedEntities #directViaBrapi').html(text);
+		$("#mdImportTargetedEntities #byFile select").append("<option selected></option>");	// we don't want any of the entity types to be passed  to the server
 	}
+	else
+		$("#mdImportTargetedEntities #byFile select option").filter(function() { return $(this).text() === ''; }).remove();	// remove dummy empty entry
+	$("#metadataFile1").change();
 }
