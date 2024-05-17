@@ -920,9 +920,9 @@ function updateMdEntityTypeDiv() {
 		let filesProvidedInGenotypingDataTab = [ ...importDropzoneG.files.map(f => f.name), $("input[name=dataFile1]").val().trim(), $("input[name=dataFile2]").val().trim(), $("input[name=dataFile3]").val().trim()]
 		let providingMappingFile = providingSamples && filesProvidedInGenotypingDataTab.filter(n => { let lcN = n.toLowerCase(); return lcN.endsWith(".csv") || lcN.endsWith(".tsv"); }).length > 0;
 		let text = "";
-		if (providingSamples) {
+		if (providingSamples || $("#moduleExistingMD").is(":visible")) {
 			text += "<p>Sample metadata will be pulled from the specified datasource, assuming that identifiers provided with the genotyping data match BrAPI sampleDbIds.</p>"; 
-			if (!providingMappingFile)
+			if (!providingMappingFile && !$("#moduleExistingMD").is(":visible"))
 				text += "<p>Germplasm metadata will be pulled from the specified datasource, by retrieving germplasmDbIds from sampleDbIds using the BrAPI datasource.</p>";
 		}
 		if (!providingSamples || providingMappingFile)
@@ -933,5 +933,5 @@ function updateMdEntityTypeDiv() {
 	}
 	else
 		$("#mdImportTargetedEntities #byFile select option").filter(function() { return $(this).text() === ''; }).remove();	// remove dummy empty entry
-	$("#metadataFile1").change();
+	$("#metadataFile1").change();	// force server-side validation of the metadata form contents
 }
