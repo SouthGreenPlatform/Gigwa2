@@ -1,0 +1,56 @@
+name: Gigwa Build Staging
+on:
+  workflow_dispatch:
+    push:
+      tags:
+        - '*-STAGING'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v4.2.1
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Run build script
+        run: |
+          wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build-staging.sh
+          chmod +x build-staging.sh
+          ./build-staging.sh -P staging
+          pwd
+          ls
+
+      - name: Upload Webapp Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
+          name: Gigwa_Webapp.zip
+          if-no-files-found: error
+
+#  ssh:
+#    runs-on: ubuntu-latest
+#    needs: build
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: Install OpenVPN
+#        run: |
+#          sudo apt update
+#          sudo apt install -y openvpn openvpn-systemd-resolved
+#      - name: Connect to VPN
+#        uses: "kota65535/github-openvpn-connect-action@v2"
+#        with:
+#          config_file: .github/workflows/client.ovpn
+#          username: ${{ secrets.OVPN_USERNAME }}
+#          password: ${{ secrets.OVPN_PASSWORD }}
+#          client_key: ${{ secrets.USER_KEY }}
+#      - name: Use SSH
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.SERVER_HOST }}
+#          username: ${{ secrets.SERVER_USERNAME }}
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          script: |
+#            ls
