@@ -1,9 +1,8 @@
 name: Gigwa Build Staging
 on:
-  workflow_dispatch:
-    push:
-      tags:
-        - '*-STAGING'
+  push:
+    tags:
+      - '*-STAGING'
 jobs:
   build:
     runs-on: ubuntu-latest
