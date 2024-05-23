@@ -28,14 +28,16 @@ jobs:
           name: Gigwa_Webapp.zip
           if-no-files-found: error
 
-      - name: Delete tag
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Delete release and tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ github.ref }}
         run: |
           TAG_NAME=$(basename ${{ github.ref }})
           echo "Deleting release and tag $TAG_NAME"
-          
+
           # Get the release ID associated with the tag
           RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
