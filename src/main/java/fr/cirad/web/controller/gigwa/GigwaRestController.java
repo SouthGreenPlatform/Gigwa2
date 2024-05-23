@@ -114,7 +114,9 @@ import com.github.jmchilton.blend4j.galaxy.HistoriesClient;
 import com.github.jmchilton.blend4j.galaxy.HistoryUrlFeeder;
 import com.github.jmchilton.blend4j.galaxy.beans.History;
 import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.result.DeleteResult;
 import com.sun.jersey.api.client.ClientResponse;
 
@@ -859,14 +861,15 @@ public class GigwaRestController extends ControllerInterface {
         	build400Response(resp, "Missing parameter: displayedSequence");
         	return;
         }
-        
+                
         String processId = "igvViz_" + token;
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
         
 		int projId = Integer.parseInt(info[1]);
-		Collection<GenotypingSample> samples = MgdbDao.getSamplesForProject(info[0], projId, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-		
+		boolean fNoGenotypesRequested = gir.getAllCallSetIds().isEmpty() || (gir.getAllCallSetIds().size() == 1 && gir.getAllCallSetIds().get(0).isEmpty());
+		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+
 		Map<String, Integer> individualPositions = new LinkedHashMap<>();
 		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
 			individualPositions.put(ind, individualPositions.size());
@@ -878,7 +881,7 @@ public class GigwaRestController extends ControllerInterface {
         VariantQueryWrapper varQueryWrapper = VariantQueryBuilder.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
         BasicDBList variantQueryDBList = varQueryWrapper.getVariantDataQueries().iterator().next();
 
-		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(VariantRunData.class));
+		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(fNoGenotypesRequested ? VariantData.class : VariantRunData.class));		
 
 		resp.setContentType("text/tsv;charset=UTF-8");
 		String header = "variant\talleles\tchrom\tpos";
@@ -886,6 +889,16 @@ public class GigwaRestController extends ControllerInterface {
         for (String individual : individualPositions.keySet())
             resp.getWriter().write(("\t" + individual));
         resp.getWriter().write("\n");
+        
+		if (fNoGenotypesRequested) {	// simplest case where we're not returning genotypes: querying on variants collection will be faster
+			MongoCursor<VariantData> varIt = collWithPojoCodec.find(new BasicDBObject("$and", variantQueryDBList), VariantData.class).projection(new BasicDBObject(VariantData.FIELDNAME_KNOWN_ALLELES, 1).append(Assembly.getThreadBoundVariantRefPosPath(), 1)).iterator();
+			while (varIt.hasNext()) {
+				VariantData variant = varIt.next();
+            	ReferencePosition rp = variant.getReferencePosition(Assembly.getThreadBoundAssembly());
+				resp.getWriter().write(variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n");
+			}
+			return;
+		}
 
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
