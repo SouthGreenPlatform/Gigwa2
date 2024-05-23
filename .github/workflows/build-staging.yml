@@ -28,6 +28,17 @@ jobs:
           name: Gigwa_Webapp.zip
           if-no-files-found: error
 
+      - name: Delete tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref }}
+        run: |
+          echo "Deleting tag $TAG_NAME"
+          # Delete the tag locally
+          #git tag -d $(basename $TAG_NAME)
+          # Delete the tag from the remote repository
+          #git push origin :refs/tags/$(basename $TAG_NAME)
+
 #  ssh:
 #    runs-on: ubuntu-latest
 #    needs: build
