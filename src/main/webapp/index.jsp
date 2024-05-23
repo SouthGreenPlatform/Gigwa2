@@ -414,8 +414,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<div style="display: flex; position: relative; justify-content: center;" >
 						<div style="position: absolute; top: 0; left: 0">
-							<b>Quick variant stats</b>
-							<div id="quickvariantsstats"></div>
+							<div id="quickvariantsstats" style="min-width:200px;"></div>
 						</div>
 							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
@@ -1671,180 +1670,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
     }
 
-	function buildGenotypeTableContents(jsonResult) {
-		const knownAlleles = jsonResult.alternateBases;
-		knownAlleles.unshift(jsonResult.referenceBases);
-		const gtTable = [];
-		const headerPositions = [];
-
-		const nGroupCount = getGenotypeInvestigationMode() + 1;
-		const groupsContent = [null];
-		const missingDataCount = new Array(nGroupCount).fill(0);
-		const heterozygousCount = new Array(nGroupCount).fill(0);
-		const firstAlleleCount = new Array(nGroupCount).fill(0);
-		const secondAlleleCount = new Array(nGroupCount).fill(0);
-		const totalCalls = new Array(nGroupCount).fill(0);
-
-
-		for (let k = 1; k < nGroupCount; k++)
-			groupsContent.push(getSelectedIndividuals([k]));
-
-
-		for (const call in jsonResult.calls) {
-			const individual = splitId(jsonResult.calls[call].callSetId, 2);
-			const gtRow = [individual];
-			let gt = '';
-			const alleles = [];
-
-			for (const allele in jsonResult.calls[call].genotype) {
-				const alleleIndex = jsonResult.calls[call].genotype[allele];
-				alleles.push(knownAlleles[alleleIndex]);
-			}
-
-			for (let i = 0; i < groupsContent.length; i++) {
-				if (i === 0 || groupsContent[i].includes(individual)) {
-					totalCalls[i]++
-					if (alleles.length === 0) {
-						missingDataCount[i]++;
-					}
-					if (knownAlleles.length === 2) {
-						let uniqueAlleles = new Set(alleles);
-						if (uniqueAlleles.size === 2) {
-							heterozygousCount[i]++;
-						}
-						for (const allele in alleles) {
-							if (alleles[allele] === knownAlleles[0]) {
-								firstAlleleCount[i]++;
-							} else if (alleles[allele] === knownAlleles[1]) {
-								secondAlleleCount[i]++;
-							}
-						}
-					}
-				}
-			}
-
-			alleles.forEach(function(allele) {
-				gt += '<div class="allele">' + allele + '</div>';
-			});
-
-			gtRow.push(gt);
-
-			for (const header in jsonResult.calls[call].info) {
-				let headerPos = headerPositions[header];
-				if (headerPos == null) {
-					headerPos = Object.keys(headerPositions).length;
-					headerPositions[header] = headerPos;
-				}
-				gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-			}
-			gtTable.push(gtRow);
-		}
-
-
-		const displayPercentage = (value, total) => {
-			const percentage = (value / total) * 100;
-			return percentage.toFixed(2) + "%";
-		};
-		$("#quickvariantsstats").html('');
-		for (let i = 0; i < groupsContent.length; i++) {
-			const missingDataPercentage = displayPercentage(missingDataCount[i], totalCalls[i]);
-			const heterozygousPercentage = ploidy === 1 ? "" : displayPercentage(heterozygousCount[i], totalCalls[i] - missingDataCount[i]);
-			const minorAlleleFrequency = knownAlleles.length === 2 ? (Math.min(firstAlleleCount[i], secondAlleleCount[i]) / ((totalCalls[i] - missingDataCount[i]) * ploidy) * 100).toFixed(2) + "%" : "";
-			const div1 = $("<div>").text("Percentage of missing data : " + missingDataPercentage);
-			const div2 = $("<div>").text("Percentage of heterozygotes : " + heterozygousPercentage);
-			const div3 = $("<div>").text("Minor allele frequency : " + minorAlleleFrequency);
-			const div = $("<div>").append(div1, div2, div3).addClass("group" + i).css("padding", "10px");
-			$("#quickvariantsstats").append(div);
-		}
-
-		var tableHeader = new Array(2);
-        for (var header in headerPositions)
-            tableHeader[headerPositions[header] + 2] = header;
-        
-        var indexSample = tableHeader.indexOf("sample");
-        var htmlTableContents = new StringBuffer();
-        htmlTableContents.append('<thead><tr>');
-
-        // Add "Individual" as first column always
-        htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
-        // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
-        if (indexSample !== -1) {
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
-        }
-        // Add "Genotype" as a column
-        htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
-        
-        for (var headerPos in tableHeader) {
-            var header = tableHeader[headerPos];
-            // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
-            if (header === "sample") {
-                continue;
-            }
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
-        }
-        htmlTableContents.append('</tr></thead>');
-
-        var annotationFieldThresholds = {};
-        for (var i = 1; i <= 10; i++)
-            $('#vcfFieldFilterGroup' + i + ' input').each(function () {
-                if (parseFloat($(this).val()) > 0)
-                    annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-            });
-
-        var activeGroups = $(".genotypeInvestigationDiv").length;
-        var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
-        var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
-
-        var prevFirstElement = null;
-        var prevColor = '#d1d1e0';
-        
-        for (var row in gtTable) {
-            var indivColors = [];
-
-            for (var i = 0; i < individualsByGroup.length; i++) {
-                var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-                if (inGroup)
-                    indivColors.push(groupColors[i]);
-            }
-            var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
-            htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
-
-            for (var i = 0; i < tableHeader.length; i++) {
-                var missingData = false;
-                // Ignore the "sample" column because we will treat it separately
-                if (i !== indexSample) {
-                    // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
-                    if (indexSample !== -1 && i === 1) {
-                    	// Changes the color if the first element in the row is different from the previous row
-                        var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
-                        htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
-                        prevColor = backgroundColor;
-                    }
-                    if (applyThresholds && i >= 2) {
-                        for (var annotation in annotationThresholds) {
-                            if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                                missingData = true;
-                                break;
-                            }
-                        }
-                    }
-                    htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-                }
-            }
-            htmlTableContents.append('</tr>');
-            // Updates the first element of the previous row
-            prevFirstElement = gtTable[row][0];
-        }
-        //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
-        return htmlTableContents.toString();
-    }
-
-    function extractUniqueAlleles(jsonResult) {
-   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
-    	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
-    	return allelesWithDivs;
-    }
-
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
 		var errorEncountered = false;
@@ -1879,8 +1704,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                     $('#varSeq').html("Seq: " + jsonResult.referenceName);
                                     $('#varType').html("Type: " + jsonResult.info.type[0]);
                                     $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-                                     $('#textKnownAlleles').html("Known Allele(s)");
-                                 $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+                                    $('#textKnownAlleles').html("Known Allele(s)");
+                                 	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
                             }
                             var htmlTableContents = buildGenotypeTableContents(jsonResult);
                             
@@ -1930,6 +1755,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
 			markInconsistentGenotypesAsMissing();
+			calculateVariantStats();
 
 			if (!errorEncountered)
 				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
