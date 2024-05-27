@@ -733,7 +733,8 @@ function markInconsistentGenotypesAsMissing() {
 		return; // no multi-sample individuals displayed
 
 	multiSampleIndividuals.forEach(function(ind) {
-		var indGTs = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).map(function() {
+		let rowsToConsider = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
+		var indGTs = rowsToConsider.map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();
 
@@ -741,7 +742,7 @@ function markInconsistentGenotypesAsMissing() {
 			return;
 
 		var correctIndGT = mostFrequentString(indGTs);
-		$("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).each(function() {
+		rowsToConsider.each(function() {
 			var gtCell = $(this).find("td:eq(0)");
 			if (gtCell.text() != "" && gtCell.text() != correctIndGT) {
 	            gtCell.addClass("missingData");
