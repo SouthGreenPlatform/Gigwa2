@@ -67,7 +67,7 @@ jobs:
           release_name: "STAGING"
           draft: true
           prerelease: true
-          body: "This is a staging prerelease ${DATE} ${SHORT_SHA}"
+          body: "This is a staging prerelease ${{ env.DATE }} ${{ env.SHORT_SHA }}"
 
       - name: Grep release version
         id: grep_release_version
