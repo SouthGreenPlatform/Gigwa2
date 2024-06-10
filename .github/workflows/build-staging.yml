@@ -4,7 +4,7 @@ on:
     tags:
       - 'STAGING'
 jobs:
-  build:
+  pre-realese:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -55,10 +55,7 @@ jobs:
         run: |
           DATE=$(date +'%d%m%y')
           SHORT_SHA=$(git rev-parse --short HEAD)
-          NEW_NAME="Gigwa2_STAGING_${DATE}-${SHORT_SHA}"
-          echo "DATE=$DATE" >> $GITHUB_ENV
-          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-          echo "NEW_NAME=$NEW_NAME" >> $GITHUB_ENV
+          NEW_NAME="Gigwa2_STAGING"
 
       - name: Create prerelease
         id: create_release
@@ -68,9 +65,9 @@ jobs:
         with:
           tag_name: "STAGING"
           release_name: "STAGING"
-          draft: false
+          draft: true
           prerelease: true
-          body: "This is a staging prerelease"
+          body: "This is a staging prerelease ${DATE} ${SHORT_SHA}"
 
       - name: Grep release version
         id: grep_release_version
