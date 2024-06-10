@@ -1,8 +1,8 @@
-name: Gigwa Build Staging
+name: Gigwa Build Staging test
 on:
   push:
     tags:
-      - '*-STAGING'
+      - 'STAGING'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +13,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Run build script
+      - name: Build project
         run: |
           wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build-staging.sh
           chmod +x build-staging.sh
@@ -21,11 +21,25 @@ jobs:
           pwd
           ls
 
+      - name: Set up variables
+        id: vars
+        run: |
+          DATE=$(date +'%d%m%y')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          NEW_NAME="Gigwa2_STAGING_${DATE}-${SHORT_SHA}.zip"
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "NEW_NAME=$NEW_NAME" >> $GITHUB_ENV
+
+      - name: Move and rename artifact
+        run: |
+          mv ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip ${{ env.NEW_NAME }}
+
       - name: Upload Webapp Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
-          name: Gigwa_Webapp.zip
+          path: ${{ env.NEW_NAME }}
+          name: ${{ env.NEW_NAME }}
           if-no-files-found: error
 
       - name: Checkout repository
