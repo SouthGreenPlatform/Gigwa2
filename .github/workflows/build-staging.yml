@@ -29,19 +29,26 @@ jobs:
         run: |
           DATE=$(date +'%d%m%y')
           SHORT_SHA=$(git rev-parse --short HEAD)
-          NEW_NAME="Gigwa2_STAGING_${DATE}-${SHORT_SHA}.zip"
+          NEW_NAME="Gigwa2_STAGING_${DATE}-${SHORT_SHA}"
           echo "DATE=$DATE" >> $GITHUB_ENV
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
           echo "NEW_NAME=$NEW_NAME" >> $GITHUB_ENV
 
-      - name: Move and rename artifact
-        run: |
-          mv ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip ${{ env.NEW_NAME }}
+#      - name: Move and rename artifact
+#        run: |
+#          mv ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip ${{ env.NEW_NAME }}
+
+#      - name: Upload Webapp Artifact
+#        uses: actions/upload-artifact@v4.3.3
+#        with:
+#          path: ${{ env.NEW_NAME }}
+#          name: ${{ env.NEW_NAME }}
+#          if-no-files-found: error
 
       - name: Upload Webapp Artifact
         uses: actions/upload-artifact@v4.3.3
         with:
-          path: ${{ env.NEW_NAME }}
+          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip/
           name: ${{ env.NEW_NAME }}
           if-no-files-found: error
 
