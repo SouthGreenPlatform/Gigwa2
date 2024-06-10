@@ -48,7 +48,7 @@ jobs:
       - name: Upload Webapp Artifact
         uses: actions/upload-artifact@v4.3.3
         with:
-          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip/
+          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
           name: ${{ env.NEW_NAME }}
           if-no-files-found: error
 
