@@ -72,6 +72,13 @@ jobs:
           prerelease: true
           body: "This is a staging prerelease"
 
+      - name: Grep release version
+        id: grep_release_version
+        run: |
+          # RESULT=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+          echo "release_version=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >>$GITHUB_OUTPUT
+        shell: bash
+
       - name: Upload main prerelease asset (webapp zip)
         id: upload-release-asset
         uses: actions/upload-release-asset@v1.0.2
@@ -79,7 +86,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
+          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           asset_name: ${{ env.NEW_NAME }}
           asset_content_type: application/zip
 
