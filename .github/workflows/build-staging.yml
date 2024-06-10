@@ -24,6 +24,32 @@ jobs:
           pwd
           ls
 
+      - name: Delete old prelease and tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=$(basename ${{ github.ref }})
+          echo "Deleting release and tag $TAG_NAME"
+
+          # Get the release ID associated with the tag
+          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+            | jq -r '.id')
+
+          if [ "$RELEASE_ID" != "null" ]; then
+            echo "Deleting release with ID $RELEASE_ID"
+            # Delete the release
+            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+          else
+            echo "No release found for tag $TAG_NAME"
+          fi
+
+          # Delete the tag locally
+          git tag -d $TAG_NAME
+          # Delete the tag from the remote repository
+          git push origin :refs/tags/$TAG_NAME
+
       - name: Set up variables
         id: vars
         run: |
@@ -34,53 +60,28 @@ jobs:
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
           echo "NEW_NAME=$NEW_NAME" >> $GITHUB_ENV
 
-#      - name: Move and rename artifact
-#        run: |
-#          mv ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip ${{ env.NEW_NAME }}
-
-#      - name: Upload Webapp Artifact
-#        uses: actions/upload-artifact@v4.3.3
-#        with:
-#          path: ${{ env.NEW_NAME }}
-#          name: ${{ env.NEW_NAME }}
-#          if-no-files-found: error
-
-      - name: Find and unzip the file
-        run: |
-          zip_file=$(ls ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip)
-          unzip "$zip_file" -d extracted_content
-
-      - name: Upload Webapp Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create prerelease
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ env.NEW_NAME }}
-          path: extracted_content/**
+          tag_name: "$TAG_NAME"
+          release_name: "$TAG_NAME"
+          draft: false
+          prerelease: true
+          body: "This is a staging prerelease"
 
-#      - name: Delete release and tag
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          TAG_NAME=$(basename ${{ github.ref }})
-#          echo "Deleting release and tag $TAG_NAME"
-#
-#          # Get the release ID associated with the tag
-#          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-#            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
-#            | jq -r '.id')
-#
-#          if [ "$RELEASE_ID" != "null" ]; then
-#            echo "Deleting release with ID $RELEASE_ID"
-#            # Delete the release
-#            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
-#              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-#          else
-#            echo "No release found for tag $TAG_NAME"
-#          fi
-#
-#          # Delete the tag locally
-#          git tag -d $TAG_NAME
-#          # Delete the tag from the remote repository
-#          git push origin :refs/tags/$TAG_NAME
+      - name: Upload main prerelease asset (webapp zip)
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
+          asset_name: ${{ env.NEW_NAME }}
+          asset_content_type: application/zip
 
 #  ssh:
 #    runs-on: ubuntu-latest
