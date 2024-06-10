@@ -65,7 +65,7 @@ jobs:
         with:
           tag_name: "STAGING"
           release_name: "STAGING"
-          draft: true
+          draft: false
           prerelease: true
           body: "This is a staging prerelease ${{ env.DATE }} ${{ env.SHORT_SHA }}"
 
