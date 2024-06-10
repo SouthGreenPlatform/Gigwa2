@@ -52,31 +52,31 @@ jobs:
           name: ${{ env.NEW_NAME }}
           if-no-files-found: error
 
-      - name: Delete release and tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_NAME=$(basename ${{ github.ref }})
-          echo "Deleting release and tag $TAG_NAME"
-
-          # Get the release ID associated with the tag
-          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
-            | jq -r '.id')
-          
-          if [ "$RELEASE_ID" != "null" ]; then
-            echo "Deleting release with ID $RELEASE_ID"
-            # Delete the release
-            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-          else
-            echo "No release found for tag $TAG_NAME"
-          fi
-
-          # Delete the tag locally
-          git tag -d $TAG_NAME
-          # Delete the tag from the remote repository
-          git push origin :refs/tags/$TAG_NAME
+#      - name: Delete release and tag
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          TAG_NAME=$(basename ${{ github.ref }})
+#          echo "Deleting release and tag $TAG_NAME"
+#
+#          # Get the release ID associated with the tag
+#          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+#            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+#            | jq -r '.id')
+#
+#          if [ "$RELEASE_ID" != "null" ]; then
+#            echo "Deleting release with ID $RELEASE_ID"
+#            # Delete the release
+#            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+#              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+#          else
+#            echo "No release found for tag $TAG_NAME"
+#          fi
+#
+#          # Delete the tag locally
+#          git tag -d $TAG_NAME
+#          # Delete the tag from the remote repository
+#          git push origin :refs/tags/$TAG_NAME
 
 #  ssh:
 #    runs-on: ubuntu-latest
