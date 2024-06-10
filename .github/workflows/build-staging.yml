@@ -45,12 +45,16 @@ jobs:
 #          name: ${{ env.NEW_NAME }}
 #          if-no-files-found: error
 
+      - name: Find and unzip the file
+        run: |
+          zip_file=$(ls ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip)
+          unzip "$zip_file" -d extracted_content
+
       - name: Upload Webapp Artifact
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.event.repository.name }}/target/Gigwa_V*_Webapp.zip
           name: ${{ env.NEW_NAME }}
-          if-no-files-found: error
+          path: extracted_content/**
 
 #      - name: Delete release and tag
 #        env:
