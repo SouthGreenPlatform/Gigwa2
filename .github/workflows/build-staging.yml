@@ -53,7 +53,7 @@ jobs:
       - name: Set up variables
         id: vars
         run: |
-          echo "DATE=$(date +'%d%m%y')" >> $GITHUB_ENV
+          echo "DATE=$(date +'%d/%m/%y')" >> $GITHUB_ENV
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "NEW_NAME=Gigwa2_STAGING" >> $GITHUB_ENV
 
