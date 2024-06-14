@@ -10,28 +10,58 @@
 
 set -e
 
-m2repo=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+# Clone the Gigwa2 repository
+git clone https://github.com/SouthGreenPlatform/Gigwa2.git
 
-declare -a subProjects=(GuilhemSempere/GenotypeFileManipulation GuilhemSempere/Mgdb2BrapiModel GuilhemSempere/Mgdb2 GuilhemSempere/Mgdb2Export GuilhemSempere/role_manager GuilhemSempere/Mgdb2BrapiImpl GuilhemSempere/Mgdb2BrapiV2Impl GuilhemSempere/Gigwa2ServiceInterface GuilhemSempere/Gigwa2ServiceImpl SouthGreenPlatform/Gigwa2)
+cd ./Gigwa2
 
-for subProject in ${subProjects[*]} ;
-do
-  echo
-  subProjectName="${subProject##*/}"
-  rm -rf $subProjectName
-  git clone -b master --single-branch https://github.com/$subProject.git
+# Get the latest tag
+git fetch --tags
 
-  cd $subProjectName
-  tag=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
-  echo Switching to tag $tag in project $subProjectName
-  git -c advice.detachedHead=false checkout $tag
-  artifactId=$(grep -m 1 artifactId pom.xml | sed -n 's/.*<artifactId>\(.*\)<\/artifactId>.*/\1/p')
+latest_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
 
-  echo Cleaning $subProjectName folder in local m2 repository
-  rm -rf $m2repo/fr/cirad/$artifactId
-  cd ..
+# Check if the latest tag is STAGING
+if [ "$latest_tag" == "STAGING" ]; then
+  previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+  echo "Latest tag is STAGING, using previous tag: $previous_tag"
+  git checkout $previous_tag
+else
+  echo "Using latest tag: $latest_tag"
+  git checkout $latest_tag
+fi
+
+# Get the list of dependencies
+dependencies=$(mvn dependency:tree | grep -v WARNING | grep "fr\.cirad.*\-RELEASE" | awk '
+{
+  if (match($0, /fr\.cirad:[^:]+:(jar|war):[^:]+/)) {
+    split(substr($0, RSTART, RLENGTH), arr, ":");
+    app_name = arr[2];
+    release_name = arr[4];
+    print app_name ":" release_name;
+  }
+}')
+
+# Convert the list of dependencies into an array
+subProjects=()
+while IFS= read -r line; do
+  subProjects+=("$line")
+done <<< "$dependencies"
+
+cd ..
+
+# Clone the sub-projects
+for subProject in "${subProjects[@]}"; do
+  app_name=$(echo "$subProject" | awk -F':' '{print $1}')
+  release_name=$(echo "$subProject" | awk -F':' '{print $2}')
+
+  # Skip if app_name is "Gigwa2"
+  if [ "$app_name" == "Gigwa2" ]; then
+    continue
+  fi
+
+  git clone -b $release_name --single-branch "https://github.com/GuilhemSempere/$app_name.git"
 done
-  
-cd Gigwa2/bom/
-mvn install $@
+
+cd ./Gigwa2/bom/
+mvn install "$@"
 cd ../..
