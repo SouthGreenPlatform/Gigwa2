@@ -67,15 +67,13 @@ print_current_dir
 echo "Cloning sub-projects"
 for subProject in "${subProjects[@]}"; do
   app_name=$(echo "$subProject" | awk -F':' '{print $1}')
-  release_name=$(echo "$subProject" | awk -F':' '{print $2}')
-
-  echo "Cloning $app_name with tag $release_name"
-
   if [ "$app_name" == "Gigwa2" ]; then
     continue
+  else
+    release_name=$(echo "$subProject" | awk -F':' '{print $2}')
+    echo "Cloning $app_name with tag $release_name"
+    git clone -b $release_name --single-branch "https://github.com/GuilhemSempere/$app_name.git"
   fi
-
-  git clone -b $release_name --single-branch "https://github.com/GuilhemSempere/$app_name.git"
 done
 
 #cd ./Gigwa2/bom/
