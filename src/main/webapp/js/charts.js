@@ -18,7 +18,7 @@ var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
 var displayedRangeIntervalCount = getIntervalCountFromLocalStorage();
 var dataBeingLoaded = false;
-let localmin, localmax;
+let localmin, localmax, prevRanges = [];
 let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
@@ -251,7 +251,7 @@ function getGroupingOptions() {
 }
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayChart();">' +
+    const headerHtml = ('<div id="resetZoom" value="Zoom out" style="display:none; float:right; margin-top:3px; height:25px;"><input value="Zoom out" type="button" onclick="displayChart(prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][0], prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][1]);">&nbsp;<input value="Reset zoom" type="button" onclick="displayChart();"></div>' +
                         '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' +
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
@@ -435,14 +435,14 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())
     };
 
-    let genotypes = [];
-    let mostsameratio = [];
-    let minmaf = [];
-    let maxmaf = [];
-    let minmissingdata = [];
-    let maxmissingdata = [];
-    let minhez = [];
-    let maxhez = [];
+//    let genotypes = [];
+//    let mostsameratio = [];
+//    let minmaf = [];
+//    let maxmaf = [];
+//    let minmissingdata = [];
+//    let maxmissingdata = [];
+//    let minhez = [];
+//    let maxhez = [];
     let callsetids = [];
     var annotationFieldThresholds = [];
     for (let i = 0; i < activeGroups; i++) {
@@ -463,8 +463,6 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 }
 
 function loadChart(minPos, maxPos) {    
-    const chartInfo = chartTypes.get(currentChartType);
-    
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
         displayChart(minPos, maxPos);
@@ -473,12 +471,23 @@ function loadChart(minPos, maxPos) {
 }
 
 function displayChart(minPos, maxPos) {
-    localmin = minPos;
-    localmax = maxPos;
+    if (minPos == null)
+		prevRanges = [];
+	else {
+	    let zoomingOut = parseInt(minPos) < localmin || parseInt(maxPos) > localmax;
+		if (zoomingOut)
+			prevRanges.pop();
+		else if (!isNaN(localmin) && (prevRanges.length == 0 || (localmin != minPos && localmax != maxPos)))
+			prevRanges.push([localmin, localmax]);
+    }
+		
+	localmin = parseInt(minPos);
+    localmax = parseInt(maxPos);
+	    
     const chartInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
-    $("input#resetZoom").toggle(zoomApplied);
+    $("#resetZoom").toggle(zoomApplied);
     
     if (dataBeingLoaded)
         abortOngoingOperation();
@@ -526,8 +535,7 @@ function displayChart(minPos, maxPos) {
                     if (jsonResult.length == 0)
                         return; // probably aborted
     
-                    if (localmin == null && localmax == null)    // FIXME: for now since we can't zoom out progressively, we only cache the totally unzoomed region's data
-                        cachedResults[hash] = jsonResult;
+                    cachedResults[hash] = jsonResult;
                     displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence);
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
