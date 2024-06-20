@@ -2667,6 +2667,27 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
         return trackIndividuals;
     }
+	
+    function handleRangePaste(event) {
+        event.preventDefault();
+        var paste = (event.originalEvent.clipboardData || window.clipboardData).getData('text');
+        
+        var inputs = {
+            min: $('#minposition'),
+            max: $('#maxposition')
+        };
+
+        if (paste.includes('-')) {
+            var parts = paste.split('-').map(part => part.trim());
+            inputs.min.val(parts[0]);
+            inputs.max.val(parts[1]);
+        } else {
+            $(event.target).val(paste);
+        }
+    }
+
+    // Attach paste handler to the inputs using jQuery
+    $('#minposition, #maxposition').on('paste', handleRangePaste);
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
 
