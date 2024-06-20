@@ -15,6 +15,7 @@ jobs:
           java-version: 17
       - name: Run build script
         run: |
+          cd $GITHUB_WORKSPACE
           wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build.sh
           chmod +x build.sh
           ./build.sh -P prod
