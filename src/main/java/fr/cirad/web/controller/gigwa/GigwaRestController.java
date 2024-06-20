@@ -1741,7 +1741,7 @@ public class GigwaRestController extends ControllerInterface {
 	                        	throw new Exception("Don't know what metadata to import!");
 		
 		                    nModifiedRecords.set(0);
-		                    endpointLoop: for (String sBrapiUrl : brapiUrlToIndsOrSamples.keySet()) {
+		                    for (String sBrapiUrl : brapiUrlToIndsOrSamples.keySet()) {
 		                        int tokenIndex = brapiUrlList.indexOf(sBrapiUrl);
 		                        if (tokenIndex == -1) {
 		                            LOG.debug("User chose to skip BrAPI source " + sBrapiUrl);
@@ -2050,7 +2050,7 @@ public class GigwaRestController extends ControllerInterface {
 		AtomicBoolean fDatasourceAlreadyExisted = new AtomicBoolean();
 		if (progress.getError() != null)
 			for (File fileToDelete : uploadedFiles)
-				fileToDelete.delete();		
+				fileToDelete.delete();
 		else {
 			AtomicReference<AbstractGenotypeImport> genotypeImporter = new AtomicReference<>();
 			final Object finalMetadataFileOrEndpoint = metadataFileOrEndpoint;
@@ -2396,7 +2396,7 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			
 			if (metadataFileOrEndpoint != null) {
-				new SessionAttributeAwareThread(request.getSession()) {
+				Thread metadataImportThread = new SessionAttributeAwareThread(request.getSession()) {
 					public void run() {
 						try {
 							while (progress.getError() == null && !progress.isAborted() && (genotypeImporter.get() == null || !genotypeImporter.get().haveSamplesBeenPersisted()))
@@ -2423,7 +2423,11 @@ public class GigwaRestController extends ControllerInterface {
 							progress.setError("Error while importing data : " + e.getMessage());
 						}
 					}
-				}.start();
+				};
+				if (finalMetadataFileOrEndpoint instanceof URL)
+					metadataImportThread.start();
+				else
+					metadataImportThread.run();	// run synchronously if it's an uploaded file because Multipart data dets cleand up automatically when the http request has finished processing
 
 				// watch metadata import progress so we are aware of errors if any
 				Timer timer = new Timer();

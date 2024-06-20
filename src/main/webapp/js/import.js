@@ -295,6 +295,10 @@ $(document).ready(function () {
           });
   	    }
   	  });
+  	  
+  	  importDropzoneG.on("error", function(file, message) {
+		  console.log("Error: " + message);
+	  });
   	    	  
    	  importDropzoneMD = new Dropzone("#importDropzoneMD", {
    		maxFiles: 1,
@@ -358,6 +362,10 @@ $(document).ready(function () {
           });
    	    }
    	  });
+   	  
+   	  importDropzoneMD.on("error", function(file, message) {
+		  console.log("Error: " + message);
+	  });
   	})
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
@@ -589,15 +597,16 @@ function importGenotypes(importMetadataToo) {
 		for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
 			var file = importDropzoneMD.getAcceptedFiles()[i];
 			file.accepted = null;	// remove this flag that was for the other DropZone (it needs to be set by this one otherwise it gets confused counting accepted files)
-		    var isPhenotypeFile = file.name.endsWith(".phenotype");
-		    if (isPhenotypeFile)
-				importDropzoneG.options.acceptedFiles += ",.phenotype";
+			let fileExtension = /[^.]+$/.exec(file.name);
+		    var isPhenotypeFile = fileExtension == "phenotype", fNeedToCheatOnAcceptedTypes = isPhenotypeFile || !$("#providingSamples").is(':checked');
+		    if (fNeedToCheatOnAcceptedTypes)
+				importDropzoneG.options.acceptedFiles += ",." + fileExtension;
 			//console.log("adding " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
 		    importDropzoneG.addFile(file);
-		    if (isPhenotypeFile)
-		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
-	    	else
+		    if (!isPhenotypeFile)
 				file.upload.filename = file.name + ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+	    	else if (fNeedToCheatOnAcceptedTypes)
+		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
         }
         
         $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").is(":checked"));
