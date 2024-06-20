@@ -59,7 +59,8 @@ while IFS= read -r line; do
   subProjects+=("$line")
 done <<< "$dependencies"
 
-cd ..
+#cd ..
+echo "first print current dir"
 print_current_dir
 
 # Clone the sub-projects
@@ -77,11 +78,13 @@ for subProject in "${subProjects[@]}"; do
   git clone -b $release_name --single-branch "https://github.com/GuilhemSempere/$app_name.git"
 done
 
-cd ./Gigwa2/bom/
+#cd ./Gigwa2/bom/
+echo "second print current dir"
 print_current_dir
 
 echo "Running Maven install"
 mvn install "$@"
 echo "Maven install completed"
 cd ../..
+echo "third print current dir"
 print_current_dir
