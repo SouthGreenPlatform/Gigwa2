@@ -41,6 +41,7 @@ fi
 
 # Get the list of dependencies
 echo "Running Maven dependency tree"
+mvn dependency:tree | grep -v WARNING | grep "fr\.cirad.*\-RELEASE"
 dependencies=$(mvn dependency:tree | grep -v WARNING | grep "fr\.cirad.*\-RELEASE" | awk '
 {
   if (match($0, /fr\.cirad:[^:]+:(jar|war):[^:]+/)) {
