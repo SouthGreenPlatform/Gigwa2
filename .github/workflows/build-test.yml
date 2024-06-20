@@ -1,8 +1,8 @@
-name: Gigwa Build
+name: Gigwa Build Test
 on:
   push:
     branches:
-      - "staging"
+      - "build-update"
 jobs:
   build:
     runs-on: ubuntu-latest
