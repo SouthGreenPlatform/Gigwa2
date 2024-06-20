@@ -1204,7 +1204,6 @@ function toggleIndividualPasteBox(groupNumber) {
 function onPasteIndividuals(groupNumber, textarea) {
     var cleanSelectionArray = [];
     $("#variantIdsSelect").html("");
-    var optionSB = new StringBuffer();
     textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
         cleanSelectionArray.push(ind);
     });
