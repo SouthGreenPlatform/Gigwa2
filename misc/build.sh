@@ -15,12 +15,12 @@ print_current_dir() {
   echo "Current directory: $(pwd)"
 }
 
-# Clone the Gigwa2 repository
-echo "Cloning Gigwa2 repository"
-git clone https://github.com/SouthGreenPlatform/Gigwa2.git
-
-cd ./Gigwa2
-print_current_dir
+## Clone the Gigwa2 repository
+#echo "Cloning Gigwa2 repository"
+#git clone https://github.com/SouthGreenPlatform/Gigwa2.git
+#
+#cd ./Gigwa2
+#print_current_dir
 
 # Get the latest tag
 echo "Fetching tags"
