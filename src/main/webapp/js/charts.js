@@ -114,7 +114,7 @@ const chartTypes = new Map([
 				        data: JSON.stringify(filters),
 				        success: function (callSetResponse) {
 			                callSetResponse.forEach(function (callset) {
-			                    if (selectedIndividuals.includes(callset.id))
+			                    if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
 									targetGroup.push(callset.id)
 			                });
 				        }
@@ -241,7 +241,7 @@ function onManualIndividualSelection() {
 }
 
 function getGroupingOptions() {
-    let options = '<option value="__">Investigated groups</option>';
+    let options = getGenotypeInvestigationMode() == 0 ? "" : '<option value="__">Investigated groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -622,7 +622,39 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
                                 "separator",
                                 "downloadPNG", "downloadPDF", "downloadSVG",
                                 "separator",
-                                "downloadCSV", "downloadXLS"]
+                                "downloadCSV", "downloadXLS",
+                                "separator",
+		                        {
+		                            text: 'Copy X-axis range to clipboard',
+		                            onclick: function () {
+		                                var xAxis = this.xAxis[0];
+		                                var start = xAxis.categories[0];
+		                                var end = xAxis.categories[xAxis.categories.length - 1];
+		                                var text = `${start}-${end}`;
+	                                    var textArea = document.createElement('textarea');
+	                                    textArea.style.position = 'fixed';
+	                                    textArea.style.top = 0;
+	                                    textArea.style.left = 0;
+	                                    textArea.style.width = '2em';
+	                                    textArea.style.height = '2em';
+	                                    textArea.style.padding = 0;
+	                                    textArea.style.border = 'none';
+	                                    textArea.style.outline = 'none';
+	                                    textArea.style.boxShadow = 'none';
+	                                    textArea.style.background = 'transparent';
+	                                    textArea.value = text;
+	                                    document.body.appendChild(textArea);
+	                                    textArea.focus();
+	                                    textArea.select();
+	                                    try {
+	                                        document.execCommand('copy');
+	                                        console.log('Copied to clipboard: ' + text);
+	                                    } catch (err) {
+	                                        console.log('Failed to copy text to clipboard: ' + text);
+	                                    }
+	                                    document.body.removeChild(textArea);
+		                            }
+		                     	}]
                   }
             }
         }
