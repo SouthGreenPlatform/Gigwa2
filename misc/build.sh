@@ -10,15 +10,24 @@
 
 set -e
 
+# Function to print the current directory for debugging
+print_current_dir() {
+  echo "Current directory: $(pwd)"
+}
+
 # Clone the Gigwa2 repository
+echo "Cloning Gigwa2 repository"
 git clone https://github.com/SouthGreenPlatform/Gigwa2.git
 
 cd ./Gigwa2
+print_current_dir
 
 # Get the latest tag
+echo "Fetching tags"
 git fetch --tags
 
 latest_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+echo "Latest tag: $latest_tag"
 
 # Check if the latest tag is STAGING
 if [ "$latest_tag" == "STAGING" ]; then
@@ -31,6 +40,7 @@ else
 fi
 
 # Get the list of dependencies
+echo "Running Maven dependency tree"
 dependencies=$(mvn dependency:tree | grep -v WARNING | grep "fr\.cirad.*\-RELEASE" | awk '
 {
   if (match($0, /fr\.cirad:[^:]+:(jar|war):[^:]+/)) {
@@ -41,6 +51,8 @@ dependencies=$(mvn dependency:tree | grep -v WARNING | grep "fr\.cirad.*\-RELEAS
   }
 }')
 
+echo "Dependencies found: $dependencies"
+
 # Convert the list of dependencies into an array
 subProjects=()
 while IFS= read -r line; do
@@ -48,13 +60,16 @@ while IFS= read -r line; do
 done <<< "$dependencies"
 
 cd ..
+print_current_dir
 
 # Clone the sub-projects
+echo "Cloning sub-projects"
 for subProject in "${subProjects[@]}"; do
   app_name=$(echo "$subProject" | awk -F':' '{print $1}')
   release_name=$(echo "$subProject" | awk -F':' '{print $2}')
 
-  # Skip if app_name is "Gigwa2"
+  echo "Cloning $app_name with tag $release_name"
+
   if [ "$app_name" == "Gigwa2" ]; then
     continue
   fi
@@ -63,5 +78,10 @@ for subProject in "${subProjects[@]}"; do
 done
 
 cd ./Gigwa2/bom/
+print_current_dir
+
+echo "Running Maven install"
 mvn install "$@"
+echo "Maven install completed"
 cd ../..
+print_current_dir
