@@ -10,6 +10,8 @@
 
 set -e
 
+m2repo=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+
 # Function to print the current directory for debugging
 print_current_dir() {
   echo "Current directory: $(pwd)"
@@ -74,6 +76,15 @@ for subProject in "${subProjects[@]}"; do
     release_name=$(echo "$subProject" | awk -F':' '{print $2}')
     echo "Cloning $app_name with tag $release_name"
     git clone -b $release_name --single-branch "https://github.com/GuilhemSempere/$app_name.git"
+    cd $app_name
+    tag=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+    echo Switching to tag $tag in project $app_name
+    git -c advice.detachedHead=false checkout $tag
+    artifactId=$(grep -m 1 artifactId pom.xml | sed -n 's/.*<artifactId>\(.*\)<\/artifactId>.*/\1/p')
+
+    echo Cleaning $app_name folder in local m2 repository
+    rm -rf $m2repo/fr/cirad/$artifactId
+    cd ..
   fi
 done
 
