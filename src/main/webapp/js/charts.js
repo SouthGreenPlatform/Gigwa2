@@ -477,7 +477,7 @@ function displayChart(minPos, maxPos) {
 	    let zoomingOut = parseInt(minPos) < localmin || parseInt(maxPos) > localmax;
 		if (zoomingOut)
 			prevRanges.pop();
-		else if (!isNaN(localmin) && (prevRanges.length == 0 || (localmin != minPos && localmax != maxPos)))
+		else if (!isNaN(localmin) && (prevRanges.length == 0 || localmin != minPos || localmax != maxPos))
 			prevRanges.push([localmin, localmax]);
     }
 		
