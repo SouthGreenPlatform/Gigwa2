@@ -286,7 +286,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning"></div>
+											<div id="serverExportWarning" style="white-space: initial"></div>
 										</div>
 									</div>
 								</div>
@@ -412,10 +412,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-md-12">
-							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
+					<div style="display: flex; position: relative; justify-content: center;" >
+						<div style="position: absolute; top: 0; left: 0">
+							<div id="quickvariantsstats" style="min-width:200px;"></div>
 						</div>
+							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
 				</div>
 			</div>
@@ -544,7 +545,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</li>
 							<li class="dropdown" id="igvGroupsMenu" hidden="true">
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-									Groups <span class="caret"></span>
+									Displayed genotypes <span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
 							</li>
@@ -1669,119 +1670,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
     }
 
-    function buildGenotypeTableContents(jsonResult) {
-        var before = new Date().getTime();
-        var knownAlleles = jsonResult.alternateBases;
-        knownAlleles.unshift(jsonResult.referenceBases);
-
-        var gtTable = new Array();
-        var headerPositions = new Array();
-        for (var call in jsonResult.calls) {
-            var individual = splitId(jsonResult.calls[call].callSetId, 2);
-            var gtRow = new Array();
-            gtRow.push(individual);
-            var gt = '';
-            for (var allele in jsonResult.calls[call].genotype)
-                gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
-            gtRow.push(gt);
-            for (var header in jsonResult.calls[call].info) {
-                var headerPos = headerPositions[header];
-                if (headerPos == null) {
-                    headerPos = Object.keys(headerPositions).length;
-                    headerPositions[header] = headerPos;
-                }
-                gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-            }
-            gtTable.push(gtRow);
-        }
-        var tableHeader = new Array(2);
-        for (var header in headerPositions)
-            tableHeader[headerPositions[header] + 2] = header;
-        
-        var indexSample = tableHeader.indexOf("sample");
-        var htmlTableContents = new StringBuffer();
-        htmlTableContents.append('<thead><tr>');
-
-        // Add "Individual" as first column always
-        htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
-        // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
-        if (indexSample !== -1) {
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
-        }
-        // Add "Genotype" as a column
-        htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
-        
-        for (var headerPos in tableHeader) {
-            var header = tableHeader[headerPos];
-            // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
-            if (header === "sample") {
-                continue;
-            }
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
-        }
-        htmlTableContents.append('</tr></thead>');
-
-        var annotationFieldThresholds = {};
-        for (var i = 1; i <= 10; i++)
-            $('#vcfFieldFilterGroup' + i + ' input').each(function () {
-                if (parseFloat($(this).val()) > 0)
-                    annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-            });
-
-        var activeGroups = $(".genotypeInvestigationDiv").length;
-        var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
-        var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
-
-        var prevFirstElement = null;
-        var prevColor = '#d1d1e0';
-        
-        for (var row in gtTable) {
-            var indivColors = [];
-
-            for (var i = 0; i < individualsByGroup.length; i++) {
-                var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-                if (inGroup)
-                    indivColors.push(groupColors[i]);
-            }
-            var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
-            htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
-
-            for (var i = 0; i < tableHeader.length; i++) {
-                var missingData = false;
-                // Ignore the "sample" column because we will treat it separately
-                if (i !== indexSample) {
-                    // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
-                    if (indexSample !== -1 && i === 1) {
-                    	// Changes the color if the first element in the row is different from the previous row
-                        var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
-                        htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
-                        prevColor = backgroundColor;
-                    }
-                    if (applyThresholds && i >= 2) {
-                        for (var annotation in annotationThresholds) {
-                            if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                                missingData = true;
-                                break;
-                            }
-                        }
-                    }
-                    htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-                }
-            }
-            htmlTableContents.append('</tr>');
-            // Updates the first element of the previous row
-            prevFirstElement = gtTable[row][0];
-        }
-        //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
-        return htmlTableContents.toString();
-    }
-
-    function extractUniqueAlleles(jsonResult) {
-   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
-    	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
-    	return allelesWithDivs;
-    }
-
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
 		var errorEncountered = false;
@@ -1816,8 +1704,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                     $('#varSeq').html("Seq: " + jsonResult.referenceName);
                                     $('#varType').html("Type: " + jsonResult.info.type[0]);
                                     $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-                                     $('#textKnownAlleles').html("Known Allele(s)");
-                                 $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+                                    $('#textKnownAlleles').html("Known Allele(s)");
+                                 	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
                             }
                             var htmlTableContents = buildGenotypeTableContents(jsonResult);
                             
@@ -1867,6 +1755,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
 			markInconsistentGenotypesAsMissing();
+			calculateVariantStats();
 
 			if (!errorEncountered)
 				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
@@ -2676,6 +2565,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     sourceType: "file",
                     order: Number.MAX_SAFE_INTEGER,
                     visibilityWindow: 100000,
+//                     showGenotypes: false,
                     reader: new GigwaSearchReader(
                         individuals, token,
                         "<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
@@ -2751,9 +2641,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	// Build the list of individuals to display in IGV
     function igvSelectedIndividuals() {
-        let group = $('input[name="igvGroupsButton"]:checked').val();
-        let trackIndividuals;
+        let trackIndividuals, group = $('input[name="igvGroupsButton"]:checked').val();
         switch (group) {
+	        case "none":
+	        	trackIndividuals = [[]];
+	            break;
             case "selected":
             	var groupInds = getSelectedIndividuals(null, false);
             	trackIndividuals = [groupInds.length == 0 ? indOpt : groupInds];
@@ -2775,6 +2667,27 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
         return trackIndividuals;
     }
+	
+    function handleRangePaste(event) {
+        event.preventDefault();
+        var paste = (event.originalEvent.clipboardData || window.clipboardData).getData('text');
+        
+        var inputs = {
+            min: $('#minposition'),
+            max: $('#maxposition')
+        };
+
+        if (paste.includes('-')) {
+            var parts = paste.split('-').map(part => part.trim());
+            inputs.min.val(parts[0]);
+            inputs.max.val(parts[1]);
+        } else {
+            $(event.target).val(paste);
+        }
+    }
+
+    // Attach paste handler to the inputs using jQuery
+    $('#minposition, #maxposition').on('paste', handleRangePaste);
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
 

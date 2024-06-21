@@ -16,9 +16,9 @@
  *******************************************************************************/
 var minimumProcessQueryIntervalUnit = 500;
 var chart = null;
-var displayedRangeIntervalCount = 1000;
+var displayedRangeIntervalCount = getIntervalCountFromLocalStorage();
 var dataBeingLoaded = false;
-let localmin, localmax;
+let localmin, localmax, prevRanges = [];
 let chartJsonKeys;
 let colorTab = ['#396AB1', '#DA7C30', '#3E9651', '#CC2529', '#535154', '#6B4C9A', '#922428', '#948B3D'];
 var currentChartType = null;
@@ -114,7 +114,7 @@ const chartTypes = new Map([
 				        data: JSON.stringify(filters),
 				        success: function (callSetResponse) {
 			                callSetResponse.forEach(function (callset) {
-			                    if (selectedIndividuals.includes(callset.id))
+			                    if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
 									targetGroup.push(callset.id)
 			                });
 				        }
@@ -241,7 +241,7 @@ function onManualIndividualSelection() {
 }
 
 function getGroupingOptions() {
-    let options = '<option value="__">Investigated groups</option>';
+    let options = getGenotypeInvestigationMode() == 0 ? "" : '<option value="__">Investigated groups</option>';
     const fields = callSetMetadataFields.slice();
     fields.sort();
     fields.forEach(function (field){
@@ -251,10 +251,10 @@ function getGroupingOptions() {
 }
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    const headerHtml = ('<input type="button" id="resetZoom" value="Reset zoom" style="display:none; float:right; margin-top:3px; height:25px;" onclick="displayChart();">' +
-                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' + 
+    const headerHtml = ('<div id="resetZoom" value="Zoom out" style="display:none; float:right; margin-top:3px; height:25px;"><input value="Zoom out" type="button" onclick="displayChart(prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][0], prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][1]);">&nbsp;<input value="Reset zoom" type="button" onclick="displayChart();"></div>' +
+                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:120px; font-weight:bold;">&nbsp;</div>' +
                         '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
-                            'Data to display: <select id="chartTypeList" style="margin-right:20px; heigh:25px;" onchange="applyChartType();"></select>' + 
+                            'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
                             'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadChart();"></select>' + 
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                         '</div></form>');
@@ -353,7 +353,19 @@ function displayOrAbort() {
         abortOngoingOperation();
     } else {
         displayChart();
+        setIntervalCountInLocalStorage();
     }
+}
+
+function setIntervalCountInLocalStorage() {
+    localStorage.setItem("intervalCount", $('#intervalCount').val());
+}
+
+function getIntervalCountFromLocalStorage() {
+    if (localStorage.getItem("intervalCount") != null)
+        return localStorage.getItem("intervalCount");
+    else
+        return 1000;
 }
 
 function applyChartType() {
@@ -423,14 +435,14 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
         "end": $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())
     };
 
-    let genotypes = [];
-    let mostsameratio = [];
-    let minmaf = [];
-    let maxmaf = [];
-    let minmissingdata = [];
-    let maxmissingdata = [];
-    let minhez = [];
-    let maxhez = [];
+//    let genotypes = [];
+//    let mostsameratio = [];
+//    let minmaf = [];
+//    let maxmaf = [];
+//    let minmissingdata = [];
+//    let maxmissingdata = [];
+//    let minhez = [];
+//    let maxhez = [];
     let callsetids = [];
     var annotationFieldThresholds = [];
     for (let i = 0; i < activeGroups; i++) {
@@ -451,8 +463,6 @@ function buildDataPayLoad(displayedSequence, displayedVariantType) {
 }
 
 function loadChart(minPos, maxPos) {    
-    const chartInfo = chartTypes.get(currentChartType);
-    
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
         displayChart(minPos, maxPos);
@@ -461,12 +471,23 @@ function loadChart(minPos, maxPos) {
 }
 
 function displayChart(minPos, maxPos) {
-    localmin = minPos;
-    localmax = maxPos;
+    if (minPos == null)
+		prevRanges = [];
+	else {
+	    let zoomingOut = parseInt(minPos) < localmin || parseInt(maxPos) > localmax;
+		if (zoomingOut)
+			prevRanges.pop();
+		else if (!isNaN(localmin) && (prevRanges.length == 0 || localmin != minPos || localmax != maxPos))
+			prevRanges.push([localmin, localmax]);
+    }
+		
+	localmin = parseInt(minPos);
+    localmax = parseInt(maxPos);
+	    
     const chartInfo = chartTypes.get(currentChartType);
     
     var zoomApplied = minPos != null && maxPos != null;
-    $("input#resetZoom").toggle(zoomApplied);
+    $("#resetZoom").toggle(zoomApplied);
     
     if (dataBeingLoaded)
         abortOngoingOperation();
@@ -496,7 +517,7 @@ function displayChart(minPos, maxPos) {
     var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
     if (chartInfo.buildRequestPayload !== undefined)
         dataPayLoad = chartInfo.buildRequestPayload(dataPayLoad);
-        if (dataPayLoad === null) return;
+    if (dataPayLoad === null) return;
 
     calculateObjectHash(dataPayLoad)
       .then(hash => {
@@ -514,8 +535,7 @@ function displayChart(minPos, maxPos) {
                     if (jsonResult.length == 0)
                         return; // probably aborted
     
-                    if (localmin == null && localmax == null)    // FIXME: for now since we can't zoom out progressively, we only cache the totally unzoomed region's data
-                        cachedResults[hash] = jsonResult;
+                    cachedResults[hash] = jsonResult;
                     displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence);
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
@@ -533,11 +553,25 @@ function displayChart(minPos, maxPos) {
 async function calculateObjectHash(obj) {
   const utf8Encoder = new TextEncoder();
   const data = utf8Encoder.encode(JSON.stringify(obj));
+  
+  if (crypto.subtle == null)
+  	  return adler32(data.toString());	// use workaround
 
   const buffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(buffer));
   const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
   return hashHex;
+}
+
+function adler32(str) {
+    const MOD_ADLER = 65521;
+    let a = 1, b = 0;
+
+    for (let i = 0; i < str.length; i++) {
+        a = (a + str.charCodeAt(i)) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+    return (b << 16) | a;
 }
 
 function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
@@ -610,7 +644,39 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
                                 "separator",
                                 "downloadPNG", "downloadPDF", "downloadSVG",
                                 "separator",
-                                "downloadCSV", "downloadXLS"]
+                                "downloadCSV", "downloadXLS",
+                                "separator",
+		                        {
+		                            text: 'Copy X-axis range to clipboard',
+		                            onclick: function () {
+		                                var xAxis = this.xAxis[0];
+		                                var start = xAxis.categories[0];
+		                                var end = xAxis.categories[xAxis.categories.length - 1];
+		                                var text = `${start}-${end}`;
+	                                    var textArea = document.createElement('textarea');
+	                                    textArea.style.position = 'fixed';
+	                                    textArea.style.top = 0;
+	                                    textArea.style.left = 0;
+	                                    textArea.style.width = '2em';
+	                                    textArea.style.height = '2em';
+	                                    textArea.style.padding = 0;
+	                                    textArea.style.border = 'none';
+	                                    textArea.style.outline = 'none';
+	                                    textArea.style.boxShadow = 'none';
+	                                    textArea.style.background = 'transparent';
+	                                    textArea.value = text;
+	                                    document.body.appendChild(textArea);
+	                                    textArea.focus();
+	                                    textArea.select();
+	                                    try {
+	                                        document.execCommand('copy');
+	                                        console.log('Copied to clipboard: ' + text);
+	                                    } catch (err) {
+	                                        console.log('Failed to copy text to clipboard: ' + text);
+	                                    }
+	                                    document.body.removeChild(textArea);
+		                            }
+		                     	}]
                   }
             }
         }

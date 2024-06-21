@@ -733,7 +733,8 @@ function markInconsistentGenotypesAsMissing() {
 		return; // no multi-sample individuals displayed
 
 	multiSampleIndividuals.forEach(function(ind) {
-		var indGTs = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).map(function() {
+		let rowsToConsider = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
+		var indGTs = rowsToConsider.map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();
 
@@ -741,7 +742,7 @@ function markInconsistentGenotypesAsMissing() {
 			return;
 
 		var correctIndGT = mostFrequentString(indGTs);
-		$("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).each(function() {
+		rowsToConsider.each(function() {
 			var gtCell = $(this).find("td:eq(0)");
 			if (gtCell.text() != "" && gtCell.text() != correctIndGT) {
 	            gtCell.addClass("missingData");
@@ -847,24 +848,21 @@ function setGenotypeInvestigationMode(mode) {
         placeholder: 'Lookup'
     }
     
+	$("#igvGroupsMenu ul").html('<li id="igvGroupsNone"><a href="#"><label><input checked type="radio" name="igvGroupsButton" value="none" onchange="igvSelectGroup();" /> None</label></a></li>');
     if (mode == 0) {
-	    $("#igvGroupsMenu ul").html('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();"/> All individuals</label></a></li>');
+	    $("#igvGroupsMenu ul").append('<li id="igvGroupsAll"><a href="#"><label><input type="radio" name="igvGroupsButton" value="all" onchange="igvSelectGroup();"/> All individuals '+ (indOpt.length > 500 ? '(may be slow!)' : '') + '</label></a></li>');
 	    igvUpdateVariants();
 	}
     else if (mode > 1) {
-    	$("#igvGroupsMenu ul").html('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
+    	$("#igvGroupsMenu ul").append('<li id="igvGroupsSelected"><a href="#"><label><input type="radio" name="igvGroupsButton" value="selected" onchange="igvSelectGroup();" /> All selected individuals</label></a></li>');
     	$("#igvGroupsMenu ul").append('<li id="igvGroupsSeparate"><a href="#"><label><input type="radio" name="igvGroupsButton" value="separate" onChange="igvSelectGroup();"/> All groups</label></a></li>');
     }
-    else
-	    $("#igvGroupsMenu ul").html('');
 
     if (mode < count) {	// remove unwanted groups
     	let toDitch = elements.slice(mode);
 		for (let i=0; i<toDitch.length; i++) {
-			$("button#groupMemorizer" + (i+1)).removeClass('active');
-			var indListBox = $(toDitch[i]).find(".indListBox");
-			indListBox.off('change');
-			indListBox.selectmultiple('deselectAll');	// doing this will remove possibly stored list in groupMemorize (localStorage)
+			$(toDitch[i]).find("form button.glyphicon-floppy-save").removeClass('active');
+			applyGroupMemorizing(parseInt(toDitch[i].id.replace("genotypeInvestigationDiv", "")));
 			toDitch[i].remove();
 		}
     }
@@ -1206,7 +1204,6 @@ function toggleIndividualPasteBox(groupNumber) {
 function onPasteIndividuals(groupNumber, textarea) {
     var cleanSelectionArray = [];
     $("#variantIdsSelect").html("");
-    var optionSB = new StringBuffer();
     textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
         cleanSelectionArray.push(ind);
     });
@@ -1529,7 +1526,7 @@ function menuAction(){
 
 //This function allow the user to save a query into the DB
 function saveQuery() {
-    var queryName = "";
+    var queryName = ""; // test
     while (queryName.trim() == "")
         if ((queryName = prompt("Enter query name")) == null)
             return;
@@ -2030,4 +2027,189 @@ function buildHeader(token, assemblyId, individuals) {
     if (individuals != null)
     	headers["ind"] = individuals;
 	return headers;
+}
+
+function buildGenotypeTableContents(jsonResult) {
+	const knownAlleles = jsonResult.alternateBases;
+	knownAlleles.unshift(jsonResult.referenceBases);
+	const gtTable = [];
+	const headerPositions = [];
+
+	for (const call in jsonResult.calls) {
+		const individual = splitId(jsonResult.calls[call].callSetId, 2);
+		const gtRow = [individual];
+		let gt = '';
+		const alleles = [];
+
+		for (const allele in jsonResult.calls[call].genotype) {
+			const alleleIndex = jsonResult.calls[call].genotype[allele];
+			alleles.push(knownAlleles[alleleIndex]);
+		}
+
+		alleles.forEach(function(allele) {
+			gt += '<div class="allele">' + allele + '</div>';
+		});
+
+		gtRow.push(gt);
+
+		for (const header in jsonResult.calls[call].info) {
+			let headerPos = headerPositions[header];
+			if (headerPos == null) {
+				headerPos = Object.keys(headerPositions).length;
+				headerPositions[header] = headerPos;
+			}
+			gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
+		}
+		gtTable.push(gtRow);
+	}
+	var tableHeader = new Array(2);
+    for (var header in headerPositions)
+        tableHeader[headerPositions[header] + 2] = header;
+    
+    var indexSample = tableHeader.indexOf("sample");
+    var htmlTableContents = new StringBuffer();
+    htmlTableContents.append('<thead><tr>');
+
+    // Add "Individual" as first column always
+    htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
+    // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
+    if (indexSample !== -1) {
+        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
+    }
+    // Add "Genotype" as a column
+    htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
+    
+    for (var headerPos in tableHeader) {
+        var header = tableHeader[headerPos];
+        // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
+        if (header === "sample") {
+            continue;
+        }
+        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
+    }
+    htmlTableContents.append('</tr></thead>');
+
+    var annotationFieldThresholds = {};
+    for (var i = 1; i <= 10; i++)
+        $('#vcfFieldFilterGroup' + i + ' input').each(function () {
+            if (parseFloat($(this).val()) > 0)
+                annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+        });
+
+    var activeGroups = $(".genotypeInvestigationDiv").length;
+    var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
+    var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
+
+    var prevFirstElement = null;
+    var prevColor = '#d1d1e0';
+    for (var row in gtTable) {
+        var indivColors = [];
+
+        for (var i = 0; i < individualsByGroup.length; i++) {
+            var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
+            if (inGroup)
+                indivColors.push(groupColors[i]);
+        }
+        var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
+        htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
+
+        for (var i = 0; i < tableHeader.length; i++) {
+            var missingData = false;
+            // Ignore the "sample" column because we will treat it separately
+            if (i !== indexSample) {
+                // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
+                if (indexSample !== -1 && i === 1) {
+                	// Changes the color if the first element in the row is different from the previous row
+                    var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
+                    htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
+                    prevColor = backgroundColor;
+                }
+                if (applyThresholds && i >= 2) {
+                    for (var annotation in annotationThresholds) {
+                        if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
+                            missingData = true;
+                            break;
+                        }
+                    }
+                }
+                htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
+            }
+        }
+        htmlTableContents.append('</tr>');
+
+        // Updates the first element of the previous row
+        prevFirstElement = gtTable[row][0];
+    }
+    return htmlTableContents.toString();
+}
+
+function calculateVariantStats() {
+	let individuals = new Set($('table.genotypeTable tr th:first-child').filter(function() {
+		    return $(this).text().trim() != "Individual";
+		}).map(function() {
+		    return $(this).text();
+		}));
+		
+    const nGroupCount = getGenotypeInvestigationMode() + 1;
+	const groupsContent = [nGroupCount == 2 && !$("#displayAllGt").prop('checked') ? null : []];
+
+	for (let k = 1; k < nGroupCount; k++) {
+		let groupIndivs = getSelectedIndividuals([k]);
+		groupsContent.push(groupIndivs);
+		if (groupIndivs.length == 0)
+			groupsContent[0] = null;	// At least one group contains all individuals so we won't need the overall figures div
+	}
+
+	let treatedIndividuals = new Set();
+	let alleleCounts = Array.from({ length: nGroupCount }, () => ({}));
+	let hetZcount = new Array(nGroupCount).fill(0);
+	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = ploidy > 1;
+	
+	$("table.genotypeTable tr").each(function() {
+		if ($(this).find("td.missingData").length > 0)
+			return;
+
+		let indName = $(this).find('th:first-child').text();
+		if (treatedIndividuals.has(indName))
+			return;
+
+		for (let i = 0; i < groupsContent.length; i++) {
+			if (groupsContent[i] == null || (groupsContent[i].length > 0 && !groupsContent[i].includes(indName)))
+				continue;
+			
+			let distinctIndAlleles = new Set();
+			$(this).find('div.allele').map(function() {
+				let allele = $(this).text(), prevCount = alleleCounts[i][allele] == null ? 0 : alleleCounts[i][allele];
+				alleleCounts[i][allele] = prevCount + 1;
+	
+				distinctIndAlleles.add(allele);
+			});
+			treatedIndividuals.add(indName);
+			if (doHetZ && distinctIndAlleles.size > 1)
+				hetZcount[i]++;
+		}
+	});
+	
+	let qvs = $("#quickvariantsstats");
+	qvs.html('<b>Quick variant stats</b>');
+	for (let i = 0; i < groupsContent.length; i++)
+		if (groupsContent[i] != null) {
+			let groupSize = groupsContent[i].length == 0 ? individuals.size : groupsContent[i].length;
+			let missingCount = groupSize - Object.keys(alleleCounts[i]).map(key => alleleCounts[i][key] || 0).reduce((sum, value) => sum + value, 0) / ploidy;
+			let groupStats = '<div style="border:1px solid lightgrey; padding:8px;" class="margin-top-md group' + i + '">';
+			groupStats += "<div style='text-decoration:underline;'>" + (i > 0 ? "Group " + i : "Overall figures") + " (" + groupSize + " individuals)</div>";
+			groupStats += "<div>Missing data: " + (missingCount * 100 / groupSize).toFixed(2) + "%</div>";
+			if (doHetZ)
+				groupStats += "<div>Heterozygous: " + (hetZcount[i] == 0 ? 0 : hetZcount[i] * 100 / (groupSize - missingCount)).toFixed(2) + "%</div>";
+			if (doMaf)
+				groupStats += "<div>MAF: " + (Object.keys(alleleCounts[i]).length < 2 ? 0 : Math.min(...Object.values(alleleCounts[i]))*100/Object.values(alleleCounts[i]).reduce((sum, num) => sum + num, 0)).toFixed(2) + "%</div>";
+			groupStats += '</div>';
+			qvs.append(groupStats);
+		}
+}
+
+function extractUniqueAlleles(jsonResult) {
+	var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
+	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
+	return allelesWithDivs;
 }
