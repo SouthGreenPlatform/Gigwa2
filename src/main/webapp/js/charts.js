@@ -553,11 +553,25 @@ function displayChart(minPos, maxPos) {
 async function calculateObjectHash(obj) {
   const utf8Encoder = new TextEncoder();
   const data = utf8Encoder.encode(JSON.stringify(obj));
+  
+  if (crypto.subtle == null)
+  	  return adler32(data.toString());	// use workaround
 
   const buffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(buffer));
   const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
   return hashHex;
+}
+
+function adler32(str) {
+    const MOD_ADLER = 65521;
+    let a = 1, b = 0;
+
+    for (let i = 0; i < str.length; i++) {
+        a = (a + str.charCodeAt(i)) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+    return (b << 16) | a;
 }
 
 function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
