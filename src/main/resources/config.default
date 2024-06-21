@@ -112,3 +112,11 @@ allowedOrigins_/**=*
 
 # Set a paragraph to be automatically added to the homepage
 #customHomepageParagraph = You can customize your home page here.
+
+
+# URL pointing to a SnpClust instance (for editing SNP genotypes based on fluorescence intensity values)
+#snpclustLink = http://<snpclust.shiny.url:9999>/app/snpclust
+
+
+# Tells whether or not to activate experimental features. The only one currently is Jukes-Cantor neighbour joining tree export. Default: false
+#enableExperimentalFeatures = true
