@@ -1294,7 +1294,7 @@ function displayProjectInfo(projName)
 }
 
 function areGroupsOverlapping(specificGroups) {
-    let groups = specificGroups != null ? specificGroups : Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
+    let groups = specificGroups != null ? [...specificGroups] : Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
     if (groups.length < 2)
     	return false;
 
