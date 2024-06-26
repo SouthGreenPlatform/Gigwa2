@@ -20,6 +20,7 @@
  * This file stores common js methods 
  */
 var minimumProcessQueryIntervalUnit = 100;
+var maxPastableGeneIdCount = 1000, maxSelectableGeneIdCount = 5000;
 var maxUploadableVariantIdCount = 1000000, maxPastableVariantIdCount = 1000, maxSelectableVariantIdCount = 10000;
 var selectedVariantIDsWhenTooManyToFitInSelect = null;
 var emptyResponseCountsByProcess = [];
@@ -1213,6 +1214,17 @@ function onPasteIndividuals(groupNumber, textarea) {
     $("button#pasteIndividuals" + groupNumber).click();
 }
 
+function toggleGenesPasteBox() {
+    var genesIdsPastePanel = $("div#genesIdsPastePanel");
+    if (genesIdsPastePanel.get().length == 0)
+    {
+        var pasteBoxHtml = '<div class="panel shadowed-panel panel-grey" style="text-align:left; position:absolute; border:1px solid white; left:105px; margin-top:-45px; padding:5px; z-index:200;" id="genesIdsPastePanel">Please paste up to ' + maxPastableGeneIdCount + ' gene IDs (one per line) in the box below:<textarea id="pasteAreaGeneIds" style="width:100%;" rows="15"></textarea><input type="button" style="float:right;" class="btn btn-primary btn-sm" onclick="onProvideGeneIds($(this).prev().val(), maxPastableGeneIdCount);" value="Apply" /><input type="button" class="btn btn-primary btn-sm" onclick="$(this).parent().remove();" value="Cancel" /></div>';
+        $("button#pasteGeneIds").before(pasteBoxHtml);
+    }
+    else
+        genesIdsPastePanel.remove();
+}
+
 function toggleVariantsPasteBox() {
     var variantsIdsPastePanel = $("div#variantsIdsPastePanel");
     if (variantsIdsPastePanel.get().length == 0)
@@ -1222,6 +1234,50 @@ function toggleVariantsPasteBox() {
     }
     else
         variantsIdsPastePanel.remove();
+}
+
+function onProvideGeneIds(geneIdLines, maxAllowedItems) {
+    $("#geneIdsSelect").html("");
+    var idArray = geneIdLines.split("\n").map(id => id.trim()).filter(id => id.length > 0);
+    if (idArray.length > maxAllowedItems) {
+        alert("You may not provide more than " + maxAllowedItems + " gene IDs!  (" + idArray.length + " provided)");
+        return;
+    }
+
+    var selectTitle;
+    var spanText;
+
+    var optionSB = new StringBuffer();
+    if (idArray.length > maxSelectableGeneIdCount) {    // we can't handle selects with too many items
+        selectedGeneIDsWhenTooManyToFitInSelect = idArray;
+        spanText = idArray.length + " selected";
+        selectTitle = "too many IDs for manual selection";
+        $('#geneIdsSelect').val(null).prop('disabled', true);
+        $('#copyGeneIds').hide();
+        $('#clearGeneIdSelection').css('display', 'inline');
+    }
+    else {
+        selectedGeneIDsWhenTooManyToFitInSelect = null;
+        selectTitle = "Select to enter IDs";
+        $('#geneIdsSelect').removeAttr('disabled').selectpicker('refresh');
+        idArray.forEach(function (varId) {
+            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+        });
+        $('#copyGeneIds').show();
+        $('#clearGeneIdSelection').hide();
+    }
+
+    $("#geneIdsSelect").append(optionSB.toString());
+    if (idArray.length > maxSelectableGeneIdCount)
+        $('#geneIdsSelect').trigger('change');
+    $('button[data-id="geneIdsSelect"]').prop("title", selectTitle);
+    $('button[data-id="geneIdsSelect"] span.filter-option').html(spanText);
+    $("#geneIdsSelect").prop("title", selectTitle);
+    if (idArray.length <= maxSelectableGeneIdCount)
+        $('#geneIdsSelect').trigger('change');
+
+    $("div#genesIdsPastePanel").remove();
+	onGeneSelectionEditMode();
 }
 
 function onProvideVariantIds(variantIdLines, maxAllowedItems) {
@@ -1238,7 +1294,7 @@ function onProvideVariantIds(variantIdLines, maxAllowedItems) {
     var optionSB = new StringBuffer();
     if (idArray.length > maxSelectableVariantIdCount) {    // we can't handle selects with too many items
         selectedVariantIDsWhenTooManyToFitInSelect = idArray;
-        spanText = idArray.length + " items selected";
+        spanText = idArray.length + " selected";
         selectTitle = "too many IDs for manual selection";
         $('#variantIdsSelect').val(null).prop('disabled', true);
         $('#copyVariantIds').hide();
@@ -1877,6 +1933,7 @@ function onFilterByIds(checked) {
         $('#variantEffects').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
         $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+        $('#pasteGeneIds').removeAttr('disabled').selectpicker('refresh');
         $('#pasteVariantIds').removeAttr('disabled').selectpicker('refresh');
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
@@ -1910,6 +1967,7 @@ function onFilterByIds(checked) {
         $('#copyVariantIds').prop('disabled', true);
         $('#copyVariantIds').show();
         $('#clearVariantIdSelection').hide();
+        $('#pasteGeneIds').prop('disabled', true);
         $('#pasteVariantIds').prop('disabled', true);
         $('#uploadVariantIds').prop('disabled', true);
         
@@ -1928,7 +1986,6 @@ function onFilterByIds(checked) {
 		}
     }
 }
-
 
 function onGeneSelectionMinusMode() {
     if (!$('#geneIdsSelect').prop('disabled')) {

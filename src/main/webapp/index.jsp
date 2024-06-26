@@ -184,9 +184,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<a id="clearGenesIdSelection" href="#" onclick="clearGeneIdSelection();" style="display: none; font-size: 18px; margin-left: -20px; position: absolute; font-weight: bold; text-decoration: none;" title="Clear selection">
 												<button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button>
 											</a>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteGeneIds" disabled onclick="toggleGenesPasteBox();"></button>
 											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-plus" title="Variants with any gene-name annotation" id="plusMode" disabled onclick="onGeneSelectionPlusMode();"></button>
 											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-minus" aria-pressed="false" title="Variants without gene-name annotation" id="minusMode" disabled onclick="onGeneSelectionMinusMode();"></button>
-											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Variants with selected gene-name annotation" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Use gene name lookup" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
 										</div>
 									</div>
                                     <div id="VariantIds" class="margin-top-md">
@@ -1013,6 +1014,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	function resizeDialogs() {
 	   	$('div.modal-lg div.modal-content').css('max-height', parseInt($(window).height() - 60) + 'px').css('height', parseInt($(window).height() - 60) + "px");
+ 		$("div.modal iframe").css({height: ($(window).height() - 80) + 'px'});
 	}
 	
 	function markCurrentProcessAsAborted() {
