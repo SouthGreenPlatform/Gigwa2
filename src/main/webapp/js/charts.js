@@ -990,7 +990,7 @@ function updateAvailableGroups() {
 		$("#chartGroupSelectionDesc").css("visibility", "hidden");
 		let selectOptions = "";
 		for (var i=1; i<=getGenotypeInvestigationMode(); i++)
-			selectOptions += '<option value="' + i + '">Investigation group #' + i + '</option>';
+			selectOptions += '<option value="' + i + '">' + $("input#group" + i).val() + '</option>';
 		$("select#plotGroupingMetadataValues").html(selectOptions);
 		if (!areGroupsOverlapping(groupSelect.val()))
 			$("select#plotGroupingMetadataValues").find('option').prop('selected', true);

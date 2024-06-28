@@ -948,8 +948,9 @@ public class GigwaRestController extends ControllerInterface {
 						        List<List<String>> callsetIds = gr.getAllCallSetIds();
 						        for (int i = 0; i < callsetIds.size(); i++)
 						        	try {
-							            individualsByPop.put("Group" + (i+1), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-							            annotationFieldThresholdsByPop.put("Group" + (i+1), gr.getAnnotationFieldThresholds(i));
+						        		String groupName = gr.getGroupName(i);
+							            individualsByPop.put(groupName, callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+							            annotationFieldThresholdsByPop.put(groupName, gr.getAnnotationFieldThresholds(i));
 							        }
 						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
 						        	{}
@@ -2731,7 +2732,7 @@ public class GigwaRestController extends ControllerInterface {
     
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
-	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {
 		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
 		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
 
@@ -2739,13 +2740,14 @@ public class GigwaRestController extends ControllerInterface {
 		int i = 1;
 		while (dbIterator.hasNext()) {
 			String dbName = dbIterator.next().getName();
+			MongoTemplate mongoTemplate = MongoTemplateManager.get(dbName);
 
 			Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
 
 			resultObject.put("database", dbName);
 			resultObject.put("individuals", Helper.estimDocCount(dbName, Individual.class));
 			resultObject.put("markers", Helper.estimDocCount(dbName, VariantData.class));
-			resultObject.put("samples", Helper.estimDocCount(dbName, GenotypingSample.class));
+			resultObject.put("taxon", Helper.nullToEmptyString(MongoTemplateManager.getTaxonName(dbName)));
 
 			Query query = new Query();
         	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
@@ -2762,7 +2764,8 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("description", project.getDescription());
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
-				pj.put("runNumber", project.getRuns().size());
+				pj.put("samples", mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(project.getId())), GenotypingSample.class));
+				pj.put("runs", project.getRuns());
 				resultObject.put("Project" + j, pj);
 				j++;
 			}

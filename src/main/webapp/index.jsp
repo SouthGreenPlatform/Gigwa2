@@ -141,7 +141,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  </div>
 									</div>
                                     <div id="sequenceFilter">
-                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences <span style="font-weight:normal;"></span></div>
                                         <div id="Sequences"></div>
                                     </div>
                                     <div id="positions" class="margin-top-md">
@@ -529,7 +529,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 									Load reference genome <span class="caret"></span>
 								</a>
-								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
+								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh; z-index: 2000; overflow-y:auto;">
 									<li><a href="#" data-toggle="modal" data-target="#igvGenomeFileModal">Load from file</a></li>
 									<li><a href="#" data-toggle="modal" data-target="#igvGenomeURLModal">Load from URL</a></li>
 									<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
@@ -548,7 +548,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 									Displayed genotypes <span class="caret"></span>
 								</a>
-								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
+								<ul class="dropdown-menu" style="max-height:75vh; z-index: 2000; overflow-y:auto;"></ul>
 							</li>
 						</ul>
 					</div>
@@ -733,6 +733,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var referenceNames;
 	var exportedIndividualCount = 0;
     var indOpt = [];
+    var databasesByTaxon = {};
 
 	$.ajaxSetup({cache: false});
 
@@ -758,8 +759,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			
 			referenceset = $(this).val();
 
-			if (!loadProjects(referenceset))
+			if (referenceset == "" || !loadProjects(referenceset)) {
+				$("div.alert").hide();
+				$("div#searchPanel").fadeOut();
+				$("div#welcome").fadeIn();
 				return;
+			}
 
 			$("div#welcome").hide();
 
@@ -927,7 +932,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 		$('#Sequences').on('multiple_select_change', function() {
 			var nCount = $('#Sequences').selectmultiple('count');
-			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
+			$('#sequencesLabel span').text((nCount == 0 ? seqCount : nCount) + "/" + seqCount + "");
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
@@ -1060,18 +1065,49 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				"pageToken": null
 			}),
 			success: function(jsonResult) {
-				var option = "";
+				var dbListOptions = "";
 				for (var set in jsonResult.referenceSets) {
-					option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+					let taxon = null;
+					jsonResult.referenceSets[set].description.split(" ; ").forEach(function(descItem) {
+						if (descItem.startsWith("Species:"))
+							taxon = descItem.substring("Species:".length).trim();
+						else if (descItem.startsWith("Taxon:"))
+							taxon = descItem.substring("Taxon:".length).trim();
+
+					});
+					if (taxon == null)
+						taxon = "(Unspecified taxon)";
+					if (databasesByTaxon[taxon] == null)
+						databasesByTaxon[taxon] = [];
+					databasesByTaxon[taxon].push(jsonResult.referenceSets[set].name);
+
+					dbListOptions += '<option data-taxon="' + taxon + '">' + jsonResult.referenceSets[set].name + '</option>';
 				}
-				$('#module').html(option).selectpicker('refresh');
+
+				let sortedTaxa = Object.keys(databasesByTaxon);
+				sortedTaxa.sort();
+				if (Object.keys(databasesByTaxon).length > 1) {
+					$('#grpTaxa').show();
+					for (let i in sortedTaxa) {
+						databasesByTaxon[sortedTaxa[i]].sort();
+						$("#taxa").append("<option>" + sortedTaxa[i] + "</option>")
+					}
+				}
+				$("#taxa").selectpicker("refresh");
+
+				$('#module').html(dbListOptions).selectpicker('refresh');
 				var module = $_GET("module"); // get module from url
 				if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp			   
 					module = module.replace(new RegExp('#([^\\s]*)', 'g'), '');
 				
-				if (module !== null) {
+				if (module != null) {
 					$('#module').selectpicker('val', module);
 					$('#module').trigger('change');
+					let moduleTaxon = $('#module option').filter(':selected').attr("data-taxon");
+					if (moduleTaxon != null) {
+						$("#taxa").val(moduleTaxon);
+						$("#taxa").selectpicker("refresh").trigger('change');
+					}
 				}
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -1206,7 +1242,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.result.data.length;
-				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
+				$('#sequencesLabel span').text( seqCount + "/" + seqCount + "");
 				referenceNames = [];
 				jsonResult.result.data.forEach(ref => {
 					referenceNames.push(ref["referenceName"]);
@@ -2561,7 +2597,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
             trackIndividuals.forEach(function (individuals, index, array) {
                 trackConfigs.push({
-                    name: array.length > 1 ? "Group " + (index + 1) : "Query",
+                    name: array.length > 1 ? $("input#group" + (index + 1)).val() : "Query",
                     type: "variant",
                     format: "custom",
                     sourceType: "file",
