@@ -63,6 +63,9 @@
 					</c:if>
                 </ul>
                 <form class="navbar-form navbar-left" role="search" id="moduleProjectNavbar">
+                    <div class="form-group" id="grpTaxa" style="display:none;">
+	                    <select class="selectpicker" id="taxa" data-actions-box="true" data-live-search="true" name="taxa" onchange="taxonSelected();"><option>(Any taxon)</option></select>&nbsp;
+					</div>
                     <select class="selectpicker" id="module" data-actions-box="true" data-live-search="true" name="module" title="Database"></select>
                     <div class="form-group" id="grpProj">&nbsp;
                         <label for="project" class="label-light" id="projectLabel">Project </label>

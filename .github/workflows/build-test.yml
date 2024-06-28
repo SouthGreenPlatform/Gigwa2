@@ -1,0 +1,91 @@
+name: Gigwa Build Test
+on:
+  push:
+    branches:
+      - "build-update"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v3.13.0
+        with:
+          distribution: 'zulu'
+          java-version: 17
+      - name: Run build script
+        run: |
+          cd $GITHUB_WORKSPACE
+          wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build.sh
+          chmod +x build.sh
+          ./build.sh -P prod
+      - name: Grep release version
+        id: grep_release_version
+        run: |
+          # RESULT=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+          echo "release_version=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >>$GITHUB_OUTPUT
+        shell: bash
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ steps.grep_release_version.outputs.release_version }}"
+          release_name: "${{ steps.grep_release_version.outputs.release_version }}"
+          draft: false
+          prerelease: false
+      - name: Update Release Description
+        run: |
+          release_id=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.grep_release_version.outputs.release_version }}" | jq -r .id)
+          curl -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/releases/${release_id}" -d '{"body": "For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!"}'
+      - name: Upload Main Release Asset (webapp zip)
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_content_type: application/zip
+      - name: Upload Additional Release Asset (osx bundle creation script)
+        id: upload-osx-bundle-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/misc/macos_bundle.command
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
+          asset_content_type: application/x-sh
+      - name: Upload Additional Release Asset (linux bundle creation script)
+        id: upload-linux-bundle-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
+          asset_content_type: application/x-sh
+      - name: Upload Additional Release Asset (windows bundle creation script)
+        id: upload-win-bundle-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
+          asset_content_type: application/powershell
+      - name: Upload Additional Release Asset (docker-compose file)
+        id: upload-docker-compose-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/docker-compose.yml
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
+          asset_content_type: application/yml

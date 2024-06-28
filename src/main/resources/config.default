@@ -49,6 +49,7 @@ maxImportSize_anonymousUser=200
 
 # Any property named onlineOutputTool_N with N being an integer >= 1 is a way for defining an online output tool for datasets exported to server. N accepts consecutive values (if only onlineOutputTool_1 and onlineOutputTool_3 exist then only onlineOutputTool_1 will be taken into account). The property value must consist in semi-colon-separated values. The first one is the label to display for this tool, the second one is the tool URL (in which any * character will be replaced at run time with the export file URL). The third value is optional and may contain a comma-separated list of file-formats (must match some of those that the Gigwa instance is able to export: BED, DARWIN, EIGENSTRAT, FLAPJACK, GFF3, HAPMAP, PLINK, VCF), thus defining those accepted by the tool (if unspecified, files in any format will be made available for this tool).
 onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url=;VCF
+onlineOutputTool_2 = Online visualization;https://webtools.southgreen.fr/MetadataColorConfig/?metadataUrl={don|tsv|phenotype}&dataUrl={nwk};NJ-NEWICK
 
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
@@ -118,3 +119,11 @@ allowedOrigins_/**=*
 
 # Set a paragraph to be automatically added to the homepage
 #customHomepageParagraph = You can customize your home page here.
+
+
+# URL pointing to a SnpClust instance (for editing SNP genotypes based on fluorescence intensity values)
+#snpclustLink = http://<snpclust.shiny.url:9999>/app/snpclust
+
+
+# Tells whether or not to activate experimental features. The only one currently is Jukes-Cantor neighbour joining tree export. Default: false
+#enableExperimentalFeatures = true

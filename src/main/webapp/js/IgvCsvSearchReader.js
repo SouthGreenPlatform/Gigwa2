@@ -357,6 +357,7 @@ class GigwaSearchReader {
 				variantSetId: getProjectId(),
 				displayedSequence: chr,
 				callSetIds: self.header.callSetIds,
+				additionalCallSetIds: null	// not being used for this kind of query so let's remove it from the payload
 			};
 			
 			if (overlap) {

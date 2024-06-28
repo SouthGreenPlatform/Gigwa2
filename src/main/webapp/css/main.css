@@ -55,7 +55,7 @@
  	color: red;
  }
  
- .metadataToPull-no {
+ .metadataToPull-no, .orange {
  	color: #ee8800;
  }
  .metadataToPull-yes {
@@ -235,7 +235,8 @@ form#importDropzone .form-group {
 }
 
 .dropzone .dz-default.dz-message {
-	height:142px;
+	height:auto;
+	padding:5px;
 }
 
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {
@@ -463,8 +464,8 @@ div#exportPanel select[multiple] option {
 }
 
 div#serverExportBox {
-	min-width: 580px;
-	right: 266px;
+	min-width: 500px;
+	right: 512px;
 	margin-top: 28px;
 	padding: 5px;
 }
