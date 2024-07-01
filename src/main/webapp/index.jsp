@@ -46,6 +46,7 @@
 <script type="text/javascript" src="js/jquery.flot.min.js"></script>
 <script type="text/javascript" src="js/jquery.flot.selection.js" async></script>
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/highcharts/exporting.js"></script>
