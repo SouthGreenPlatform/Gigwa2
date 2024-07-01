@@ -48,6 +48,204 @@
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
 		<script type="text/javascript" src="js/multiple-select-big.js"></script>
+    </head>
+    <body>
+        <%@include file="../../../navbar.jsp" %>
+        <div class="container margin-top-md">
+        <c:choose>
+        	<c:when test="${userDao.doesLoggedUserOwnEntities()}">
+                <div class="panel panel-default importFormDiv">
+                    <div class="panel-body panel-grey">
+                        <div class="form text-center">
+                            <div class ="row">
+                                <div class="col-md-1" style="text-align:right;"></div>
+                                <div class="col-md-10">
+                                    <h4>Add functional annotations to variants using SnpEff</h4>
+							<p class="margin-top-md text-red">Properties followed by * are required</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-1" style="text-align:right;"></div>
+                                <div class="col-md-10">
+                                    <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
+                                        <div class="row" id="rowModuleExisting">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="moduleExisting">Database <span class="text-red">*</span></label>
+                                         </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="moduleExisting" class="moduleExisting" name="moduleExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                         	<label for="projectExisting">Project <span class="text-red">*</span></label>
+                                         </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-left">
+                                        <div class="row">
+                                     	<div class="col-md-2" style="text-align:right;">
+                                          <label for="runExisting">Run <span class="text-red">*</span></label>
+                                      </div>
+                                            <div class="col-md-3">
+                                                <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+									<div class="form-group" id="grpAsmAnnotate" style="display:none;">
+										&nbsp;<label for="assemblyAnnotate" class="label-light">Assembly </label>
+										<select class="selectpicker" id="assemblyAnnotate" data-actions-box="true" name="assemblyAnnotate"></select>
+									</div>
+
+                                    <!-- Default genomes selector -->
+                                    <div id="genomeSelectContainer" class="form-group text-left">
+                                        <div class="row">
+	                                     	<div class="col-md-2" style="text-align:right;">
+	                                            <label for="availableGenomes">Select a genome<span class="text-red">*</span></label>
+	                                      	</div>
+	                                      	<div class="col-md-4" style="width:450px; margin-left:-15px;">
+	                                      		<select id="availableGenomes" name="availableGenomes" class="selectpicker col-md-6" title="Select an available genome" data-live-search="true"></select>
+	                                      	</div>
+                                            <button class="col-md-2 btn btn-default btn-sm" type="button" data-toggle="modal" data-target="#installDialog">Install a new genome</button>
+                                        </div>
+                                    </div>
+                              <div class ="row">
+                              	  <div class="col-md-2"></div>
+                                  <div class="col-md-1">
+                                   <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start annotation process</button>
+                                  </div>
+                              </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+             </form>
+        </div>
+
+		<!-- progress modal -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="progress" aria-hidden="true">
+            <div class="modal-dialog modal-sm margin-top-lg">
+                <div class="modal-content modal-progress">
+                    <div class="loading text-center" id="progressContents">
+                        <h3 id="progressText" class="loading-message">Please wait...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Genome install modal -->
+        <div class="modal fade" role="dialog" id="installDialog" aria-hidden="true">
+        	<div class="modal-dialog modal-lg">
+        		<div class="modal-content" style="height:550px;">
+        			<div class="modal-header">
+	        			Install a new genome
+	        		</div>
+        			<div class="modal-body">
+			            <div class="row">
+				          	<div class="col-md-3" style="text-align:right;">
+				                 <label for="genomeInputType">Genome input</label>
+				           	</div>
+			                <div class="col-md-6">
+			                	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
+			                		<option value="select">Default SnpEff genomes</option>
+			                		<option value="url">Download from specific URL</option>
+			                		<option value="files">Build from local genome files</option>
+			                	</select>
+			                </div>
+			            </div>
+
+			            <!-- Default genomes selector -->
+			            <div class="row margin-top-md" id="downloadableGenomesContainer">
+			            	<div class="col-md-3" style="text-align:right;">
+				                 <label for="downloadableGenomes">Downloadable genomes</label>
+				           	</div>
+		            		<div class="col-md-9">
+		            			<input list="downloadableGenomeList" style="width: 500px;" name="downloadableGenomes" id="downloadableGenomes" placeholder="(Please select)"/>
+		            		</div>
+                            <datalist id="downloadableGenomeList"></datalist>
+			            </div>
+
+			            <!-- Download from URL -->
+			            <div class="row margin-top-md" id="downloadURLContainer">
+			            	<div class="col-md-3" style="text-align:right;">
+			            		<label for="genomeURL">SnpEff database URL (.zip)</label>
+			            	</div>
+			            	<div class="col-md-9">
+			            		<input type="url" style="width:calc(100% - 20px);" id="genomeURL" name="genomeURL" />
+			            	</div>
+			            </div>
+
+			            <!-- Upload files -->
+			            <div class="row margin-top-md" id="uploadContainer">
+			            	<form class="dropzone" style="background-color:#ffffff; overflow: hidden;" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
+			            		<div class="row">
+			            			<div class="col-md-3" style="text-align:right;">
+			            				<label for="newGenomeID">New genome identifier</label>
+			            			</div>
+			            			<div class="col-md-9">
+			            				<input type="text" style="width:300px;" id="newGenomeID" name="newGenomeID" />
+			            			</div>
+			            		</div>
+			            		<div class="row margin-top-md">
+			            			<div class="col-md-3" style="text-align:right;">
+			            				<label for="newGenomeName">New genome name</label>
+			            			</div>
+			            			<div class="col-md-9">
+			            				<input type="text" style="width:300px;" id="newGenomeName" name="newGenomeName" />
+			            			</div>
+			            		</div>
+			            		<div class="row margin-top">
+			            			<div class="col-md-1"></div>
+                                    <div class="col-md-5" style="padding-right:0;">
+										<div class="dz-default dz-message" style="margin-left:10px; height:270px; background-color:#e8e8e8; padding:5px; border:2px dashed lightblue;">
+	       									<h4>&nbsp;Please drop files here or click to upload</h4>
+	       									<div style="font-size:13px; margin:25px;">
+	       										<b><u>Required files:</u> FASTA</b> sequence <b>plus</b> one of
+	       										<ul>
+	       											<li>.gtf</li>
+	       											<li>.gff</li>
+													<li>.gbk</li>
+													<li>.refseq</li>
+													<li>.embl</li>
+													<li>.kg</li>
+												</ul>
+												When possible, you should also provide a CDS sequence and a protein sequence to check the genome, named cds.fa[.gz] and protein.fa[.gz]
+											</div>
+       									</div>
+                                    </div>
+                                    <div class="col-md-5" id="dropZonePreviews" style="padding-left:30px;">
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                </div>
+			            </div>
+			        </div>
+			        <div class="modal-footer">
+	        			<button class="btn btn-info btn-sm" type="button" onclick="submitGenomeInstall()">Install</button>
+	        		</div>
+        		</div>
+        	</div>
+        </div>
+
+        <!-- Genome install result modal -->
+        <div class="modal fade" role="dialog" id="importResult" aria-hidden="true">
+        	<div class="modal-dialog modal-lg">
+        		<div class="modal-content">
+        			<div class="modal-header">
+	        			Genome installation
+	        		</div>
+        			<div class="modal-body">
+			            <h5 id="importResultSuccess"></h5>
+			            <pre id="importResultLog"></pre>
+			        </div>
+        		</div>
+        	</div>
+        </div>
         <script type="text/javascript">
 	    	var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 	    	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
@@ -529,201 +727,10 @@
 				displayProcessProgress(5, token);
             }
         </script>
-    </head>
-    <body>
-        <%@include file="../../../navbar.jsp" %>
-        <div class="container margin-top-md">
-                <div class="panel panel-default importFormDiv">
-                    <div class="panel-body panel-grey">
-                        <div class="form text-center">
-                            <div class ="row">
-                                <div class="col-md-1" style="text-align:right;"></div>
-                                <div class="col-md-10">
-                                    <h4>Add functional annotations to variants using SnpEff</h4>
-							<p class="margin-top-md text-red">Properties followed by * are required</p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-1" style="text-align:right;"></div>
-                                <div class="col-md-10">
-                                    <div class="form-group margin-top-md text-left"<c:if test="${limitToTempData}"> hidden</c:if>>
-                                        <div class="row" id="rowModuleExisting">
-                                     	<div class="col-md-2" style="text-align:right;">
-                                          <label for="moduleExisting">Database <span class="text-red">*</span></label>
-                                         </div>
-                                            <div class="col-md-3">
-                                                <select class="selectpicker" id="moduleExisting" class="moduleExisting" name="moduleExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group text-left">
-                                        <div class="row">
-                                     	<div class="col-md-2" style="text-align:right;">
-                                         	<label for="projectExisting">Project <span class="text-red">*</span></label>
-                                         </div>
-                                            <div class="col-md-3">
-                                                <select class="selectpicker" id="projectExisting" name="projectExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group text-left">
-                                        <div class="row">
-                                     	<div class="col-md-2" style="text-align:right;">
-                                          <label for="runExisting">Run <span class="text-red">*</span></label>
-                                      </div>
-                                            <div class="col-md-3">
-                                                <select class="selectpicker" id="runExisting" name="runExisting" data-actions-box="true" data-width="100%" data-live-search="true"></select>
-                                            </div>
-                                        </div>
-                                    </div>
-									<div class="form-group" id="grpAsmAnnotate" style="display:none;">
-										&nbsp;<label for="assemblyAnnotate" class="label-light">Assembly </label>
-										<select class="selectpicker" id="assemblyAnnotate" data-actions-box="true" name="assemblyAnnotate"></select>
-									</div>
-
-                                    <!-- Default genomes selector -->
-                                    <div id="genomeSelectContainer" class="form-group text-left">
-                                        <div class="row">
-	                                     	<div class="col-md-2" style="text-align:right;">
-	                                            <label for="availableGenomes">Select a genome<span class="text-red">*</span></label>
-	                                      	</div>
-	                                      	<div class="col-md-4" style="width:450px; margin-left:-15px;">
-	                                      		<select id="availableGenomes" name="availableGenomes" class="selectpicker col-md-6" title="Select an available genome" data-live-search="true"></select>
-	                                      	</div>
-                                            <button class="col-md-2 btn btn-default btn-sm" type="button" data-toggle="modal" data-target="#installDialog">Install a new genome</button>
-                                        </div>
-                                    </div>
-                              <div class ="row">
-                              	  <div class="col-md-2"></div>
-                                  <div class="col-md-1">
-                                   <button class="btn btn-primary btn-sm" style='margin-top:50px;' id="startButton" type="button">Start annotation process</button>
-                                  </div>
-                              </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-             </form>
-        </div>
-
-		<!-- progress modal -->
-        <div class="modal fade" tabindex="-1" role="dialog" id="progress" aria-hidden="true">
-            <div class="modal-dialog modal-sm margin-top-lg">
-                <div class="modal-content modal-progress">
-                    <div class="loading text-center" id="progressContents">
-                        <h3 id="progressText" class="loading-message">Please wait...</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Genome install modal -->
-        <div class="modal fade" role="dialog" id="installDialog" aria-hidden="true">
-        	<div class="modal-dialog modal-lg">
-        		<div class="modal-content" style="height:550px;">
-        			<div class="modal-header">
-	        			Install a new genome
-	        		</div>
-        			<div class="modal-body">
-			            <div class="row">
-				          	<div class="col-md-3" style="text-align:right;">
-				                 <label for="genomeInputType">Genome input</label>
-				           	</div>
-			                <div class="col-md-6">
-			                	<select id="genomeInputType" name="genomeInputType" class="selectpicker">
-			                		<option value="select">Default SnpEff genomes</option>
-			                		<option value="url">Download from specific URL</option>
-			                		<option value="files">Build from local genome files</option>
-			                	</select>
-			                </div>
-			            </div>
-
-			            <!-- Default genomes selector -->
-			            <div class="row margin-top-md" id="downloadableGenomesContainer">
-			            	<div class="col-md-3" style="text-align:right;">
-				                 <label for="downloadableGenomes">Downloadable genomes</label>
-				           	</div>
-		            		<div class="col-md-9">
-		            			<input list="downloadableGenomeList" style="width: 500px;" name="downloadableGenomes" id="downloadableGenomes" placeholder="(Please select)"/>
-		            		</div>
-                            <datalist id="downloadableGenomeList"></datalist>
-			            </div>
-
-			            <!-- Download from URL -->
-			            <div class="row margin-top-md" id="downloadURLContainer">
-			            	<div class="col-md-3" style="text-align:right;">
-			            		<label for="genomeURL">SnpEff database URL (.zip)</label>
-			            	</div>
-			            	<div class="col-md-9">
-			            		<input type="url" style="width:calc(100% - 20px);" id="genomeURL" name="genomeURL" />
-			            	</div>
-			            </div>
-
-			            <!-- Upload files -->
-			            <div class="row margin-top-md" id="uploadContainer">
-			            	<form class="dropzone" style="background-color:#ffffff; overflow: hidden;" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
-			            		<div class="row">
-			            			<div class="col-md-3" style="text-align:right;">
-			            				<label for="newGenomeID">New genome identifier</label>
-			            			</div>
-			            			<div class="col-md-9">
-			            				<input type="text" style="width:300px;" id="newGenomeID" name="newGenomeID" />
-			            			</div>
-			            		</div>
-			            		<div class="row margin-top-md">
-			            			<div class="col-md-3" style="text-align:right;">
-			            				<label for="newGenomeName">New genome name</label>
-			            			</div>
-			            			<div class="col-md-9">
-			            				<input type="text" style="width:300px;" id="newGenomeName" name="newGenomeName" />
-			            			</div>
-			            		</div>
-			            		<div class="row margin-top">
-			            			<div class="col-md-1"></div>
-                                    <div class="col-md-5" style="padding-right:0;">
-										<div class="dz-default dz-message" style="margin-left:10px; height:270px; background-color:#e8e8e8; padding:5px; border:2px dashed lightblue;">
-	       									<h4>&nbsp;Please drop files here or click to upload</h4>
-	       									<div style="font-size:13px; margin:25px;">
-	       										<b><u>Required files:</u> FASTA</b> sequence <b>plus</b> one of
-	       										<ul>
-	       											<li>.gtf</li>
-	       											<li>.gff</li>
-													<li>.gbk</li>
-													<li>.refseq</li>
-													<li>.embl</li>
-													<li>.kg</li>
-												</ul>
-												When possible, you should also provide a CDS sequence and a protein sequence to check the genome, named cds.fa[.gz] and protein.fa[.gz]
-											</div>
-       									</div>
-                                    </div>
-                                    <div class="col-md-5" id="dropZonePreviews" style="padding-left:30px;">
-                                    </div>
-                                    <div class="col-md-1"></div>
-                                </div>
-			            </div>
-			        </div>
-			        <div class="modal-footer">
-	        			<button class="btn btn-info btn-sm" type="button" onclick="submitGenomeInstall()">Install</button>
-	        		</div>
-        		</div>
-        	</div>
-        </div>
-
-        <!-- Genome install result modal -->
-        <div class="modal fade" role="dialog" id="importResult" aria-hidden="true">
-        	<div class="modal-dialog modal-lg">
-        		<div class="modal-content">
-        			<div class="modal-header">
-	        			Genome installation
-	        		</div>
-        			<div class="modal-body">
-			            <h5 id="importResultSuccess"></h5>
-			            <pre id="importResultLog"></pre>
-			        </div>
-        		</div>
-        	</div>
-        </div>
+        </c:when>
+        <c:otherwise>
+        	<h4>You may not use this functionality</h4>
+        </c:otherwise>
+        </c:choose>
     </body>
 </html>
