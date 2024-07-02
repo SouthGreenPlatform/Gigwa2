@@ -282,3 +282,27 @@ function buildHeader(token, assemblyId, individuals) {
     	headers["ind"] = individuals;
 	return headers;
 }
+
+function getNcbiTaxonDetails(ncbiTaxonId)
+{
+    var result = $.ajax({
+        async:false,
+        type:"GET",
+        url:"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=taxonomy&retmode=json&id=" + ncbiTaxonId,
+        error:function(xhr, ajaxOptions, thrownError) {}
+    });
+    return result['responseJSON']['result'][ncbiTaxonId];
+}
+
+function grabNcbiTaxon(inputObj)
+{
+    if ($(inputObj).val() == '' || isNaN($(inputObj).val()))
+        return;
+    var taxonDetails=getNcbiTaxonDetails($(inputObj).val()), taxonName=taxonDetails['scientificname'], genus=taxonDetails['genus'], species=taxonDetails['species'];
+    if (taxonName != null && taxonName != '')
+        $(inputObj).attr('title', $(inputObj).val());
+    if (species != null && species != '')
+        $(inputObj).attr('species', genus + " " + species);
+
+    $(inputObj).val(taxonName);
+}
