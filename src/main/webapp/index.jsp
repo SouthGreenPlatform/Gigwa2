@@ -468,15 +468,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
-			(You will need to provide an API key to be able to push exported files there)
-			<hr />
-			<b>Standalone IGV</b> (DEPRECATED in favor of using the embedded IGV.js) 
-			<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="25" width="25" title="You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
+			(You will be requested to provide an API key to be able to push exported files there)
 			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
-			<br />Online tool URL (any * will be replaced with exported file location)<br />
-			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
+			<br />Online tool URL with placeholders specifying extensions, e.g. {don|tsv|phenotype}<br />
+			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl={vcf|vcf.gz}" />
 			<p>
 				<br/>
 				(Set URL blank to revert to default)
