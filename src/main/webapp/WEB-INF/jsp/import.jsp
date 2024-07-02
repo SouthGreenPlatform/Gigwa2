@@ -43,7 +43,7 @@
         <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
         <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="js/main.js"></script>
+        <script type="text/javascript" src="js/common.js"></script>
         <script type="text/javascript" src="js/import.js"></script>
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>

@@ -149,7 +149,6 @@ import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaDensityRequest;
-import fr.cirad.model.GigwaIgvRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
 import fr.cirad.model.GigwaSearchVariantsRequest;
 import fr.cirad.model.GigwaVcfFieldPlotRequest;
@@ -838,7 +837,7 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 * @param resp
-	 * @param gir
+	 * @param gr
 	 * @throws Exception
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = IGV_DATA_PATH, notes = "get IGV data from selected variants")
@@ -847,17 +846,17 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
-    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaIgvRequest gir) throws Exception {
+    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaDensityRequest gr) throws Exception {
 		long before = System.currentTimeMillis();
 
 		String token = tokenManager.readToken(request);
-        String info[] = Helper.getInfoFromId(gir.getVariantSetId(), 2);
+        String info[] = Helper.getInfoFromId(gr.getVariantSetId(), 2);
         if (!tokenManager.canUserReadDB(token, info[0])) {
 			build404Response(resp);
 			return;
         }
         
-        if (gir.getDisplayedSequence() == null) {
+        if (gr.getDisplayedSequence() == null) {
         	build400Response(resp, "Missing parameter: displayedSequence");
         	return;
         }
@@ -867,8 +866,8 @@ public class GigwaRestController extends ControllerInterface {
 		ProgressIndicator.registerProgressIndicator(progress);
         
 		int projId = Integer.parseInt(info[1]);
-		boolean fNoGenotypesRequested = gir.getAllCallSetIds().isEmpty() || (gir.getAllCallSetIds().size() == 1 && gir.getAllCallSetIds().get(0).isEmpty());
-		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+		boolean fNoGenotypesRequested = gr.getAllCallSetIds().isEmpty() || (gr.getAllCallSetIds().size() == 1 && gr.getAllCallSetIds().get(0).isEmpty());
+		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
 
 		Map<String, Integer> individualPositions = new LinkedHashMap<>();
 		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
@@ -878,7 +877,7 @@ public class GigwaRestController extends ControllerInterface {
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
         
-        VariantQueryWrapper varQueryWrapper = VariantQueryBuilder.buildVariantDataQuery(gir, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
+        VariantQueryWrapper varQueryWrapper = VariantQueryBuilder.buildVariantDataQuery(gr, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
         BasicDBList variantQueryDBList = varQueryWrapper.getVariantDataQueries().iterator().next();
 
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(fNoGenotypesRequested ? VariantData.class : VariantRunData.class));		
@@ -937,20 +936,21 @@ public class GigwaRestController extends ControllerInterface {
                                     continue;   // skip genotype
 
 								List<Collection<String>> indlists = new ArrayList<>();
-								for (HashMap<String, Float> entry : gir.getAnnotationFieldThresholds()) {
+								for (HashMap<String, Float> entry : gr.getAnnotationFieldThresholds()) {
 									if (!entry.isEmpty()) {
-										List<String> indList = gir.getCallSetIds() == null ? new ArrayList<>() : gir.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
+										List<String> indList = gr.getCallSetIds() == null ? new ArrayList<>() : gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
 										indlists.add(indList);
 									}
 								}
 								
 						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
 						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
-						        List<List<String>> callsetIds = gir.getAllCallSetIds();
+						        List<List<String>> callsetIds = gr.getAllCallSetIds();
 						        for (int i = 0; i < callsetIds.size(); i++)
 						        	try {
-							            individualsByPop.put("Group" + (i+1), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-							            annotationFieldThresholdsByPop.put("Group" + (i+1), gir.getAnnotationFieldThresholds(i));
+						        		String groupName = gr.getGroupName(i);
+							            individualsByPop.put(groupName, callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+							            annotationFieldThresholdsByPop.put(groupName, gr.getAnnotationFieldThresholds(i));
 							        }
 						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
 						        	{}
@@ -1006,7 +1006,7 @@ public class GigwaRestController extends ControllerInterface {
 		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
-		LOG.debug("getSelectionIgvData processed range " + gir.getDisplayedSequence() + ":" + gir.getDisplayedRangeMin() + "-" + gir.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
+		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
 	}
 
 	/**
@@ -2732,7 +2732,7 @@ public class GigwaRestController extends ControllerInterface {
     
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
-	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {		
+	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {
 		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
 		Iterator<ReferenceSet> dbIterator = accessibleDBs.getReferenceSets().iterator();
 
@@ -2740,13 +2740,14 @@ public class GigwaRestController extends ControllerInterface {
 		int i = 1;
 		while (dbIterator.hasNext()) {
 			String dbName = dbIterator.next().getName();
+			MongoTemplate mongoTemplate = MongoTemplateManager.get(dbName);
 
 			Map<String, Object> resultObject = new LinkedHashMap<String, Object>();
 
 			resultObject.put("database", dbName);
 			resultObject.put("individuals", Helper.estimDocCount(dbName, Individual.class));
 			resultObject.put("markers", Helper.estimDocCount(dbName, VariantData.class));
-			resultObject.put("samples", Helper.estimDocCount(dbName, GenotypingSample.class));
+			resultObject.put("taxon", Helper.nullToEmptyString(MongoTemplateManager.getTaxonName(dbName)));
 
 			Query query = new Query();
         	query.fields().include(GenotypingProject.FIELDNAME_PLOIDY_LEVEL)
@@ -2763,7 +2764,8 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("description", project.getDescription());
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
-				pj.put("runNumber", project.getRuns().size());
+				pj.put("samples", mongoTemplate.count(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(project.getId())), GenotypingSample.class));
+				pj.put("runs", project.getRuns());
 				resultObject.put("Project" + j, pj);
 				j++;
 			}

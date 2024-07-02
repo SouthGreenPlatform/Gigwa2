@@ -39,7 +39,7 @@
 		}
 	</style>
     <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
     <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script type="text/javascript">
@@ -112,6 +112,9 @@
                 currentcell.textContent = "Databases";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
+                currentcell.textContent = "Taxon";
+                currentcell.className = "cellStyle";
+                currentcell = currentrow.insertCell();
                 currentcell.textContent = "# Variants";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
@@ -141,6 +144,10 @@
                         currentcell.id = db["database"] + "cellid";
                         currentcell = currentrow.insertCell();
                         currentcell.rowSpan = rowSpan;
+                        currentcell.textContent = db["taxon"];
+                        currentcell.className = "cellStyle";
+                        currentcell = currentrow.insertCell();
+                        currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["markers"];
                         currentcell.className = "cellStyle";
                         currentcell = currentrow.insertCell();
@@ -148,7 +155,7 @@
                         currentcell.textContent = db["individuals"];
                         currentcell.className = "cellStyle";
 
-                        if (keys.length - 4 < 1)
+                        if (keys.length < 5)
                         {
                             currentcell = currentrow.insertCell();
                             currentcell.textContent = "(empty database)";
@@ -173,13 +180,13 @@
                                     currentcell.appendChild(span);
                                 }
                                 currentcell.appendChild(document.createElement('br'));
-                                currentcell.appendChild(document.createTextNode("Variant type: " + db["Project" + j]["variantType"].toString().split(',').join(', ')));
+                                currentcell.appendChild(document.createTextNode("Variant types: " + db["Project" + j]["variantType"].toString().split(',').join(', ')));
                                 currentcell.appendChild(document.createElement('br'));
                                 currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
                                 currentcell.appendChild(document.createElement('br'));
-                                currentcell.appendChild(document.createTextNode("# Runs: " + db["Project" + j]["runNumber"]));
-                                currentcell.appendChild(document.createElement('br'));
                                 currentcell.appendChild(document.createTextNode("# Samples: " + db["Project" + j]["samples"]));
+                                currentcell.appendChild(document.createElement('br'));
+                                currentcell.appendChild(document.createTextNode("Runs: " + db["Project" + j]["runs"].join(" ; ")));
                                 currentcell.className = "cellStyle";
                                 currentrow = jsonTable.insertRow();
                             }
