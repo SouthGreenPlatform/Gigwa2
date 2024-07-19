@@ -367,7 +367,7 @@ function buildCustomisationDiv(chartInfo) {
                 i++;
             }
             if (i > 0)
-          		vcfMetadataSelectionHTML += '</div>';
+          		vcfMetadataSelectionHTML += '<div>(cumulated for selected individuals, averaged on #variants per interval)</div></div>';
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
