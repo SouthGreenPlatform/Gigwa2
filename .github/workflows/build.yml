@@ -57,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           asset_content_type: application/zip
 
@@ -68,7 +68,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.event.repository.name }}/misc/macos_bundle.command
+          asset_path: misc/macos_bundle.command
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
           asset_content_type: application/x-sh
 
@@ -79,7 +79,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
+          asset_path: misc/linux_bundle.sh
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
           asset_content_type: application/x-sh
 
@@ -90,7 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
+          asset_path: misc/win_bundle.ps1
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
           asset_content_type: application/powershell
 
@@ -101,6 +101,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.event.repository.name }}/docker-compose.yml
+          asset_path: docker-compose.yml
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
           asset_content_type: application/yml
