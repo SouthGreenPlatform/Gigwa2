@@ -35,11 +35,12 @@ jobs:
         cd misc
         python3 build.py
 
-    - name: Get release version
+    - name: Grep release version
       id: grep_release_version
       run: |
-        VERSION=$(xmllint --xpath "/*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
-        echo "release_version=$VERSION" >> $GITHUB_OUTPUT
+        # RESULT=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+        echo "release_version=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >>$GITHUB_OUTPUT
+      shell: bash
 
     - name: Create Release
       id: create_release
