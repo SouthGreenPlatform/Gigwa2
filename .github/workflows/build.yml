@@ -77,6 +77,14 @@ jobs:
           - { path: 'docker-compose.yml', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_docker-compose.yml', type: 'application/yml' }
     steps:
       - uses: actions/checkout@v3
+      - name: Verify and list target directory contents before upload
+        run: |
+          ls -l target/
+          if [ -f target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip ]; then
+            echo "File exists before upload."
+          else:
+            echo "File does not exist before upload."
+            exit 1
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
