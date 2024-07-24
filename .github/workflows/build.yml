@@ -61,11 +61,11 @@ jobs:
     strategy:
       matrix:
         asset:
-          - { path: '${{ github.event.repository.name }}/target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', type: 'application/zip' }
-          - { path: '${{ github.event.repository.name }}/misc/macos_bundle.command', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_osx.command', type: 'application/x-sh' }
-          - { path: '${{ github.event.repository.name }}/misc/linux_bundle.sh', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
-          - { path: '${{ github.event.repository.name }}/misc/win_bundle.ps1', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_windows.ps1', type: 'application/powershell' }
-          - { path: '${{ github.event.repository.name }}/docker-compose.yml', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_docker-compose.yml', type: 'application/yml' }
+          - { path: 'target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', type: 'application/zip' }
+          - { path: 'misc/macos_bundle.command', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_osx.command', type: 'application/x-sh' }
+          - { path: 'misc/linux_bundle.sh', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
+          - { path: 'misc/win_bundle.ps1', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_windows.ps1', type: 'application/powershell' }
+          - { path: 'docker-compose.yml', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_docker-compose.yml', type: 'application/yml' }
     steps:
       - uses: actions/checkout@v3
       - name: Upload Release Asset
