@@ -34,6 +34,14 @@ jobs:
         run: |
           echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
         shell: bash
+      - name: Check if target zip file exists
+        run: |
+          if [ -f target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip ]; then
+            echo "File exists."
+          else
+            echo "File does not exist."
+            exit 1
+          fi
 
   create_release:
     needs: prepare
