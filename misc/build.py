@@ -120,14 +120,6 @@ try:
         os.chdir(bom_dir)
         subprocess.run(['mvn', 'install', '-P', 'prod', '-f', 'pom.xml'], check=True)
         print("mvn install completed successfully on bom/pom.xml.")
-
-        # Lister le contenu du répertoire target pour vérifier la présence du fichier zip
-        target_dir = os.path.join(gigwa2_dir, 'target')
-        if os.path.exists(target_dir):
-            print("Listing contents of the target directory:")
-            subprocess.run(['ls', '-l', target_dir])
-        else:
-            print(f"Error: target directory not found in {gigwa2_dir}")
     else:
         print(f"Error: bom directory not found in {gigwa2_dir}")
 except subprocess.CalledProcessError as e:

@@ -36,6 +36,7 @@ jobs:
         shell: bash
       - name: Check if target zip file exists
         run: |
+          ls -l target/
           if [ -f target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip ]; then
             echo "File exists."
           else
