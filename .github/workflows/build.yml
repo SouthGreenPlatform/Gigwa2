@@ -8,14 +8,6 @@ on:
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        asset:
-          - { path: 'target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip', name: 'Gigwa_V2.9-RELEASE-TEST_Webapp.zip', type: 'application/zip' }
-          - { path: 'misc/macos_bundle.command', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_osx.command', type: 'application/x-sh' }
-          - { path: 'misc/linux_bundle.sh', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
-          - { path: 'misc/win_bundle.ps1', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_windows.ps1', type: 'application/powershell' }
-          - { path: 'docker-compose.yml', name: 'Gigwa_V2.9-RELEASE-TEST_docker-compose.yml', type: 'application/yml' }
     steps:
       - uses: actions/checkout@v3
 
@@ -53,7 +45,6 @@ jobs:
         id: grep_release_version
         run: |
           echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
-        shell: bash
 
       - name: Create Release
         id: create_release
@@ -68,21 +59,57 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Verify and list target directory contents before upload
-        run: |
-          ls -l target/
-          if [ -f target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip ]; then
-            echo "File exists before upload."
-          else:
-            echo "File does not exist before upload."
-            exit 1
+      - name: Upload Main Release Asset (webapp zip)
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_content_type: application/zip
 
-      - name: Upload Release Asset
+      - name: Upload Additional Release Asset (osx bundle creation script)
+        id: upload-osx-bundle-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ matrix.asset.path }}
-          asset_name: ${{ matrix.asset.name }}
-          asset_content_type: ${{ matrix.asset.type }}
+          asset_path: ${{ github.event.repository.name }}/misc/macos_bundle.command
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
+          asset_content_type: application/x-sh
+
+      - name: Upload Additional Release Asset (linux bundle creation script)
+        id: upload-linux-bundle-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
+          asset_content_type: application/x-sh
+
+      - name: Upload Additional Release Asset (windows bundle creation script)
+        id: upload-win-bundle-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
+          asset_content_type: application/powershell
+
+      - name: Upload Additional Release Asset (docker-compose file)
+        id: upload-docker-compose-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/docker-compose.yml
+          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
+          asset_content_type: application/yml
