@@ -32,15 +32,6 @@ jobs:
           cd misc
           python3 build.py
 
-      - name: Check if target zip file exists
-        run: |
-          ls -l target/
-          if [ -f target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip ]; then
-            echo "File exists."
-          else
-            echo "File does not exist."
-            exit 1
-
       - name: Grep release version
         id: grep_release_version
         run: |
