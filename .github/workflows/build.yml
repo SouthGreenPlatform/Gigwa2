@@ -6,106 +6,74 @@ on:
       - feat/update-actions
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
-    
+    outputs:
+      release_version: ${{ steps.grep_release_version.outputs.release_version }}
     steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install gitpython
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 17
+      - name: Run Python build script
+        run: |
+          cd misc
+          python3 build.py
+      - name: Grep release version
+        id: grep_release_version
+        run: |
+          echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
+        shell: bash
 
-    - name: Checkout repository
-      uses: actions/checkout@v3
+  create_release:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ needs.prepare.outputs.release_version }}"
+          release_name: "${{ needs.prepare.outputs.release_version }}"
+          body: |
+            For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!
+          draft: false
+          prerelease: false
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install gitpython
-
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: 17
-
-    - name: Run Python build script
-      run: |
-        cd misc
-        python3 build.py
-
-    - name: Grep release version
-      id: grep_release_version
-      run: |
-        # RESULT=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
-        echo "release_version=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >>$GITHUB_OUTPUT
-      shell: bash
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1.1.4
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: "${{ steps.grep_release_version.outputs.release_version }}"
-        release_name: "${{ steps.grep_release_version.outputs.release_version }}"
-        body: |
-          For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!
-        draft: false
-        prerelease: false
-
-    - name: Upload Main Release Asset (webapp zip)
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-        asset_content_type: application/zip
-
-    - name: Upload Additional Release Asset (osx bundle creation script)
-      id: upload-osx-bundle-asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.event.repository.name }}/misc/macos_bundle.command
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
-        asset_content_type: application/x-sh
-
-    - name: Upload Additional Release Asset (linux bundle creation script)
-      id: upload-linux-bundle-asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.event.repository.name }}/misc/linux_bundle.sh
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
-        asset_content_type: application/x-sh
-
-    - name: Upload Additional Release Asset (windows bundle creation script)
-      id: upload-win-bundle-asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.event.repository.name }}/misc/win_bundle.ps1
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
-        asset_content_type: application/powershell
-
-    - name: Upload Additional Release Asset (docker-compose file)
-      id: upload-docker-compose-asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.event.repository.name }}/docker-compose.yml
-        asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
-        asset_content_type: application/yml
+  upload_assets:
+    needs: [prepare, create_release]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        asset:
+          - { path: '${{ github.event.repository.name }}/target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', type: 'application/zip' }
+          - { path: '${{ github.event.repository.name }}/misc/macos_bundle.command', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_osx.command', type: 'application/x-sh' }
+          - { path: '${{ github.event.repository.name }}/misc/linux_bundle.sh', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
+          - { path: '${{ github.event.repository.name }}/misc/win_bundle.ps1', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_windows.ps1', type: 'application/powershell' }
+          - { path: '${{ github.event.repository.name }}/docker-compose.yml', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_docker-compose.yml', type: 'application/yml' }
+    steps:
+      - uses: actions/checkout@v3
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ${{ matrix.asset.path }}
+          asset_name: ${{ matrix.asset.name }}
+          asset_content_type: ${{ matrix.asset.type }}
