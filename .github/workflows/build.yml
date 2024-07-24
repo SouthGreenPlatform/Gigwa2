@@ -6,91 +6,83 @@ on:
       - feat/update-actions
 
 jobs:
-  prepare:
+  build_and_release:
     runs-on: ubuntu-latest
-    outputs:
-      release_version: ${{ steps.grep_release_version.outputs.release_version }}
+    strategy:
+      matrix:
+        asset:
+          - { path: 'target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip', name: 'Gigwa_V2.9-RELEASE-TEST_Webapp.zip', type: 'application/zip' }
+          - { path: 'misc/macos_bundle.command', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_osx.command', type: 'application/x-sh' }
+          - { path: 'misc/linux_bundle.sh', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
+          - { path: 'misc/win_bundle.ps1', name: 'Gigwa_V2.9-RELEASE-TEST_bundle_creation_windows.ps1', type: 'application/powershell' }
+          - { path: 'docker-compose.yml', name: 'Gigwa_V2.9-RELEASE-TEST_docker-compose.yml', type: 'application/yml' }
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install gitpython
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
+
       - name: Run Python build script
         run: |
           cd misc
           python3 build.py
+
+      - name: Check if target zip file exists
+        run: |
+          ls -l target/
+          if [ -f target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip ]; then
+            echo "File exists."
+          else
+            echo "File does not exist."
+            exit 1
+
       - name: Grep release version
         id: grep_release_version
         run: |
           echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Check if target zip file exists
-        run: |
-          ls -l target/
-          if [ -f target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip ]; then
-            echo "File exists."
-          else
-            echo "File does not exist."
-            exit 1
-          fi
 
-  create_release:
-    needs: prepare
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "${{ needs.prepare.outputs.release_version }}"
-          release_name: "${{ needs.prepare.outputs.release_version }}"
+          tag_name: "${{ steps.grep_release_version.outputs.release_version }}"
+          release_name: "${{ steps.grep_release_version.outputs.release_version }}"
           body: |
             For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!
           draft: false
           prerelease: false
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
 
-  upload_assets:
-    needs: [prepare, create_release]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        asset:
-          - { path: 'target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip', type: 'application/zip' }
-          - { path: 'misc/macos_bundle.command', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_osx.command', type: 'application/x-sh' }
-          - { path: 'misc/linux_bundle.sh', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_ubuntu.sh', type: 'application/x-sh' }
-          - { path: 'misc/win_bundle.ps1', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_bundle_creation_windows.ps1', type: 'application/powershell' }
-          - { path: 'docker-compose.yml', name: 'Gigwa_V${{ needs.prepare.outputs.release_version }}_docker-compose.yml', type: 'application/yml' }
-    steps:
-      - uses: actions/checkout@v3
       - name: Verify and list target directory contents before upload
         run: |
           ls -l target/
-          if [ -f target/Gigwa_V${{ needs.prepare.outputs.release_version }}_Webapp.zip ]; then
+          if [ -f target/Gigwa_V2.9-RELEASE-TEST_Webapp.zip ]; then
             echo "File exists before upload."
           else:
             echo "File does not exist before upload."
             exit 1
+
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ matrix.asset.path }}
           asset_name: ${{ matrix.asset.name }}
           asset_content_type: ${{ matrix.asset.type }}
