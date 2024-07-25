@@ -66,8 +66,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "${{ release_version }}"
-          release_name: "${{ release_version }}"
+          tag_name: "${{ needs.setup.outputs.release_version }}"
+          release_name: "${{ needs.setup.outputs.release_version }}"
           body: |
             For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!
           draft: false
