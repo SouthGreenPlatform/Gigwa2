@@ -908,7 +908,7 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
     }
     else {
         chart.series.forEach(function (element) {
-            if(element.name==fieldName){
+            if(element.name == "Average " + fieldName){
                 chart.get(fieldName).remove();
             }
         });
