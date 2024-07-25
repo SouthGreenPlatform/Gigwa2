@@ -111,17 +111,17 @@ jobs:
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
           asset_content_type: application/yml
 
-#  build_push_docker:
-#    needs: build_project_and_create_release
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Build and push Docker image
-#        uses: docker/build-push-action@v4
-#        with:
-#          context: .
-#          push: true
-#          tags: |
-#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.build_project_and_create_release.outputs.release_version }}
-#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
+  build_push_docker:
+    needs: build_project_and_create_release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.build_project_and_create_release.outputs.release_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
