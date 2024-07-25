@@ -111,16 +111,19 @@ jobs:
           asset_content_type: ${{ matrix.asset.content_type }}
 
   docker:
-    needs: [setup, release]
+    needs: [ setup, release ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download target directory
+      - name: Download gigwa directory
         uses: actions/download-artifact@v3
         with:
           name: gigwa
           path: target/
+
+      - name: List target directory
+        run: ls -la target
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
