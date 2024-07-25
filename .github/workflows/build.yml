@@ -76,7 +76,7 @@ jobs:
     strategy:
       matrix:
         asset:
-          - { path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_Webapp.zip", content_type: "application/zip", downloaded: true }
+          - { path: "target/Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_Webapp.zip", content_type: "application/zip", downloaded: true }
           - { path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh" }
           - { path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh" }
           - { path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell" }
