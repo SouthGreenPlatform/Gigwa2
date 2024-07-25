@@ -51,13 +51,11 @@ jobs:
       - name: Upload Webapp zip
         uses: actions/upload-artifact@v3
         with:
-          name: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
 
       - name: Upload gigwa directory
         uses: actions/upload-artifact@v3
         with:
-          name: target/gigwa
           path: target/gigwa
 
   release:
