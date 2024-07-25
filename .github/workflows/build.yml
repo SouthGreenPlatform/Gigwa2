@@ -48,11 +48,17 @@ jobs:
           cd misc
           python3 build.py
 
-      - name: Upload target directory
+      - name: Upload Webapp zip
         uses: actions/upload-artifact@v3
         with:
-          name: target
-          path: target
+          name: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+
+      - name: Upload gigwa directory
+        uses: actions/upload-artifact@v3
+        with:
+          name: target/gigwa
+          path: target/gigwa
 
   release:
     needs: setup
@@ -90,8 +96,8 @@ jobs:
       - name: Download target directory
         uses: actions/download-artifact@v3
         with:
-          name: target
-          path: target
+          name: target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
+          path: target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
@@ -112,8 +118,8 @@ jobs:
 #      - name: Download target directory
 #        uses: actions/download-artifact@v3
 #        with:
-#          name: target
-#          path: target
+#          name: target/gigwa
+#          path: target/gigwa
 #
 #      - name: Build and push Docker image
 #        uses: docker/build-push-action@v4
