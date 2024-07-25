@@ -8,6 +8,11 @@
 #
 # WARNING - Don't launch this script from its original location (within the Gigwa2 source hierarchy) as it would create duplicate source files in your IDE workspace
 
+##############################################################################################################################
+## DEPRECATED - This script is no longer used and has been replaced by the python script build.py                           ##
+## It takes the latest versions of subprojects without checking whether they are the correct version for the latest release ##
+##############################################################################################################################
+
 set -e
 
 m2repo=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
