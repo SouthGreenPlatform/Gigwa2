@@ -2364,7 +2364,7 @@ public class GigwaRestController extends ControllerInterface {
 									            authoritiesToSave.add(role);
 									            for (GrantedAuthority authority : owner.getAuthorities())
 									                authoritiesToSave.add(authority);
-									            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
+									            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod(), owner.getEmail());
 									        }
 		
 											tokenManager.reloadUserPermissions(securityContext);

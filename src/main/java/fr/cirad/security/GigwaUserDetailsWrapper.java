@@ -36,7 +36,7 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 				// TODO : Config option to create account automatically or only manually
 				String[] authorities = {IRoleDefinition.DUMMY_EMPTY_ROLE};
 				try {
-					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS);
+					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS, null);
 				} catch (IOException e) {
 					LOG.error(e);
 					throw new ExternalUserCreationFailureException("Error while creating the new CAS user", e);
