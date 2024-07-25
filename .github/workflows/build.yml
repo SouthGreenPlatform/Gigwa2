@@ -8,6 +8,8 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.grep_release_version.outputs.release_version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +38,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Grep release version
+        id: grep_release_version
+        run: |
+          echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
+
       - name: Run Python build script
         run: |
           cd misc
@@ -52,15 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_version: ${{ steps.grep_release_version.outputs.release_version }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Grep release version
-        id: grep_release_version
-        run: |
-          echo "release_version=$(grep -m 1 project\\\.version pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >> $GITHUB_OUTPUT
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1.1.4
@@ -75,16 +74,16 @@ jobs:
           prerelease: false
 
   upload_assets:
-    needs: release
+    needs: [setup, release]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         asset:
-          - {path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.release.outputs.release_version }}_Webapp.zip", content_type: "application/zip"}
-          - {path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh"}
-          - {path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh"}
-          - {path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell"}
-          - {path: "docker-compose.yml", name: "Gigwa_V${{ needs.release.outputs.release_version }}_docker-compose.yml", content_type: "application/yml"}
+          - {path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", content_type: "application/zip"}
+          - {path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh"}
+          - {path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh"}
+          - {path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell"}
+          - {path: "docker-compose.yml", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_docker-compose.yml", content_type: "application/yml"}
     steps:
       - uses: actions/checkout@v4
 
