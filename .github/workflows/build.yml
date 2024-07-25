@@ -85,11 +85,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download target directory
+      - name: Download Webapp zip
         uses: actions/download-artifact@v3
         with:
           name: Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
-          path: target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
+          path: target/
 
       - name: Upload Main Release Asset (webapp zip)
         id: upload-release-asset
