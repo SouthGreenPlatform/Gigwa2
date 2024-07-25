@@ -1,4 +1,4 @@
-name: Gigwa Build RELEASE-TEST
+name: Gigwa Build
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - feat/update-actions
 
 jobs:
-  build_and_release:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+  build_project_and_create_release:
+    needs: setup
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.grep_release_version.outputs.release_version }}
+    steps:
       - name: Run Python build script
         run: |
           cd misc
@@ -60,7 +66,6 @@ jobs:
           prerelease: false
 
       - name: Upload Main Release Asset (webapp zip)
-        id: upload-release-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +76,6 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Additional Release Asset (osx bundle creation script)
-        id: upload-osx-bundle-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -82,7 +86,6 @@ jobs:
           asset_content_type: application/x-sh
 
       - name: Upload Additional Release Asset (linux bundle creation script)
-        id: upload-linux-bundle-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,7 +96,6 @@ jobs:
           asset_content_type: application/x-sh
 
       - name: Upload Additional Release Asset (windows bundle creation script)
-        id: upload-win-bundle-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,7 +106,6 @@ jobs:
           asset_content_type: application/powershell
 
       - name: Upload Additional Release Asset (docker-compose file)
-        id: upload-docker-compose-asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -114,11 +115,15 @@ jobs:
           asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
           asset_content_type: application/yml
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ steps.grep_release_version.outputs.release_version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
+#  build_push_docker:
+#    needs: build_project_and_create_release
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v4
+#        with:
+#          context: .
+#          push: true
+#          tags: |
+#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.build_project_and_create_release.outputs.release_version }}
+#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
