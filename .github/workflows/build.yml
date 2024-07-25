@@ -54,11 +54,11 @@ jobs:
           name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
 
-      - name: Upload gigwa directory
+      - name: Upload Gigwa directory
         uses: actions/upload-artifact@v3
         with:
           name: gigwa
-          path: target/gigwa
+          path: target/gigwa/
 
   release:
     needs: setup
@@ -120,10 +120,13 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: gigwa
-          path: target/
+          path: target/gigwa/
 
       - name: List target directory
         run: ls -la target
+
+      - name: List target/gigwa directory
+        run: ls -la target/gigwa
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
