@@ -6,8 +6,10 @@ on:
       - feat/update-actions
 
 jobs:
-  setup:
+  build_project_and_create_release:
     runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.grep_release_version.outputs.release_version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,14 +37,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-  build_project_and_create_release:
-    needs: setup
-    runs-on: ubuntu-latest
-    outputs:
-      release_version: ${{ steps.grep_release_version.outputs.release_version }}
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Run Python build script
         run: |
