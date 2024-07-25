@@ -79,42 +79,26 @@ jobs:
           draft: false
           prerelease: false
 
-  upload_downloaded_assets:
-    needs: [setup, release]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Webapp zip
-        uses: actions/download-artifact@v3
-        with:
-          name: Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
-          path: target/
-
-      - name: Upload Main Release Asset (webapp zip)
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
-          asset_name: Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
-          asset_content_type: application/zip
-
   upload_assets:
-    needs: [setup, release, upload_downloaded_assets]
+    needs: [setup, release]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         asset:
-          - {path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", content_type: "application/zip"}
-          - {path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh"}
-          - {path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh"}
-          - {path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell"}
-          - {path: "docker-compose.yml", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_docker-compose.yml", content_type: "application/yml"}
+          - { path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", content_type: "application/zip", downloaded: true }
+          - { path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh" }
+          - { path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh" }
+          - { path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell" }
+          - { path: "docker-compose.yml", name: "Gigwa_V${{ needs.setup.outputs.release_version }}_docker-compose.yml", content_type: "application/yml" }
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download Webapp zip
+        if: matrix.asset.downloaded == true
+        uses: actions/download-artifact@v3
+        with:
+          name: Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip
+          path: target/
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
@@ -126,23 +110,23 @@ jobs:
           asset_name: ${{ matrix.asset.name }}
           asset_content_type: ${{ matrix.asset.content_type }}
 
-#  docker:
-#    needs: release
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Download target directory
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: gigwa
-#          path: target/gigwa
-#
-#      - name: Build and push Docker image
-#        uses: docker/build-push-action@v4
-#        with:
-#          context: .
-#          push: true
-#          tags: |
-#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.release.outputs.release_version }}
-#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
+  docker:
+    needs: [setup, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download target directory
+        uses: actions/download-artifact@v3
+        with:
+          name: gigwa
+          path: target/
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.setup.outputs.release_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
