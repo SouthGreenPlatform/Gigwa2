@@ -6,7 +6,7 @@ on:
       - feat/update-actions
 
 jobs:
-  build_project_create_release_push_docker_image:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +41,21 @@ jobs:
           cd misc
           python3 build.py
 
+      - name: Upload target directory
+        uses: actions/upload-artifact@v3
+        with:
+          name: target
+          path: target
+
+  release:
+    needs: setup
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_version: ${{ steps.grep_release_version.outputs.release_version }}
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Grep release version
         id: grep_release_version
         run: |
@@ -52,68 +67,60 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "${{ steps.grep_release_version.outputs.release_version }}"
-          release_name: "${{ steps.grep_release_version.outputs.release_version }}"
+          tag_name: "${{ release_version }}"
+          release_name: "${{ release_version }}"
           body: |
             For initial setups not using Docker, download the bundle creation script corresponding to your OS, place it in the desired installation location, and launch it!
           draft: false
           prerelease: false
 
-      - name: Upload Main Release Asset (webapp zip)
+  upload_assets:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        asset:
+          - {path: "target/Gigwa_V${{ needs.setup.outputs.release_version }}_Webapp.zip", name: "Gigwa_V${{ needs.release.outputs.release_version }}_Webapp.zip", content_type: "application/zip"}
+          - {path: "misc/macos_bundle.command", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_osx.command", content_type: "application/x-sh"}
+          - {path: "misc/linux_bundle.sh", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_ubuntu.sh", content_type: "application/x-sh"}
+          - {path: "misc/win_bundle.ps1", name: "Gigwa_V${{ needs.release.outputs.release_version }}_bundle_creation_windows.ps1", content_type: "application/powershell"}
+          - {path: "docker-compose.yml", name: "Gigwa_V${{ needs.release.outputs.release_version }}_docker-compose.yml", content_type: "application/yml"}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download target directory
+        uses: actions/download-artifact@v3
+        with:
+          name: target
+          path: target
+
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
-          asset_content_type: application/zip
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ matrix.asset.path }}
+          asset_name: ${{ matrix.asset.name }}
+          asset_content_type: ${{ matrix.asset.content_type }}
 
-      - name: Upload Additional Release Asset (osx bundle creation script)
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: misc/macos_bundle.command
-          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_osx.command
-          asset_content_type: application/x-sh
-
-      - name: Upload Additional Release Asset (linux bundle creation script)
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: misc/linux_bundle.sh
-          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_ubuntu.sh
-          asset_content_type: application/x-sh
-
-      - name: Upload Additional Release Asset (windows bundle creation script)
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: misc/win_bundle.ps1
-          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_bundle_creation_windows.ps1
-          asset_content_type: application/powershell
-
-      - name: Upload Additional Release Asset (docker-compose file)
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: docker-compose.yml
-          asset_name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_docker-compose.yml
-          asset_content_type: application/yml
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ steps.grep_release_version.outputs.release_version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
+#  docker:
+#    needs: release
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Download target directory
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: target
+#          path: target
+#
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v4
+#        with:
+#          context: .
+#          push: true
+#          tags: |
+#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:${{ needs.release.outputs.release_version }}
+#            ${{ secrets.DOCKERHUB_USERNAME }}/gigwa:latest
