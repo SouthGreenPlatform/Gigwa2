@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -11,17 +12,26 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import fr.cirad.security.GigwaAuthenticationSuccessHandler;
+import fr.cirad.service.PasswordResetService;
 
 @Controller
 public class GigwaAuthenticationController {
+	private static final String LOGIN_LOST_PASSWORD_URL = "/lostPassword.do";
+	private static final String LOGIN_RESET_PASSWORD_URL = "/resetPassword.do";
 	private static final String LOGIN_CAS_URL = "/login/cas.do";
 	private static final String LOGIN_FORM_URL = "/login.do";
 
-	@Autowired GigwaAuthenticationSuccessHandler authenticationSuccessHandler;
+	@Autowired
+	private PasswordResetService passwordResetService;
+
+	@Autowired
+	private GigwaAuthenticationSuccessHandler authenticationSuccessHandler;
 
 	@GetMapping(LOGIN_FORM_URL)
 	public String loginFormPath(HttpServletRequest request, HttpServletResponse response) {
@@ -32,9 +42,7 @@ public class GigwaAuthenticationController {
 				String redirectUrl = URLEncoder.encode(targetUrl, StandardCharsets.UTF_8.name());
 				request.setAttribute("loginOrigin", redirectUrl);
 			} catch (UnsupportedEncodingException ignored) {}
-			//authenticationSuccessHandler.getRequestCache().removeRequest(request, response);
 		}
-
 		return "login";
 	}
 
@@ -49,5 +57,39 @@ public class GigwaAuthenticationController {
 		} else {
 			return "redirect:/index.jsp";
 		}
+	}
+
+	@GetMapping(LOGIN_LOST_PASSWORD_URL)
+	public String lostPasswordForm() {
+		return "lostPassword";
+	}
+
+	@PostMapping(LOGIN_LOST_PASSWORD_URL)
+	public String sendResetPasswordEmail(@RequestParam String email, Model model) {
+		boolean emailSent = passwordResetService.sendResetPasswordEmail(email);
+
+		if (emailSent) {
+			model.addAttribute("message", "A code has been sent to your email address. Please check your inbox.");
+			return "resetPassword";
+		} else {
+			model.addAttribute("error", "Failed to send email. Please try again.");
+			return "lostPassword";
+		}
+	}
+
+	@PostMapping(LOGIN_RESET_PASSWORD_URL)
+	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, Model model) {
+		boolean isValid = passwordResetService.validateResetCode(code);
+
+		if (isValid) {
+			boolean updated = passwordResetService.updatePassword(code, newPassword);
+			if (updated) {
+				model.addAttribute("message", "Password updated successfully. You can now login.");
+				return "login";
+			}
+		}
+
+		model.addAttribute("error", "Invalid or expired code. Please try again.");
+		return "resetPassword";
 	}
 }
