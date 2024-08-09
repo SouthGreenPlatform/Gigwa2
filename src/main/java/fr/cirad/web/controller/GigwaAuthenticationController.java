@@ -73,6 +73,11 @@ public class GigwaAuthenticationController {
 
 	@PostMapping(LOGIN_RESET_PASSWORD_URL)
 	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, Model model) {
+		if (newPassword.length() > 20) {
+			model.addAttribute("error", "Password must not exceed 20 characters.");
+			return "resetPassword";
+		}
+
 		boolean updated = passwordResetService.updatePassword(code, newPassword);
 		if (updated) {
 			model.addAttribute("message", "Password updated successfully. You can now login.");
