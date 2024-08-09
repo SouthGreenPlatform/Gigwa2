@@ -5,19 +5,16 @@ import fr.cirad.security.UserWithMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 
 @Service
 public class PasswordResetService {
 
-    private Map<String, String> resetCodes = new HashMap<>();
-    private Map<String, LocalDateTime> codeExpirations = new HashMap<>();
+    private static final String RESET_CODE_KEY = "resetCode";
+    private static final String RESET_EMAIL_KEY = "resetEmail";
+    private static final String RESET_EXPIRATION_KEY = "resetExpiration";
 
     @Autowired
     private EmailService emailService;
@@ -26,48 +23,40 @@ public class PasswordResetService {
     private ReloadableInMemoryDaoImpl userDao;
 
     public String generateResetCode() {
-        return String.format("%08d", new Random().nextInt(100000000));
+        return String.format("%08d", new java.util.Random().nextInt(100000000));
     }
 
-    public boolean sendResetPasswordEmail(String email) {
+    public boolean sendResetPasswordEmail(String email, HttpSession session) {
         UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
         if (user == null) {
             return true; // We return true to not disclose if the email exists
         }
 
         String resetCode = generateResetCode();
-        resetCodes.put(resetCode, email);
-        codeExpirations.put(resetCode, LocalDateTime.now().plusMinutes(5)); // Code valid for 5 minutes
-
-        scheduleCodeRemoval(resetCode);
+        session.setAttribute(RESET_CODE_KEY, resetCode);
+        session.setAttribute(RESET_EMAIL_KEY, email);
+        session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
 
         return emailService.sendResetPasswordEmail(email, resetCode);
     }
 
-    private void scheduleCodeRemoval(String code) {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                resetCodes.remove(code);
-                codeExpirations.remove(code);
-            }
-        }, 5 * 60 * 1000); // 5 minutes in milliseconds
-    }
+    public boolean validateResetCode(String code, HttpSession session) {
+        String storedCode = (String) session.getAttribute(RESET_CODE_KEY);
+        LocalDateTime expiration = (LocalDateTime) session.getAttribute(RESET_EXPIRATION_KEY);
 
-    public boolean validateResetCode(String code) {
-        if (!resetCodes.containsKey(code)) {
+        if (storedCode == null || !storedCode.equals(code) || expiration == null) {
             return false;
         }
-        LocalDateTime expiration = codeExpirations.get(code);
+
         return expiration.isAfter(LocalDateTime.now());
     }
 
-    public boolean updatePassword(String code, String newPassword) {
-        if (!validateResetCode(code)) {
+    public boolean updatePassword(String code, String newPassword, HttpSession session) {
+        if (!validateResetCode(code, session)) {
             return false;
         }
 
-        String email = resetCodes.get(code);
+        String email = (String) session.getAttribute(RESET_EMAIL_KEY);
         UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
         if (user == null) {
             return false;
@@ -82,8 +71,11 @@ public class PasswordResetService {
             return false;
         }
 
-        resetCodes.remove(code);
-        codeExpirations.remove(code);
+        // Clear the reset information from the session
+        session.removeAttribute(RESET_CODE_KEY);
+        session.removeAttribute(RESET_EMAIL_KEY);
+        session.removeAttribute(RESET_EXPIRATION_KEY);
+
         return true;
     }
 }

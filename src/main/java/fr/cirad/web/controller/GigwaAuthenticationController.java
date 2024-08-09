@@ -8,6 +8,7 @@ import java.util.Random;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.savedrequest.SavedRequest;
@@ -65,20 +66,20 @@ public class GigwaAuthenticationController {
 	}
 
 	@PostMapping(LOGIN_LOST_PASSWORD_URL)
-	public String sendResetPasswordEmail(@RequestParam String email, Model model) {
-		passwordResetService.sendResetPasswordEmail(email);
+	public String sendResetPasswordEmail(@RequestParam String email, HttpSession session, Model model) {
+		passwordResetService.sendResetPasswordEmail(email, session);
 		model.addAttribute("message", "If this e-mail address matches a user account, a code valid for 5 minutes has just been sent to it.");
 		return "resetPassword";
 	}
 
 	@PostMapping(LOGIN_RESET_PASSWORD_URL)
-	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, Model model) {
+	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, HttpSession session, Model model) {
 		if (newPassword.length() > 20) {
 			model.addAttribute("error", "Password must not exceed 20 characters.");
 			return "resetPassword";
 		}
 
-		boolean updated = passwordResetService.updatePassword(code, newPassword);
+		boolean updated = passwordResetService.updatePassword(code, newPassword, session);
 		if (updated) {
 			model.addAttribute("message", "Password updated successfully. You can now login.");
 			return "login";

@@ -1,6 +1,9 @@
 package fr.cirad.service;
 
+import fr.cirad.tools.AppConfig;
+import org.mortbay.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,21 +16,25 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private AppConfig appConfig;
+
     public boolean sendResetPasswordEmail(String to, String resetCode) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            SimpleMailMessage message = new SimpleMailMessage();
 
-            String subject = "Password Reset Request - Gigwa2";
-            String emailContent = "<h1>Password Reset Request</h1>"
-                    + "<p>Hello,</p>"
-                    + "<p>You have requested to reset your password for the <strong>Gigwa2</strong> application.</p>"
-                    + "<p>Your password reset code is: <strong>" + resetCode + "</strong></p>"
-                    + "<p>Please enter this code in the application to reset your password. This code will expire in 5 minutes.</p>";
+            String enforcedWebapRootUrl = appConfig.get("enforcedWebapRootUrl");
 
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(emailContent, true);
+            if (enforcedWebapRootUrl == null || enforcedWebapRootUrl.trim().isEmpty()) {
+                Log.warn("enforcedWebapRootUrl is not set in the application.properties file. Using the default value.");
+            }
+
+            String subject = "Password Reset Request";
+            String emailContent = "Hello,\nYou have requested to reset your password for : " + enforcedWebapRootUrl + ".\nYour password reset code is: " + resetCode + "\nPlease enter this code in the application to reset your password. This code will expire in 5 minutes.\n";
+
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(emailContent);
 
             mailSender.send(message);
             return true;
