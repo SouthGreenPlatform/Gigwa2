@@ -66,30 +66,20 @@ public class GigwaAuthenticationController {
 
 	@PostMapping(LOGIN_LOST_PASSWORD_URL)
 	public String sendResetPasswordEmail(@RequestParam String email, Model model) {
-		boolean emailSent = passwordResetService.sendResetPasswordEmail(email);
-
-		if (emailSent) {
-			model.addAttribute("message", "A code has been sent to your email address. Please check your inbox.");
-			return "resetPassword";
-		} else {
-			model.addAttribute("error", "Failed to send email. Please try again.");
-			return "lostPassword";
-		}
+		passwordResetService.sendResetPasswordEmail(email);
+		model.addAttribute("message", "If this e-mail address matches a user account, a code valid for 5 minutes has just been sent to it.");
+		return "resetPassword";
 	}
 
 	@PostMapping(LOGIN_RESET_PASSWORD_URL)
 	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, Model model) {
-		boolean isValid = passwordResetService.validateResetCode(code);
-
-		if (isValid) {
-			boolean updated = passwordResetService.updatePassword(code, newPassword);
-			if (updated) {
-				model.addAttribute("message", "Password updated successfully. You can now login.");
-				return "login";
-			}
+		boolean updated = passwordResetService.updatePassword(code, newPassword);
+		if (updated) {
+			model.addAttribute("message", "Password updated successfully. You can now login.");
+			return "login";
+		} else {
+			model.addAttribute("error", "Invalid or expired code. Please try again.");
+			return "resetPassword";
 		}
-
-		model.addAttribute("error", "Invalid or expired code. Please try again.");
-		return "resetPassword";
 	}
 }

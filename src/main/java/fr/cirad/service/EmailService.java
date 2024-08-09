@@ -15,8 +15,8 @@ public class EmailService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
-            message.setSubject("Réinitialisation de votre mot de passe");
-            message.setText("Votre code de réinitialisation est : " + resetCode + "\nCe code expirera dans 5 minutes.");
+            message.setSubject("Password Reset Request");
+            message.setText("Your password reset code is: " + resetCode + "\nThis code will expire in 5 minutes.");
             mailSender.send(message);
             return true;
         } catch (Exception e) {

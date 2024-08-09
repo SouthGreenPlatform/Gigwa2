@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @Service
 public class PasswordResetService {
@@ -20,17 +22,36 @@ public class PasswordResetService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired private ReloadableInMemoryDaoImpl userDao;
+    @Autowired
+    private ReloadableInMemoryDaoImpl userDao;
 
     public String generateResetCode() {
         return String.format("%08d", new Random().nextInt(100000000));
     }
 
     public boolean sendResetPasswordEmail(String email) {
+        UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
+        if (user == null) {
+            return true; // We return true to not disclose if the email exists
+        }
+
         String resetCode = generateResetCode();
         resetCodes.put(resetCode, email);
         codeExpirations.put(resetCode, LocalDateTime.now().plusMinutes(5)); // Code valid for 5 minutes
+
+        scheduleCodeRemoval(resetCode);
+
         return emailService.sendResetPasswordEmail(email, resetCode);
+    }
+
+    private void scheduleCodeRemoval(String code) {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                resetCodes.remove(code);
+                codeExpirations.remove(code);
+            }
+        }, 5 * 60 * 1000); // 5 minutes in milliseconds
     }
 
     public boolean validateResetCode(String code) {
@@ -38,19 +59,11 @@ public class PasswordResetService {
             return false;
         }
         LocalDateTime expiration = codeExpirations.get(code);
-        boolean isValid = expiration.isAfter(LocalDateTime.now());
-
-        // Remove the code after checking its validity
-        resetCodes.remove(code);
-        codeExpirations.remove(code);
-
-        return isValid;
+        return expiration.isAfter(LocalDateTime.now());
     }
 
     public boolean updatePassword(String code, String newPassword) {
-        boolean isValid = validateResetCode(code);
-
-        if (!isValid) {
+        if (!validateResetCode(code)) {
             return false;
         }
 
@@ -61,7 +74,9 @@ public class PasswordResetService {
         }
 
         try {
-            userDao.saveOrUpdateUser(user.getUsername(), newPassword, user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toArray(String[]::new), user.isEnabled(), user.getMethod(), user.getEmail());
+            userDao.saveOrUpdateUser(user.getUsername(), newPassword,
+                    user.getAuthorities(),
+                    user.isEnabled(), user.getMethod(), user.getEmail());
         } catch (IOException e) {
             e.printStackTrace();
             return false;
