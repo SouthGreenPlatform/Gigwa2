@@ -5,6 +5,7 @@ import fr.cirad.security.UserWithMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ public class PasswordResetService {
         return String.format("%08d", new java.util.Random().nextInt(100000000));
     }
 
-    public boolean sendResetPasswordEmail(String email, HttpSession session) {
+    public boolean sendResetPasswordEmail(String email, HttpSession session, HttpServletRequest request) {
         UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
         if (user == null) {
             return true; // We return true to not disclose if the email exists
@@ -37,7 +38,7 @@ public class PasswordResetService {
         session.setAttribute(RESET_EMAIL_KEY, email);
         session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
 
-        return emailService.sendResetPasswordEmail(email, resetCode);
+        return emailService.sendResetPasswordEmail(email, resetCode, request);
     }
 
     public boolean validateResetCode(String code, HttpSession session) {

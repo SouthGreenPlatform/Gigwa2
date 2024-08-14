@@ -66,8 +66,8 @@ public class GigwaAuthenticationController {
 	}
 
 	@PostMapping(LOGIN_LOST_PASSWORD_URL)
-	public String sendResetPasswordEmail(@RequestParam String email, HttpSession session, Model model) {
-		passwordResetService.sendResetPasswordEmail(email, session);
+	public String sendResetPasswordEmail(@RequestParam String email, HttpSession session, HttpServletRequest request, Model model) {
+		passwordResetService.sendResetPasswordEmail(email, session, request);
 		model.addAttribute("message", "If this e-mail address matches a user account, a code valid for 5 minutes has just been sent to it.");
 		return "resetPassword";
 	}

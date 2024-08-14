@@ -1,6 +1,7 @@
 package fr.cirad.service;
 
 import fr.cirad.tools.AppConfig;
+import fr.cirad.web.controller.BackOfficeController;
 import org.mortbay.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -9,6 +10,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletRequest;
+
+import static fr.cirad.mgdb.service.GigwaGa4ghServiceImpl.TMP_OUTPUT_FOLDER;
 
 @Service
 public class EmailService {
@@ -19,11 +23,14 @@ public class EmailService {
     @Autowired
     private AppConfig appConfig;
 
-    public boolean sendResetPasswordEmail(String to, String resetCode) {
+    public boolean sendResetPasswordEmail(String to, String resetCode, HttpServletRequest request) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
 
-            String enforcedWebapRootUrl = appConfig.get("enforcedWebapRootUrl");
+            String sWebAppRoot = appConfig.get("enforcedWebapRootUrl");
+            String enforcedWebapRootUrl = (sWebAppRoot == null
+                    ? BackOfficeController.determinePublicHostName(request) + request.getContextPath()
+                    : sWebAppRoot);
 
             if (enforcedWebapRootUrl == null || enforcedWebapRootUrl.trim().isEmpty()) {
                 Log.warn("enforcedWebapRootUrl is not set in the application.properties file. Using the default value.");
