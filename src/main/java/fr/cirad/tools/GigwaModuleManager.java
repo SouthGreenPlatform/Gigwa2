@@ -27,15 +27,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -70,6 +63,7 @@ import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
 import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.manager.dump.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
@@ -84,6 +78,8 @@ import fr.cirad.web.controller.security.UserPermissionController;
 
 @Component
 public class GigwaModuleManager implements IModuleManager {
+
+    private Map<String, ImportProcess> importProcesses = new ConcurrentHashMap<>();
 
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
@@ -403,7 +399,7 @@ public class GigwaModuleManager implements IModuleManager {
             } catch (IOException e) {
                 LOG.error("Error creating description file", e);
             }
-        return process;
+        return (IBackgroundProcess) process;
     }
 
     @Override
@@ -414,7 +410,7 @@ public class GigwaModuleManager implements IModuleManager {
         DumpProcess process = new DumpProcess(this, sModule, MongoTemplateManager.getDatabaseName(sModule), MongoTemplateManager.getServerHosts(sHost), servletContext.getRealPath(""), appConfig.get("dumpFolder"));
 
         process.startRestore(dumpFile, drop, credentials);
-        return process;
+        return (IBackgroundProcess) process;
     }
 
     @Override
@@ -611,7 +607,12 @@ public class GigwaModuleManager implements IModuleManager {
 		throw new Exception("Not managing entities of type " + sEntityType);
 	}
 
-	@Override
+    @Override
+    public Map<String, ImportProcess> getImportProcesses() {
+        return Collections.unmodifiableMap(importProcesses);
+    }
+
+    @Override
 	public Collection<? extends String> getLevel1Roles(String level1Type, ResourceBundle bundle) {
 		List<String> result = new ArrayList<>();
 		for (String role : StringUtils.tokenizeToStringArray(bundle.getString(UserPermissionController.LEVEL1_ROLES + "_" + level1Type), ","))
