@@ -1857,7 +1857,7 @@ public class GigwaRestController extends ControllerInterface {
 		boolean providingSamples = Boolean.TRUE.equals(providingSampleIDs);
 		boolean useBrapiMdEndpoint = Boolean.TRUE.equals(directlyPullMdFromBrAPI);
 
-		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
+		final String processId = "import::" + auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
         ProgressIndicator.registerProgressIndicator(progress);
 
