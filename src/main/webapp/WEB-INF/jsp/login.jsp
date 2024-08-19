@@ -63,7 +63,7 @@
                             <form name="f" action='login' method='POST' id="form-login" style="">
                                 <input type="text" name="username" id="username" placeholder="Username" required="required" />
                                 <input type="password" name="password" id="password" placeholder="Password" required="required" />
-                                <a href="${pageContext.request.contextPath}/lostPassword.do">Lost Password</a>
+                                <a class="text-danger" style="font-size:13px;" href="${pageContext.request.contextPath}/lostPassword.do">Lost your password?</a>
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large" style="margin:40px 0 20px 0;">Log me in</button>
                             </form>
                             <c:set var="casServerURL" value="<%= appConfig.get(\"casServerURL\") %>"></c:set>

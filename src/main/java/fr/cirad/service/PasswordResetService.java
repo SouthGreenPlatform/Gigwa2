@@ -2,7 +2,13 @@ package fr.cirad.service;
 
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.UserWithMethod;
+import fr.cirad.tools.AppConfig;
+import fr.cirad.web.controller.BackOfficeController;
+
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,12 +19,17 @@ import java.time.LocalDateTime;
 @Service
 public class PasswordResetService {
 
+	private static final Logger LOG = Logger.getLogger(PasswordResetService.class);
+	
     private static final String RESET_CODE_KEY = "resetCode";
     private static final String RESET_EMAIL_KEY = "resetEmail";
     private static final String RESET_EXPIRATION_KEY = "resetExpiration";
 
     @Autowired
-    private EmailService emailService;
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private AppConfig appConfig;
 
     @Autowired
     private ReloadableInMemoryDaoImpl userDao;
@@ -38,7 +49,27 @@ public class PasswordResetService {
         session.setAttribute(RESET_EMAIL_KEY, email);
         session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
 
-        return emailService.sendResetPasswordEmail(email, resetCode, request);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+
+            String sWebAppRoot = appConfig.get("enforcedWebapRootUrl");
+            String enforcedWebapRootUrl = (sWebAppRoot == null ? BackOfficeController.determinePublicHostName(request) + request.getContextPath() : sWebAppRoot);
+            if (enforcedWebapRootUrl == null || enforcedWebapRootUrl.trim().isEmpty())
+            	LOG.warn("enforcedWebapRootUrl is not set in the application.properties file. Using the default value.");
+
+            String subject = "Gigwa - Password reset request";
+            String emailContent = "Hello,\n\nYou have requested to reset your password for the following Gigwa instance: " + enforcedWebapRootUrl + "\nYour password reset code is: " + resetCode + "\nPlease enter this code in the application to reset your password. This code will expire in 5 minutes.\n";
+
+            message.setTo(email);
+            message.setSubject(subject);
+            message.setText(emailContent);
+
+            mailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            LOG.error("Unable to send password reset email", e);
+            return false;
+        }
     }
 
     public boolean validateResetCode(String code, HttpSession session) {

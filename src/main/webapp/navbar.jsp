@@ -36,20 +36,9 @@
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
 						<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
-							<li>
-								<c:if test="${principal != null && !isAnonymous}">
-									<a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">
-										<c:choose>
-											<c:when test="${userDao.canLoggedUserWriteToSystem()}">
-												Manage users<br/>and permissions
-											</c:when>
-											<c:otherwise>
-												Manage account
-											</c:otherwise>
-										</c:choose>
-									</a>
-								</c:if>
-							</li>
+		                    <c:if test="${!isAnonymous}">
+								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and/or user permissions</a></li>
+							</c:if>
 							<c:if test="${principal != null && !isAnonymous}">
 								<li><a href="<c:url value='/exportedData.jsp' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">View exported data</a></li>
 							</c:if>

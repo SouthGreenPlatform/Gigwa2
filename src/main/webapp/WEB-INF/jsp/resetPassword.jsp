@@ -40,14 +40,14 @@
                                 <input type="text" name="code" placeholder="Reset code" required />
                                 <input type="password" name="newPassword" placeholder="New password" required />
                                 <c:if test="${not empty error}">
-                                    <p class="text-danger">${error}</p>
+                                    <p style="font-size:13px;" class="text-danger">${error}</p>
                                 </c:if>
                                 <c:if test="${not empty message}">
-                                    <p class="text-success">${message}</p>
+                                    <p style="font-size:13px;" class="text-success">${message}</p>
                                 </c:if>
                                 <button type="submit" class="btn btn-primary btn-block btn-large" style="margin:40px 0 20px 0;">Update password</button>
                             </form>
-                            <a type="button" class="btn btn-primary btn-block btn-large margin-top-md" href="${pageContext.request.contextPath}/login.do">Return to login</a>
+                            <a type="button" class="btn btn-primary btn-block btn-large margin-top-md" href="${pageContext.request.contextPath}/login.do">Return to login page</a>
                         </div>
                     </div>
                 </div>
