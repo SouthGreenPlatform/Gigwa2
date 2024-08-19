@@ -122,6 +122,7 @@ import com.sun.jersey.api.client.ClientResponse;
 
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
+import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
@@ -158,6 +159,7 @@ import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
+import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.SessionAttributeAwareThread;
@@ -1855,7 +1857,7 @@ public class GigwaRestController extends ControllerInterface {
 		boolean providingSamples = Boolean.TRUE.equals(providingSampleIDs);
 		boolean useBrapiMdEndpoint = Boolean.TRUE.equals(directlyPullMdFromBrAPI);
 
-		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
+		final String processId = "import::" + auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
         ProgressIndicator.registerProgressIndicator(progress);
 
@@ -2205,6 +2207,9 @@ public class GigwaRestController extends ControllerInterface {
 							public void run() {
 								Scanner scanner = null;
 								try {
+							        ImportProcess process = new ImportProcess(progress, sModule);
+							        ((GigwaModuleManager) moduleManager).registerImportProcess(process);
+
 									Integer newProjId = null;
 									if (fBrapGenotypeiImport) {
 										genotypeImporter.set(new BrapiImport(processId));

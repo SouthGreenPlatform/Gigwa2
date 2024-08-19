@@ -27,15 +27,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -54,6 +47,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,11 +59,12 @@ import org.xml.sax.SAXException;
 
 import com.mongodb.BasicDBObject;
 
+import fr.cirad.manager.AbstractProcess;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
-import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
@@ -85,6 +80,8 @@ import fr.cirad.web.controller.security.UserPermissionController;
 @Component
 public class GigwaModuleManager implements IModuleManager {
 
+    private Map<String, AbstractProcess> importProcesses = new ConcurrentHashMap<>();
+
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
     private static final String defaultDumpFolder = DumpProcess.dumpManagementPath + "/dumps";
@@ -96,6 +93,7 @@ public class GigwaModuleManager implements IModuleManager {
     @Autowired private ServletContext servletContext;
     @Autowired private ReloadableInMemoryDaoImpl userDao;
 	@Autowired private TokenManager tokenManager;
+//	@Autowired private DumpManager dumpManager;
 
     @Override
     public String getModuleHost(String sModule) {
@@ -382,7 +380,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startDump(String sModule, String dumpName, String sDescription) {
+    public AbstractProcess startDump(String sModule, String dumpName, String sDescription) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String databaseName = MongoTemplateManager.getDatabaseName(sModule);
@@ -407,7 +405,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
+    public AbstractProcess startRestore(String sModule, String dumpId, boolean drop) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
@@ -610,13 +608,35 @@ public class GigwaModuleManager implements IModuleManager {
 
 		throw new Exception("Not managing entities of type " + sEntityType);
 	}
-
-	@Override
+	
+    @Override
 	public Collection<? extends String> getLevel1Roles(String level1Type, ResourceBundle bundle) {
 		List<String> result = new ArrayList<>();
 		for (String role : StringUtils.tokenizeToStringArray(bundle.getString(UserPermissionController.LEVEL1_ROLES + "_" + level1Type), ","))
 			if (!role.equals(AbstractTokenManager.ENTITY_SNPCLUST_EDITOR_ROLE) || appConfig.get("snpclustLink") != null)
 				result.add(role);
 		return result;
+	}
+	
+	public void registerImportProcess(ImportProcess process) {
+		importProcesses.put(process.getProcessID(), process);
+	}
+
+    @Override
+    public Map<String, AbstractProcess> getImportProcesses() {
+        return importProcesses;
+    }
+    
+	/**
+	 * Clean old finished processes regularly
+	 */
+	@Scheduled(fixedRate = 86400000)
+	public void cleanupFinishedProcesses() {
+		for (String processID : importProcesses.keySet()) {
+			AbstractProcess process = importProcesses.get(processID);
+			if (process.getStatus().isFinal()) {
+				importProcesses.remove(processID);
+			}
+		}
 	}
 }
