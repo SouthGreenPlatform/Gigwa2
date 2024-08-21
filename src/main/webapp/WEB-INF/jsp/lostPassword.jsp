@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<%@ page language="java" contentType="text/html; charset=utf-8" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.GigwaAuthenticationController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <html>
@@ -21,10 +21,10 @@
                     <div class="panel panel-default">
                         <div class="panel-body text-center">
                             <div style="background-color:white; padding:7px; border:darkblue 5px outset; margin:10px 0 40px 0;"><img alt="Gigwa" height="40" src="images/logo_big.png" /><br/>RESET PASSWORD</div>
-                            <form action="lostPassword.do" method="POST">
+                            <form action="<c:url value='<%= GigwaAuthenticationController.LOGIN_LOST_PASSWORD_URL %>' />" method="POST">
                                 <input type="email" name="email" placeholder="Email address" required />
-                                <c:if test="${not empty error}">
-                                    <p class="text-danger">${error}</p>
+                                <c:if test="${not empty param.error}">
+                                    <p style="font-size:13px;" class="text-danger">${param.error}</p>
                                 </c:if>
                                 <button type="submit" class="btn btn-primary btn-block btn-large" style="margin:40px 0 20px 0;">Send reset code</button>
                             </form>

@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.GigwaAuthenticationController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -63,7 +63,9 @@
                             <form name="f" action='login' method='POST' id="form-login" style="">
                                 <input type="text" name="username" id="username" placeholder="Username" required="required" />
                                 <input type="password" name="password" id="password" placeholder="Password" required="required" />
-                                <a class="text-danger" style="font-size:13px;" href="${pageContext.request.contextPath}/lostPassword.do">Lost your password?</a>
+                                <c:if test="${resetPasswordEnabled}">
+                                	<a class="text-danger" style="font-size:13px;" href="${pageContext.request.contextPath}<%= GigwaAuthenticationController.LOGIN_LOST_PASSWORD_URL %>">Lost your password?</a>
+                                </c:if>
                                 <button type="submit" name="connexion" class="btn btn-primary btn-block btn-large" style="margin:40px 0 20px 0;">Log me in</button>
                             </form>
                             <c:set var="casServerURL" value="<%= appConfig.get(\"casServerURL\") %>"></c:set>
@@ -74,17 +76,24 @@
                             	<c:choose><c:when test='${!fn:startsWith(casOrganization, "??") && !empty casOrganization}'>${casOrganization}</c:when><c:otherwise>organization</c:otherwise></c:choose>
                             	account</a>
 							</c:if>
-                            <c:if test="${param.auth eq 'failure'}">
-                                <div class="text-red margin-top-md">
-                                    &nbsp;
-                                    <span id="loginErrorMsg" style="background-color:white; padding:0 10px;"><c:out value="${SPRING_SECURITY_LAST_EXCEPTION.message}" /></span>
-                                    <script type="text/javascript">
-                                    setTimeout(function () {
-                                        $("span#loginErrorMsg").fadeTo(1000, 0);
-                                    }, 2000);
-                                    </script>
-                                </div>
-                            </c:if>
+							<c:choose>
+	                            <c:when test="${param.auth eq 'failure'}">
+	                                <div class="text-red margin-top-md">
+	                                    &nbsp;
+	                                    <span id="loginErrorMsg" style="background-color:white; padding:0 10px;"><c:out value="${SPRING_SECURITY_LAST_EXCEPTION.message}" /></span>
+	                                    <script type="text/javascript">
+	                                    setTimeout(function () {
+	                                        $("span#loginErrorMsg").fadeTo(1000, 0);
+	                                    }, 2000);
+	                                    </script>
+	                                </div>
+	                            </c:when>
+	                            <c:otherwise>
+	                                <c:if test="${not empty param.message}">
+	                                    <p style="font-size:13px;" class="text-success">${param.message}</p>
+	                                </c:if>
+	                            </c:otherwise>
+                            </c:choose>
                             <button type="button" class="btn btn-primary btn-block btn-large margin-top-md" onclick="window.location.href = 'index.jsp';">Return to public databases</button>
                             <c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
                             <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>

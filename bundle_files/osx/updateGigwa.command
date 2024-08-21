@@ -34,7 +34,7 @@ if [ -d "$1" ]; then
 
 		#copy configuration files from saved folder to new gigwa folder
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-data.xml $2/WEB-INF/classes/applicationContext-data.xml
-#		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-security.xml $2/WEB-INF/classes/applicationContext-security.xml
+		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-MVC.xml $2/WEB-INF/classes/applicationContext-MVC.xml
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/datasources.properties $2/WEB-INF/classes/datasources.properties
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/users.properties $2/WEB-INF/classes/users.properties
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/config.properties $2/WEB-INF/classes/config.properties
