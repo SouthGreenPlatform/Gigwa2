@@ -28,7 +28,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -268,35 +275,66 @@ public class GigwaModuleManager implements IModuleManager {
             String dumpFolder = appConfig.get("dumpFolder");
             if (dumpFolder == null)
                 actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
-            else if (Files.isDirectory(Paths.get(dumpFolder))) {
+            else {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return Files.isDirectory(Paths.get(dumpFolder));
+                    }
+                });
+
+                boolean isDirectory;
                 try {
-                    String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
-
-                    Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    actionRequiredToEnableDumps = ""; // all seems OK
-                } catch (IOException ioe) {
-                    LOG.error("error checking for mongodump presence: " + ioe.getMessage());
-                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    isDirectory = future.get(10, TimeUnit.SECONDS); // Timeout after 10 seconds
+                } catch (TimeoutException e) {
+                    future.cancel(true); // Cancel the task if it times out
+                    LOG.error("Timeout while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                    LOG.error("Interrupted while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (ExecutionException e) {
+                    LOG.error("Error while checking if dumpFolder is a directory: " + e.getCause().getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } finally {
+                    executor.shutdownNow();
                 }
+
+                if (isDirectory) {
+                    try {
+                        String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
+
+                        Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        actionRequiredToEnableDumps = ""; // all seems OK
+                    } catch (IOException ioe) {
+                        LOG.error("error checking for mongodump presence: " + ioe.getMessage());
+                        actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    }
+                }
+                else
+                    actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
             }
-            else
-                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
         }
         return actionRequiredToEnableDumps;
     }
-
+    
     @Override
     public List<DumpMetadata> getDumps(String sModule) {
         return getDumps(sModule, true);
