@@ -69,7 +69,7 @@ public class PasswordResetService {
         String resetCode = generateResetCode();
         String sWebAppRoot = request.getHeader("referer");
         if (sWebAppRoot != null)
-            sWebAppRoot = sWebAppRoot.replaceFirst(GigwaAuthenticationController.LOGIN_LOST_PASSWORD_URL, "");
+            sWebAppRoot = sWebAppRoot.split("\\?")[0].replaceFirst(GigwaAuthenticationController.LOGIN_LOST_PASSWORD_URL, "");
         else {
 			sWebAppRoot = appConfig.get("enforcedWebapRootUrl");
 			if (sWebAppRoot == null) {
@@ -108,6 +108,8 @@ public class PasswordResetService {
         session.setAttribute(RESET_CODE_KEY, resetCode);
         session.setAttribute(RESET_EMAIL_KEY, email);
         session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
+        
+        LOG.info("Sent password reset code to " + email);
         return true;
     }
     
@@ -128,16 +130,10 @@ public class PasswordResetService {
         String noReplyAddress = "noreply@" + cleanedHost;
 
         // Validate the email address
-        if (!isValidEmailAddress(noReplyAddress))
+        if (!UserWithMethod.isEmailAddress(noReplyAddress))
             throw new IllegalArgumentException("Generated noreply address is not valid: " + noReplyAddress);
 
         return noReplyAddress;
-    }
-
-    private static boolean isValidEmailAddress(String email) {
-        // Simple email validation regex
-        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
-        return email.matches(emailRegex);
     }
 
     public boolean validateResetCode(String code, HttpSession session) {
