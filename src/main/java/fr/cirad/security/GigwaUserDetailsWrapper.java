@@ -30,10 +30,8 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 	public UserDetails loadUserDetails(T authentication) throws DataAccessException {
 		if (authentication instanceof CasAssertionAuthenticationToken) {  // CAS authentication
 			try {
-				return service.loadUserByUsernameAndMethod(authentication.getName(), METHOD_CAS);
-			} catch (UsernameNotFoundException exc) {
-				// New CAS user : create account
-				// TODO : Config option to create account automatically or only manually
+				return service.loadUserByUsername(authentication.getName());
+			} catch (UsernameNotFoundException exc) { // New CAS user : create account
 				String[] authorities = {IRoleDefinition.DUMMY_EMPTY_ROLE};
 				try {
 					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS, null);
@@ -41,7 +39,7 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 					LOG.error(e);
 					throw new ExternalUserCreationFailureException("Error while creating the new CAS user", e);
 				}
-				UserDetails user = service.loadUserByUsernameAndMethod(authentication.getName(), METHOD_CAS);
+				UserDetails user = service.loadUserByUsername(authentication.getName());
 				return user;
 			}
 		} else {  // Traditional authentication

@@ -157,6 +157,7 @@ import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
+import fr.cirad.service.PasswordResetService;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.GigwaModuleManager;
@@ -208,6 +209,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
 	
 	@Autowired private IModuleManager moduleManager;
+	
+	@Autowired private PasswordResetService passwordResetService;
 
 	/**
 	 * The Constant LOG.
@@ -301,8 +304,16 @@ public class GigwaRestController extends ControllerInterface {
             Authentication authentication;
             if (userInfo == null) {
                 authentication = SecurityContextHolder.getContext().getAuthentication();
-                if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
-                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
+                if (authentication != null) {
+	                if (authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials())) {
+	                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it via the \"Manage users and permissions\" button.");
+	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
+	                }
+	                else if (passwordResetService.seemsProperlyConfigured() && authentication.getPrincipal() instanceof UserWithMethod && Helper.isNullOrEmptyString(((UserWithMethod) authentication.getPrincipal()).getEmail())) {
+	                    result.put(Constants.MESSAGE, "This Gigwa instance supports a password reset functionality, which requires to know your e-mail address in order to be effective. In order to avoid password loss, we strongly recommend you specify an e-mail address for your account via the \"Manage users and permissions\" button.");
+	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
+	                }
+                }
                 LOG.info("Returning token for current session user " + authentication.getName());
             }
             else {
@@ -2359,7 +2370,7 @@ public class GigwaRestController extends ControllerInterface {
 									}
 									else if (!fDatasourceAlreadyExisted.get() && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
-									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
+									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsername(auth.getName());
 									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
 									            return; // no need to grant any role to administrators
 		

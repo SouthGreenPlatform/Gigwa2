@@ -244,6 +244,8 @@ function getToken() {
             token = jsonResult.token;
             if (document.referrer.endsWith("/login.do") && jsonResult.msg != null)
                 alert(jsonResult.msg);
+            if (jsonResult.redirect != null)
+            	window.location.href = jsonResult.redirect;
         },
         error: function (xhr, thrownError) {
             handleError(xhr, thrownError);
