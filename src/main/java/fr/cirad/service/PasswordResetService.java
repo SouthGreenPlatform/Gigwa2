@@ -62,57 +62,68 @@ public class PasswordResetService {
 
     public boolean sendResetPasswordEmail(String email, HttpSession session, HttpServletRequest request) throws MessagingException, SocketException, UnknownHostException {
         UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
-        if (user == null) {
-            return true; // We return true to not disclose if the email exists
-        }
+        if (user == null /* don't disclose if the email exists */|| !user.getMethod().isEmpty() /* only local accounts are concerned */)
+            return true;
 
         String resetCode = generateResetCode();
         String sWebAppRoot = request.getHeader("referer");
         if (sWebAppRoot != null)
             sWebAppRoot = sWebAppRoot.split("\\?")[0].replaceFirst(GigwaAuthenticationController.LOGIN_LOST_PASSWORD_URL, "");
         else {
-			sWebAppRoot = appConfig.get("enforcedWebapRootUrl");
-			if (sWebAppRoot == null) {
-				String computedBaseURL = BackOfficeController.determinePublicHostName(request);
-				if (computedBaseURL != null)
-					sWebAppRoot = computedBaseURL + request.getContextPath();
-			}
+            sWebAppRoot = appConfig.get("enforcedWebapRootUrl");
+            if (sWebAppRoot == null) {
+                String computedBaseURL = BackOfficeController.determinePublicHostName(request);
+                if (computedBaseURL != null)
+                    sWebAppRoot = computedBaseURL + request.getContextPath();
+            }
         }
-		if (sWebAppRoot == null)
-			LOG.warn("Unable to determine password reset link. None will be mentioned in the e-mail!");
-		
-        String subject = "Gigwa - Password reset request";
-        String emailContent = "Hello,\n\nYou have requested to reset your password"
-	         + (sWebAppRoot == null ? "" : " for the following Gigwa instance: " + sWebAppRoot + GigwaAuthenticationController.LOGIN_RESET_PASSWORD_URL)
-	         + ".\nYour password reset code is: " + resetCode + "\nPlease enter this code in the application to reset your password. This code will expire in 5 minutes.\n";
-        
-		MimeMessage message = mailSender.createMimeMessage();
-		MimeMultipart multipart = new MimeMultipart("alternative");
-		MimeBodyPart messageTxtBody = new MimeBodyPart();
-		
-		messageTxtBody.setContent(emailContent, "text/plain; charset=" + mailSender.getDefaultEncoding());
+        if (sWebAppRoot == null)
+            LOG.warn("Unable to determine password reset link. None will be mentioned in the e-mail!");
 
-		multipart.addBodyPart(messageTxtBody);
-		
-		message.setContent(multipart);
-		message.setSentDate(new java.util.Date());
-		String adminEmail = appConfig.get("adminEmail");    		
-		message.addFrom(new InternetAddress[] {new InternetAddress(adminEmail != null ? adminEmail : getNoReplyAddress(mailSender))});
+        String subject = "Gigwa - Password Reset Request";
+        String emailContentText = "Hello,\n\nYou have requested to reset your password"
+             + (sWebAppRoot == null ? "" : " for the following Gigwa instance: " + sWebAppRoot + GigwaAuthenticationController.LOGIN_RESET_PASSWORD_URL)
+             + ".\nYour password reset code is: " + resetCode + "\nPlease enter this code in the application to reset your password, it will expire in 5 minutes.\n";
+
+        String emailContentHtml = "<html><body>"
+             + "<p>Hello,</p>"
+             + "<p>You have requested to reset your password"
+             + (sWebAppRoot == null ? "" : " for the following Gigwa instance: <a href=\"" + sWebAppRoot + GigwaAuthenticationController.LOGIN_RESET_PASSWORD_URL + "\">" + sWebAppRoot + GigwaAuthenticationController.LOGIN_RESET_PASSWORD_URL + "</a>")
+             + ".</p>"
+             + "<p>Your password reset code is: <strong>" + resetCode + "</strong></p>"
+             + "<p>Please enter this code in the application to reset your password, it will expire in 5 minutes.</p>"
+             + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMultipart multipart = new MimeMultipart("alternative");
+
+        MimeBodyPart messageTxtBody = new MimeBodyPart();
+        messageTxtBody.setContent(emailContentText, "text/plain; charset=" + mailSender.getDefaultEncoding());
+        multipart.addBodyPart(messageTxtBody);
+
+        MimeBodyPart messageHtmlBody = new MimeBodyPart();
+        messageHtmlBody.setContent(emailContentHtml, "text/html; charset=" + mailSender.getDefaultEncoding());
+        multipart.addBodyPart(messageHtmlBody);
+
+        message.setContent(multipart);
+        message.setSentDate(new java.util.Date());
+        String adminEmail = appConfig.get("adminEmail");
+        message.addFrom(new InternetAddress[] {new InternetAddress(adminEmail != null ? adminEmail : getNoReplyAddress(mailSender))});
 
         message.setSubject(subject);
-		message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
-		message.saveChanges();
+        message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
+        message.saveChanges();
 
         mailSender.send(message);
-        
+
         session.setAttribute(RESET_CODE_KEY, resetCode);
         session.setAttribute(RESET_EMAIL_KEY, email);
         session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
-        
+
         LOG.info("Sent password reset code to " + email);
         return true;
     }
-    
+
     public static String getNoReplyAddress(JavaMailSenderImpl mailSender) throws IllegalArgumentException{
         String host = mailSender.getHost();
 
