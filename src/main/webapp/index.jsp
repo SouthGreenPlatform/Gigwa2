@@ -333,7 +333,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
 					<br/>
 					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -784,7 +784,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			});
 
 			$.ajax({
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />',
 				async: false,
 				type: "GET",
 				contentType: "application/json;charset=utf-8",
@@ -1961,7 +1961,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			$("div#exportPanel").hide();
 			$("a#exportBoxToggleButton").removeClass("active");
 		}
-		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
+		displayProcessProgress(2, "export_" + token, null, function() {
+			let fileExtensions = $("#exportFormat option:selected").data('ext').split(";");
+			if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
+				fileExtensions.push("tsv");
+			showServerExportBox(fileExtensions);
+		});
 	}
 
 	function postDataToIFrame(frameName, url, params)
