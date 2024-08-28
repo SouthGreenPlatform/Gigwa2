@@ -242,10 +242,12 @@ function getToken() {
         contentType: "application/json;charset=utf-8",
         success: function (jsonResult) {
             token = jsonResult.token;
-            if (document.referrer.endsWith("/login.do") && jsonResult.msg != null)
-                alert(jsonResult.msg);
-            if (jsonResult.redirect != null)
-            	window.location.href = jsonResult.redirect;
+            if (document.referrer.endsWith("/login.do")) {
+				if (jsonResult.msg != null)
+                	alert(jsonResult.msg);
+	            if (jsonResult.redirect != null)
+	            	window.location.href = jsonResult.redirect;
+	        }
         },
         error: function (xhr, thrownError) {
             handleError(xhr, thrownError);

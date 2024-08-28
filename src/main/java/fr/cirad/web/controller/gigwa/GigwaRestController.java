@@ -309,7 +309,7 @@ public class GigwaRestController extends ControllerInterface {
 	                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it via the \"Manage users and permissions\" button.");
 	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
 	                }
-	                else if (passwordResetService.seemsProperlyConfigured() && authentication.getPrincipal() instanceof UserWithMethod && Helper.isNullOrEmptyString(((UserWithMethod) authentication.getPrincipal()).getEmail())) {
+	                else if (passwordResetService.seemsProperlyConfigured() && authentication.getPrincipal() instanceof UserWithMethod && ((UserWithMethod) authentication.getPrincipal()).getMethod().isEmpty() && Helper.isNullOrEmptyString(((UserWithMethod) authentication.getPrincipal()).getEmail())) {
 	                    result.put(Constants.MESSAGE, "This Gigwa instance supports a password reset functionality, which requires to know your e-mail address in order to be effective. In order to avoid password loss, we strongly recommend you specify an e-mail address for your account via the \"Manage users and permissions\" button.");
 	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
 	                }
