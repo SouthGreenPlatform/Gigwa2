@@ -100,7 +100,6 @@ public class GigwaModuleManager implements IModuleManager {
     @Autowired private ServletContext servletContext;
     @Autowired private ReloadableInMemoryDaoImpl userDao;
 	@Autowired private TokenManager tokenManager;
-//	@Autowired private DumpManager dumpManager;
 
     @Override
     public String getModuleHost(String sModule) {
@@ -126,22 +125,21 @@ public class GigwaModuleManager implements IModuleManager {
             if (fIncludeEntityDescriptions)
             	q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
 
-            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
-                if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny)) {
-                    Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
-                    if (moduleEntities == null) {
-                        moduleEntities = new LinkedHashMap<>();
-                        entitiesByModule.put(sModule, moduleEntities);
-                    }
-
-                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
-                    	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
-                    	projectInfo[0] = project.getName();
-                    	if (fIncludeEntityDescriptions)
-                    		projectInfo[1] = project.getDescription();
-                        moduleEntities.put(project.getId(), projectInfo);
-                    }
+            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules()) {
+                Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
+                if (moduleEntities == null) {
+                    moduleEntities = new LinkedHashMap<>();
+                    entitiesByModule.put(sModule, moduleEntities);
                 }
+
+                for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
+                	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
+                	projectInfo[0] = project.getName();
+                	if (fIncludeEntityDescriptions)
+                		projectInfo[1] = project.getDescription();
+                    moduleEntities.put(project.getId(), projectInfo);
+                }
+            }
         }
         else
             throw new Exception("Not managing entities of type " + entityType);
