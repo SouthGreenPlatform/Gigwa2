@@ -18,6 +18,7 @@ package fr.cirad.manager;
 
 import fr.cirad.mgdb.importing.OntologyImport;
 import fr.cirad.tools.AppConfig;
+import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 
@@ -42,8 +43,9 @@ public class ScheduledTaskManager {
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(ScheduledTaskManager.class);
     
     @Autowired private AppConfig appConfig;
-    @Autowired TokenManager tokenManager;
-
+    @Autowired private TokenManager tokenManager;
+    @Autowired private GigwaModuleManager moduleManager;
+    
     /**
      * remove old tokens and drop associated temporary collections, executed every 6 hours
      */
@@ -83,4 +85,12 @@ public class ScheduledTaskManager {
         		LOG.info("CAS authentication enabled with " + casServerURL);
         }
     }
+    
+	/**
+	 * Clean old finished processes regularly
+	 */
+	@Scheduled(fixedRate = 86400000)
+	public void cleanupCompleteImportProcesses() {
+		moduleManager.cleanupCompleteImportProcesses();
+	}
 }

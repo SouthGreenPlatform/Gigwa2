@@ -662,12 +662,8 @@ public class GigwaModuleManager implements IModuleManager {
     public Map<String, AbstractProcess> getImportProcesses() {
         return importProcesses;
     }
-    
-	/**
-	 * Clean old finished processes regularly
-	 */
-	@Scheduled(fixedRate = 86400000)
-	public void cleanupFinishedProcesses() {
+
+	public void cleanupCompleteImportProcesses() {
 		for (String processID : importProcesses.keySet()) {
 			AbstractProcess process = importProcesses.get(processID);
 			if (process.getStatus().isFinal()) {
