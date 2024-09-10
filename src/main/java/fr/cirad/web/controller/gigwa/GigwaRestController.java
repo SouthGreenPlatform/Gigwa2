@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -897,17 +898,19 @@ public class GigwaRestController extends ControllerInterface {
 
 		resp.setContentType("text/tsv;charset=UTF-8");
 		String header = "variant\talleles\tchrom\tpos";
-        resp.getWriter().append(header);
+		
+		OutputStream os = resp.getOutputStream();
+		os.write(header.getBytes());
         for (String individual : individualPositions.keySet())
-            resp.getWriter().write(("\t" + individual));
-        resp.getWriter().write("\n");
+            os.write(("\t" + individual).getBytes());
+        os.write("\n".getBytes());
         
 		if (fNoGenotypesRequested) {	// simplest case where we're not returning genotypes: querying on variants collection will be faster
 			MongoCursor<VariantData> varIt = collWithPojoCodec.find(new BasicDBObject("$and", variantQueryDBList), VariantData.class).projection(new BasicDBObject(VariantData.FIELDNAME_KNOWN_ALLELES, 1).append(Assembly.getThreadBoundVariantRefPosPath(), 1)).iterator();
 			while (varIt.hasNext()) {
 				VariantData variant = varIt.next();
             	ReferencePosition rp = variant.getReferencePosition(Assembly.getThreadBoundAssembly());
-				resp.getWriter().write(variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n");
+				os.write((variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n").getBytes());
 			}
 			return;
 		}
@@ -919,7 +922,8 @@ public class GigwaRestController extends ControllerInterface {
 		final Integer nAssembly = Assembly.getThreadBoundAssembly();	// will need to be passed on to child thread
 
 		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
-			public void run() {
+			@Override
+			public void writeChunkRunsSynchronously(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream mainOS, OutputStream warningOS) {
 				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
 				
                 markerRunsToWrite.forEach(runsToWrite -> {
@@ -1003,7 +1007,7 @@ public class GigwaRestController extends ControllerInterface {
 		                    writtenGenotypeCount++;
 		                }
 		                sb.append("\n");
-			            resp.getWriter().write(sb.toString());
+		                mainOS.write(sb.toString().getBytes());
 	                }
 					catch (Exception e)
 					{
@@ -1013,10 +1017,15 @@ public class GigwaRestController extends ControllerInterface {
 					}
 				});
 			}
+
+			@Override
+			public void run() {
+				writeChunkRunsSynchronously(m_markerRunsToWrite, m_orderedMarkerIDs, m_mainOS, m_warningOS);				
+			}
 		};
 
-		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList(), samples, true, 100, writingThread, null, null, progress);
-		exportManager.readAndWrite();
+		ExportManager exportManager = new ExportManager(info[0], Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList(), samples, true, 100, writingThread, null, progress);
+		exportManager.readAndWrite(os);
 		progress.markAsComplete();
 		
 		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
