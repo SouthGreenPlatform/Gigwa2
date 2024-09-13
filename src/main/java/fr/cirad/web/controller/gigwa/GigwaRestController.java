@@ -124,7 +124,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
-import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
+import fr.cirad.mgdb.exporting.IExportHandler;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
@@ -914,6 +914,17 @@ public class GigwaRestController extends ControllerInterface {
 			}
 			return;
 		}
+		
+		// count variants to display
+		BasicDBList variantLevelQuery = !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList();
+    	List<BasicDBObject> countPipeline = new ArrayList<>();
+        if (!variantLevelQuery.isEmpty())
+        	countPipeline.add(new BasicDBObject("$match", new BasicDBObject("$and", variantLevelQuery)));
+    	countPipeline.add(new BasicDBObject("$count", "count"));
+    	MongoCursor<Document> countCursor = (fWorkingOnTempColl ? collWithPojoCodec : mongoTemplate.getCollection(mongoTemplate.getCollectionName(VariantData.class))).aggregate(countPipeline, Document.class).collation(IExportHandler.collationObj).iterator();
+    	long markerCount = countCursor.hasNext() ? ((Number) countCursor.next().get("count")).longValue() : 0;
+    	if (markerCount == 0)
+    		return;	// no genotypes to show
 
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
@@ -921,9 +932,9 @@ public class GigwaRestController extends ControllerInterface {
 		
 		final Integer nAssembly = Assembly.getThreadBoundAssembly();	// will need to be passed on to child thread
 
-		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
+		ExportManager.AbstractExportWriter writingThread = new ExportManager.AbstractExportWriter() {
 			@Override
-			public void writeChunkRunsSynchronously(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream mainOS, OutputStream warningOS) {
+			public void writeChunkRuns(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream mainOS, OutputStream warningOS) {
 				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
 				
                 markerRunsToWrite.forEach(runsToWrite -> {
@@ -966,6 +977,8 @@ public class GigwaRestController extends ControllerInterface {
 						        for (int i = 0; i < callsetIds.size(); i++)
 						        	try {
 						        		String groupName = gr.getGroupName(i);
+						        		if (i == 0 && groupName == null)
+						        			break;	// no groups selected
 							            individualsByPop.put(groupName, callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
 							            annotationFieldThresholdsByPop.put(groupName, gr.getAnnotationFieldThresholds(i));
 							        }
@@ -1017,14 +1030,9 @@ public class GigwaRestController extends ControllerInterface {
 					}
 				});
 			}
-
-			@Override
-			public void run() {
-				writeChunkRunsSynchronously(m_markerRunsToWrite, m_orderedMarkerIDs, m_mainOS, m_warningOS);				
-			}
 		};
 
-		ExportManager exportManager = new ExportManager(info[0], Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList(), samples, true, 100, writingThread, null, progress);
+		ExportManager exportManager = new ExportManager(info[0], Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, variantLevelQuery, samples, true, 100, writingThread, markerCount, progress);
 		exportManager.readAndWrite(os);
 		progress.markAsComplete();
 		
