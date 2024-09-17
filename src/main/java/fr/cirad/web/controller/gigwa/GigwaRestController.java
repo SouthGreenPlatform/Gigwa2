@@ -934,7 +934,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		ExportManager.AbstractExportWriter writingThread = new ExportManager.AbstractExportWriter() {
 			@Override
-			public void writeChunkRuns(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream mainOS, OutputStream warningOS) {
+			public void writeChunkRuns(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream genotypeOS, OutputStream variantOS, OutputStream warningOS) {
 				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
 				
                 markerRunsToWrite.forEach(runsToWrite -> {
@@ -1020,7 +1020,7 @@ public class GigwaRestController extends ControllerInterface {
 		                    writtenGenotypeCount++;
 		                }
 		                sb.append("\n");
-		                mainOS.write(sb.toString().getBytes());
+		                genotypeOS.write(sb.toString().getBytes());
 	                }
 					catch (Exception e)
 					{
