@@ -125,7 +125,9 @@ import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.exporting.IExportHandler;
+import fr.cirad.mgdb.exporting.individualoriented.AbstractIndividualOrientedExportHandler;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
+import fr.cirad.mgdb.exporting.markeroriented.HapMapExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.DartImport;
@@ -882,11 +884,7 @@ public class GigwaRestController extends ControllerInterface {
 		int projId = Integer.parseInt(info[1]);
 		boolean fNoGenotypesRequested = gr.getAllCallSetIds().isEmpty() || (gr.getAllCallSetIds().size() == 1 && gr.getAllCallSetIds().get(0).isEmpty());
 		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-
-		Map<String, Integer> individualPositions = new LinkedHashMap<>();
-		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
-			individualPositions.put(ind, individualPositions.size());
-		
+        
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
@@ -897,15 +895,19 @@ public class GigwaRestController extends ControllerInterface {
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(fNoGenotypesRequested ? VariantData.class : VariantRunData.class));		
 
 		resp.setContentType("text/tsv;charset=UTF-8");
-		String header = "variant\talleles\tchrom\tpos";
-		
 		OutputStream os = resp.getOutputStream();
-		os.write(header.getBytes());
-        for (String individual : individualPositions.keySet())
-            os.write(("\t" + individual).getBytes());
-        os.write("\n".getBytes());
         
 		if (fNoGenotypesRequested) {	// simplest case where we're not returning genotypes: querying on variants collection will be faster
+			Map<String, Integer> individualPositions = new LinkedHashMap<>();
+			for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
+				individualPositions.put(ind, individualPositions.size());
+
+			String header = "variant\talleles\tchrom\tpos";
+			os.write(header.getBytes());
+	        for (String individual : individualPositions.keySet())
+	            os.write(("\t" + individual).getBytes());
+	        os.write("\n".getBytes());
+
 			MongoCursor<VariantData> varIt = collWithPojoCodec.find(new BasicDBObject("$and", variantQueryDBList), VariantData.class).projection(new BasicDBObject(VariantData.FIELDNAME_KNOWN_ALLELES, 1).append(Assembly.getThreadBoundVariantRefPosPath(), 1)).iterator();
 			while (varIt.hasNext()) {
 				VariantData variant = varIt.next();
@@ -929,114 +931,23 @@ public class GigwaRestController extends ControllerInterface {
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
-		
-		final Integer nAssembly = Assembly.getThreadBoundAssembly();	// will need to be passed on to child thread
 
-		ExportManager.AbstractExportWriter writingThread = new ExportManager.AbstractExportWriter() {
-			@Override
-			public void writeChunkRuns(Collection<Collection<VariantRunData>> markerRunsToWrite, List<String> orderedMarkerIDs, OutputStream genotypeOS, OutputStream variantOS, OutputStream warningOS) {
-				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
-				
-                markerRunsToWrite.forEach(runsToWrite -> {
-                    if (progress.isAborted() || progress.getError() != null || runsToWrite == null || runsToWrite.isEmpty())
-                        return;
+        Assembly assembly = mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class);
+        Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
+        Map<String, Collection<String>> individualsByPop = new HashMap<>();
+        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
+        List<List<String>> callsetIds = gr.getAllCallSetIds();
+        for (int i = 0; i < callsetIds.size(); i++) {
+            individualsByPop.put(gr.getGroupName(i), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+            annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
+        }
 
-					VariantRunData vrd = runsToWrite.iterator().next();
-					String idOfVarToWrite = vrd.getVariantId();
-					StringBuffer sb = new StringBuffer();
-					try
-					{
-		                ReferencePosition rp = vrd.getReferencePosition(Assembly.getThreadBoundAssembly());
-		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
-	
-		                List<String>[] individualGenotypes = new ArrayList[individualPositions.size()];
+		HapMapExportHandler markerOrientedExportHandler = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
+		markerOrientedExportHandler.writeGenotypeFile(true, os, info[0], assembly, individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
 
-		                runsToWrite.forEach( run -> {
-	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
-                                String individualId = sampleIdToIndividualMap.get(sampleId);
-                                Integer individualIndex = individualPositions.get(individualId);
-                                if (individualIndex == null)
-                                    continue;   // unwanted sample
-                                
-								SampleGenotype sampleGenotype = run.getSampleGenotypes().get(sampleId);
-	                            String gtCode = sampleGenotype.getCode();
-	                            if (gtCode == null)
-                                    continue;   // skip genotype
-
-								List<Collection<String>> indlists = new ArrayList<>();
-								for (HashMap<String, Float> entry : gr.getAnnotationFieldThresholds()) {
-									if (!entry.isEmpty()) {
-										List<String> indList = gr.getCallSetIds() == null ? new ArrayList<>() : gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-										indlists.add(indList);
-									}
-								}
-								
-						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
-						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
-						        List<List<String>> callsetIds = gr.getAllCallSetIds();
-						        for (int i = 0; i < callsetIds.size(); i++)
-						        	try {
-						        		String groupName = gr.getGroupName(i);
-						        		if (i == 0 && groupName == null)
-						        			break;	// no groups selected
-							            individualsByPop.put(groupName, callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-							            annotationFieldThresholdsByPop.put(groupName, gr.getAnnotationFieldThresholds(i));
-							        }
-						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
-						        	{}
-
-								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individualsByPop, annotationFieldThresholdsByPop))
-    								continue;
-
-								if (individualGenotypes[individualIndex] == null)
-									individualGenotypes[individualIndex] = new ArrayList<String>();
-								individualGenotypes[individualIndex].add(gtCode);
-	                        }
-	                    });
-
-		                int writtenGenotypeCount = 0;
-		                
-		                String missingGenotype = "";
-						for (String individual : individualPositions.keySet() /* we use this list because it has the proper ordering */) {
-		                    int individualIndex = individualPositions.get(individual);
-		                    while (writtenGenotypeCount < individualIndex) {
-		                        sb.append(missingGenotype);
-		                        writtenGenotypeCount++;
-		                    }
-
-		                	String mostFrequentGenotype = null;
-		                    LinkedHashMap<Object, Integer> genotypeCounts = AbstractMarkerOrientedExportHandler.sortGenotypesFromMostFound(individualGenotypes[individualPositions.get(individual)]);
-                            if (genotypeCounts.size() == 1 || genotypeCounts.values().stream().limit(2).distinct().count() == 2)
-                            	mostFrequentGenotype = genotypeCounts.keySet().iterator().next().toString();
-		                    if (genotypeCounts.size() > 1)
-		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". " + (mostFrequentGenotype == null ? "Exporting as missing data" : "Exporting most frequent: " + mostFrequentGenotype) + "\n");
-
-		                    sb.append("\t" + (mostFrequentGenotype == null ? missingGenotype : mostFrequentGenotype));
-		                    writtenGenotypeCount++;
-		                }
-	
-		                while (writtenGenotypeCount < individualPositions.size()) {
-		                    sb.append(missingGenotype);
-		                    writtenGenotypeCount++;
-		                }
-		                sb.append("\n");
-		                genotypeOS.write(sb.toString().getBytes());
-	                }
-					catch (Exception e)
-					{
-						if (progress.getError() == null)	// only log this once
-							LOG.error("Unable to export " + idOfVarToWrite, e);
-						progress.setError("Unable to export " + idOfVarToWrite + ": " + e.getMessage());
-					}
-				});
-			}
-		};
-
-		ExportManager exportManager = new ExportManager(info[0], Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, variantLevelQuery, samples, true, 100, writingThread, markerCount, progress);
-		exportManager.readAndWrite(os);
 		progress.markAsComplete();
 		
-		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
+		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + new HashSet<>(sampleIdToIndividualMap.values()).size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
 	}
 
 	/**
