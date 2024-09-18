@@ -1883,16 +1883,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		}
 		
 		exporting = true;
-// 		if (keepExportOnServer)
-// 		{
-			$('#ddlWarning').hide();
-			$('#asyncProgressButton').show();
-// 		}
-// 		else
-// 		{
-// 			$('#ddlWarning').show();
-// 			$('#asyncProgressButton').hide();
-// 		}
+
+		$('#ddlWarning').hide();
+		$('#asyncProgressButton').show();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1910,58 +1903,22 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
-// 		if (keepExportOnServer) {
-            $.ajax({
-                url: url,
-                type: "POST",       
-                contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-                data: JSON.stringify(query),
-                success: function(response) {
-                        downloadURL = response;
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                        downloadURL = null;
-                        $("div#exportPanel").hide();
-                        $("a#exportBoxToggleButton").removeClass("active");
-                        handleError(xhr, thrownError);
-                }
-            });
-// 		} else {
-// 			var headers = buildHeader(token, $('#assembly').val());
-//             headers["Content-Type"] = "application/json;charset=utf-8"; 
-
-//             var request = {
-//                 method: "POST",
-//                 headers: headers,
-//                 body: JSON.stringify(query)
-//             };
-            
-//             var filename = '';
-            
-//             fetch(url, request).then((response) => {
-//                     var header = response.headers.get('Content-Disposition');
-//                     var parts = header.split(';');
-//                     filename = parts[1].split('=')[1];
-//                     return response.blob();
-//             })
-//             .then((result) => {
-//                 if (result !== undefined) {
-//                     var objectURL = URL.createObjectURL(result);
-//                     var link = document.createElement("a");
-//                     link.setAttribute("href", objectURL);
-//                     link.setAttribute("download", filename);
-//                     document.body.appendChild(link);
-//                     link.click();
-//                     link.remove();
-//                 }
-//             });
-// 			downloadURL = null;
-// 			//postDataToIFrame("outputFrame", url, query);
-// 			$("div#exportPanel").hide();
-// 			$("a#exportBoxToggleButton").removeClass("active");
-// 		}
-
+        $.ajax({
+            url: url,
+            type: "POST",       
+            contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+            data: JSON.stringify(query),
+            success: function(response) {
+                    downloadURL = response;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                    downloadURL = null;
+                    $("div#exportPanel").hide();
+                    $("a#exportBoxToggleButton").removeClass("active");
+                    handleError(xhr, thrownError);
+            }
+        });
 
 		displayProcessProgress(2, "export_" + token, null, function() {
 	        if (keepExportOnServer) {
@@ -1970,30 +1927,17 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					fileExtensions.push("tsv");
 				showServerExportBox(fileExtensions, $('#keepExportOnServ').prop('checked'));
 	        }
-	        else
-	        	parent.frames['outputFrame'].location.href = downloadURL;
+	        else {
+	        	var link = document.createElement('a');
+	        	link.href = downloadURL;
+	        	link.style.display = 'none';
+	        	link.download = downloadURL.substring(downloadURL.lastIndexOf('/') + 1);
+	        	document.body.appendChild(link);
+	        	link.click();
+	        	document.body.removeChild(link);
+	        }
 		});
 	}
-
-// 	function postDataToIFrame(frameName, url, params)
-// 	{
-// 		 var form = document.createElement("form");
-// 		 form.setAttribute("method", "post");
-// 		 form.setAttribute("action", url);
-// 		 form.setAttribute("target", frameName);
-
-// 		 for (var i in params) {
-// 			 var input = document.createElement('input');
-// 			 input.type = 'hidden';
-// 			 input.name = i;
-// 			 input.value = params[i];
-// 			 form.appendChild(input);
-// 		 }
-
-// 		 document.body.appendChild(form);
-// 		 form.submit();
-// 		 document.body.removeChild(form);
-// 	}
 
 	// split an Id and return element at the corresponding position
 	function splitId(id, pos) {

@@ -125,7 +125,6 @@ import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.exporting.IExportHandler;
-import fr.cirad.mgdb.exporting.individualoriented.AbstractIndividualOrientedExportHandler;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
 import fr.cirad.mgdb.exporting.markeroriented.HapMapExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
@@ -932,7 +931,6 @@ public class GigwaRestController extends ControllerInterface {
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
 
-        Assembly assembly = mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class);
         Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
         Map<String, Collection<String>> individualsByPop = new HashMap<>();
         Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
@@ -942,8 +940,8 @@ public class GigwaRestController extends ControllerInterface {
             annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
         }
 
-		HapMapExportHandler markerOrientedExportHandler = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
-		markerOrientedExportHandler.writeGenotypeFile(true, os, info[0], assembly, individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
+		HapMapExportHandler heh = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
+		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
 
 		progress.markAsComplete();
 		
