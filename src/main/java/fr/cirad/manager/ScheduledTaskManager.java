@@ -17,19 +17,22 @@
 package fr.cirad.manager;
 
 import fr.cirad.mgdb.importing.OntologyImport;
+import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 
-import java.text.ParseException;
 import javax.annotation.PostConstruct;
+import javax.servlet.ServletContext;
 
+import org.brapi.v2.api.VariantsetsApiController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.context.ServletContextAware;
 
 /**
  * class for methods that run periodically or upon server startup
@@ -38,13 +41,20 @@ import org.springframework.scheduling.annotation.Scheduled;
  */
 @Configuration
 @EnableScheduling
-public class ScheduledTaskManager {
+public class ScheduledTaskManager implements ServletContextAware {
 
     static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(ScheduledTaskManager.class);
     
     @Autowired private AppConfig appConfig;
     @Autowired private TokenManager tokenManager;
     @Autowired private GigwaModuleManager moduleManager;
+
+	private ServletContext servletContext;
+    
+	@Override
+	public void setServletContext(ServletContext servletContext) {
+		this.servletContext = servletContext;
+	}
     
     /**
      * remove old tokens and drop associated temporary collections, executed every 6 hours
@@ -87,10 +97,27 @@ public class ScheduledTaskManager {
     }
     
 	/**
-	 * Clean old finished processes regularly
+	 * Cleanup old finished import processes periodically
 	 */
-	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRate = 1000*60*60*24 /* 1 day */)
 	public void cleanupCompleteImportProcesses() {
 		moduleManager.cleanupCompleteImportProcesses();
+	}
+	
+	/**
+	 * Cleanup old finished processes regularly
+	 */
+	@Scheduled(fixedRate = 1000*60/*60*/ /* 1 hour */)
+	public void cleanupExpiredExportFiles() {
+        new Thread() {
+        	public void run() {
+	            try {
+	            	GigwaGa4ghServiceImpl.cleanupExpiredExportData(servletContext);
+	                VariantsetsApiController.cleanupOldExportData(servletContext);
+	            } catch (Exception e) {
+	                LOG.error("Unable to cleanup expired export files", e);
+	            }
+	        }
+	    }.start();
 	}
 }
