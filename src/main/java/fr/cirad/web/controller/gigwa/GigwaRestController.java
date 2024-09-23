@@ -686,10 +686,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param referenceSetId
 	 * @return Map<String, Boolean> true if could drop temporary collection
+	 * @throws InterruptedException 
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DROP_TEMP_COL_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
-	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
+	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException, InterruptedException {
 		Map<String, Boolean> response = new HashMap<>();
 		boolean success = false;
 		String token = tokenManager.readToken(request);
@@ -1009,11 +1010,13 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param variantSetId
 	 * @return Map<String, Collection<String>> @throws Exception
+	 * @throws InterruptedException 
+	 * @throws NumberFormatException 
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+			@PathVariable String variantSetId) throws IOException, NumberFormatException, InterruptedException {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
