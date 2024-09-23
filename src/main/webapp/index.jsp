@@ -333,7 +333,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
 					<br/>
 					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&keepExportOnServ=' + $('#keepExportOnServ').prop('checked') + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -1883,16 +1883,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		}
 		
 		exporting = true;
-		if (keepExportOnServer)
-		{
-			$('#ddlWarning').hide();
-			$('#asyncProgressButton').show();
-		}
-		else
-		{
-			$('#ddlWarning').show();
-			$('#asyncProgressButton').hide();
-		}
+
+		$('#ddlWarning').hide();
+		$('#asyncProgressButton').show();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1910,83 +1903,40 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
-		if (keepExportOnServer) {
-            $.ajax({
-                url: url,
-                type: "POST",       
-                contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-                data: JSON.stringify(query),
-                success: function(response) {
-                        downloadURL = response;
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                        downloadURL = null;
-                        $("div#exportPanel").hide();
-                        $("a#exportBoxToggleButton").removeClass("active");
-                        handleError(xhr, thrownError);
-                }
-            });
-		} else {
-			var headers = buildHeader(token, $('#assembly').val());
-            headers["Content-Type"] = "application/json;charset=utf-8"; 
+        $.ajax({
+            url: url,
+            type: "POST",       
+            contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+            data: JSON.stringify(query),
+            success: function(response) {
+                    downloadURL = response;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                    downloadURL = null;
+                    $("div#exportPanel").hide();
+                    $("a#exportBoxToggleButton").removeClass("active");
+                    handleError(xhr, thrownError);
+            }
+        });
 
-            var request = {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(query)
-            };
-            
-            var filename = '';
-            
-            fetch(url, request).then((response) => {
-                    var header = response.headers.get('Content-Disposition');
-                    var parts = header.split(';');
-                    filename = parts[1].split('=')[1];
-                    return response.blob();
-            })
-            .then((result) => {
-                if (result !== undefined) {
-                    var objectURL = URL.createObjectURL(result);
-                    var link = document.createElement("a");
-                    link.setAttribute("href", objectURL);
-                    link.setAttribute("download", filename);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                }
-            });
-			downloadURL = null;
-			//postDataToIFrame("outputFrame", url, query);
-			$("div#exportPanel").hide();
-			$("a#exportBoxToggleButton").removeClass("active");
-		}
 		displayProcessProgress(2, "export_" + token, null, function() {
-			let fileExtensions = $("#exportFormat option:selected").data('ext').split(";");
-			if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
-				fileExtensions.push("tsv");
-			showServerExportBox(fileExtensions);
+	        if (keepExportOnServer) {
+				let fileExtensions = $("#exportFormat option:selected").data('ext').split(";");
+				if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
+					fileExtensions.push("tsv");
+				showServerExportBox(fileExtensions, $('#keepExportOnServ').prop('checked'));
+	        }
+	        else {
+	        	var link = document.createElement('a');
+	        	link.href = downloadURL;
+	        	link.style.display = 'none';
+	        	link.download = downloadURL.substring(downloadURL.lastIndexOf('/') + 1);
+	        	document.body.appendChild(link);
+	        	link.click();
+	        	document.body.removeChild(link);
+	        }
 		});
-	}
-
-	function postDataToIFrame(frameName, url, params)
-	{
-		 var form = document.createElement("form");
-		 form.setAttribute("method", "post");
-		 form.setAttribute("action", url);
-		 form.setAttribute("target", frameName);
-
-		 for (var i in params) {
-			 var input = document.createElement('input');
-			 input.type = 'hidden';
-			 input.name = i;
-			 input.value = params[i];
-			 form.appendChild(input);
-		 }
-
-		 document.body.appendChild(form);
-		 form.submit();
-		 document.body.removeChild(form);
 	}
 
 	// split an Id and return element at the corresponding position
