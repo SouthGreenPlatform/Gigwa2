@@ -549,7 +549,7 @@ function groupNameChanged(n) {
 	let newName = $("input#group" + n).val();
 	for (var i = 1; i <= getGenotypeInvestigationMode(); i++)
    	   if (i != n) {
-		   $('#discriminate' + i + ` option[title='Group${n}']`).text(newName);
+		   $('#discriminate' + i + ` option[value='${n}']`).text(newName).attr('title', newName);
 		   $('#discriminate' + i).selectpicker('refresh');
 
 		   $("#igvGroupsMenu li input[value=group" + n + "]").parent().find("span").text(newName);
@@ -1118,10 +1118,9 @@ function menuAction(){
                 }
             });
         });
-        
-    } else {
-        $submenu.css('display', 'none');
     }
+    else
+        $submenu.css('display', 'none');
 }
 
 //This function allow the user to save a query into the DB
@@ -1430,6 +1429,7 @@ function listQueries(){
 	                  $('#Genotypes'+ (i + 1)).trigger('change');
 	                  $('#discriminate' + (i + 1)).selectpicker('val', jsonResult['discriminate'][i]);
 	                  $('#discriminate'+ (i + 1)).trigger('change');
+	                  groupNameChanged(i + 1);
                 }
                
                 $('#queryManager').modal("hide");
@@ -1487,7 +1487,7 @@ function onFilterByIds(checked) {
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
         $('#GeneIds').val("").prop('disabled', true);
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
         $('#clearGeneIdSelection').hide();
         $('#GeneIds button').prop('disabled', true).removeClass('active');
         
@@ -1538,7 +1538,7 @@ function onFilterByIds(checked) {
 
 function onGeneSelectionMinusMode() {
     if (!$('#geneIdsSelect').prop('disabled')) {
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
     }
 
     if (!$("#minusMode").hasClass("active")) {
@@ -1554,7 +1554,7 @@ function onGeneSelectionMinusMode() {
 
 function onGeneSelectionPlusMode() {
     if (!$('#geneIdsSelect').prop('disabled')) {
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
     }
 
     if (!$("#plusMode").hasClass("active")) {
@@ -1579,7 +1579,7 @@ function onGeneSelectionEditMode() {
     }
     else {
 		$("#editMode.active").removeClass("active");
-		$('#geneIdsSelect').prop('disabled', true).selectpicker('refresh');
+		$('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('refresh');
 	}
     
     $("#minusMode.active").removeClass("active");
