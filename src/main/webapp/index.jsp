@@ -173,8 +173,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<div id="GeneIds" class="margin-top-md">
 										<div class="container-fluid">
 											<div class="row">
-												<div class="col-xl-6 input-group half-width custom-label"
-													style="float: left;" id="geneIdsLabel">Gene Names</div>
+												<div class="col-xl-6 input-group half-width custom-label" style="float: left;" id="geneIdsLabel">Gene Names</div>
 													<div class="col-xl-6 input-group half-width custom-label" style="float: right; font-weight:400;">Selection mode</div>
 											</div>
 										</div>
