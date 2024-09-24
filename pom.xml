@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-        <project.version>2.9-snapshot</project.version>
+        <project.version>2.9-alpha</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
