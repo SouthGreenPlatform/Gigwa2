@@ -62,6 +62,7 @@
   <filter-mapping>
     <filter-name>autoUnzipFilterChain</filter-name>
     <url-pattern>/genofilt/tmpOutput/*</url-pattern>
+	<url-pattern>/genofilt/ddl_tmpOutput/*</url-pattern>
   </filter-mapping>
   
   <filter>
