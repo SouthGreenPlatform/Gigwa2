@@ -1057,7 +1057,7 @@ function checkGroupOverlap(groupNumber) {
 	});
 }
 
-function applyOutputToolConfig(t) {
+function applyOutputToolConfig() {
 	if ($("input#outputToolURL").val().trim() == "") {
 		localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val());
 		configureSelectedExternalTool();
@@ -1066,8 +1066,12 @@ function applyOutputToolConfig(t) {
 
 	if ($("input#galaxyInstanceURL").val().trim() == "")
 		localStorage.removeItem("galaxyInstanceURL");
-	else
+	else {
 		localStorage.setItem("galaxyInstanceURL", $("input#galaxyInstanceURL").val());
+		$("#galaxyPushButton input").val("Send exported data to " + $("input#galaxyInstanceURL").val());
+	}
+	
+	showGalaxyPushButton();
 
 	$("#applyOutputToolConfig").prop("disabled", "disabled");
 }

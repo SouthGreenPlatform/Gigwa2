@@ -277,18 +277,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 														</label>&nbsp;<br/>
 														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
 													</div>
-													<div style="width:100%; text-align:center;">
-														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
-														</label>
+													<div style="width:100%; margin-left:-10px;" class="margin-top margin-bottom label-checkbox">
 														<div>
-															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
+															<input type="checkbox" id="keepExportOnServ" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var enabled=$(this).is(':checked'); $('#enableExportPush').prop('checked', enabled); $('#enableExportPush').prop('disabled', enabled);" title="If ticked, export data will remain downloadable for at least 48h. You may then share its URL with collaborators." class="input-checkbox">
+															<label style="width:120px;" for="keepExportOnServ">Keep files on server</label>
 														</div>
+														<div style="text-align:center;">
+															<input type="checkbox" id="enableExportPush" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" title="If ticked, exported data will be provided by URL, and available for pushing into external online tools." class="input-checkbox">
+															<label style="width:120px;" for="enableExportPush">Provide export URL</label>
+														</div>
+													</div>
+													<div>
+														<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning" style="white-space: initial"></div>
 										</div>
+										<div id="serverExportWarning" style="white-space: initial"></div>
 									</div>
 								</div>
 								<a class="btn icon-btn btn-default" id="exportBoxToggleButton" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px 4px 10px;" href="#" onclick="toggleExportPanel();" title="Export selection">
@@ -316,7 +321,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 			</div>
 		</div>
-	</div>
 	</main>
 	<!-- modal which display process progress -->
 	<div class="modal" tabindex="-1" id="progress" aria-hidden="true">
@@ -329,7 +333,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="c3"></div>
 						<div class="c4"></div>
 					</div>
-					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
+					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span></h3>
 					<br/>
 					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
 					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&keepExportOnServ=' + $('#keepExportOnServ').prop('checked') + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
@@ -464,7 +468,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			(feature available when the 'Keep files on server' box is ticked)<br />
 			</div>
 			<hr />
-			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:6px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
 			(You will be requested to provide an API key to be able to push exported files there)
@@ -1333,7 +1337,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 if (gotMetaData) {
                     $('#asyncProgressButton').hide();
                     $('button#abort').hide();
-                    $('#ddlWarning').hide();
                     $('#progressText').html("Loading individuals' metadata...");
                     $('#progress').modal({
                         backdrop: 'static',
@@ -1505,7 +1508,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		if ($('#exportPanel').is(':visible'))
 			$('#exportBoxToggleButton').click()
 		$('#asyncProgressButton').hide();
-		$('#ddlWarning').hide();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1852,15 +1854,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
 	function exportData() {
-		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
-		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-			if (exportedIndividualCount * count > 1000000000) {
-				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
-				return;
-			}
-		}
+		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
+// 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
+// 			if (exportedIndividualCount * count > 1000000000) {
+// 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
+// 				return;
+// 			}
+// 		}
 
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
@@ -1883,7 +1885,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		
 		exporting = true;
 
-		$('#ddlWarning').hide();
 		$('#asyncProgressButton').show();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
@@ -1895,7 +1896,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />';
         var query = buildSearchQuery(3, currentPageToken);
-        query["keepExportOnServer"] =  keepExportOnServer;
+        query["keepExportOnServer"] = keepExportOnServer;
         query["exportFormat"] =  $('#exportFormat').val();
         query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
         query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
@@ -1920,11 +1921,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         });
 
 		displayProcessProgress(2, "export_" + token, null, function() {
-	        if (keepExportOnServer) {
+	        if ($('#enableExportPush').prop('checked')) {
 				let fileExtensions = $("#exportFormat option:selected").data('ext').split(";");
 				if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
 					fileExtensions.push("tsv");
-				showServerExportBox(fileExtensions, $('#keepExportOnServ').prop('checked'));
+				showServerExportBox(fileExtensions, keepExportOnServer);
 	        }
 	        else {
 	        	var link = document.createElement('a');

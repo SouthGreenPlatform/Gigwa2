@@ -22,6 +22,9 @@
 
 var minimumProcessQueryIntervalUnit = 100;
 var emptyResponseCountsByProcess = [];
+
+var archivedDataFiles = new Array();
+
 var StringBuffer = function() {
     this.buffer = new Array();
 };
@@ -311,6 +314,20 @@ function grabNcbiTaxon(inputObj)
     $(inputObj).val(taxonName);
 }
 
+function showGalaxyPushButton()
+{
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+	if (galaxyInstanceUrl.startsWith("http")) {
+		var fileURLs = "";
+		for (key in archivedDataFiles)
+			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" />');
+		$("#galaxyPushButton").show();			
+	}
+	else
+		$("#galaxyPushButton").hide();
+}
+
 function showServerExportBox(exportFormatExtensions, keepExportOnServer)
 {
 	$("div#exportPanel").hide();
@@ -319,30 +336,25 @@ function showServerExportBox(exportFormatExtensions, keepExportOnServer)
 		return;
 
 	var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">x&nbsp;</button></button>&nbsp;Export file ' + (keepExportOnServer ? 'may be downloaded from this URL' : 'will be available at this URL for 48h') + ':<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
+	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">x&nbsp;</button></button>&nbsp;Export file will be available at this URL for ' + (!keepExportOnServer ? 1 : 48) + 'h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a><br/><br/>').show();
 	var exportedFormat = $('#exportFormat').val().toUpperCase();
 	if ("VCF" == exportedFormat)
 		addIgvExportIfRunning();
 	else if ("FLAPJACK" == exportedFormat)
 		addFjBytesExport();
+		
+	$('#serverExportBox').append("<div id='galaxyPushButton' />");
 
-	var archivedDataFiles = new Array();
+	archivedDataFiles = new Array();
 	for (var key in exportFormatExtensions)
 		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
 	
-	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-	if (galaxyInstanceUrl.startsWith("http")) {
-		var fileURLs = "";
-		for (key in archivedDataFiles)
-			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-		$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
-	}
+	showGalaxyPushButton();
 
 	if (onlineOutputTools != null)
 		for (var toolName in onlineOutputTools) {
 			var toolConfig = getOutputToolConfig(toolName);
-			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {		
-
+			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {
 				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
 				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
 				if (matchResult != null) {
@@ -369,7 +381,7 @@ function showServerExportBox(exportFormatExtensions, keepExportOnServer)
 				}
 
 				if (formatsForThisButton != "")
-					$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
+					$('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
 			}
 		}
 }
