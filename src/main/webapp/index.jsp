@@ -1857,12 +1857,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
-// 		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-// 			if (exportedIndividualCount * count > 1000000000) {
-// 				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
-// 				return;
-// 			}
-// 		}
 
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
@@ -1921,12 +1915,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         });
 
 		displayProcessProgress(2, "export_" + token, null, function() {
-	        if ($('#enableExportPush').prop('checked')) {
-				let fileExtensions = $("#exportFormat option:selected").data('ext').split(";");
-				if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
-					fileExtensions.push("tsv");
-				showServerExportBox(fileExtensions, keepExportOnServer);
-	        }
+	        if ($('#enableExportPush').prop('checked'))
+				showServerExportBox(keepExportOnServer);
 	        else {
 	        	var link = document.createElement('a');
 	        	link.href = downloadURL;

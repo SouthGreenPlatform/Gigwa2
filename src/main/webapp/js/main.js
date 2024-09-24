@@ -1071,7 +1071,7 @@ function applyOutputToolConfig() {
 		$("#galaxyPushButton input").val("Send exported data to " + $("input#galaxyInstanceURL").val());
 	}
 	
-	showGalaxyPushButton();
+	showServerExportBox($('#keepExportOnServ').prop('checked'));
 
 	$("#applyOutputToolConfig").prop("disabled", "disabled");
 }

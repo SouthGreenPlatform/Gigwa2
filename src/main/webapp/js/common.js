@@ -314,21 +314,21 @@ function grabNcbiTaxon(inputObj)
     $(inputObj).val(taxonName);
 }
 
-function showGalaxyPushButton()
-{
-	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-	if (galaxyInstanceUrl.startsWith("http")) {
-		var fileURLs = "";
-		for (key in archivedDataFiles)
-			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" />');
-		$("#galaxyPushButton").show();			
-	}
-	else
-		$("#galaxyPushButton").hide();
-}
+//function showGalaxyPushButton()
+//{
+//	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+//	if (galaxyInstanceUrl.startsWith("http")) {
+//		var fileURLs = "";
+//		for (key in archivedDataFiles)
+//			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+//		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" /><br/>');
+//		$("#galaxyPushButton").show();			
+//	}
+//	else
+//		$("#galaxyPushButton").hide();
+//}
 
-function showServerExportBox(exportFormatExtensions, keepExportOnServer)
+function showServerExportBox(keepExportOnServer, exportFormatExtensions)
 {
 	$("div#exportPanel").hide();
 	$("a#exportBoxToggleButton").removeClass("active");
@@ -346,10 +346,25 @@ function showServerExportBox(exportFormatExtensions, keepExportOnServer)
 	$('#serverExportBox').append("<div id='galaxyPushButton' />");
 
 	archivedDataFiles = new Array();
+	
+	if (exportFormatExtensions == null) {
+		exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
+		if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
+			exportFormatExtensions.push("tsv");
+	}
 	for (var key in exportFormatExtensions)
 		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
 	
-	showGalaxyPushButton();
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+	if (galaxyInstanceUrl.startsWith("http")) {
+		var fileURLs = "";
+		for (key in archivedDataFiles)
+			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" /><br/>');
+		$("#galaxyPushButton").show();			
+	}
+	else
+		$("#galaxyPushButton").hide();
 
 	if (onlineOutputTools != null)
 		for (var toolName in onlineOutputTools) {
@@ -381,7 +396,7 @@ function showServerExportBox(exportFormatExtensions, keepExportOnServer)
 				}
 
 				if (formatsForThisButton != "")
-					$('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
+					$('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" /><br/>');
 			}
 		}
 }

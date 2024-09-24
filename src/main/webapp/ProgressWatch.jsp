@@ -119,7 +119,7 @@
 				<c:if test="${param.exportedTsvMetadata eq true}">
 				fileExtensions.push("tsv");
 				</c:if>
-				showServerExportBox(fileExtensions, ${param.keepExportOnServ});
+				showServerExportBox(${param.keepExportOnServ}, fileExtensions);
 		}
 		</c:if>
 	</script>
