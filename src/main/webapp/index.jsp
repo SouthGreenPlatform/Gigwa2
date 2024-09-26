@@ -278,13 +278,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
 													</div>
 													<div style="width:100%; margin-left:-10px;" class="margin-top margin-bottom label-checkbox">
-														<div>
-															<input type="checkbox" id="keepExportOnServ" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var enabled=$(this).is(':checked'); $('#enableExportPush').prop('checked', enabled); $('#enableExportPush').prop('disabled', enabled);" title="If ticked, export data will remain downloadable for at least 48h. You may then share its URL with collaborators." class="input-checkbox">
-															<label style="width:120px;" for="keepExportOnServ">Keep files on server</label>
-														</div>
 														<div style="text-align:center;">
-															<input type="checkbox" id="enableExportPush" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" title="If ticked, exported data will be provided by URL, and available for pushing into external online tools." class="input-checkbox">
+															<input type="checkbox" id="enableExportPush" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="showHideLocalhostWarning();" title="If ticked, exported data will be provided by URL, and available for pushing into external online tools." class="input-checkbox">
 															<label style="width:120px;" for="enableExportPush">Provide export URL</label>
+														</div>
+														<div>
+															<input type="checkbox" id="keepExportOnServ" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var enabled=$(this).is(':checked'); $('#enableExportPush').prop('checked', enabled); $('#enableExportPush').prop('disabled', enabled); showHideLocalhostWarning();" title="If ticked, export data will remain downloadable for at least 48h. You may then share its URL with collaborators." class="input-checkbox">
+															<label style="width:120px;" for="keepExportOnServ">Keep files on server</label>
 														</div>
 													</div>
 													<div>
@@ -293,7 +293,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 												</div>
 											</div>
 										</div>
-										<div id="serverExportWarning" style="white-space: initial"></div>
+										<div id="serverExportWarning" style="white-space:initial; text-align:center;"></div>
 									</div>
 								</div>
 								<a class="btn icon-btn btn-default" id="exportBoxToggleButton" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px 4px 10px;" href="#" onclick="toggleExportPanel();" title="Export selection">

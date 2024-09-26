@@ -1827,3 +1827,8 @@ function taxonSelected() {
 	});
 	$("#module").selectpicker("refresh");
 }
+
+function showHideLocalhostWarning() {
+	var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2);
+	$('div#serverExportWarning').html($("#enableExportPush").prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');
+}
