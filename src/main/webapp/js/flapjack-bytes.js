@@ -4995,7 +4995,8 @@
             var _ref4 = _slicedToArray(_ref3, 2),
               traitValue = _ref4[0],
               traitValueColor = _ref4[1];
-            var traitValueIndex = _this3.dataSet.traits.get(traitName).values.indexOf(traitValue),
+            var trait = _this3.dataSet.traits.get(traitName),
+              traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
               traitColorMap = settings.traitColors[traitName];
             if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
             delete traitColorMap[traitValue];

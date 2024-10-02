@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -127,8 +128,10 @@ import com.sun.jersey.api.client.ClientResponse;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.mgdb.annotation.SnpEffAnnotationService;
 import fr.cirad.manager.IModuleManager;
-import fr.cirad.mgdb.exporting.AbstractExportWritingThread;
+import fr.cirad.manager.ImportProcess;
+import fr.cirad.mgdb.exporting.IExportHandler;
 import fr.cirad.mgdb.exporting.markeroriented.AbstractMarkerOrientedExportHandler;
+import fr.cirad.mgdb.exporting.markeroriented.HapMapExportHandler;
 import fr.cirad.mgdb.exporting.tools.ExportManager;
 import fr.cirad.mgdb.importing.BrapiImport;
 import fr.cirad.mgdb.importing.DartImport;
@@ -161,8 +164,10 @@ import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
+import fr.cirad.service.PasswordResetService;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
+import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.SessionAttributeAwareThread;
@@ -212,6 +217,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
 	
 	@Autowired private IModuleManager moduleManager;
+	
+	@Autowired private PasswordResetService passwordResetService;
 
 	/**
 	 * The Constant LOG.
@@ -308,8 +315,16 @@ public class GigwaRestController extends ControllerInterface {
             Authentication authentication;
             if (userInfo == null) {
                 authentication = SecurityContextHolder.getContext().getAuthentication();
-                if (authentication != null && authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials()))
-                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it by selecting Manage data / Administer existing data and user permissions from the main menu.");
+                if (authentication != null) {
+	                if (authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) && "nimda".equals(authentication.getCredentials())) {
+	                    result.put(Constants.MESSAGE, "You are using the default administrator password. Please change it via the \"Manage users and permissions\" button.");
+	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
+	                }
+	                else if (passwordResetService.seemsProperlyConfigured() && authentication.getPrincipal() instanceof UserWithMethod && ((UserWithMethod) authentication.getPrincipal()).getMethod().isEmpty() && Helper.isNullOrEmptyString(((UserWithMethod) authentication.getPrincipal()).getEmail())) {
+	                    result.put(Constants.MESSAGE, "This Gigwa instance supports a password reset functionality, which requires to know your e-mail address in order to be effective. In order to avoid password loss, we strongly recommend you specify an e-mail address for your account via the \"Manage users and permissions\" button.");
+	                    result.put(Constants.REDIRECTION, "permissionManagement.jsp");
+	                }
+                }
                 LOG.info("Returning token for current session user " + authentication.getName());
             }
             else {
@@ -680,10 +695,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param referenceSetId
 	 * @return Map<String, Boolean> true if could drop temporary collection
+	 * @throws InterruptedException 
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DROP_TEMP_COL_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
-	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
+	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException, InterruptedException {
 		Map<String, Boolean> response = new HashMap<>();
 		boolean success = false;
 		String token = tokenManager.readToken(request);
@@ -877,11 +893,6 @@ public class GigwaRestController extends ControllerInterface {
 
 		boolean fNoGenotypesRequested = gr.getAllCallSetIds().isEmpty() || (gr.getAllCallSetIds().size() == 1 && gr.getAllCallSetIds().get(0).isEmpty());
 		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-
-		Map<String, Integer> individualPositions = new LinkedHashMap<>();
-		for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
-			individualPositions.put(ind, individualPositions.size());
-
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
@@ -892,131 +903,58 @@ public class GigwaRestController extends ControllerInterface {
 		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(fNoGenotypesRequested ? VariantData.class : VariantRunData.class));		
 
 		resp.setContentType("text/tsv;charset=UTF-8");
-		String header = "variant\talleles\tchrom\tpos";
-        resp.getWriter().append(header);
-        for (String individual : individualPositions.keySet())
-            resp.getWriter().write(("\t" + individual));
-        resp.getWriter().write("\n");
+		OutputStream os = resp.getOutputStream();
         
 		if (fNoGenotypesRequested) {	// simplest case where we're not returning genotypes: querying on variants collection will be faster
+			Map<String, Integer> individualPositions = new LinkedHashMap<>();
+			for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
+				individualPositions.put(ind, individualPositions.size());
+
+			String header = "variant\talleles\tchrom\tpos";
+			os.write(header.getBytes());
+	        for (String individual : individualPositions.keySet())
+	            os.write(("\t" + individual).getBytes());
+	        os.write("\n".getBytes());
+
 			MongoCursor<VariantData> varIt = collWithPojoCodec.find(new BasicDBObject("$and", variantQueryDBList), VariantData.class).projection(new BasicDBObject(VariantData.FIELDNAME_KNOWN_ALLELES, 1).append(Assembly.getThreadBoundVariantRefPosPath(), 1)).iterator();
 			while (varIt.hasNext()) {
 				VariantData variant = varIt.next();
             	ReferencePosition rp = variant.getReferencePosition(Assembly.getThreadBoundAssembly());
-				resp.getWriter().write(variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n");
+				os.write((variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n").getBytes());
 			}
 			return;
 		}
+		
+		// count variants to display
+		BasicDBList variantLevelQuery = !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList();
+    	List<BasicDBObject> countPipeline = new ArrayList<>();
+        if (!variantLevelQuery.isEmpty())
+        	countPipeline.add(new BasicDBObject("$match", new BasicDBObject("$and", variantLevelQuery)));
+    	countPipeline.add(new BasicDBObject("$count", "count"));
+    	MongoCursor<Document> countCursor = (fWorkingOnTempColl ? collWithPojoCodec : mongoTemplate.getCollection(mongoTemplate.getCollectionName(VariantData.class))).aggregate(countPipeline, Document.class).collation(IExportHandler.collationObj).iterator();
+    	long markerCount = countCursor.hasNext() ? ((Number) countCursor.next().get("count")).longValue() : 0;
+    	if (markerCount == 0)
+    		return;	// no genotypes to show
 
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
-		
-		final Integer nAssembly = Assembly.getThreadBoundAssembly();	// will need to be passed on to child thread
 
-		AbstractExportWritingThread writingThread = new AbstractExportWritingThread() {
-			public void run() {
-//                HashMap<Object, Integer> genotypeCounts = new HashMap<Object, Integer>();	// will help us to keep track of missing genotypes
-				Assembly.setThreadAssembly(nAssembly);	// set it once and for all
-                markerRunsToWrite.forEach(runsToWrite -> {
-                    if (progress.isAborted() || progress.getError() != null || runsToWrite == null || runsToWrite.isEmpty())
-                        return;
+    Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
+    Map<String, Collection<String>> individualsByPop = new HashMap<>();
+    Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
+    List<List<String>> callsetIds = gr.getAllCallSetIds();
+    for (int i = 0; i < callsetIds.size(); i++) {
+        individualsByPop.put(gr.getGroupName(i), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+        annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
+    }
 
-					VariantRunData vrd = runsToWrite.iterator().next();
-					String idOfVarToWrite = vrd.getVariantId();
-					StringBuffer sb = new StringBuffer();
-					try
-					{
-		                ReferencePosition rp = vrd.getReferencePosition(Assembly.getThreadBoundAssembly());
-		                sb.append(idOfVarToWrite + "\t" + StringUtils.join(vrd.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()));
-//		                LinkedHashSet<String>[] individualGenotypes = new LinkedHashSet[individualPositions.size()];
-		                List<String>[] individualGenotypes = new ArrayList[individualPositions.size()];
+		HapMapExportHandler heh = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
+		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
 
-
-		                runsToWrite.forEach( run -> {
-	                    	for (Integer sampleId : run.getSampleGenotypes().keySet()) {
-                                String individualId = sampleIdToIndividualMap.get(sampleId);
-                                Integer individualIndex = individualPositions.get(individualId);
-                                if (individualIndex == null)
-                                    continue;   // unwanted sample
-
-								SampleGenotype sampleGenotype = run.getSampleGenotypes().get(sampleId);
-	                            String gtCode = sampleGenotype.getCode();
-	                            if (gtCode == null)
-                                    continue;   // skip genotype
-
-								List<Collection<String>> indlists = new ArrayList<>();
-								for (HashMap<String, Float> entry : gr.getAnnotationFieldThresholds()) {
-									if (!entry.isEmpty()) {
-										List<String> indList = gr.getCallSetIds() == null ? new ArrayList<>() : gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList());
-										indlists.add(indList);
-									}
-								}
-								
-						        Map<String, Collection<String>> individualsByPop = new HashMap<>();
-						        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
-						        List<List<String>> callsetIds = gr.getAllCallSetIds();
-						        for (int i = 0; i < callsetIds.size(); i++)
-						        	try {
-						        		String groupName = gr.getGroupName(i);
-							            individualsByPop.put(groupName, callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-							            annotationFieldThresholdsByPop.put(groupName, gr.getAnnotationFieldThresholds(i));
-							        }
-						        	catch (ObjectNotFoundException neverWillHappen)	// module existence has been checked above
-						        	{}
-
-								if (!VariantData.gtPassesVcfAnnotationFilters(individualId, sampleGenotype, individualsByPop, annotationFieldThresholdsByPop))
-    								continue;
-
-								if (individualGenotypes[individualIndex] == null)
-									individualGenotypes[individualIndex] = new ArrayList<String>();
-								individualGenotypes[individualIndex].add(gtCode);
-	                        }
-	                    });
-
-		                int writtenGenotypeCount = 0;
-
-		                String missingGenotype = "";
-						for (String individual : individualPositions.keySet() /* we use this list because it has the proper ordering */) {
-		                    int individualIndex = individualPositions.get(individual);
-		                    while (writtenGenotypeCount < individualIndex) {
-		                        sb.append(missingGenotype);
-		                        writtenGenotypeCount++;
-		                    }
-
-		                	String mostFrequentGenotype = null;
-		                    LinkedHashMap<Object, Integer> genotypeCounts = AbstractMarkerOrientedExportHandler.sortGenotypesFromMostFound(individualGenotypes[individualPositions.get(individual)]);
-                            if (genotypeCounts.size() == 1 || genotypeCounts.values().stream().limit(2).distinct().count() == 2)
-                            	mostFrequentGenotype = genotypeCounts.keySet().iterator().next().toString();
-		                    if (genotypeCounts.size() > 1)
-		                        LOG.info("Dissimilar genotypes found for variant " + idOfVarToWrite + ", individual " + individual + ". " + (mostFrequentGenotype == null ? "Exporting as missing data" : "Exporting most frequent: " + mostFrequentGenotype) + "\n");
-
-		                    sb.append("\t" + (mostFrequentGenotype == null ? missingGenotype : mostFrequentGenotype));
-		                    writtenGenotypeCount++;
-		                }
-
-		                while (writtenGenotypeCount < individualPositions.size()) {
-		                    sb.append(missingGenotype);
-		                    writtenGenotypeCount++;
-		                }
-		                sb.append("\n");
-			            resp.getWriter().write(sb.toString());
-	                }
-					catch (Exception e)
-					{
-						if (progress.getError() == null)	// only log this once
-							LOG.error("Unable to export " + idOfVarToWrite, e);
-						progress.setError("Unable to export " + idOfVarToWrite + ": " + e.getMessage());
-					}
-				});
-			}
-		};
-
-		ExportManager exportManager = new ExportManager(mongoTemplate, Assembly.getThreadBoundAssembly(), collWithPojoCodec, VariantRunData.class, !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList(), samples, true, 100, writingThread, null, null, progress);
-		exportManager.readAndWrite();
 		progress.markAsComplete();
 		
-		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + individualPositions.size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
+		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + new HashSet<>(sampleIdToIndividualMap.values()).size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
 	}
 
 	/**
@@ -1080,11 +1018,13 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param variantSetId
 	 * @return Map<String, Collection<String>> @throws Exception
+	 * @throws InterruptedException 
+	 * @throws NumberFormatException 
 	 */
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
+			@PathVariable String variantSetId) throws IOException, NumberFormatException, InterruptedException {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = tokenManager.readToken(request);
 		try {
@@ -1469,10 +1409,11 @@ public class GigwaRestController extends ControllerInterface {
 	@GetMapping(value = BASE_URL + snpclustEditionURL)
 	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
-		if (auth != null && (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId)))) {
-			String url = appConfig.get("snpclustLink");
-			if (url == null)
-				return "";
+//		if (auth != null && (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) 
+//                        || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId)))) {
+                String url = appConfig.get("snpclustLink");
+                if (url == null)
+                        return "";
 
 	        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(projId));
@@ -1488,7 +1429,7 @@ public class GigwaRestController extends ControllerInterface {
 	                    if (VariantData.GT_FIELD_FI.equals(aiKey)/* && !Number.class.isAssignableFrom(annotationMap.get(aiKey).getClass())*/)
 	            			return url;
 	        }
-		}
+		
 		return "";
 	}
 
@@ -1866,7 +1807,7 @@ public class GigwaRestController extends ControllerInterface {
 		boolean providingSamples = Boolean.TRUE.equals(providingSampleIDs);
 		boolean useBrapiMdEndpoint = Boolean.TRUE.equals(directlyPullMdFromBrAPI);
 
-		final String processId = auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
+		final String processId = "import::" + auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
         ProgressIndicator.registerProgressIndicator(progress);
 
@@ -2216,6 +2157,9 @@ public class GigwaRestController extends ControllerInterface {
 							public void run() {
 								Scanner scanner = null;
 								try {
+							        ImportProcess process = new ImportProcess(progress, sModule);
+							        ((GigwaModuleManager) moduleManager).registerImportProcess(process);
+
 									Integer newProjId = null;
 									if (fBrapGenotypeiImport) {
 										genotypeImporter.set(new BrapiImport(processId));
@@ -2365,7 +2309,7 @@ public class GigwaRestController extends ControllerInterface {
 									}
 									else if (!fDatasourceAlreadyExisted.get() && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
-									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsernameAndMethod(auth.getName(), null);
+									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsername(auth.getName());
 									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
 									            return; // no need to grant any role to administrators
 		
@@ -2375,7 +2319,7 @@ public class GigwaRestController extends ControllerInterface {
 									            authoritiesToSave.add(role);
 									            for (GrantedAuthority authority : owner.getAuthorities())
 									                authoritiesToSave.add(authority);
-									            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod());
+									            userDao.saveOrUpdateUser(auth.getName(), owner.getPassword(), authoritiesToSave, owner.isEnabled(), owner.getMethod(), owner.getEmail());
 									        }
 		
 											tokenManager.reloadUserPermissions(securityContext);

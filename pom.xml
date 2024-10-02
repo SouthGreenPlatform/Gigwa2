@@ -4,19 +4,19 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-        <project.version>2.8-beta</project.version>
+        <project.version>2.9-alpha</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
 		<bundle.dir.ubuntu>${bundle.dir}/Gigwa_V${project.version}-Ubuntu</bundle.dir.ubuntu>
 		<bundle.dir.osx>${bundle.dir}/Gigwa_V${project.version}-OSX</bundle.dir.osx>
 		<bundle.dir.windows>${bundle.dir}/Gigwa_V${project.version}-Windows</bundle.dir.windows>
-		<path.to.ubuntu.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz</path.to.ubuntu.jre>
-		<path.to.osx.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz</path.to.osx.jre>
-		<path.to.windows.jre>/home/sempere/Bureau/projects/gigwa/bundle_jre/zulu17.40.19-ca-jre17.0.6-win_x64.tar.gz</path.to.windows.jre>
-<!-- 		ubuntu	https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz -->
-<!-- 		macos	https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz -->
-<!-- 		win		https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jre17.0.6-win_x64.tar.gz -->
+		<path.to.ubuntu.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_linux-x64_bin.tar.gz</path.to.ubuntu.jdk>
+		<path.to.osx.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_macos-x64_bin.tar.gz</path.to.osx.jdk>
+		<path.to.windows.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_windows-x64_bin.tar.gz</path.to.windows.jdk>
+<!-- 		ubuntu	https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz -->
+<!-- 		macos	https://download.oracle.com/java/17/latest/jdk-17_macos-x64_bin.tar.gz -->
+<!-- 		win		https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.zip, needs to be converted to tar.gz by hand -->
 		<tomcat.version>9.0.64</tomcat.version>
 		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.25</mongodb.linux.file>
 		<mongodb.windows.file>win32-x86_64-2012plus-4.2.25</mongodb.windows.file>
@@ -30,11 +30,29 @@
 	<packaging>war</packaging>
 	<name>Gigwa</name>
 
-	<dependencies>		
+	<dependencies>
+		<dependency>
+			<groupId>javax.mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1.4.7</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+			<version>5.3.25</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>1.1.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>role_manager</artifactId>
-			<version>1.3.7-RELEASE</version>
+			<version>1.3.8-RELEASE</version>
 		</dependency>
 
 		<dependency>
@@ -851,7 +869,7 @@
 									<workingDirectory>${bundle.dir.ubuntu}/jre</workingDirectory>
 									<arguments>
 										<argument>xvzf</argument>
-										<argument>${path.to.ubuntu.jre}</argument>
+										<argument>${path.to.ubuntu.jdk}</argument>
 										<argument>--strip-components=1</argument>
 									</arguments>
 								</configuration>
@@ -867,7 +885,7 @@
 									<workingDirectory>${bundle.dir.osx}/jre</workingDirectory>
 									<arguments>
 										<argument>xvzf</argument>
-										<argument>${path.to.osx.jre}</argument>
+										<argument>${path.to.osx.jdk}</argument>
 										<argument>--strip-components=1</argument>
 									</arguments>
 								</configuration>
@@ -883,7 +901,7 @@
 									<workingDirectory>${bundle.dir.windows}/jre</workingDirectory>
 									<arguments>
 										<argument>xvzf</argument>
-										<argument>${path.to.windows.jre}</argument>
+										<argument>${path.to.windows.jdk}</argument>
 										<argument>--strip-components=1</argument>
 									</arguments>
 								</configuration>

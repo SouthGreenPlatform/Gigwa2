@@ -21,86 +21,6 @@ var selectedVariantIDsWhenTooManyToFitInSelect = null;
 var igvGenomeOptions = null;
 var filtersToColumns = new Array();
 
-
-function addIgvExportIfRunning() {
-    if (igvDataLoadPort == null)
-        return;
-    
-    var igvGenomeOptions = null;
-    $.ajax({
-        type:"GET",
-        url:"http://127.0.0.1:" + igvDataLoadPort,
-        success:function(jsonResult) {    
-            if ("ERROR Unknown command: /" == jsonResult)
-            {
-                if (igvGenomeOptions == null)
-                {
-                    var genomeList = $.ajax({
-                        async:false,
-                        type:"GET",
-                        url:igvGenomeListUrl,
-                         crossDomain : true,
-                        error:function(xhr, ajaxOptions, thrownError) {}
-                    });
-                    
-                    igvGenomeOptions = "<option>&nbsp;</option>";
-                    if (genomeList.responseText != null)
-                    {
-                        var genomeLines = genomeList.responseText.split("\n");
-                        for (var i=0; i<genomeLines.length; i++)
-                            if (i > 0 || !genomeLines[i].startsWith("<"))    // skip header
-                            {
-                                var genomeFields = genomeLines[i].split("\t");
-                                if (genomeFields.length == 3)
-                                    igvGenomeOptions += "<option value='" + genomeFields[2] + "'>" + genomeFields[0] + "</option>";
-                            }
-                    }
-                    $('div#serverExportBox').append("<br/><br/><center><table><tr><th valign='middle'>View in IGV within genomic/structural context&nbsp;</th></tr><tr><td align='center'><select id='igvGenome' style='min-width:175px;'>" + igvGenomeOptions + "</select><br/>(you may select a genome to switch to)</td><td valign='top'>&nbsp;<input type='button' value='Send' onclick='sendToIGV();'/></td></tr></table></center>");
-                }
-            }
-        },
-        error:function(xhr, ajaxOptions, thrownError) {
-            //handleError(xhr, ajaxOptions, thrownError);
-            console.log("Unable to find IGV instance");
-        }
-    });
-}
-
-function addFjBytesExport() {
-    $('div#serverExportBox').append("<br/><br/><center><input type='button' value='View in Flapjack-Bytes' onclick='sendToFjBytes();'/>" + (exportedIndividualCount * count > 500000000 ? "<div class='text-red margin-top'>WARNING: Exported dataset potentially contains more than 500 million genotypes.<br/>A standard workstation's web-browser may be unable to load it in with Flapjack-Bytes </div>" : "") + "</center>");
-}
-
-function sendToFjBytes() {
-    $("#fjBytesPanel").modal({
-        opacity: 80,
-        overlayCss: {
-            backgroundColor: "#111111"
-        }
-    });
-
-	let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') +
-	            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
-	            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
-	            "&id=" + getModuleName();
-	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#fjBytesPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
-	$("#fjBytesFrame").attr('src', url);
-}
-
-function sendToIGV(genomeID)
-{
-    var genomeID = $("select#igvGenome").val();
-    $.ajax({
-        type:"GET",
-        url:"http://127.0.0.1:" + igvDataLoadPort + "/load?" + (genomeID != "" ? "genome=" + genomeID + "&" : "") + "file=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.vcf'),
-        success:function(tsvResult) {
-            alert("Variant list was sent to IGV!");
-        },
-        error:function(xhr, ajaxOptions, thrownError) {
-            handleError(xhr, ajaxOptions, thrownError);
-        }
-    });
-}
-
 function getSelectedTypes() {
     var variantTypes = $('#variantTypes').val();
     if (variantTypes === null || variantTypes.length === variantTypesCount)
@@ -627,10 +547,9 @@ function groupNameChanged(n) {
 
 	let newName = $("input#group" + n).val();
 	for (var i = 1; i <= getGenotypeInvestigationMode(); i++)
-   	   if (i != n) {
-		   $('#discriminate' + i + ` option[title='Group${n}']`).text(newName);
+   	if (i != n) {
+		   $('#discriminate' + i + ` option[value='${n}']`).text(newName).attr('title', newName);
 		   $('#discriminate' + i).selectpicker('refresh');
-
 		   $("#igvGroupsMenu li input[value=group" + n + "]").parent().find("span").text(newName);
 		}
 }
@@ -1136,60 +1055,7 @@ function checkGroupOverlap(groupNumber) {
 	});
 }
 
-function sendToGalaxy(archivedDataFiles) {
-	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim(), apiKey = sessionStorage.getItem("galaxyApiKey::" + galaxyInstanceUrl);
-	if (apiKey == null)
-		apiKey = prompt("Enter the API key tied to your account on\n" + galaxyInstanceUrl);
-	if (apiKey != null && apiKey.trim() != "") {
-		sessionStorage.setItem("galaxyApiKey::" + galaxyInstanceUrl, apiKey);
-		$('#progressText').html("Pushing files to " + galaxyInstanceUrl + " ...");
-		$('#asyncProgressButton').hide();
-		$('button#abort').hide();
-		$('#progress').modal({
-			backdrop: 'static',
-			keyboard: false,
-			show: true
-		});
-		setTimeout(function() {
-			var n = 0, responseMsg = null;
-			for (var fileUrl in archivedDataFiles)
-				$.ajax({
-					async: false,
-					url: galaxyPushURL + "?galaxyUrl=" + galaxyInstanceUrl + "&galaxyApiKey=" + apiKey + "&fileUrl=" + archivedDataFiles[fileUrl],
-					type: "GET",
-					success: function(respString) {
-						responseMsg = respString;
-						n++;
-					},
-					error: function(xhr, ajaxOptions, thrownError) {
-						$('#progress').modal('hide');
-						
-						if (xhr.status == 403) {
-							console.log("Removing invalid Galaxy API key: " + apiKey);
-							sessionStorage.removeItem("galaxyApiKey::" + galaxyInstanceUrl);
-						}
-						
-						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
-							alert("Error accessing resource: " + genomeURL);
-						else
-							handleError(xhr, thrownError);
-					}
-				});
-			if (n > 0)
-				if (confirm(n + " file(s) " + responseMsg + "\nOpen a window pointing to that Galaxy instance?"))
-					window.open(galaxyInstanceUrl);
-			$('#progress').modal('hide');
-		}, 1);
-	}
-}
-
-function getOutputToolConfig(toolName)
-{
-    var storedToolConfig = localStorage.getItem("outputTool_" + toolName);
-    return storedToolConfig != null ? JSON.parse(storedToolConfig) : onlineOutputTools[toolName];
-}
-
-function applyOutputToolConfig(t) {
+function applyOutputToolConfig() {
 	if ($("input#outputToolURL").val().trim() == "") {
 		localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val());
 		configureSelectedExternalTool();
@@ -1198,8 +1064,12 @@ function applyOutputToolConfig(t) {
 
 	if ($("input#galaxyInstanceURL").val().trim() == "")
 		localStorage.removeItem("galaxyInstanceURL");
-	else
+	else {
 		localStorage.setItem("galaxyInstanceURL", $("input#galaxyInstanceURL").val());
+		$("#galaxyPushButton input").val("Send exported data to " + $("input#galaxyInstanceURL").val());
+	}
+	
+	showServerExportBox($('#keepExportOnServ').prop('checked'));
 
 	$("#applyOutputToolConfig").prop("disabled", "disabled");
 }
@@ -1214,71 +1084,6 @@ function configureSelectedExternalTool() {
 function checkIfOuputToolConfigChanged() {
     var changed = $('#outputToolFormats').val() != $('#outputToolFormats').prop('previousVal') || $('#outputToolURL').val() != $('#outputToolURL').prop('previousVal');
     $("#applyOutputToolConfig").prop('disabled', changed ? false : 'disabled');
-}
-
-function showServerExportBox()
-{
-	$("div#exportPanel").hide();
-	$("a#exportBoxToggleButton").removeClass("active");
-	if (processAborted || downloadURL == null)
-		return;
-
-	var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
-	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">x&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
-	var exportedFormat = $('#exportFormat').val().toUpperCase();
-	if ("VCF" == exportedFormat)
-		addIgvExportIfRunning();
-	else if ("FLAPJACK" == exportedFormat)
-		addFjBytesExport();
-
-	var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
-	if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != exportedFormat && "DARWIN" != exportedFormat /* these two already have their own metadata file format*/)
-		exportFormatExtensions.push("tsv");
-	for (var key in exportFormatExtensions)
-		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
-	
-	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-	if (galaxyInstanceUrl.startsWith("http")) {
-		var fileURLs = "";
-		for (key in archivedDataFiles)
-			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-		$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
-	}
-
-	if (onlineOutputTools != null)
-		for (var toolName in onlineOutputTools) {
-			var toolConfig = getOutputToolConfig(toolName);
-			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {		
-
-				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
-				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
-				if (matchResult != null) {
-					var placeHolders = matchResult.map(res => res.replace(/{|}/g , ''));
-					phLoop: for (var i in placeHolders) {
-						var phFormats = placeHolders[i].split("\|");
-						for (var j in phFormats) {
-							for (var key in archivedDataFiles) {
-								if (key == phFormats[j]) {
-									formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + key;
-									urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", archivedDataFiles[key]);
-									continue phLoop;
-								}
-							}
-						}
-						console.log("unused param: " + placeHolders[i]);
-						urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", "");
-					}
-				}
-				
-				if (urlForThisButton == toolConfig['url'] && urlForThisButton.indexOf("*") != -1) {
-					urlForThisButton = urlForThisButton.replace("\*", Object.values(archivedDataFiles).join(","));
-					formatsForThisButton = Object.keys(archivedDataFiles).join(", ");
-				}
-
-				if (formatsForThisButton != "")
-					$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
-			}
-		}
 }
 
 function resetFilters() {
@@ -1315,10 +1120,9 @@ function menuAction(){
                 }
             });
         });
-        
-    } else {
-        $submenu.css('display', 'none');
     }
+    else
+        $submenu.css('display', 'none');
 }
 
 //This function allow the user to save a query into the DB
@@ -1627,6 +1431,7 @@ function listQueries(){
 	                  $('#Genotypes'+ (i + 1)).trigger('change');
 	                  $('#discriminate' + (i + 1)).selectpicker('val', jsonResult['discriminate'][i]);
 	                  $('#discriminate'+ (i + 1)).trigger('change');
+	                  groupNameChanged(i + 1);
                 }
                
                 $('#queryManager').modal("hide");
@@ -1684,7 +1489,7 @@ function onFilterByIds(checked) {
         $('#uploadVariantIds').removeAttr('disabled').selectpicker('refresh');
         
         $('#GeneIds').val("").prop('disabled', true);
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
         $('#clearGeneIdSelection').hide();
         $('#GeneIds button').prop('disabled', true).removeClass('active');
         
@@ -1735,7 +1540,7 @@ function onFilterByIds(checked) {
 
 function onGeneSelectionMinusMode() {
     if (!$('#geneIdsSelect').prop('disabled')) {
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
     }
 
     if (!$("#minusMode").hasClass("active")) {
@@ -1751,7 +1556,7 @@ function onGeneSelectionMinusMode() {
 
 function onGeneSelectionPlusMode() {
     if (!$('#geneIdsSelect').prop('disabled')) {
-        $('#geneIdsSelect').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
+        $('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
     }
 
     if (!$("#plusMode").hasClass("active")) {
@@ -1776,7 +1581,7 @@ function onGeneSelectionEditMode() {
     }
     else {
 		$("#editMode.active").removeClass("active");
-		$('#geneIdsSelect').prop('disabled', true).selectpicker('refresh');
+		$('#geneIdsSelect').val(null).prop('disabled', true).selectpicker('refresh');
 	}
     
     $("#minusMode.active").removeClass("active");
@@ -2019,4 +1824,9 @@ function taxonSelected() {
 		}
 	});
 	$("#module").selectpicker("refresh");
+}
+
+function showHideLocalhostWarning() {
+	var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2);
+	$('div#serverExportWarning').html($("#enableExportPush").prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');
 }

@@ -25,10 +25,10 @@ import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
@@ -45,14 +45,20 @@ public class GlobalExceptionHandler {
 	@Autowired private AbstractTokenManager tokenManager;
 	
   @ExceptionHandler(Exception.class)
-  @ResponseStatus(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
   public ModelAndView handleAllExceptions(HttpServletRequest request, HttpServletResponse response, Exception ex)
   {
 	  	if (ex instanceof HttpRequestMethodNotSupportedException)
 	  		LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI() + "?" + request.getQueryString() + " - " + ex.getMessage());
-	  	else
+	  	else {
 	  		LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI() + "?" + request.getQueryString(), ex);
-		if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
+	  	}
+
+  		if (AccessDeniedException.class.isAssignableFrom(ex.getClass()))
+  			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+  		else
+  			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
+	  	if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
 		{
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("errorMsg", ExceptionUtils.getStackTrace(ex));
@@ -75,18 +81,4 @@ public class GlobalExceptionHandler {
 		}
 		return handleAllExceptions(request, response, ex);
   }
-
-//  @ExceptionHandler(AccessDeniedException.class)
-//  @ResponseStatus(org.springframework.http.HttpStatus.FORBIDDEN)
-//  public ModelAndView handleAccessDeniedExceptions(HttpServletRequest request, HttpServletResponse response, Exception ex) {
-//  	LOG.error("Error at URL " + request.getRequestURI() + "?" + request.getQueryString(), ex);
-//  	if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With")))
-//  	{
-//  		HashMap<String, String> map = new HashMap<String, String>();
-//  		map.put("errorMsg", ExceptionUtils.getStackTrace(ex));
-//  		return new ModelAndView(new MappingJackson2JsonView(), UnmodifiableMap.decorate(map));
-//  	}
-//  	else
-//  		return exceptionResolver.resolveException(request, response, null, ex);
-//  }
 }

@@ -22,6 +22,8 @@
 
 var minimumProcessQueryIntervalUnit = 100;
 var emptyResponseCountsByProcess = [];
+var archivedDataFiles = new Array();
+
 var StringBuffer = function() {
     this.buffer = new Array();
 };
@@ -177,7 +179,7 @@ function abort(token) {
 
 function displayMessage(message, duration) {
     duration = duration === undefined ? 5000 : duration;
-    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:2000; position:absolute; top:100px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
+    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:2000; position:absolute; top:200px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
     if (duration !== null){
         window.setTimeout(function() {
             $(".alert").fadeTo(500, 0, function(){
@@ -242,8 +244,12 @@ function getToken() {
         contentType: "application/json;charset=utf-8",
         success: function (jsonResult) {
             token = jsonResult.token;
-            if (document.referrer.endsWith("/login.do") && jsonResult.msg != null)
-                alert(jsonResult.msg);
+            if (document.referrer.endsWith("/login.do")) {
+				if (jsonResult.msg != null)
+                	alert(jsonResult.msg);
+	            if (jsonResult.redirect != null)
+	            	window.location.href = jsonResult.redirect;
+	        }
         },
         error: function (xhr, thrownError) {
             handleError(xhr, thrownError);
@@ -281,4 +287,253 @@ function buildHeader(token, assemblyId, individuals) {
     if (individuals != null)
     	headers["ind"] = individuals;
 	return headers;
+}
+
+function getNcbiTaxonDetails(ncbiTaxonId)
+{
+    var result = $.ajax({
+        async:false,
+        type:"GET",
+        url:"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=taxonomy&retmode=json&id=" + ncbiTaxonId,
+        error:function(xhr, ajaxOptions, thrownError) {}
+    });
+    return result['responseJSON']['result'][ncbiTaxonId];
+}
+
+function grabNcbiTaxon(inputObj)
+{
+    if ($(inputObj).val() == '' || isNaN($(inputObj).val()))
+        return;
+    var taxonDetails=getNcbiTaxonDetails($(inputObj).val()), taxonName=taxonDetails['scientificname'], genus=taxonDetails['genus'], species=taxonDetails['species'];
+    if (taxonName != null && taxonName != '')
+        $(inputObj).attr('title', $(inputObj).val());
+    if (species != null && species != '')
+        $(inputObj).attr('species', genus + " " + species);
+
+    $(inputObj).val(taxonName);
+}
+
+//function showGalaxyPushButton()
+//{
+//	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+//	if (galaxyInstanceUrl.startsWith("http")) {
+//		var fileURLs = "";
+//		for (key in archivedDataFiles)
+//			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+//		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" /><br/>');
+//		$("#galaxyPushButton").show();			
+//	}
+//	else
+//		$("#galaxyPushButton").hide();
+//}
+
+function showServerExportBox(keepExportOnServer, exportFormatExtensions)
+{
+	$("div#exportPanel").hide();
+	$("a#exportBoxToggleButton").removeClass("active");
+	if (processAborted || downloadURL == null)
+		return;
+
+	var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
+	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">x&nbsp;</button></button>&nbsp;Export file will be available at this URL for ' + (!keepExportOnServer ? 1 : 48) + 'h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a><br/><br/>').show();
+	var exportedFormat = $('#exportFormat').val().toUpperCase();
+	if ("VCF" == exportedFormat)
+		addIgvExportIfRunning();
+	else if ("FLAPJACK" == exportedFormat)
+		addFjBytesExport();
+		
+	$('#serverExportBox').append("<div id='galaxyPushButton' />");
+
+	archivedDataFiles = new Array();
+	
+	if (exportFormatExtensions == null) {
+		exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
+		if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != $('#exportFormat').val() && "DARWIN" != $('#exportFormat').val() /* these two already have their own metadata file format*/)
+			exportFormatExtensions.push("tsv");
+	}
+	for (var key in exportFormatExtensions)
+		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
+	
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+	if (galaxyInstanceUrl.startsWith("http")) {
+		var fileURLs = "";
+		for (key in archivedDataFiles)
+			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" /><br/>');
+		$("#galaxyPushButton").show();			
+	}
+	else
+		$("#galaxyPushButton").hide();
+
+	if (onlineOutputTools != null)
+		for (var toolName in onlineOutputTools) {
+			var toolConfig = getOutputToolConfig(toolName);
+			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {
+				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
+				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
+				if (matchResult != null) {
+					var placeHolders = matchResult.map(res => res.replace(/{|}/g , ''));
+					phLoop: for (var i in placeHolders) {
+						var phFormats = placeHolders[i].split("\|");
+						for (var j in phFormats) {
+							for (var key in archivedDataFiles) {
+								if (key == phFormats[j]) {
+									formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + key;
+									urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", archivedDataFiles[key]);
+									continue phLoop;
+								}
+							}
+						}
+						console.log("unused param: " + placeHolders[i]);
+						urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", "");
+					}
+				}
+				
+				if (urlForThisButton == toolConfig['url'] && urlForThisButton.indexOf("*") != -1) {
+					urlForThisButton = urlForThisButton.replace("\*", Object.values(archivedDataFiles).join(","));
+					formatsForThisButton = Object.keys(archivedDataFiles).join(", ");
+				}
+
+				if (formatsForThisButton != "")
+					$('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" /><br/>');
+			}
+		}
+}
+
+function getOutputToolConfig(toolName)
+{
+    var storedToolConfig = localStorage.getItem("outputTool_" + toolName);
+    return storedToolConfig != null ? JSON.parse(storedToolConfig) : onlineOutputTools[toolName];
+}
+
+function addIgvExportIfRunning() {
+    if (igvDataLoadPort == null)
+        return;
+    
+    var igvGenomeOptions = null;
+    $.ajax({
+        type:"GET",
+        url:"http://127.0.0.1:" + igvDataLoadPort,
+        success:function(jsonResult) {    
+            if ("ERROR Unknown command: /" == jsonResult)
+            {
+                if (igvGenomeOptions == null)
+                {
+                    var genomeList = $.ajax({
+                        async:false,
+                        type:"GET",
+                        url:igvGenomeListUrl,
+                         crossDomain : true,
+                        error:function(xhr, ajaxOptions, thrownError) {}
+                    });
+                    
+                    igvGenomeOptions = "<option>&nbsp;</option>";
+                    if (genomeList.responseText != null)
+                    {
+                        var genomeLines = genomeList.responseText.split("\n");
+                        for (var i=0; i<genomeLines.length; i++)
+                            if (i > 0 || !genomeLines[i].startsWith("<"))    // skip header
+                            {
+                                var genomeFields = genomeLines[i].split("\t");
+                                if (genomeFields.length == 3)
+                                    igvGenomeOptions += "<option value='" + genomeFields[2] + "'>" + genomeFields[0] + "</option>";
+                            }
+                    }
+                    $('div#serverExportBox').append("<center><table style='margin-bottom:20px;'><tr><th valign='middle'>View in IGV within genomic/structural context&nbsp;</th></tr><tr><td align='center'><select id='igvGenome' style='min-width:175px;'>" + igvGenomeOptions + "</select><br/>(you may select a genome to switch to)</td><td valign='top'>&nbsp;<input type='button' value='Send' onclick='sendToIGV();'/></td></tr></table></center>");
+                }
+            }
+        },
+        error:function(xhr, ajaxOptions, thrownError) {
+            //handleError(xhr, ajaxOptions, thrownError);
+            console.log("Unable to find IGV instance");
+        }
+    });
+}
+
+function addFjBytesExport() {
+    $('div#serverExportBox').append("<input style='margin-bottom:20px;' type='button' value='View in Flapjack-Bytes' onclick='sendToFjBytes();'/>" + (exportedIndividualCount * count > 500000000 ? "<div class='text-red margin-top'>WARNING: Exported dataset potentially contains more than 500 million genotypes.<br/>A standard workstation's web-browser may be unable to load it in with Flapjack-Bytes </div>" : "") + "<br/>");
+}
+
+function sendToGalaxy(archivedDataFiles) {
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim(), apiKey = sessionStorage.getItem("galaxyApiKey::" + galaxyInstanceUrl);
+	if (apiKey == null)
+		apiKey = prompt("Enter the API key tied to your account on\n" + galaxyInstanceUrl);
+	if (apiKey != null && apiKey.trim() != "") {
+		sessionStorage.setItem("galaxyApiKey::" + galaxyInstanceUrl, apiKey);
+		$('#progressText').html("Pushing files to " + galaxyInstanceUrl + " ...");
+		$('#asyncProgressButton').hide();
+		$('button#abort').hide();
+		$('#progress').modal({
+			backdrop: 'static',
+			keyboard: false,
+			show: true
+		});
+		setTimeout(function() {
+			var n = 0, responseMsg = null;
+			for (var fileUrl in archivedDataFiles)
+				$.ajax({
+					async: false,
+					url: galaxyPushURL + "?galaxyUrl=" + galaxyInstanceUrl + "&galaxyApiKey=" + apiKey + "&fileUrl=" + archivedDataFiles[fileUrl],
+					type: "GET",
+					success: function(respString) {
+						responseMsg = respString;
+						n++;
+					},
+					error: function(xhr, ajaxOptions, thrownError) {
+						$('#progress').modal('hide');
+						
+						if (xhr.status == 403) {
+							console.log("Removing invalid Galaxy API key: " + apiKey);
+							sessionStorage.removeItem("galaxyApiKey::" + galaxyInstanceUrl);
+						}
+						
+						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+							alert("Error accessing resource: " + genomeURL);
+						else
+							handleError(xhr, thrownError);
+					}
+				});
+			if (n > 0)
+				if (confirm(n + " file(s) " + responseMsg + "\nOpen a window pointing to that Galaxy instance?"))
+					window.open(galaxyInstanceUrl);
+			$('#progress').modal('hide');
+		}, 1);
+	}
+}
+
+function sendToFjBytes() {
+	let url = "fjbytes.html?m=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.map') +
+            "&g=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.genotype') +
+            "&p=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.phenotype') +
+            "&id=" + getModuleName();
+
+	if ($("#fjBytesPanel").length == 0) {
+		location.href = url;
+		return;
+	}
+
+    $("#fjBytesPanel").modal({
+        opacity: 80,
+        overlayCss: {
+            backgroundColor: "#111111"
+        }
+    });
+
+	$('#fjBytesPanelHeader').html('<center>This is a functionality under development and might not be totally stable. Check <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">https://github.com/cropgeeks/flapjack-bytes</a> for information about Flapjack-Bytes.&nbsp;&nbsp;&nbsp;<a href="' + url + '" onclick="$(\'#fjBytesPanel\').modal(\'hide\');" target="_blank">Open in separate window</a></center>');
+	$("#fjBytesFrame").attr('src', url);
+}
+
+function sendToIGV(genomeID)
+{
+    var genomeID = $("select#igvGenome").val();
+    $.ajax({
+        type:"GET",
+        url:"http://127.0.0.1:" + igvDataLoadPort + "/load?" + (genomeID != "" ? "genome=" + genomeID + "&" : "") + "file=" + location.origin + $("a#exportOutputUrl").attr("href").replace(new RegExp(/\.[^.]*$/), '.vcf'),
+        success:function(tsvResult) {
+            alert("Variant list was sent to IGV!");
+        },
+        error:function(xhr, ajaxOptions, thrownError) {
+            handleError(xhr, ajaxOptions, thrownError);
+        }
+    });
 }

@@ -1,4 +1,4 @@
-name: Gigwa Build Staging test
+name: Gigwa Staging Version Build 
 on:
   push:
     tags:

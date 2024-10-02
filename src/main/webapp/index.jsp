@@ -173,8 +173,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<div id="GeneIds" class="margin-top-md">
 										<div class="container-fluid">
 											<div class="row">
-												<div class="col-xl-6 input-group half-width custom-label"
-													style="float: left;" id="geneIdsLabel">Gene Names</div>
+												<div class="col-xl-6 input-group half-width custom-label" style="float: left;" id="geneIdsLabel">Gene Names</div>
 													<div class="col-xl-6 input-group half-width custom-label" style="float: right; font-weight:400;">Selection mode</div>
 											</div>
 										</div>
@@ -278,18 +277,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 														</label>&nbsp;<br/>
 														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
 													</div>
-													<div style="width:100%; text-align:center;">
-														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
-														</label>
-														<div>
-															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
+													<div style="width:100%; margin-left:-10px;" class="margin-top margin-bottom label-checkbox">
+														<div style="text-align:center;">
+															<input type="checkbox" id="enableExportPush" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="showHideLocalhostWarning();" title="If ticked, exported data will be provided by URL, and available for pushing into external online tools." class="input-checkbox">
+															<label style="width:120px;" for="enableExportPush">Provide export URL</label>
 														</div>
+														<div>
+															<input type="checkbox" id="keepExportOnServ" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var enabled=$(this).is(':checked'); $('#enableExportPush').prop('checked', enabled); $('#enableExportPush').prop('disabled', enabled); showHideLocalhostWarning();" title="If ticked, export data will remain downloadable for at least 48h. You may then share its URL with collaborators." class="input-checkbox">
+															<label style="width:120px;" for="keepExportOnServ">Keep files on server</label>
+														</div>
+													</div>
+													<div>
+														<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning" style="white-space: initial"></div>
 										</div>
+										<div id="serverExportWarning" style="white-space:initial; text-align:center;"></div>
 									</div>
 								</div>
 								<a class="btn icon-btn btn-default" id="exportBoxToggleButton" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px 4px 10px;" href="#" onclick="toggleExportPanel();" title="Export selection">
@@ -317,7 +321,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 			</div>
 		</div>
-	</div>
 	</main>
 	<!-- modal which display process progress -->
 	<div class="modal" tabindex="-1" id="progress" aria-hidden="true">
@@ -330,10 +333,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="c3"></div>
 						<div class="c4"></div>
 					</div>
-					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
+					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span></h3>
 					<br/>
 					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&keepExportOnServ=' + $('#keepExportOnServ').prop('checked') + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -465,18 +468,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			(feature available when the 'Keep files on server' box is ticked)<br />
 			</div>
 			<hr />
-			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:6px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
-			(You will need to provide an API key to be able to push exported files there)
-			<hr />
-			<b>Standalone IGV</b> (DEPRECATED in favor of using the embedded IGV.js) 
-			<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="25" width="25" title="You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
+			(You will be requested to provide an API key to be able to push exported files there)
 			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
-			<br />Online tool URL (any * will be replaced with exported file location)<br />
-			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
+			<br />Online tool URL with placeholders specifying extensions, e.g. {don|tsv|phenotype}<br />
+			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl={vcf|vcf.gz}" />
 			<p>
 				<br/>
 				(Set URL blank to revert to default)
@@ -787,7 +787,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			});
 
 			$.ajax({
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />',
 				async: false,
 				type: "GET",
 				contentType: "application/json;charset=utf-8",
@@ -1337,7 +1337,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 if (gotMetaData) {
                     $('#asyncProgressButton').hide();
                     $('button#abort').hide();
-                    $('#ddlWarning').hide();
                     $('#progressText').html("Loading individuals' metadata...");
                     $('#progress').modal({
                         backdrop: 'static',
@@ -1509,7 +1508,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		if ($('#exportPanel').is(':visible'))
 			$('#exportBoxToggleButton').click()
 		$('#asyncProgressButton').hide();
-		$('#ddlWarning').hide();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1856,15 +1854,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
 	function exportData() {
-		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
-		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-			if (exportedIndividualCount * count > 1000000000) {
-				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
-				return;
-			}
-		}
+		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 
 		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
 		if (supportedTypes != null) {
@@ -1886,16 +1878,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		}
 		
 		exporting = true;
-		if (keepExportOnServer)
-		{
-			$('#ddlWarning').hide();
-			$('#asyncProgressButton').show();
-		}
-		else
-		{
-			$('#ddlWarning').show();
-			$('#asyncProgressButton').hide();
-		}
+
+		$('#asyncProgressButton').show();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1906,85 +1890,43 @@ https://doi.org/10.1093/gigascience/giz051</pre>
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />';
         var query = buildSearchQuery(3, currentPageToken);
-        query["keepExportOnServer"] =  keepExportOnServer;
+        query["keepExportOnServer"] = keepExportOnServer;
         query["exportFormat"] =  $('#exportFormat').val();
         query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
         query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
-		if (keepExportOnServer) {
-            $.ajax({
-                url: url,
-                type: "POST",       
-                contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-                data: JSON.stringify(query),
-                success: function(response) {
-                        downloadURL = response;
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                        downloadURL = null;
-                        $("div#exportPanel").hide();
-                        $("a#exportBoxToggleButton").removeClass("active");
-                        handleError(xhr, thrownError);
-                }
-            });
-		} else {
-			var headers = buildHeader(token, $('#assembly').val());
-            headers["Content-Type"] = "application/json;charset=utf-8"; 
+        $.ajax({
+            url: url,
+            type: "POST",       
+            contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+            data: JSON.stringify(query),
+            success: function(response) {
+                    downloadURL = response;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                    downloadURL = null;
+                    $("div#exportPanel").hide();
+                    $("a#exportBoxToggleButton").removeClass("active");
+                    handleError(xhr, thrownError);
+            }
+        });
 
-            var request = {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(query)
-            };
-            
-            var filename = '';
-            
-            fetch(url, request).then((response) => {
-                    var header = response.headers.get('Content-Disposition');
-                    var parts = header.split(';');
-                    filename = parts[1].split('=')[1];
-                    return response.blob();
-            })
-            .then((result) => {
-                if (result !== undefined) {
-                    var objectURL = URL.createObjectURL(result);
-                    var link = document.createElement("a");
-                    link.setAttribute("href", objectURL);
-                    link.setAttribute("download", filename);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                }
-            });
-			downloadURL = null;
-			//postDataToIFrame("outputFrame", url, query);
-			$("div#exportPanel").hide();
-			$("a#exportBoxToggleButton").removeClass("active");
-		}
-		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
-	}
-
-	function postDataToIFrame(frameName, url, params)
-	{
-		 var form = document.createElement("form");
-		 form.setAttribute("method", "post");
-		 form.setAttribute("action", url);
-		 form.setAttribute("target", frameName);
-
-		 for (var i in params) {
-			 var input = document.createElement('input');
-			 input.type = 'hidden';
-			 input.name = i;
-			 input.value = params[i];
-			 form.appendChild(input);
-		 }
-
-		 document.body.appendChild(form);
-		 form.submit();
-		 document.body.removeChild(form);
+		displayProcessProgress(2, "export_" + token, null, function() {
+	        if ($('#enableExportPush').prop('checked'))
+				showServerExportBox(keepExportOnServer);
+	        else {
+	        	var link = document.createElement('a');
+	        	link.href = downloadURL;
+	        	link.style.display = 'none';
+	        	link.download = downloadURL.substring(downloadURL.lastIndexOf('/') + 1);
+	        	document.body.appendChild(link);
+	        	link.click();
+	        	document.body.removeChild(link);
+	        }
+		});
 	}
 
 	// split an Id and return element at the corresponding position
