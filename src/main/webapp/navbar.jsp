@@ -35,7 +35,12 @@
 		   			<li class="dropdown">
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
-						<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
+							<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
+		                    <c:if test="${userDao.doesLoggedUserOwnEntities()}">
+		                    	<c:if test='${appConfig.get("snpEffConfigFile") != null && appConfig.get("snpEffDataRepository") != null}'>
+		                    		<li><a href="<c:url value='/annotate.jsp' />" data-toggle="tooltip" data-placement="bottom">Annotate data</a></li>
+								</c:if>
+							</c:if>
 		                    <c:if test="${!isAnonymous}">
 								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and/or user permissions</a></li>
 							</c:if>

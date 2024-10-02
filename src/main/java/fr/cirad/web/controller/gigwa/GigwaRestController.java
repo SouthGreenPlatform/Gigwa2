@@ -188,7 +188,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import static java.lang.Integer.parseInt;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
