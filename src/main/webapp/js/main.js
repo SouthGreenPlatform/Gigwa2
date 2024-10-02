@@ -21,7 +21,6 @@ var selectedVariantIDsWhenTooManyToFitInSelect = null;
 var igvGenomeOptions = null;
 var filtersToColumns = new Array();
 
-
 function getSelectedTypes() {
     var variantTypes = $('#variantTypes').val();
     if (variantTypes === null || variantTypes.length === variantTypesCount)
@@ -548,10 +547,9 @@ function groupNameChanged(n) {
 
 	let newName = $("input#group" + n).val();
 	for (var i = 1; i <= getGenotypeInvestigationMode(); i++)
-   	   if (i != n) {
+   	if (i != n) {
 		   $('#discriminate' + i + ` option[value='${n}']`).text(newName).attr('title', newName);
 		   $('#discriminate' + i).selectpicker('refresh');
-
 		   $("#igvGroupsMenu li input[value=group" + n + "]").parent().find("span").text(newName);
 		}
 }

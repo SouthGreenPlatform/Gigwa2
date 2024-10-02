@@ -75,7 +75,7 @@
             </div>
         </div>
     </nav>
-    
+
     <!-- modal which displays documentation -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="manual" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
@@ -84,7 +84,7 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- modal which displays terms of use -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="termsOfUse" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
@@ -92,9 +92,9 @@
 				<div class="modal-header" id="termsOfUseContainer">
 					<center><h3>Gigwa - Terms of use</h3></center>
 					<h4>1) Limitation of warranty</h4>
-					<p>a) You acknowledge that the actual state of scientific and technical knowledge do not permit to test and check all uses of Gigwa, nor to detect the being of  possible defaults. You acknowledge that the changes, the Use, the modification, the development, the reproduction of Gigwa are deemed to be executed by experimented users and contain risks. You are responsible for the checking by any means of fitness of Gigwa for your own purposes, of checking of its working, of its Use in conditions that do not cause damages to persons or goods.</p>
+					<p>a) You acknowledge that the actual state of scientific and technical knowledge do not permit to test and check all uses of Gigwa, nor to detect the being of possible defaults. You acknowledge that the changes, the Use, the modification, the development, the reproduction of Gigwa are deemed to be executed by experimented users and contain risks. You are responsible for the checking by any means of fitness of Gigwa for your own purposes, of checking of its working, of its Use in conditions that do not cause damages to persons or goods.</p>
 					<p>b) Gigwa is provided on a « as is » basis, without warranties express or implied other than its existence, including all disclaimer of warranty relating to a title or deed (of property or exploitation), the lack of infringement, the merchantability, the secured, innovative or accurate features of Gigwa, the lack of mistakes, the suitability with Your equipment and/or software configuration.</p>
-					
+
 					<h4>2) Disclaimer of liability</h4>
 						a) CIRAD or IRD can not be held responsible towards anyone:
 						<ul>
@@ -103,7 +103,7 @@
 						<li>iii) for any indirect damage arising from the Use or the performances of Gigwa
 						</ul>
 					<p>b) The parties agree expressly that any financial or commercial prejudice (for instance loose of data, loose of customers or orders, loose of benefit, trading loss, misses to gain, commercial disorder) or any action suited against You by a third party is considered as an indirect damage and can not be subject of a indemnifying by CIRAD or IRD.</p>
-					
+
 					<h4>3) Applicable law</h4>
 					<p>This contract and all disputes arising out of the execution or interpretation of this license shall be governed by French law.</p>
 					<p style="text-align:center"><input type="button" value="I understand and consent to the above" style="margin:5px;" class="btn btn-primary btn-sm" data-dismiss="modal" onclick="$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });" /></p>
@@ -111,11 +111,11 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<script type="text/javascript" src="private/js/jquery.cookie.js"></script>
 	<script type="text/javascript">
 		var termsOfUseCookieDuration = 1000 * 60 * 60 * 24 * 3;		// 3 days
-		
+
 		if ($.cookie('termsOfUseAgreed'))
 			$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });	// push expiry date back
 		else

@@ -75,12 +75,18 @@ maxExportableBillionGenotypes = 2
 # Set your Google Analytics id for the tag to be automatically added into the main page
 #googleAnalyticsId = SOME_GA_ID
 
-
 # In some situations the system needs to provide externally visible file URLs for remote applications to download.
 # In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL.
 # This also provides the base service URL and needs to be set for CAS authentication
 # Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
+
+
+# Path to the SnpEff config file. Online annotation will be available only if this is defined.
+snpEffConfigFile = /opt/SnpEff/snpEff.config
+
+# Path to the SnpEff data repository. Online annotation will be available only if this is defined
+snpEffDataRepository = /opt/SnpEff/data
 
 
 # If defined, enables CAS authentication by defining the CAS server URL

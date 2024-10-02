@@ -22,7 +22,6 @@
 
 var minimumProcessQueryIntervalUnit = 100;
 var emptyResponseCountsByProcess = [];
-
 var archivedDataFiles = new Array();
 
 var StringBuffer = function() {

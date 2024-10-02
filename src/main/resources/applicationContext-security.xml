@@ -57,13 +57,9 @@
         <secur:cors configuration-source-ref="corsSource" />
     </secur:http>
 
-
-
 <!-- Only one passwordEncoder bean should be enabled at a time -->
 <!-- 	<bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder" /> -->
     <bean id="passwordEncoder" class="fr.cirad.security.CustomBCryptPasswordEncoder" />
-
-
 
 <!-- Authentication providers -->
     <secur:authentication-manager alias="authenticationManager" erase-credentials="false">

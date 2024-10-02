@@ -18,6 +18,7 @@ package fr.cirad.web.controller.gigwa;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.net.UnknownHostException;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -56,6 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
@@ -104,6 +107,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
@@ -122,6 +126,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.sun.jersey.api.client.ClientResponse;
 
 import fr.cirad.io.brapi.BrapiService;
+import fr.cirad.mgdb.annotation.SnpEffAnnotationService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.exporting.IExportHandler;
@@ -183,6 +188,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import static java.lang.Integer.parseInt;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
@@ -271,13 +277,16 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String DELETE_QUERY_URL = "/deleteQuery";
     static public final String VARIANTS_BY_IDS = "/variants/byIds";
     static public final String VARIANTS_LOOKUP = "/variants/lookup";
+    static public final String SNPEFF_ANNOTATION_PATH = "/snpEff/annotate";
+    static public final String SNPEFF_GENOME_LIST = "/snpEff/genomes";
+    static public final String SNPEFF_INSTALL_GENOME = "/snpEff/install";
     static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
 	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
-		
+
 	/**
 	 * get a unique processID
 	 *
@@ -577,7 +586,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, ProgressIndicator>
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), 
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 							@ApiResponse(code = 204, message = "No progress indicator") })
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "progressToken", required = false) final String progressToken) {
@@ -744,7 +753,7 @@ public class GigwaRestController extends ControllerInterface {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * get Fst data
 	 *
@@ -778,7 +787,7 @@ public class GigwaRestController extends ControllerInterface {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * get Tajima's D data
 	 *
@@ -876,15 +885,14 @@ public class GigwaRestController extends ControllerInterface {
         	build400Response(resp, "Missing parameter: displayedSequence");
         	return;
         }
-                
+
         String processId = "igvViz_" + token;
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
 		ProgressIndicator.registerProgressIndicator(progress);
-        
 		int projId = Integer.parseInt(info[1]);
+
 		boolean fNoGenotypesRequested = gr.getAllCallSetIds().isEmpty() || (gr.getAllCallSetIds().size() == 1 && gr.getAllCallSetIds().get(0).isEmpty());
 		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-        
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
         MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
         boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
@@ -932,14 +940,14 @@ public class GigwaRestController extends ControllerInterface {
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
 
-        Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
-        Map<String, Collection<String>> individualsByPop = new HashMap<>();
-        Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
-        List<List<String>> callsetIds = gr.getAllCallSetIds();
-        for (int i = 0; i < callsetIds.size(); i++) {
-            individualsByPop.put(gr.getGroupName(i), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-            annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
-        }
+    Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
+    Map<String, Collection<String>> individualsByPop = new HashMap<>();
+    Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
+    List<List<String>> callsetIds = gr.getAllCallSetIds();
+    for (int i = 0; i < callsetIds.size(); i++) {
+        individualsByPop.put(gr.getGroupName(i), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
+        annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
+    }
 
 		HapMapExportHandler heh = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
 		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
@@ -960,7 +968,7 @@ public class GigwaRestController extends ControllerInterface {
 			String configInfo = appConfig.get("igvGenomeConfig_" + i);
 			if (configInfo == null)
 				break;
-			
+
 			String[] splitConfigInfo = configInfo.split(";");
 			if (splitConfigInfo.length >= 2 && splitConfigInfo[0].trim().length() > 0 && splitConfigInfo[1].trim().length() > 0) {
 				HashMap<String, String> config = new HashMap<>();
@@ -1133,6 +1141,7 @@ public class GigwaRestController extends ControllerInterface {
         {
             if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
                 gsver.setRequest(request);		
+
                 Authentication authentication = tokenManager.getAuthenticationFromToken(token);
                 gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
                 ga4ghService.exportVariants(gsver, token, resp);
@@ -1252,7 +1261,7 @@ public class GigwaRestController extends ControllerInterface {
 	    	{}
       	}
 	}
-	
+
 	@ApiIgnore
 	@RequestMapping(value = IMPORT_PAGE_URL)
 	public ModelAndView setupImportPage()
@@ -1919,7 +1928,7 @@ public class GigwaRestController extends ControllerInterface {
 											else
 												nTotalImportSize += fileSize * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
 										}
-											
+
 									}
 									catch (Exception e)
 									{
@@ -1951,7 +1960,7 @@ public class GigwaRestController extends ControllerInterface {
 							{
 								File f = new File(uri);
 								if (f.exists() && !f.isDirectory() && f.length() > 0) {
-									nTotalImportSize += f.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);									
+									nTotalImportSize += f.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
 									filesByExtension.put(fileExtension, f);
 								}
 								else
@@ -2408,23 +2417,23 @@ public class GigwaRestController extends ControllerInterface {
 		{
 			if (url == null)
 				return "";
-			
+
 			String result = IOUtils.toString(new URL(url));
 			return !result.toLowerCase().startsWith("<server-side genome list>") ? "" : result;
 		}
-		catch (Exception e) 
+		catch (Exception e)
 		{
 			return "";
 		}
 	}
-	
+
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
 		String url = appConfig.get("genomeBrowser-" + sModule);
 		return url == null ? "" : url;
 	}
-	
+
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ONLINE_OUTPUT_TOOLS_URL, method = RequestMethod.GET, produces = "application/json")
 	public HashMap<String, HashMap<String, String>> getOnlineOutputToolURLs() {
@@ -2452,7 +2461,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + MAX_UPLOAD_SIZE_PATH, method = RequestMethod.GET)
 	public Long maxUploadSize(HttpServletRequest request, @RequestParam(required=false) Boolean capped) {
 		String maxSize = null;
-		
+
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		boolean fIsAdmin = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)); // limit only applies when capped for administrators
 		if (!fIsAdmin) {
@@ -2464,7 +2473,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		if (!Boolean.TRUE.equals(capped))
 			return nMaxSizeMb;
-		
+
 		return Math.min(uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
 	
@@ -2490,12 +2499,12 @@ public class GigwaRestController extends ControllerInterface {
 	public void build404Response(HttpServletResponse resp) throws IOException {
 		buildResponse(resp, HttpServletResponse.SC_NOT_FOUND, "This resource does not exist");
 	}
-	
+
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
     public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String body = IOUtils.toString(request.getReader());
-		
+
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode jsonNode = (ObjectNode) mapper.readTree(body);
 		GigwaSearchVariantsRequest gsvr = mapper.readValue(jsonNode, GigwaSearchVariantsRequest.class);
@@ -2515,7 +2524,7 @@ public class GigwaRestController extends ControllerInterface {
 
     	String info[] = Helper.getInfoFromId(gsvr.getVariantSetId(), 2);
         String sModule = info[0];
-        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);        
+        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 
         String queryKey = ga4ghService.getQueryKey(gsvr);
         
@@ -2536,7 +2545,7 @@ public class GigwaRestController extends ControllerInterface {
 		jsonNode.remove("queryLabel");
 
         BookmarkedQuery cachedQuery = new BookmarkedQuery(queryKey);
-        cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());  	
+        cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());
     	cachedQuery.setSavedFilters(mapper.readValue(jsonNode, HashMap.class));
     	mongoTemplate.save(cachedQuery);
 
@@ -2562,7 +2571,7 @@ public class GigwaRestController extends ControllerInterface {
 
         return result;
     }
-	
+
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + LOAD_QUERY_URL, method = RequestMethod.GET, produces = "application/json")
     public HashMap<String, Object> loadBookmarkedQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
@@ -2572,14 +2581,14 @@ public class GigwaRestController extends ControllerInterface {
     		build403Response(response);
     		return null;
     	}
-    	
+
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
         BookmarkedQuery cachedQuery = mongoTemplate.findById(queryId, BookmarkedQuery.class);
         if (cachedQuery == null) {
         	build404Response(response);
         	return null;
         }
-        
+
         if (!cachedQuery.getLabelsForUsers().containsKey(authentication.getName())) {
     		build403Response(response);
     		return null;
@@ -2597,17 +2606,17 @@ public class GigwaRestController extends ControllerInterface {
     		build403Response(response);
     		return;
     	}
-    	
+
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
         DeleteResult dr = mongoTemplate.remove(new Query(Criteria.where("_id").is(queryId)), BookmarkedQuery.class);
         if (dr.getDeletedCount() == 0) {
         	build404Response(response);
         	return;
         }
-        
+
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
-        
+
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VARIANTS_LOOKUP, notes = "Get variants IDs ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
 	@ApiResponse(code = 400, message = "wrong parameters"),
@@ -2617,7 +2626,7 @@ public class GigwaRestController extends ControllerInterface {
             HttpServletRequest request, HttpServletResponse resp,
             @RequestParam("projectId") String projectId,
             @RequestParam("q") String lookupText) throws Exception {
-        
+
         String token = tokenManager.readToken(request);
 
         try {
@@ -2626,11 +2635,11 @@ public class GigwaRestController extends ControllerInterface {
             if (tokenManager.canUserReadDB(token, info[0])) {            
                 return ga4ghService.searchVariantsLookup(info[0], project, lookupText);
             }
-                
+
         } catch (UnsupportedEncodingException ex) {
             LOG.debug("Error decoding projectId: " + projectId, ex);
         }
-        
+
         return null;
     }
 
@@ -2641,6 +2650,211 @@ public class GigwaRestController extends ControllerInterface {
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
 		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
 	}
+
+    @ApiIgnore
+    @ApiOperation(authorizations = {@Authorization(value = "AuthorizationToken")}, value = SNPEFF_ANNOTATION_PATH, notes = "Annotates variants with snpEff")
+	@ApiResponses(value = {@ApiResponse(code = 200, message = "Success")})
+    @RequestMapping(value = BASE_URL + SNPEFF_ANNOTATION_PATH, method = RequestMethod.POST)
+    public String snpEffAnnotation(HttpServletRequest request, HttpServletResponse response,
+    		@RequestParam("module") final String sModule,
+			@RequestParam("project") final String sProject,
+			@RequestParam("run") final String sRun,
+			@RequestParam("genome") final String genomeName) throws Exception {
+    	String token = tokenManager.readToken(request);
+    	if (token.length() == 0)
+    		return null;
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+    	if (configFile == null || dataPath == null)
+    		throw new Exception("Online annotation is not available");
+
+		ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
+		ProgressIndicator.registerProgressIndicator(progress);
+//		progress.setPercentageEnabled(false);
+
+		if (!SnpEffAnnotationService.getAvailableGenomes(dataPath).contains(genomeName)) {
+			progress.setError("Unknown genome, you must install it first");
+			return null;
+		}
+
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
+		final GenotypingProject project = mongoTemplate.findOne(new Query(Criteria.where(GenotypingProject.FIELDNAME_NAME).is(sProject)), GenotypingProject.class);
+		if (tokenManager.canUserWriteToProject(token, sModule, project.getId())) 
+			try {
+				SnpEffAnnotationService.annotateRun(configFile, dataPath, sModule, project.getId(), sRun, genomeName, progress);
+				progress.markAsComplete();
+			}
+			catch (Exception e) {
+				progress.setError("Error annotating dataset: " + e.getMessage());
+				LOG.error("Error annotating dataset", e);
+			}
+			else {
+				LOG.error("NOT AUTHENTICATED");
+			}
+
+    	return null;
+    }
+
+    @ApiIgnore
+    @RequestMapping(value = BASE_URL + SNPEFF_GENOME_LIST, method = RequestMethod.GET)
+    public Map<String, Object> snpEffGenomeList(HttpServletRequest request, HttpServletResponse response) {
+    	HashMap<String, Object> result = new HashMap<>();
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+
+    	result.put("availableGenomes", SnpEffAnnotationService.getAvailableGenomes(dataPath));
+    	result.put("downloadableGenomes", SnpEffAnnotationService.getDownloadableGenomes(configFile, dataPath));
+
+    	return result;
+    }
+
+    @ApiIgnore
+    @RequestMapping(value = BASE_URL + SNPEFF_INSTALL_GENOME, method = RequestMethod.POST)
+    public Map<String, Object> snpEffInstallGenome(MultipartHttpServletRequest request, HttpServletResponse response,
+    		@RequestParam(value="genomeName", required=false) final String genomeName,
+			@RequestParam(value="genomeURL", required=false) final URL genomeURL,
+			@RequestParam(value="newGenomeID", required=false) String newGenomeID,
+			@RequestParam(value="newGenomeName", required=false) String newGenomeName) throws Exception {
+
+    	String token = tokenManager.readToken(request);
+    	if (token.length() == 0)
+    		return null;
+
+    	String configFile = appConfig.get("snpEffConfigFile");
+    	String dataPath = appConfig.get("snpEffDataRepository");
+    	if (configFile == null || dataPath == null)
+    		throw new Exception("Online annotation is not available");
+
+    	ProgressIndicator progress = new ProgressIndicator(token, new String[] { "Checking input" });
+		ProgressIndicator.registerProgressIndicator(progress);
+
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("log", null);
+		result.put("success", false);
+
+		Map<String, MultipartFile> fileMap = request.getFileMap();
+
+    	if (genomeName != null) {
+    		if (!SnpEffAnnotationService.getAvailableGenomes(dataPath).contains(genomeName)) {
+				SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeName, progress);
+				result.put("success", true);
+			}
+		} else if (genomeURL != null) {
+			SnpEffAnnotationService.downloadGenome(configFile, dataPath, genomeURL, progress);
+			result.put("success", true);
+		} else if (fileMap != null && newGenomeID != null) {
+			if (newGenomeName == null)
+				newGenomeName = newGenomeID;
+			File fastaFile = File.createTempFile("snpEffFasta-", "");
+			File referenceFile = File.createTempFile("snpEffRef-", "");
+			File cdsFile = File.createTempFile("snpEffCDS-", "");
+			File proteinFile = File.createTempFile("snpEffProtein-", "");
+			String referenceFormat = null;
+			boolean fastaFound = false, cdsFound = false, proteinFound = false;
+
+			for (MultipartFile file : fileMap.values()) {
+				// Some browsers (or malicious users) might supply additional path components in surplus of the raw file name
+				String fileName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+
+				boolean gzipped = false;
+				int extensionPosition = fileName.lastIndexOf('.');
+				String extension = fileName.substring(extensionPosition + 1).toLowerCase();
+				String baseName = fileName.substring(0, extensionPosition);
+
+				if (extension.equals("gz")) {
+					gzipped = true;
+					extensionPosition = baseName.lastIndexOf('.');
+					extension = baseName.substring(extensionPosition + 1).toLowerCase();
+					baseName = baseName.substring(0, extensionPosition);
+				}
+
+				if (extension.equals("fa") || extension.equals("fas") || extension.equals("fasta")) {
+					if (baseName.toLowerCase().equals("cds")) {
+						transferSnpEffImport(file, cdsFile, gzipped, progress);
+						cdsFound = true;
+					} else if (baseName.toLowerCase().equals("protein")) {
+						transferSnpEffImport(file, proteinFile, gzipped, progress);
+						proteinFound = true;
+					} else {
+						transferSnpEffImport(file, fastaFile, gzipped, progress);
+						fastaFound = true;
+					}
+				} else if (extension.equals("gtf")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gtf22";
+				} else if (extension.equals("gff") || extension.equals("gff3")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gff3";
+				} else if (extension.equals("gff2")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "gff2";
+				} else if (extension.equals("genbank") || extension.equals("gbk")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "genbank";
+				} else if (extension.equals("refseq")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "refSeq";
+				} else if (extension.equals("embl")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "embl";
+				} else if (extension.equals("kg") || extension.equals("knowngenes")) {
+					transferSnpEffImport(file, referenceFile, gzipped, progress);
+					referenceFormat = "knowngenes";
+				} else {
+					progress.setError("Unsupported file type : " + fileName);
+					return result;
+				}
+			}
+
+			if (referenceFormat == null) {
+				progress.setError("No reference file found");
+				return result;
+			} else if (!fastaFound) {
+				progress.setError("No sequence file found");
+				return result;
+			}
+
+			LOG.debug("FASTA found, reference format is " + referenceFormat);
+
+			String log = SnpEffAnnotationService.importGenome(newGenomeID, newGenomeName, fastaFile, referenceFile, (cdsFound ? cdsFile : null), (proteinFound ? proteinFile : null), referenceFormat, configFile, dataPath, progress);
+			result.put("log", log);
+		} else {
+			progress.setError("No genome specified");
+			return result;
+		}
+    	// TODO : Upload : https://pcingola.github.io/SnpEff/se_buildingdb/
+
+    	if (progress.getError() != null)
+    		return result;
+
+    	result.put("success", true);
+    	progress.markAsComplete();
+    	return result;
+    }
+
+    // FIXME : Is this compatible with BGZip-compressed files ?
+    private void transferSnpEffImport(MultipartFile inputFile, File outputFile, boolean gzipped, ProgressIndicator progress) throws FileNotFoundException, IOException {
+    	String fileName = Paths.get(inputFile.getOriginalFilename()).getFileName().toString();
+    	if (gzipped) {
+    		progress.addStep("Decompressing " + fileName);
+    		progress.moveToNextStep();
+
+	    	GZIPInputStream input = new GZIPInputStream(inputFile.getInputStream());
+	    	FileOutputStream output = new FileOutputStream(outputFile);
+
+	    	byte[] buffer = new byte[65536];
+	    	int readLength;
+	    	while ((readLength = input.read(buffer)) > 0)
+	    		output.write(buffer, 0, readLength);
+
+	    	input.close();
+	    	output.close();
+    	} else {
+    		inputFile.transferTo(outputFile);
+    	}
+    }
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
