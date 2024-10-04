@@ -1858,22 +1858,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 
-		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
-		if (supportedTypes != null) {
-			supportedTypes = supportedTypes.split(";");
-			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
-			for (var i in selectedTypes)
-				if (!supportedTypes.includes(selectedTypes[i])) {
-					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+		if (!$("#filterIDsCheckbox").is(":checked")) {	// FIXME: this is just a workaround, we should be able to check the results' contents rather than relying on widget values
+			var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
+			if (supportedTypes != null) {
+				supportedTypes = supportedTypes.split(";");
+				var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
+				for (var i in selectedTypes)
+					if (!supportedTypes.includes(selectedTypes[i])) {
+						alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+						return;
+					}
+			}
+			var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+			if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
+				supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
+				if (!supportedPloidyLevels.includes(ploidy)) {
+					alert("Error: selected export format does not support ploidy level " + ploidy);
 					return;
 				}
-		}
-		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
-		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
-			supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
-			if (!supportedPloidyLevels.includes(ploidy)) {
-				alert("Error: selected export format does not support ploidy level " + ploidy);
-				return;
 			}
 		}
 		
