@@ -735,9 +735,10 @@ function addSelectionDropDownsToHeaders(tableObj)
             let colsToIgnore = [];
             for (c=2; c<columnCount; c++) {
                 distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
-                if (distinctValuesForColumn.length <= 1) {
+                if (distinctValuesForColumn == null || distinctValuesForColumn.length <= 1) {
 					colsToIgnore.push(c - 1 - colsToIgnore.length);
-					console.log("Ignoring metadata field filter because it contains less than 2 values: " + tableObj.rows[0].cells[c].innerText);
+					console.log("Ignoring metadata field filter because it " + (distinctValuesForColumn == null ? "is empty" : "contains less than 2 values") + ": " + tableObj.rows[0].cells[c].innerText);
+					continue;
 	            }
 
                 distinctValuesForColumn.sort();
@@ -779,12 +780,11 @@ function applyDropDownFiltersToTable(tableObj, reset)
     var headers = [];
     var filters = {};
     for (var i = 2; i < tableObj.rows[0].cells.length; i++) {
-        var selectElement = tableObj.rows[0].cells[i].querySelector('select');
-        var columnName = tableObj.rows[0].cells[i].innerHTML.split('<')[0]
+        var columnName = $(tableObj.rows[0].cells[i]).find("div:eq(0)").text();
         headers.push(columnName);
         var values = [];
-        if (!reset) {	// if resetting we ingore filter contents because dropdowns are being reset synchronouusly
-	        var selectedOptions = selectElement.selectedOptions;
+        if (!reset) {	// if resetting we ignore filter contents because dropdowns are being reset synchronouusly
+	        var selectedOptions = tableObj.rows[0].cells[i].querySelector('select').selectedOptions;
         	for (var j = 0; j < selectedOptions.length; j++)
 	            values.push(selectedOptions[j].value);
 	    }
