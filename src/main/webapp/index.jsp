@@ -39,6 +39,7 @@
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
 <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
+<link type="text/css" rel="stylesheet" href="css/jquery-ui.min-1.12.1.css">
 <link type="text/css" rel="stylesheet" href="css/main.css">
 <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
 <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
@@ -54,6 +55,7 @@
 <script type="text/javascript" src="js/igv.min.js"></script>
 <script type="text/javascript" src="js/IgvCsvSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min-1.12.1.js"></script>
 </head>
 
 <body>
@@ -456,7 +458,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<input class="btn btn-primary btn-sm" style="margin-left:150px;" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
 					<label style="margin-left:20px;">Always reset filters before using this dialog <input type="checkbox" id="resetMetadataFiltersOnDialogShown" checked></label>
 				</div>
-				<table id="individualFilteringTable" style="width:98%;"></table>
+				<table id="individualFilteringTable" style="width:98%;" class="draggableColumnTable"></table>
 			</div>
 		</div>
 	</div>
@@ -729,7 +731,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
 	var downloadURL;
-	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
 	var exportedIndividualCount = 0;
@@ -1303,18 +1304,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				gotMetaData = false;
 
                 // first pass to compile an exhaustive field list
-                var headers = new Array();
+                var callSetMetadataFields = null, gotMdFieldsFromLocalStorage = false;
+                try {
+                	callSetMetadataFields = JSON.parse(localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields"));
+                }
+                catch (ignored)
+                {}
+                if (callSetMetadataFields == null)
+                	callSetMetadataFields = new Array();
                 for (var ind in callSetResponse) {
                     if (!gotMetaData && callSetResponse[ind].info != null && Object.keys(callSetResponse[ind].info).length > 0)
                         gotMetaData = true;
                     if (gotMetaData)
                         for (var key in callSetResponse[ind].info)
-                            if (!headers.includes(key))
-                                headers.push(key);
+                            if (!callSetMetadataFields.includes(key))
+                                callSetMetadataFields.push(key);
                     if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
                         indOpt.push(callSetResponse[ind].name);
                 }
-                callSetMetadataFields = headers;
 
                 var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
                 $.ajax({
@@ -1345,20 +1352,72 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     });
                     setTimeout(function () {
                         var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
-                        headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
-                        for (var i in headers) {
-                            headerRow.append("<th>" + headers[i] + "<br/></th>");
-                            exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
+                        headerRow.append("<thead><tr valign='top'><td></td><th>Individual</th>");
+                        for (var i in callSetMetadataFields) {
+                            headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
+                            exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
                         var ifTable = $("table#individualFilteringTable");
                         if (headerRow != "")
-                            ifTable.prepend(headerRow + "</tr>");
+                            ifTable.prepend(headerRow + "</tr></thead>");
 
-                        var tableObj = document.getElementById("individualFilteringTable");
-                        addSelectionDropDownsToHeaders(tableObj);
+                        addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));  
+                        
+                     	// Make the table headers draggable & droppable
+                        ifTable.find("th.draggable").draggable({
+                            helper: function() {
+                                return $(this).clone().addClass("dragging-helper");
+                            },
+                            revert: true
+                        }).droppable({
+                            over: function(event, ui) {
+                                $(this).addClass("highlight");
+                            },
+                            out: function(event, ui) {
+                                $(this).removeClass("highlight");
+                            },
+                            drop: function(event, ui) {
+                                var dropped = ui.draggable;
+                                var droppedOn = $(this);
 
+                                // Get the indices of the dropped and droppedOn elements
+                                var droppedIndex = dropped.index();
+                                var droppedOnIndex = droppedOn.index();
+
+                                // Prevent moving before the first column or after the last column
+                                if (droppedIndex === 0 && droppedOnIndex === 0) return;
+                                var draggableColCount = ifTable.find("th.draggable").length;
+                                if (droppedIndex === draggableColCount - 1 && droppedOnIndex === draggableColCount - 1) return;
+
+                                // Move the header cell
+                                if (droppedIndex < droppedOnIndex) {
+                                    dropped.insertAfter(droppedOn);
+                                } else {
+                                    dropped.insertBefore(droppedOn);
+                                }
+
+                                // Move the corresponding cells in the body for all rows
+                                ifTable.find("tbody tr").each(function() {
+                                    var cells = $(this).find("td");
+                                    var droppedCell = cells.eq(droppedIndex);  // Get the dropped cell
+                                    var droppedOnCell = cells.eq(droppedOnIndex);  // Get the dropped-on cell
+                                    
+                                    if (droppedIndex < droppedOnIndex) {
+                                        droppedCell.insertAfter(droppedOnCell);
+                                    } else {
+                                        droppedCell.insertBefore(droppedOnCell);
+                                    }
+                                });
+
+                                // Remove the highlight class after drop
+                                $(this).removeClass("highlight");
+
+                                localStorage.setItem($('#module').val() + idSep + $('#project').val() + "_mdFields", JSON.stringify(ifTable.find("thead th:gt(0)").get().filter(t => !$(t).hasClass("dragging-helper")).map(t => $(t).find("div:eq(0)").text())));
+                            }
+                        });
+  
                         $('#progress').modal('hide');
                         displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
                     }, 1);
@@ -1858,22 +1917,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
 		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 
-		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
-		if (supportedTypes != null) {
-			supportedTypes = supportedTypes.split(";");
-			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
-			for (var i in selectedTypes)
-				if (!supportedTypes.includes(selectedTypes[i])) {
-					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+		if (!$("#filterIDsCheckbox").is(":checked")) {	// FIXME: this is just a workaround, we should be able to check the results' contents rather than relying on widget values
+			var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
+			if (supportedTypes != null) {
+				supportedTypes = supportedTypes.split(";");
+				var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
+				for (var i in selectedTypes)
+					if (!supportedTypes.includes(selectedTypes[i])) {
+						alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+						return;
+					}
+			}
+			var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+			if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
+				supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
+				if (!supportedPloidyLevels.includes(ploidy)) {
+					alert("Error: selected export format does not support ploidy level " + ploidy);
 					return;
 				}
-		}
-		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
-		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
-			supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
-			if (!supportedPloidyLevels.includes(ploidy)) {
-				alert("Error: selected export format does not support ploidy level " + ploidy);
-				return;
 			}
 		}
 		

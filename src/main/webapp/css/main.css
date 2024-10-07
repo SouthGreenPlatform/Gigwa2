@@ -150,6 +150,25 @@ div#welcome {
     margin: 0 auto;
 }
 
+#individualFilteringTable th.draggable {
+    cursor: move;
+}
+
+#individualFilteringTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#individualFilteringTable th, #individualFilteringTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.dragging-helper, #individualFilteringTable th.highlight {
+    background-color: #ddd;
+}
+
 div#density, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel div#igvPanel {
     overflow: hidden;
 	width: 99%;
