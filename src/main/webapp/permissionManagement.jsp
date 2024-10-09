@@ -17,7 +17,6 @@
 <!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.ga4gh.Ga4ghRestController"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
@@ -27,15 +26,14 @@
 
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
-<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
 
 <html>
     <head>
         <meta charset="utf-8">
         <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>  
         <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" /> 
-		<link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">        
-		<link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
+		<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">        
+		<link type="text/css" rel="stylesheet" href="css/main.css">
         <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
         <script type="text/javascript">

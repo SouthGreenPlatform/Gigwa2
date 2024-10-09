@@ -30,17 +30,16 @@
 <c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
-<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
 
 <html>
     <head>
         <meta charset="utf-8">
 		<title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
         <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" /> 
-        <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap-select.min.css "> 
-		<link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
-        <link type="text/css" rel="stylesheet" href="${customCssFolder}css/dropzone.css">
-        <link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
+        <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css "> 
+		<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
+        <link type="text/css" rel="stylesheet" href="css/dropzone.css">
+        <link type="text/css" rel="stylesheet" href="css/main.css">
         <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
         <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
