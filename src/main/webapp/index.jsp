@@ -740,7 +740,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-    var stringVariantIdsFromUploadFile = null;
+    var stringVariantIdsFromUploadFile = null, callSetMetadataFields = null
     const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
 	// when HTML/CSS is fully loaded
@@ -1304,7 +1304,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				gotMetaData = false;
 
                 // first pass to compile an exhaustive field list
-                var callSetMetadataFields = null, gotMdFieldsFromLocalStorage = false;
                 try {
                 	callSetMetadataFields = JSON.parse(localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields"));
                 }
