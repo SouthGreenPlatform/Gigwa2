@@ -44,6 +44,7 @@
         <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
         <script type="text/javascript" src="js/common.js"></script>
+        <script type="text/javascript" src="js/moduleListCustomisation.js"></script>
         <script type="text/javascript" src="js/import.js"></script>
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
@@ -133,8 +134,7 @@
                                               <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
                                              </div>
                                              <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
-                                             <input id="ncbiTaxon" name="ncbiTaxon" onblur="grabNcbiTaxon($(this));" onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
-                                              class="form-control text-input input-sm" style="min-width:100px; max-width:62%;" type="text" placeholder="Taxon id / name">
+                                             <input id="ncbiTaxon" name="ncbiTaxon" onclick="grabNcbiTaxon(this, prompt('Please specify NCBI taxon, preferrably by ID\n(enter blank string to clear out)'));" readonly class="form-control text-input input-sm" style="background-color:white; min-width:100px; max-width:62%;" type="text" title='Click to change selection'>
 											</div>
                                             <div class="col-md-1" style="padding-right:0px;">
                                             	<input id="ploidy" name="ploidy" class="form-control text-input input-sm" type='number' step="1" min="1" placeholder="ploidy" title="Specifying ploidy is recommended for HapMap and Flapjack formats (if left blank, guessing will be attempted and import will take longer)">

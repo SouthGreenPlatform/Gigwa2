@@ -582,11 +582,11 @@ function importGenotypes(importMetadataToo) {
 
     $('#progress').data('error', false);
     var taxonDetailsFieldContents = new Array();
-    if ($("#ncbiTaxon").attr('title') != "")
+    if ($("#ncbiTaxon").attr('data-id') != "")
     {
-    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('title'));
-        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('species') ? "" : $("#ncbiTaxon").val());
-        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('species'));
+    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-id'));
+        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('data-species') ? "" : $("#ncbiTaxon").val());
+        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-species'));
     }
     
     $('#progressText').html("Please wait...");

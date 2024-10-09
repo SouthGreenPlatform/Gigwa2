@@ -106,6 +106,11 @@ public class GigwaModuleManager implements IModuleManager {
         return MongoTemplateManager.getModuleHost(sModule);
     }
 
+	@Override
+	public String getModuleCategory(String module) {
+		return Helper.nullToEmptyString(MongoTemplateManager.getTaxonId(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getTaxonName(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getSpecies(module));
+	}
+
     @Override
     public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
         if (fTrueForPublicFalseForPrivateNullForBoth == null)
@@ -205,8 +210,8 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
-        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
+    public boolean createDataSource(String sModule, String sHost, Long expiryDate) throws Exception {
+        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, null, expiryDate);
     }
 
     @Override

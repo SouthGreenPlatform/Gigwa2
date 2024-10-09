@@ -289,44 +289,6 @@ function buildHeader(token, assemblyId, individuals) {
 	return headers;
 }
 
-function getNcbiTaxonDetails(ncbiTaxonId)
-{
-    var result = $.ajax({
-        async:false,
-        type:"GET",
-        url:"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=taxonomy&retmode=json&id=" + ncbiTaxonId,
-        error:function(xhr, ajaxOptions, thrownError) {}
-    });
-    return result['responseJSON']['result'][ncbiTaxonId];
-}
-
-function grabNcbiTaxon(inputObj)
-{
-    if ($(inputObj).val() == '' || isNaN($(inputObj).val()))
-        return;
-    var taxonDetails=getNcbiTaxonDetails($(inputObj).val()), taxonName=taxonDetails['scientificname'], genus=taxonDetails['genus'], species=taxonDetails['species'];
-    if (taxonName != null && taxonName != '')
-        $(inputObj).attr('title', $(inputObj).val());
-    if (species != null && species != '')
-        $(inputObj).attr('species', genus + " " + species);
-
-    $(inputObj).val(taxonName);
-}
-
-//function showGalaxyPushButton()
-//{
-//	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
-//	if (galaxyInstanceUrl.startsWith("http")) {
-//		var fileURLs = "";
-//		for (key in archivedDataFiles)
-//			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
-//		$('#galaxyPushButton').html('<div style="display:inline; width:70px; font-weight:bold; background-color:#333333; color:white; border-radius:3px; padding:7px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</div>&nbsp;<input style="margin-bottom:20px;" type="button" value="Send exported data to ' + galaxyInstanceUrl + '" onclick="sendToGalaxy([' + fileURLs + ']);" /><br/>');
-//		$("#galaxyPushButton").show();			
-//	}
-//	else
-//		$("#galaxyPushButton").hide();
-//}
-
 function showServerExportBox(keepExportOnServer, exportFormatExtensions)
 {
 	$("div#exportPanel").hide();
