@@ -15,7 +15,7 @@
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.7.x &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.8.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -28,7 +28,7 @@
       <BR>
       <P
          STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-         <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+         <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
             SIZE=4 class='title1'>A/ USER DOCUMENTATION</FONT></FONT></FONT>
       </P>
       <P STYLE="margin-bottom: 0.14in">
@@ -38,7 +38,7 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Choosing "Manage data" then "Import data" from the main horizontal menu leads to a page dedicated to data imports, split in two sections accessible via tabs named "Genotype import" and "Metadata import".
             </P>
@@ -52,14 +52,14 @@
                     <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                       <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.1/ IMPORTING GENOTYPING DATA</FONT></FONT></FONT>
                     </P>
-                    <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, Intertek, FlapJack, BrAPI) and in various ways:
+                    <P STYLE="margin-bottom: 0.14in"><u>Genotyping data may be provided</u> in various formats (VCF, HapMap, PLINK, Intertek, FlapJack, DArTseq, BrAPI) and in various ways:
                     </P>
                     <UL>
                         <LI>
                            <P STYLE="margin-bottom: 0in; line-height: 100%">By specifying an absolute path on the webserver filesystem (convenient for administrators managing a production instance used as data portal);
                            </P>
                         <LI>
-                           <P STYLE="margin-bottom: 0in; line-height: 100%">By uploading files from the client computer (with an adjustable size limit: see section B7.2);
+                           <P STYLE="margin-bottom: 0in; line-height: 100%">By uploading files from the client computer (with an adjustable size limit: see section B8.2);
                            </P>
                         <LI>
                            <P STYLE="margin-bottom: 0in; line-height: 100%">By providing an http URL, linking either to data files or to a BrAPI v1.1 base-url.
@@ -78,18 +78,18 @@
                            <P STYLE="margin-bottom: 0in; line-height: 100%">Run: each import process ends up adding a run to a project. Allowing multiple runs in a project is a way of supporting incremental data loading. 
                            </P>
                      </UL>
-                     <P STYLE="margin-bottom: 0.14in">For each individual referred to from an import file (e.g., VCF), a sample is added to the database. Thus, this allows accounting for multiple samples for a same individual. By default, samples are given an auto-generated name, but it is possible to make Gigwa consider the names featured in import files as sample names rather than individual names (useful when looking at using BrAPI for browsing data). This is achieved by providing the interface with an additional 2-column tabulated file listing ID mappings (with a header featuring 'individual' and 'sample').
+                     <P STYLE="margin-bottom: 0.14in">For each individual referred to from an import file (e.g., VCF), a sample is added to the database. Thus, this allows accounting for multiple samples for a same individual. By default, samples are given an auto-generated name, but it is possible to make Gigwa consider the names featured in import files as sample IDs rather than individual IDs (useful when using BrAPI for browsing data). This is achieved by checking the box labelled "Genotypes provided for samples, not individuals". Three different cases are then supported for naming individuals: (1) if no additional info is provided, individuals will be named same as samples; (2) from the "Genotype import" tab, users may supply an additional 2-column tabulated file listing ID mappings (with a header featuring 'individual' and 'sample'); (3) via BrAPI from the "Metadata import" tab" (explained below at A1.3).
                      </P>
                      <P STYLE="margin-bottom: 0.14in">Specifying a ploidy level is optional (most of the time, the system is able to guess it) but recommended for Flapjack and HapMap formats (will speed-up imports). A descriptive text can be provided for each project. A tooltipped lightbulb icon explains how to add a how-to-cite text that would then be exported along with any data extracted from the given project.
                      </P>
                      <IMG class="fullwidth" SRC="shot01_import.png" BORDER=0>
                      <P STYLE="margin-bottom: 0.14in">Genotyping data import progress can be watched in real time from the upload page, or via a dedicated
-                        asynchronous progress page (convenient for large datasets), as imports run as background processes.
+                        asynchronous progress page (convenient for large datasets), while imports run as background processes.
                      </P>
                 </LI>
                 <LI>
                     <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-                      <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.2/ IMPORTING METADATA</FONT></FONT></FONT>
+                      <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.2/ IMPORTING METADATA, the classical way</FONT></FONT></FONT>
                     </P>
                     <P STYLE="margin-bottom: 0.14in"><u>Providing metadata</u> may be done either for existing individuals / samples, or while importing them along with genotypes. Individual-level metadata aims at enabling users to batch-select them by filtering on it. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
                     Sample-level metadata can also be stored by the system but is currently not reflected in the default Gigwa UI (only accessible via BrAPI).
@@ -117,12 +117,28 @@
                        <BR>
                     </P>
                 </LI>
+                <LI>
+                    <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                      <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.3/ IMPORTING METADATA at once from BrAPI, when provided identifiers match those in the BrAPI source</FONT></FONT></FONT>
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in"><u>Providing metadata based on matching identifiers</u> can be achieved by checking the "Directly pull all metadata from a unique BrAPI endpoint, based on provided identifier" box.
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">In this case, assuming that individuals in Gigwa correspond to germplasm in BrAPI and that names provided for biological material through the genotyping data file(s) match BrAPI dbIds, Gigwa just needs a valid BrAPI endpoint to populate metadata from its contents.
+                    </P>
+                    <P STYLE="margin-bottom: 0.14in">If the "Genotypes provided for samples, not individuals" box is checked in the first tab, the system will query the BrAPI endpoint to find all necessary germplasm information, and thus name individuals based on this.
+                    </P>
+
+                    <IMG class="fullwidth" SRC="shot01ter_import_md.png" BORDER=0>
+                    <P STYLE="margin-bottom: 0.14in">
+                       <BR>
+                    </P>
+                </LI>
             </UL>
       </UL>
       <UL>
          <LI>
             <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING DATA</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">From the home page, select a database and a project. Note the presence of an "Enable browse
                and export" checkbox that toggles between a mode where only variant counts are displayed, and one where users may browse,
@@ -147,7 +163,7 @@
                      <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, number of known alleles (when several are represented);
                      </P>
                   <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file), with gene selection eased by a lookup functionality.
+                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file), with gene selection eased by a lookup functionality and support for pasting an externally managed list.
                      </P>
                </UL>
                <P STYLE="margin-bottom: 0.14in">
@@ -165,10 +181,9 @@
                <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown may be used to display up to ten additional panels
                   that allow for more advanced filtering features based on subsets of individuals referred to as groups.
                </P>
-               <P STYLE="margin-bottom: 0.14in">All of these panels have the
-                  same contents and each one lets users select a list of individuals
-                  (thus defining group contents). Additionally, some handy tools are
-                  available on the right side of the "Individuals" dropdown via tooltipped icons:
+               <P STYLE="margin-bottom: 0.14in">All of these panels have the same initial contents and each one lets users select a list of individuals
+                  (thus defining group contents). Group names may be set by users by just replacing the default values in the upper-right corner of each panel.
+                  Additionally, some handy tools are available on the right side of the "Individuals" dropdown via tooltipped icons:
                </P>
                <UL>
                   <LI>
@@ -260,6 +275,8 @@
             	optional complementary information like quality data or
             	annotations.
     		   </P>
+      		   <P STYLE="margin-bottom: 0.14in">"Quick variant stats" provide summarized figures for the overall selection, and for each group of individuals.
+    		   </P>
    			<IMG class="fullwidth" SRC="shot04_variant_details.png" ALIGN=BOTTOM BORDER=1>
      	    <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
             <UL>
@@ -272,19 +289,19 @@
                   <P STYLE="margin-bottom: 0in; line-height: 100%">
                   <IMG SRC="4ddcbf79.jpg" ALIGN=BOTTOM WIDTH=35 HEIGHT=35 BORDER=0>
                   A chart icon leads to a dialog in which, for each sequence represented in the current selection,
-                  various kinds of series charts (variant distribution, Fst, Tajima's D) may be computed, inspected online and downloaded.
+                  various kinds of series charts (variant distribution, MAF, Fst, Tajima's D) may be computed, inspected online and downloaded.
                   In the case where data was provided in VCF format containing numeric genotype-level fields (e.g. depth, genotype quality)
                   an additional series can be displayed for each of these fields, on top of the main series;
                </P>
-      	      <IMG class="fullwidth" SRC="shot05_charts.png" BORDER=1>
+      	      <IMG class="fullwidth" SRC="shot05_charts.png" BORDER=1 style="margin-top:5px;">
       	      <LI>
-           	     <IMG class="fullwidth" SRC="shot05bis_output_tools.png" BORDER=1 style='margin-top:10px;' align='right'>
+           	     <IMG class="fullwidth" SRC="shot05bis_output_tools.png" BORDER=1 style='margin:5px;' align='right'>
       	         <P STYLE="margin-bottom: 0in; line-height: 100%">
-      	            <IMG SRC="m448bf72b.jpg" ALIGN=BOTTOM HEIGHT=25 BORDER=0> An "External tools" box provides
+      	            <IMG SRC="m448bf72b.png" ALIGN=BOTTOM HEIGHT=25 BORDER=0> An "External tools" box provides
       	             means to setup the application for interacting with / pushing data into external
          	         tools: an external online genome browser (e.g., GBrowse, JBrowse) can be configured for viewing
             	     each variant in its genomic context (via an extra icon at the end
-            	     of each table row); a running standalone instance of IGV can be fed with a
+            	     of each result table row); a running standalone instance of IGV can be fed with a
             	     VCF export file (refer to tooltip for details)
             	 </P>
             	 <P STYLE="margin-bottom: 0in; line-height: 100%">
@@ -292,7 +309,7 @@
             	     box ticked (click online-output-tools icon for configuration details).       	     
             	 </P>
             	 <P STYLE="margin-bottom: 0in; line-height: 100%">
-				 	<u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favour of the newly embedded IGV.js solution
+				 	<u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favour of the embedded IGV.js solution
             	 </P>
       	      <LI>
       	         <P STYLE="margin-bottom: 0in; line-height: 100%">
@@ -316,7 +333,7 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
                   SIZE=3 class='title2'>A3/ WORKING WITH REST APIs (for advanced users)</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Any data imported into Gigwa is
@@ -370,7 +387,7 @@
       </P>
       <P
          STYLE="margin-top: 0.17in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-         <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+         <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
             SIZE=4 class='title1'>B/ ADMINISTRATOR DOCUMENTATION</FONT></FONT></FONT>
       </P>
       <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
@@ -378,7 +395,7 @@
          with a single pre-defined administrator account (login: gigwadmin,
          password: nimda). It is of course strongly advised to </SPAN><SPAN
             LANG="en-US"><B>change this password upon first connection</B></SPAN><SPAN
-            LANG="en-US"> (see section B5 below).</SPAN>
+            LANG="en-US"> (see section B6 below).</SPAN>
       </P>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -387,7 +404,7 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
                   SIZE=3 class='title2'>B1/ TOMCAT CONFIGURATION</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Ready-to-use bundled packages
@@ -433,7 +450,7 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
                   SIZE=3 class='title2'>B2/ APACHE CONFIGURATION</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">In production environments, Tomcat often runs behind an Apache proxy. If such is your case, you must include the following line in your VirtualHost configuration:
@@ -448,8 +465,8 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B3/ ENABLING PASSWORD ENCRYPTION</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B3/ ENABLING PASSWORD ENCRYPTION (for "local" user accounts)</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">User information is stored in WEB-INF/classes/users.properties. By default, passwords are not encoded. Administrator may enable password encoding to enhance security by:</P>
             <ol>
@@ -470,8 +487,25 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B4/ CENTRAL AUTHENTICATION SERVICE COMPATIBILITY</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B4/ PASSWORD RESET FUNCTIONALITY (for "local" user accounts)</FONT></FONT></FONT>
+            </P>
+            <P STYLE="margin-bottom: 0.14in">This feature becomes active if a valid <b>org.springframework.mail.javamail.JavaMailSenderImpl</b> bean is added to applicationContext-MVC.xml (see <a href="https://github.com/SouthGreenPlatform/Gigwa2/blob/master/src/main/resources/applicationContext-MVC.xml" target="_blank">https://github.com/SouthGreenPlatform/Gigwa2/blob/master/src/main/resources/applicationContext-MVC.xml</a> for an example). As of v2.9, Gigwa supports attaching an e-mail address to user accounts, which is required for this feature to be used. Please note that:</P>
+            <ul>
+               <li>User accounts whose username is actually an e-mail address are automatically updated (attached e-mail address is by default the same as their username, although they can change it, but only the one in the e-mail field will be treated a such)
+               <li>When logging in, other users are encouraged to specify an e-mail address for their account
+               <li>Any user with an e-mail address specified may use the "Lost your password?" link present on the login page to receive a secret code by e-mail, allowing him to override his current password
+            </ul>
+      </UL>
+      <P STYLE="margin-bottom: 0.14in">
+         <BR>
+      </P>
+      <UL>
+         <LI>
+            <P
+               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B5/ CENTRAL AUTHENTICATION SERVICE COMPATIBILITY</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Single-Sign-On is supported via the implementation of the <a href="https://apereo.github.io/cas/6.5.x/protocol/CAS-Protocol-Specification.html" target="_blank">CAS protocol</a>.
             If your organization is using CAS, making users of your Gigwa instance able to authenticate via their institutional account is as simple as defining the following parameters in WEB-INF/classes/config.properties:
@@ -493,8 +527,8 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B5/ MANAGING DATA</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B6/ MANAGING DATA</FONT></FONT></FONT>
             </P>
             <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
                <SPAN LANG="en-US">The visibility of a database is defined
@@ -554,8 +588,8 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B6/ MANAGING USER ACCOUNTS
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B7/ MANAGING USER ACCOUNTS
                AND PERMISSIONS</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">By choosing the "Administer existing data and user permissions" link from
@@ -587,8 +621,8 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B7/ CONFIGURING ADVANCED
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B8/ CONFIGURING ADVANCED
                SETTINGS (FOR SYSTEM ADMINISTRATORS: REQUIRES WRITE PERMISSIONS
                ON INSTALLED FILES)</FONT></FONT></FONT>
             </P>
@@ -603,7 +637,7 @@
                <P
                   STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-                     SIZE=3>B7.1/ Managing data hosts</FONT></FONT></FONT>
+                     SIZE=3>B8.1/ Managing data hosts</FONT></FONT></FONT>
                </P>
                <P STYLE="margin-bottom: 0.14in">Declaring MongoDB hosts is done
                   via the WEB-INF/classes/applicationContext-data.xml file following
@@ -621,7 +655,7 @@
          <P
             STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
             <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT
-               SIZE=3>B7.2/ Setting configuration properties</FONT></FONT></FONT>
+               SIZE=3>B8.2/ Setting configuration properties</FONT></FONT></FONT>
          </P>
          <P STYLE="margin-bottom: 0.14in">
             By default, configuration parameters shall be set via the WEB-INF/classes/config.properties file. But their values may be superseeded by defining environment variables with the same name prefixed with "GIGWA." (particularly useful when using the Docker version).
@@ -816,7 +850,15 @@
                <P>
                   <B>snpclustLink</B> - URL pointing to a <a href="https://github.com/jframi/snpclust" target="_blank">SnpClust</a> instance (for editing SNP genotypes based on fluorescence intensity values) 
                </P>
-         </UL>
+            <LI>
+               <P>
+                  <B>enableExperimentalFeatures</B> - Tells whether or not to activate experimental features. The only one currently is Jukes-Cantor neighbour joining tree export. Default: false
+               </P>
+            <LI>
+               <P>
+                  <B>maxQueryThreads_HOST</B> - Any property named maxQueryThreads_HOST where HOST stands for a mongo-client id specified in applicationContext-data.xml allows to set the number of CPU-threads Gigwa is allowed to use for querying a given host. This may be used to modulate allocation of MongoDB server resources to a given webapp instance. Setting this value to little less than its number of cores may lead to a substantial performance gain. If this not set, the system, as it always used to, attempts to regulate the number of concurrent queries by monitoring response times. 
+               </P>
+      	</UL>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -825,8 +867,8 @@
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
-               <FONT COLOR="#2e74b5"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B8/ MONGODB CACHE CONFIGURATION</FONT></FONT></FONT>
+               <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+                  SIZE=3 class='title2'>B9/ MONGODB CACHE CONFIGURATION</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">In production environments with large amounts of RAM, we found it worth to tune the --wiredTigerCacheSizeGB parameter. If left unspecified, it defaults to nearly a half of the available RAM, and essentially aims at reserving memory for manipulating indexes.
             As Gigwa does not make an enormous use of indexes, we found that <b>in most cases, setting it to <u>10 Gb</u> is more than enough</b>. This leaves the remaining memory available for other operations such as collection-scans, and can significantly improve performance (at least for searches). 

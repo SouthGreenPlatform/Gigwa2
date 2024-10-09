@@ -18,6 +18,14 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="UTF-8" language="java" import="fr.cirad.tools.Helper,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.ga4gh.Ga4ghRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<%
+	java.util.Properties prop = new java.util.Properties();
+	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
+	String appVersion = prop.getProperty("Implementation-version");
+	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+%>
+<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
 <c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
 
 <html>
@@ -32,7 +40,7 @@
 		}
 	</style>
     <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
     <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script type="text/javascript">
@@ -64,7 +72,7 @@
                 if (dbNames.length > 0)
                 	buildSummaryTable(dbNames);
                 else
-                	$("body").append("<center style='font-size:14px; margin-top:30px;'>No data is currently available to you on this instance</center>");
+                	$("div#mainContents").html("<center style='font-size:14px; margin-top:30px;'>No data is currently available to you on this instance</center>");
 		    },
             error: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
@@ -83,7 +91,6 @@
             },
             success: function(jsonResult) {
                 var jsonTable = document.createElement("table");
-                document.body.appendChild(jsonTable);
                 jsonTable.style.borderCollapse = 'collapse';
                 jsonTable.style.display = 'flex';
                 jsonTable.style.justifyContent = 'center';
@@ -106,13 +113,13 @@
                 currentcell.textContent = "Databases";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
+                currentcell.textContent = "Taxon";
+                currentcell.className = "cellStyle";
+                currentcell = currentrow.insertCell();
                 currentcell.textContent = "# Variants";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
                 currentcell.textContent = "# Individuals";
-                currentcell.className = "cellStyle";
-                currentcell = currentrow.insertCell();
-                currentcell.textContent = "# Samples";
                 currentcell.className = "cellStyle";
                 currentcell = currentrow.insertCell();
                 currentcell.textContent = "Projects";
@@ -138,18 +145,18 @@
                         currentcell.id = db["database"] + "cellid";
                         currentcell = currentrow.insertCell();
                         currentcell.rowSpan = rowSpan;
+                        currentcell.textContent = db["taxon"];
+                        currentcell.className = "cellStyle";
+                        currentcell = currentrow.insertCell();
+                        currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["markers"];
                         currentcell.className = "cellStyle";
                         currentcell = currentrow.insertCell();
                         currentcell.rowSpan = rowSpan;
                         currentcell.textContent = db["individuals"];
                         currentcell.className = "cellStyle";
-                        currentcell = currentrow.insertCell();
-                        currentcell.rowSpan = rowSpan;
-                        currentcell.textContent = db["samples"];
-                        currentcell.className = "cellStyle";
 
-                        if (keys.length - 4 < 1)
+                        if (keys.length < 5)
                         {
                             currentcell = currentrow.insertCell();
                             currentcell.textContent = "(empty database)";
@@ -174,11 +181,13 @@
                                     currentcell.appendChild(span);
                                 }
                                 currentcell.appendChild(document.createElement('br'));
-                                currentcell.appendChild(document.createTextNode("Variant type: " + db["Project" + j]["variantType"].toString().split(',').join(', ')));
+                                currentcell.appendChild(document.createTextNode("Variant types: " + db["Project" + j]["variantType"].toString().split(',').join(', ')));
                                 currentcell.appendChild(document.createElement('br'));
                                 currentcell.appendChild(document.createTextNode("Ploidy level: " + db["Project" + j]["ploidy"]));
                                 currentcell.appendChild(document.createElement('br'));
-                                currentcell.appendChild(document.createTextNode("# Runs: " + db["Project" + j]["runNumber"]));
+                                currentcell.appendChild(document.createTextNode("# Samples: " + db["Project" + j]["samples"]));
+                                currentcell.appendChild(document.createElement('br'));
+                                currentcell.appendChild(document.createTextNode("Runs: " + db["Project" + j]["runs"].join(" ; ")));
                                 currentcell.className = "cellStyle";
                                 currentrow = jsonTable.insertRow();
                             }
@@ -186,8 +195,9 @@
                         i++;
                     }
                 }
+                $("div#mainContents img").replaceWith(jsonTable);
             },
-            erlistModulesror: function(xhr, ajaxOptions, thrownError) {
+            error: function(xhr, ajaxOptions, thrownError) {
                 handleError(xhr, thrownError);
             }
         });
@@ -202,5 +212,6 @@
 <body>
 <%@include file="navbar.jsp"%>
 <h3 style="display: flex; justify-content: center">Summary of instance contents</h3>
+<div id="mainContents"style="text-align:center;"><img src='images/progress.gif' /> </div>
 </body>
 </html>

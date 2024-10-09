@@ -253,11 +253,11 @@ $(document).ready(function () {
 
     $(function() {
   	  importDropzoneG = new Dropzone("#importDropzoneG", {
-  		maxFiles: 3,
+  		maxFiles: 2,
   		parallelUploads: 5,
   		previewsContainer: "#dropZonePreviewsG",
   	    dictResponseError: 'Error importing data',
-  	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.tsv,.csv",
+  	    acceptedFiles: ".vcf,.vcf.gz,.bcf,.bcf.gz,.hapmap,.txt,.map,.ped,.intertek,.genotype,.dart",
   	  	headers: {
   	  		"Authorization": "Bearer " + token
   	  	},
@@ -269,6 +269,7 @@ $(document).ready(function () {
   	   	  self.options.uploadMultiple = true;
   	      self.on("addedfile", function (file) {
   	      	setTimeout('$("input#runToImport").change();', 1);
+  	      	updateMdEntityTypeDiv();
   	      });
   	      self.on("removedfile", function (file) {
 			self.files.forEach(function(f) {
@@ -277,6 +278,7 @@ $(document).ready(function () {
 				self.addFile(f);
 			});
   	      	setTimeout('$("input#runToImport").change();', 1);
+  	      	updateMdEntityTypeDiv();
   	      });
   	      self.on("sending", function (file) {
   	        $('.meter').show();
@@ -293,6 +295,10 @@ $(document).ready(function () {
           });
   	    }
   	  });
+  	  
+  	  importDropzoneG.on("error", function(file, message) {
+		  console.log("Error: " + message);
+	  });
   	    	  
    	  importDropzoneMD = new Dropzone("#importDropzoneMD", {
    		maxFiles: 1,
@@ -326,7 +332,7 @@ $(document).ready(function () {
    	        $('.meter').show();
    	      });
    	      self.on("success", function(file, response) {
-	        if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything else unless this was the last file
+	        if (importDropzoneMD.getActiveFiles().length == 0) {	// don't do anything unless this was the last file
 				if (self.options.url == metadataValidationURL) {	// process validation response
 		        	distinctBrapiMetadataURLs = response;
 		        	updateBrapiMetadataNotice();
@@ -356,17 +362,22 @@ $(document).ready(function () {
           });
    	    }
    	  });
+   	  
+   	  importDropzoneMD.on("error", function(file, message) {
+		  console.log("Error: " + message);
+	  });
   	})
   	
     $('button#importButton').on("click", function() { importDataIfValid(); });
 });
 
 function updateBrapiMetadataNotice() {
-	if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0)
+	if ($('#clearProjectData').is(':checked'))
+		$('div#brapiMetadataNotice').html("");
+	else if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0)
 		$('div#brapiMetadataNotice').html("<span class='metadataToPull-yes'>The current selection features " + $("#metadataType").val() + "s that are linked to " + ($("#metadataType").val() == "individual" ? "germplasm" : "sample") + " records from one or more remote BrAPI datasource(s). Clicking SUBMIT will attempt to import their metadata.</span>");
 	else
 		$('div#brapiMetadataNotice').html("<span class='metadataToPull-no'>Pulling via BrAPI v1 and v2's /search/" + ($("#metadataType").val() == "individual" ? "germplasm" : "samples") + " call is supported by importing metadata fields named <b>" + extRefIdField + "</b> and <b>" + extRefSrcField + "</b> containing respectively the remote <b>" + ($("#metadataType").val() == "individual" ? "germplasmDbId" : "sampleDbId") + "</b> and a <b>BrAPI base-URL</b>. When the system finds these if will automatically attempt to retrieve metadata via BrAPI, and, if successful, remove the two fields you provided.");
-
 }
 
 function importDataIfValid() {
@@ -571,11 +582,11 @@ function importGenotypes(importMetadataToo) {
 
     $('#progress').data('error', false);
     var taxonDetailsFieldContents = new Array();
-    if ($("#ncbiTaxon").attr('title') != "")
+    if ($("#ncbiTaxon").attr('data-id') != "")
     {
-    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('title'));
-        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('species') ? "" : $("#ncbiTaxon").val());
-        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('species'));
+    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-id'));
+        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('data-species') ? "" : $("#ncbiTaxon").val());
+        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-species'));
     }
     
     $('#progressText').html("Please wait...");
@@ -586,16 +597,19 @@ function importGenotypes(importMetadataToo) {
 		for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
 			var file = importDropzoneMD.getAcceptedFiles()[i];
 			file.accepted = null;	// remove this flag that was for the other DropZone (it needs to be set by this one otherwise it gets confused counting accepted files)
-		    var isPhenotypeFile = file.name.endsWith(".phenotype");
-		    if (isPhenotypeFile)
-				importDropzoneG.options.acceptedFiles += ",.phenotype";
+			let fileExtension = /[^.]+$/.exec(file.name);
+		    var isPhenotypeFile = fileExtension == "phenotype", fNeedToCheatOnAcceptedTypes = isPhenotypeFile || !$("#providingSamples").is(':checked');
+		    if (fNeedToCheatOnAcceptedTypes)
+				importDropzoneG.options.acceptedFiles += ",." + fileExtension;
 			//console.log("adding " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
 		    importDropzoneG.addFile(file);
-		    if (isPhenotypeFile)
-		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
-	    	else
+		    if (!isPhenotypeFile)
 				file.upload.filename = file.name + ".phenotype"; // this ensures tsv or csv files don't get confused with sample-mapping files on the server-side when importing from both tabs at once
+	    	else if (fNeedToCheatOnAcceptedTypes)
+		    	importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(",.phenotype", "");
         }
+        
+        $("#mixedImport_useBrapiMdEndpoint").val($("#useBrapiMdEndpoint").is(":checked"));
         $("#mixedImport_metadataFile1").val($("#metadataFile1").val());
         $("#mixedImport_metadataType").val($("#metadataType").val());
         
@@ -885,4 +899,48 @@ function clearFields() {
     $('#project').val("");
     $('#run').val("");
     $('#vcfImportSuccessText').html("");
+}
+
+function providingSamplesChanged() {
+	let isChecked = $("#providingSamples").is(':checked');
+	if (isChecked)
+		importDropzoneG.options.acceptedFiles += ',.tsv,.csv';
+	else
+		importDropzoneG.options.acceptedFiles = importDropzoneG.options.acceptedFiles.replace(',.tsv,.csv', '');
+	importDropzoneG.hiddenFileInput.setAttribute("accept", importDropzoneG.options.acceptedFiles);
+	importDropzoneG.options.maxFiles += isChecked ? 1 : -1;
+	$('.mappingFileDesc').css('display', isChecked ? 'block' : 'none');
+	$('#dataFile3').prop('disabled', !isChecked); updateMdEntityTypeDiv();
+	var files = importDropzoneG.files;
+	for (var i = 0; i < files.length; i++) {	// force re-validating all added files
+	    importDropzoneG.removeFile(files[i]);
+	    importDropzoneG.addFile(files[i]);
+	}
+}
+
+function updateMdEntityTypeDiv() {
+	let activated = $('#useBrapiMdEndpoint').is(':checked');
+	$('.mdByFile').css('display', !activated ? 'block' : 'none');
+	$('.mdViaBrapi').css('display', activated ? 'block' : 'none');
+	$('#mdImportTargetedEntities #byFile').css('display', !activated ? 'block' : 'none');
+	$('#mdImportTargetedEntities #directViaBrapi').css('display', activated ? 'block' : 'none');
+	if (activated) {
+		let providingSamples = $("#providingSamples").is(":checked");
+		let filesProvidedInGenotypingDataTab = [ ...importDropzoneG.files.map(f => f.name), $("input[name=dataFile1]").val().trim(), $("input[name=dataFile2]").val().trim(), $("input[name=dataFile3]").val().trim()]
+		let providingMappingFile = providingSamples && filesProvidedInGenotypingDataTab.filter(n => { let lcN = n.toLowerCase(); return lcN.endsWith(".csv") || lcN.endsWith(".tsv"); }).length > 0;
+		let text = "";
+		if (providingSamples || $("#moduleExistingMD").is(":visible")) {
+			text += "<p>Sample metadata will be pulled from the specified datasource, assuming that identifiers provided with the genotyping data match BrAPI sampleDbIds.</p>"; 
+			if (!providingMappingFile && !$("#moduleExistingMD").is(":visible"))
+				text += "<p>Germplasm metadata will be pulled from the specified datasource, by retrieving germplasmDbIds from sampleDbIds using the BrAPI datasource.</p>";
+		}
+		if (!providingSamples || providingMappingFile)
+			text += "<p>Germplasm metadata will be pulled from the specified datasource, assuming that identifiers provided " + (providingMappingFile ? "in the mapping file" : "with the genotyping data") + " match BrAPI germplasmDbIds.</p>";
+
+		$('#mdImportTargetedEntities #directViaBrapi').html(text);
+		$("#mdImportTargetedEntities #byFile select").append("<option selected></option>");	// we don't want any of the entity types to be passed  to the server
+	}
+	else
+		$("#mdImportTargetedEntities #byFile select option").filter(function() { return $(this).text() === ''; }).remove();	// remove dummy empty entry
+	$("#metadataFile1").change();	// force server-side validation of the metadata form contents
 }

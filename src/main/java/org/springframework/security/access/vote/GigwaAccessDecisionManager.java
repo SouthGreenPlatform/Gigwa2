@@ -71,7 +71,7 @@ public class GigwaAccessDecisionManager extends AffirmativeBased
     		String sModule = fi.getRequest().getParameter("module");
     		if (sModule != null && MongoTemplateManager.get(sModule) != null && !MongoTemplateManager.isModulePublic(sModule))
     		{
-    			boolean fIsAnonymous = authorities != null && authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+    			boolean fIsAnonymous = authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ANONYMOUS));
     			boolean fIsAdmin = authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
     			boolean fHasRequiredRole;
     			

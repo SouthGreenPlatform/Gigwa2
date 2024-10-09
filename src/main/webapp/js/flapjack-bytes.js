@@ -2481,6 +2481,10 @@
       key: "highlightLineScore",
       value: function highlightLineScore(germplasmStart, yPos) {
         if (this.lineSort.hasScore && this.lineUnderMouse !== undefined) {
+          var name = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse].name;
+          var score = this.lineSort.getScore(name);
+          if (score < 0) return; // negative scores are for lines with only missing data (shall appear at the end of the matrix)
+
           this.drawingContext.save();
           this.drawingContext.translate(this.traitValuesCanvasWidth + this.nameCanvasWidth, this.mapCanvasHeight);
           // Prevent line name under scrollbar being highlighted
@@ -2490,10 +2494,7 @@
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
-          var name = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse].name;
-          var y = yPos + (this.boxSize - this.fontSize / 2);
-          var score = this.lineSort.getScore(name);
-          this.drawingContext.fillText(score.toFixed(2), this.scorePadding, y);
+          this.drawingContext.fillText(score.toFixed(2), this.scorePadding, yPos + (this.boxSize - this.fontSize / 2));
           this.drawingContext.restore();
         }
       }
@@ -2776,9 +2777,10 @@
         this.backContext.fillStyle = '#333';
         this.backContext.font = this.font;
         lineNames.forEach(function (name, idx) {
-          var y = idx * _this4.boxSize - yWiggle + (_this4.boxSize - _this4.fontSize / 2);
           var score = _this4.lineSort.getScore(name);
-          _this4.backContext.fillText(score.toFixed(2), _this4.scorePadding, y);
+          if (score >= 0)
+            // negative scores are for lines with only missing data (shall appear at the end of the matrix)
+            _this4.backContext.fillText(score.toFixed(2), _this4.scorePadding, idx * _this4.boxSize - yWiggle + (_this4.boxSize - _this4.fontSize / 2));
         });
         this.backContext.restore();
       }
@@ -2985,7 +2987,7 @@
             const trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
             const traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
             if (traitValue !== undefined){
-              this.mouseOverText = trait.name + " : " + traitValue.toString();
+              this.mouseOverText = trait.name + ": " + traitValue.toString();
               this.mouseOverPosition = [x, y];
             }
           } else */
@@ -3080,7 +3082,7 @@
             var trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
             var traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
             if (traitValue !== undefined) {
-              this.mouseOverText = trait.name + " : " + traitValue.toString();
+              this.mouseOverText = trait.name + ": " + traitValue.toString();
               this.mouseOverPosition = [x, y];
             }
           }
@@ -3088,8 +3090,10 @@
           else if (this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth && x < this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth) {
             var _germplasm2 = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
             var score = this.lineSort.getScore(_germplasm2.name);
-            this.mouseOverText = "Sort score : " + score.toString();
-            this.mouseOverPosition = [x, y];
+            if (score >= 0) {
+              this.mouseOverText = "Sort score: " + score.toString();
+              this.mouseOverPosition = [x, y];
+            }
           }
         }
         this.prerender(false);
@@ -3915,7 +3919,7 @@
     } finally {
       _iterator.f();
     }
-    return score / markerCount;
+    return markerCount != 0 ? score / markerCount : -1; // negative scores are for lines with only missing data (shall appear at the end of the matrix)
   }
 
   var SimilarityLineSort = /*#__PURE__*/function () {
@@ -4991,7 +4995,8 @@
             var _ref4 = _slicedToArray(_ref3, 2),
               traitValue = _ref4[0],
               traitValueColor = _ref4[1];
-            var traitValueIndex = _this3.dataSet.traits.get(traitName).values.indexOf(traitValue),
+            var trait = _this3.dataSet.traits.get(traitName),
+              traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
               traitColorMap = settings.traitColors[traitName];
             if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
             delete traitColorMap[traitValue];
@@ -6749,7 +6754,7 @@
       customContextMenu.style.fontFamily = 'system-ui';
       customContextMenu.style.fontSize = '14px';
       var option1 = document.createElement("div");
-      option1.textContent = "Color by similarity to this line";
+      option1.textContent = "Color by similarity to this line (allele match)";
       option1.style.cursor = "pointer";
       option1.addEventListener("click", function (event) {
         var colorLineInput = document.getElementById("colorLineInput");
@@ -6996,7 +7001,7 @@
 
       //addCSSRule(sheet, '.bytes-fieldset > legend', 'border-style: none; border-width: 0; font-size: 14px; line-height: 20px; margin-bottom: 0; width: auto; padding: 0 10px; border: 1px solid #e0e0e0;');
       //addCSSRule(sheet, '.bytes-fieldset', 'border: 1px solid #e0e0e0; padding: 10px;');
-      addCSSRule(sheet, '.bytes-tabtoggle', "display: inline-block; border: none; outline: none; padding: 8px;");
+      addCSSRule(sheet, '.bytes-tabtoggle', "display: inline-block; border: none; outline: none; padding: 6px;");
       addCSSRule(sheet, '.bytes-tabtoggle:hover', 'background-color: #CCCCCC');
       addCSSRule(sheet, '.bytes-tabtoggle.bytes-tabtoggle-active', 'background-color: #DDDDDD');
       addCSSRule(sheet, '.bytes-tab', 'display: none;');
@@ -7056,14 +7061,14 @@
       range.min = 2;
       range.max = 64;
       range.value = boxSize;
-      range.style.width = "300px";
+      range.style.width = "250px";
       var zoomPreviewLabel = document.createElement('label');
       zoomPreviewLabel.setAttribute('for', 'zoom-preview');
       zoomPreviewLabel.innerHTML = 'Preview while dragging';
       var zoomPreview = document.createElement('input');
       zoomPreview.id = 'zoom-preview';
       zoomPreview.setAttribute('type', 'checkbox');
-      zoomPreview.style.marginLeft = "20px";
+      zoomPreview.style.marginLeft = "10px";
       var zoomContainer = document.createElement('div');
       zoomContainer.append(zoomLabel);
       zoomContainer.append(range);
@@ -7086,14 +7091,15 @@
       var findLine = document.createElement('input');
       findLine.type = "text";
       findLine.id = "lineInput";
-      findLine.style.width = "170px";
+      findLine.style.width = "150px";
       findLine.placeholder = "Search line";
       var notFoundlabel = document.createElement('label');
       notFoundlabel.style.display = 'none';
       notFoundlabel.setAttribute('for', 'lineInput');
       var findContainer = document.createElement('div');
       findContainer.id = "findContainer";
-      findContainer.style.marginLeft = "50px";
+      findContainer.style["float"] = "right";
+      findContainer.style.marginTop = "2px";
       findContainer.append(findLine);
       findContainer.append(notFoundlabel);
       var incfindline = 0;
@@ -7125,14 +7131,11 @@
       var markerrange = document.createElement("div");
       markerrange.id = "markerRange";
       chromosomeContainer.style.display = "inline-block";
-      chromosomeContainer.style.margin = "0 40px";
+      chromosomeContainer.style.margin = "0 30px";
       chromosomeContainer.style.paddingTop = "4px";
       chromosomeContainer.style.minWidth = "285px";
       zoomContainer.style["float"] = "right";
-      zoomContainer.style.marginLeft = "40px";
-      findContainer.style["float"] = "right";
-      findContainer.style.marginTop = "2px";
-      findContainer.style.marginLeft = "0px";
+      zoomContainer.style.marginLeft = "30px";
       markerrange.style.marginTop = "-5px";
       markerrange.style.marginLeft = "15px";
       markerrange.style.textAlign = "right";

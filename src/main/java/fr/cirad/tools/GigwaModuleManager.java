@@ -27,15 +27,15 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -54,6 +54,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,11 +66,12 @@ import org.xml.sax.SAXException;
 
 import com.mongodb.BasicDBObject;
 
+import fr.cirad.manager.AbstractProcess;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
-import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
 import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
@@ -84,6 +86,8 @@ import fr.cirad.web.controller.security.UserPermissionController;
 
 @Component
 public class GigwaModuleManager implements IModuleManager {
+
+    private Map<String, AbstractProcess> importProcesses = new ConcurrentHashMap<>();
 
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
@@ -101,6 +105,11 @@ public class GigwaModuleManager implements IModuleManager {
     public String getModuleHost(String sModule) {
         return MongoTemplateManager.getModuleHost(sModule);
     }
+
+	@Override
+	public String getModuleCategory(String module) {
+		return Helper.nullToEmptyString(MongoTemplateManager.getTaxonId(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getTaxonName(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getSpecies(module));
+	}
 
     @Override
     public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
@@ -121,22 +130,21 @@ public class GigwaModuleManager implements IModuleManager {
             if (fIncludeEntityDescriptions)
             	q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
 
-            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
-                if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny)) {
-                    Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
-                    if (moduleEntities == null) {
-                        moduleEntities = new LinkedHashMap<>();
-                        entitiesByModule.put(sModule, moduleEntities);
-                    }
-
-                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
-                    	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
-                    	projectInfo[0] = project.getName();
-                    	if (fIncludeEntityDescriptions)
-                    		projectInfo[1] = project.getDescription();
-                        moduleEntities.put(project.getId(), projectInfo);
-                    }
+            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules()) {
+                Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
+                if (moduleEntities == null) {
+                    moduleEntities = new LinkedHashMap<>();
+                    entitiesByModule.put(sModule, moduleEntities);
                 }
+
+                for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
+                	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
+                	projectInfo[0] = project.getName();
+                	if (fIncludeEntityDescriptions)
+                		projectInfo[1] = project.getDescription();
+                    moduleEntities.put(project.getId(), projectInfo);
+                }
+            }
         }
         else
             throw new Exception("Not managing entities of type " + entityType);
@@ -202,8 +210,8 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
-        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
+    public boolean createDataSource(String sModule, String sHost, Long expiryDate) throws Exception {
+        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, null, expiryDate);
     }
 
     @Override
@@ -270,35 +278,66 @@ public class GigwaModuleManager implements IModuleManager {
             String dumpFolder = appConfig.get("dumpFolder");
             if (dumpFolder == null)
                 actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
-            else if (Files.isDirectory(Paths.get(dumpFolder))) {
+            else {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return Files.isDirectory(Paths.get(dumpFolder));
+                    }
+                });
+
+                boolean isDirectory;
                 try {
-                    String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
-
-                    Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    actionRequiredToEnableDumps = ""; // all seems OK
-                } catch (IOException ioe) {
-                    LOG.error("error checking for mongodump presence: " + ioe.getMessage());
-                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    isDirectory = future.get(10, TimeUnit.SECONDS); // Timeout after 10 seconds
+                } catch (TimeoutException e) {
+                    future.cancel(true); // Cancel the task if it times out
+                    LOG.error("Timeout while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                    LOG.error("Interrupted while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (ExecutionException e) {
+                    LOG.error("Error while checking if dumpFolder is a directory: " + e.getCause().getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } finally {
+                    executor.shutdownNow();
                 }
+
+                if (isDirectory) {
+                    try {
+                        String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
+
+                        Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        actionRequiredToEnableDumps = ""; // all seems OK
+                    } catch (IOException ioe) {
+                        LOG.error("error checking for mongodump presence: " + ioe.getMessage());
+                        actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    }
+                }
+                else
+                    actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
             }
-            else
-                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
         }
         return actionRequiredToEnableDumps;
     }
-
+    
     @Override
     public List<DumpMetadata> getDumps(String sModule) {
         return getDumps(sModule, true);
@@ -382,7 +421,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startDump(String sModule, String dumpName, String sDescription) {
+    public AbstractProcess startDump(String sModule, String dumpName, String sDescription) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String databaseName = MongoTemplateManager.getDatabaseName(sModule);
@@ -407,7 +446,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
+    public AbstractProcess startRestore(String sModule, String dumpId, boolean drop) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
@@ -610,13 +649,31 @@ public class GigwaModuleManager implements IModuleManager {
 
 		throw new Exception("Not managing entities of type " + sEntityType);
 	}
-
-	@Override
+	
+    @Override
 	public Collection<? extends String> getLevel1Roles(String level1Type, ResourceBundle bundle) {
 		List<String> result = new ArrayList<>();
 		for (String role : StringUtils.tokenizeToStringArray(bundle.getString(UserPermissionController.LEVEL1_ROLES + "_" + level1Type), ","))
 			if (!role.equals(AbstractTokenManager.ENTITY_SNPCLUST_EDITOR_ROLE) || appConfig.get("snpclustLink") != null)
 				result.add(role);
 		return result;
+	}
+	
+	public void registerImportProcess(ImportProcess process) {
+		importProcesses.put(process.getProcessID(), process);
+	}
+
+    @Override
+    public Map<String, AbstractProcess> getImportProcesses() {
+        return importProcesses;
+    }
+
+	public void cleanupCompleteImportProcesses() {
+		for (String processID : importProcesses.keySet()) {
+			AbstractProcess process = importProcesses.get(processID);
+			if (process.getStatus().isFinal()) {
+				importProcesses.remove(processID);
+			}
+		}
 	}
 }

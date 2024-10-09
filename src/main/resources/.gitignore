@@ -1,3 +1,5 @@
 /applicationContext-data.xml
 /config.properties
 /datasources.properties
+/users.properties
+/applicationContext-MVC.xml

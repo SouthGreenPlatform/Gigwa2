@@ -42,12 +42,14 @@
 <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap-select.min.css ">
 <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
 <link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
+<link type="text/css" rel="stylesheet" href="${customCssFolder}css/jquery-ui.min-1.12.1.css">
 <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
 <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/jquery.flot.min.js"></script>
 <script type="text/javascript" src="js/jquery.flot.selection.js" async></script>
 <script type="text/javascript" src="js/multiple-select-big.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
 <script type="text/javascript" src="js/main.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/highcharts/exporting.js"></script>
@@ -55,6 +57,7 @@
 <script type="text/javascript" src="js/igv.min.js"></script>
 <script type="text/javascript" src="js/IgvCsvSearchReader.js"></script>
 <script type="text/javascript" src="js/ajax-bootstrap-select.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min-1.12.1.js"></script>
 </head>
 
 <body>
@@ -143,7 +146,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									  </div>
 									</div>
                                     <div id="sequenceFilter">
-                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences</div>
+                                        <div class="custom-label margin-top-md" id="sequencesLabel">Sequences <span style="font-weight:normal;"></span></div>
                                         <div id="Sequences"></div>
                                     </div>
                                     <div id="positions" class="margin-top-md">
@@ -174,8 +177,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 									<div id="GeneIds" class="margin-top-md">
 										<div class="container-fluid">
 											<div class="row">
-												<div class="col-xl-6 input-group half-width custom-label"
-													style="float: left;" id="geneIdsLabel">Gene Names</div>
+												<div class="col-xl-6 input-group half-width custom-label" style="float: left;" id="geneIdsLabel">Gene Names</div>
 													<div class="col-xl-6 input-group half-width custom-label" style="float: right; font-weight:400;">Selection mode</div>
 											</div>
 										</div>
@@ -186,9 +188,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<a id="clearGenesIdSelection" href="#" onclick="clearGeneIdSelection();" style="display: none; font-size: 18px; margin-left: -20px; position: absolute; font-weight: bold; text-decoration: none;" title="Clear selection">
 												<button type='button' style='border:none' class='btn btn-default btn-xs glyphicon glyphicon-trash'></button>
 											</a>
+                                            <button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteGeneIds" disabled onclick="toggleGenesPasteBox();"></button>
 											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-plus" title="Variants with any gene-name annotation" id="plusMode" disabled onclick="onGeneSelectionPlusMode();"></button>
 											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-minus" aria-pressed="false" title="Variants without gene-name annotation" id="minusMode" disabled onclick="onGeneSelectionMinusMode();"></button>
-											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Variants with selected gene-name annotation" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
+											<button type="button" class="btn btn-default btn-xs glyphicon glyphicon-pencil" aria-pressed="false" title="Use gene name lookup" id="editMode" disabled onclick="onGeneSelectionEditMode();"></button>
 										</div>
 									</div>
                                     <div id="VariantIds" class="margin-top-md">
@@ -278,18 +281,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 														</label>&nbsp;<br/>
 														<select disabled id="exportedIndividualMetadata" multiple style="width:100%;" size="12"></select>
 													</div>
-													<div style="width:100%; text-align:center;">
-														<label class="margin-top margin-bottom label-checkbox" style="margin-left:-10px;">
-															<input type="checkbox" onclick="var serverAddr=location.origin.substring(location.origin.indexOf('//') + 2); $('div#serverExportWarning').html($(this).prop('checked') && (serverAddr.toLowerCase().indexOf('localhost') == 0 || serverAddr.indexOf('127.0.0.1') == 0) ? 'WARNING: Gigwa seems to be running on localhost, any external tool running on a different machine will not be able to access exported files! If the computer running the webapp has an external IP address or domain name, you should use that instead.' : '');" id="keepExportOnServ" title="If ticked, generates a file URL instead of initiating a direct download. Required for pushing exported data to external online tools." class="input-checkbox"> Keep files on server&nbsp;&nbsp;
-														</label>
-														<div>
-															<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
+													<div style="width:100%; margin-left:-10px;" class="margin-top margin-bottom label-checkbox">
+														<div style="text-align:center;">
+															<input type="checkbox" id="enableExportPush" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="showHideLocalhostWarning();" title="If ticked, exported data will be provided by URL, and available for pushing into external online tools." class="input-checkbox">
+															<label style="width:120px;" for="enableExportPush">Provide export URL</label>
 														</div>
+														<div>
+															<input type="checkbox" id="keepExportOnServ" style="vertical-align:top; margin-left:15px; margin-right:5px;" onclick="var enabled=$(this).is(':checked'); $('#enableExportPush').prop('checked', enabled); $('#enableExportPush').prop('disabled', enabled); showHideLocalhostWarning();" title="If ticked, export data will remain downloadable for at least 48h. You may then share its URL with collaborators." class="input-checkbox">
+															<label style="width:120px;" for="keepExportOnServ">Keep files on server</label>
+														</div>
+													</div>
+													<div>
+														<button id="export-btn" class="btn btn-primary btn-sm" onclick="exportData();">Export</button>
 													</div>
 												</div>
 											</div>
-											<div id="serverExportWarning"></div>
 										</div>
+										<div id="serverExportWarning" style="white-space:initial; text-align:center;"></div>
 									</div>
 								</div>
 								<a class="btn icon-btn btn-default" id="exportBoxToggleButton" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px 4px 10px;" href="#" onclick="toggleExportPanel();" title="Export selection">
@@ -317,7 +325,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				</div>
 			</div>
 		</div>
-	</div>
 	</main>
 	<!-- modal which display process progress -->
 	<div class="modal" tabindex="-1" id="progress" aria-hidden="true">
@@ -330,10 +337,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						<div class="c3"></div>
 						<div class="c4"></div>
 					</div>
-					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span><span id="ddlWarning" style="display:none;"><br/><br/>Output file is being generated and will not be valid before this message disappears</span></h3>
+					<h3 class="loading-message"><span id="progressText" class="loading-message">Please wait...</span></h3>
 					<br/>
 					<button style="display:inline; margin-right:10px;" class="btn btn-danger btn-sm" type="button" name="abort" id='abort' onclick="abort($(this).attr('rel')); $('a#exportBoxToggleButton').removeClass('active');">Abort</button>
-					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
+					<button style="display:inline; margin-left:10px;" id="asyncProgressButton" class="btn btn-info btn-sm" type="button" onclick="window.open('ProgressWatch.jsp?process=export_' + token + '&abortable=true&successURL=' + escape(downloadURL) + '&module=' + getModuleName() + '&exportFormat=' + $('#exportFormat').val() + '&keepExportOnServ=' + $('#keepExportOnServ').prop('checked') + '&galaxyInstanceUrl=' + $('#galaxyInstanceURL').val() + '&exportedVariantCount=' + count + '&exportedIndividualCount=' + exportedIndividualCount + '&exportFormatExtensions=' + $('#exportFormat option:selected').data('ext') + '&exportedTsvMetadata=' + ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && 'FLAPJACK' != $('#exportFormat').val() && 'DARWIN' != $('#exportFormat').val()));" title="This will open a separate page allowing to watch export progress at any time. Leaving the current page will not abort the export process.">Open async progress watch page</button>
 				</div>
 			</div>
 		</div>
@@ -414,10 +421,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-md-12">
-							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
+					<div style="display: flex; position: relative; justify-content: center;" >
+						<div style="position: absolute; top: 0; left: 0">
+							<div id="quickvariantsstats" style="min-width:200px;"></div>
 						</div>
+							<div id="gtTable" style="display:flex; justify-content:center;" class="auto-overflow"></div>
 					</div>
 				</div>
 			</div>
@@ -452,7 +460,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<input class="btn btn-primary btn-sm" style="margin-left:150px;" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
 					<label style="margin-left:20px;">Always reset filters before using this dialog <input type="checkbox" id="resetMetadataFiltersOnDialogShown" checked></label>
 				</div>
-				<table id="individualFilteringTable" style="width:98%;"></table>
+				<table id="individualFilteringTable" style="width:98%;" class="draggableColumnTable"></table>
 			</div>
 		</div>
 	</div>
@@ -464,18 +472,18 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			(feature available when the 'Keep files on server' box is ticked)<br />
 			</div>
 			<hr />
-			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:3px;"><img alt="southgreen" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
+			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:6px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
-			(You will need to provide an API key to be able to push exported files there)
+			(You will be requested to provide an API key to be able to push exported files there)
 			<hr />
 			<b>Standalone IGV</b> (DEPRECATED in favor of using the embedded IGV.js) 
 			<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="25" width="25" title="You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
-			<br />Online tool URL (any * will be replaced with exported file location)<br />
-			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl=*" />
+			<br />Online tool URL with placeholders specifying extensions, e.g. {don|tsv|phenotype}<br />
+			<input type="text" style="font-size:11px; width:400px; margin-bottom:5px;" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" id="outputToolURL" placeholder="http://some-tool.org/import?fileUrl={vcf|vcf.gz}" />
 			<p>
 				<br/>
 				(Set URL blank to revert to default)
@@ -529,7 +537,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 									Load reference genome <span class="caret"></span>
 								</a>
-								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh;overflow-y:auto">
+								<ul class="dropdown-menu" id="igvGenomeMenu" style="max-height:75vh; z-index: 2000; overflow-y:auto;">
 									<li><a href="#" data-toggle="modal" data-target="#igvGenomeFileModal">Load from file</a></li>
 									<li><a href="#" data-toggle="modal" data-target="#igvGenomeURLModal">Load from URL</a></li>
 									<li role="separator" class="divider" id="igvDefaultGenomesDivider"></li>
@@ -546,9 +554,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</li>
 							<li class="dropdown" id="igvGroupsMenu" hidden="true">
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-									Groups <span class="caret"></span>
+									Displayed genotypes <span class="caret"></span>
 								</a>
-								<ul class="dropdown-menu" style="max-height:75vh;overflow-y:auto"></ul>
+								<ul class="dropdown-menu" style="max-height:75vh; z-index: 2000; overflow-y:auto;"></ul>
 							</li>
 						</ul>
 					</div>
@@ -728,16 +736,16 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
 	var downloadURL;
-	var callSetMetadataFields = [];
 	var gotMetaData = false;
 	var referenceNames;
 	var exportedIndividualCount = 0;
     var indOpt = [];
+    var databasesByTaxon = {};
 
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-    var stringVariantIdsFromUploadFile = null;
+    var stringVariantIdsFromUploadFile = null, callSetMetadataFields = null
     const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
 	// when HTML/CSS is fully loaded
@@ -758,8 +766,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			
 			referenceset = $(this).val();
 
-			if (!loadProjects(referenceset))
+			if (referenceset == "" || !loadProjects(referenceset)) {
+				$("div.alert").hide();
+				$("div#searchPanel").fadeOut();
+				$("div#welcome").fadeIn();
 				return;
+			}
 
 			$("div#welcome").hide();
 
@@ -781,7 +793,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			});
 
 			$.ajax({
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />?module=' + referenceset,
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />',
 				async: false,
 				type: "GET",
 				contentType: "application/json;charset=utf-8",
@@ -927,7 +939,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 		$('#Sequences').on('multiple_select_change', function() {
 			var nCount = $('#Sequences').selectmultiple('count');
-			$('#sequencesLabel').html("Sequences (" + (nCount == 0 ? seqCount : nCount) + "/" + seqCount + ")");
+			$('#sequencesLabel span').text((nCount == 0 ? seqCount : nCount) + "/" + seqCount + "");
 		});
 		$('#displayAllGt').on('change', function() {
 			loadGenotypes(true);
@@ -1014,6 +1026,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	function resizeDialogs() {
 	   	$('div.modal-lg div.modal-content').css('max-height', parseInt($(window).height() - 60) + 'px').css('height', parseInt($(window).height() - 60) + "px");
+	   	$("div.modal iframe").css({height: ($(window).height() - 80) + 'px'});
 	}
 	
 	function markCurrentProcessAsAborted() {
@@ -1059,18 +1072,49 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				"pageToken": null
 			}),
 			success: function(jsonResult) {
-				var option = "";
+				var dbListOptions = "";
 				for (var set in jsonResult.referenceSets) {
-					option += '<option>' + jsonResult.referenceSets[set].name + '</option>';
+					let taxon = null;
+					jsonResult.referenceSets[set].description.split(" ; ").forEach(function(descItem) {
+						if (descItem.startsWith("Species:"))
+							taxon = descItem.substring("Species:".length).trim();
+						else if (descItem.startsWith("Taxon:"))
+							taxon = descItem.substring("Taxon:".length).trim();
+
+					});
+					if (taxon == null)
+						taxon = "(Unspecified taxon)";
+					if (databasesByTaxon[taxon] == null)
+						databasesByTaxon[taxon] = [];
+					databasesByTaxon[taxon].push(jsonResult.referenceSets[set].name);
+
+					dbListOptions += '<option data-taxon="' + taxon + '">' + jsonResult.referenceSets[set].name + '</option>';
 				}
-				$('#module').html(option).selectpicker('refresh');
+
+				let sortedTaxa = Object.keys(databasesByTaxon);
+				sortedTaxa.sort();
+				if (Object.keys(databasesByTaxon).length > 1) {
+					$('#grpTaxa').show();
+					for (let i in sortedTaxa) {
+						databasesByTaxon[sortedTaxa[i]].sort();
+						$("#taxa").append("<option>" + sortedTaxa[i] + "</option>")
+					}
+				}
+				$("#taxa").selectpicker("refresh");
+
+				$('#module').html(dbListOptions).selectpicker('refresh');
 				var module = $_GET("module"); // get module from url
 				if (module != null)	// sometimes a # appears at the end of the url so we remove it with regexp			   
 					module = module.replace(new RegExp('#([^\\s]*)', 'g'), '');
 				
-				if (module !== null) {
+				if (module != null) {
 					$('#module').selectpicker('val', module);
 					$('#module').trigger('change');
+					let moduleTaxon = $('#module option').filter(':selected').attr("data-taxon");
+					if (moduleTaxon != null) {
+						$("#taxa").val(moduleTaxon);
+						$("#taxa").selectpicker("refresh").trigger('change');
+					}
 				}
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -1205,7 +1249,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.result.data.length;
-				$('#sequencesLabel').html("Sequences (" + seqCount + "/" + seqCount + ")");
+				$('#sequencesLabel span').text( seqCount + "/" + seqCount + "");
 				referenceNames = [];
 				jsonResult.result.data.forEach(ref => {
 					referenceNames.push(ref["referenceName"]);
@@ -1265,18 +1309,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				gotMetaData = false;
 
                 // first pass to compile an exhaustive field list
-                var headers = new Array();
+                try {
+                	callSetMetadataFields = JSON.parse(localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields"));
+                }
+                catch (ignored)
+                {}
+                if (callSetMetadataFields == null)
+                	callSetMetadataFields = new Array();
                 for (var ind in callSetResponse) {
                     if (!gotMetaData && callSetResponse[ind].info != null && Object.keys(callSetResponse[ind].info).length > 0)
                         gotMetaData = true;
                     if (gotMetaData)
                         for (var key in callSetResponse[ind].info)
-                            if (!headers.includes(key))
-                                headers.push(key);
+                            if (!callSetMetadataFields.includes(key))
+                                callSetMetadataFields.push(key);
                     if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
                         indOpt.push(callSetResponse[ind].name);
                 }
-                callSetMetadataFields = headers;
 
                 var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
                 $.ajax({
@@ -1299,7 +1348,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 if (gotMetaData) {
                     $('#asyncProgressButton').hide();
                     $('button#abort').hide();
-                    $('#ddlWarning').hide();
                     $('#progressText').html("Loading individuals' metadata...");
                     $('#progress').modal({
                         backdrop: 'static',
@@ -1308,20 +1356,72 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     });
                     setTimeout(function () {
                         var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
-                        headerRow.append("<tr valign='top'><td></td><th>Individual</th>");
-                        for (var i in headers) {
-                            headerRow.append("<th>" + headers[i] + "<br/></th>");
-                            exportedMetadataSelectOptions += "<option selected>" + headers[i] + "</option>";
+                        headerRow.append("<thead><tr valign='top'><td></td><th>Individual</th>");
+                        for (var i in callSetMetadataFields) {
+                            headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
+                            exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
                         var ifTable = $("table#individualFilteringTable");
                         if (headerRow != "")
-                            ifTable.prepend(headerRow + "</tr>");
+                            ifTable.prepend(headerRow + "</tr></thead>");
 
-                        var tableObj = document.getElementById("individualFilteringTable");
-                        addSelectionDropDownsToHeaders(tableObj);
+                        addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));  
+                        
+                     	// Make the table headers draggable & droppable
+                        ifTable.find("th.draggable").draggable({
+                            helper: function() {
+                                return $(this).clone().addClass("dragging-helper");
+                            },
+                            revert: true
+                        }).droppable({
+                            over: function(event, ui) {
+                                $(this).addClass("highlight");
+                            },
+                            out: function(event, ui) {
+                                $(this).removeClass("highlight");
+                            },
+                            drop: function(event, ui) {
+                                var dropped = ui.draggable;
+                                var droppedOn = $(this);
 
+                                // Get the indices of the dropped and droppedOn elements
+                                var droppedIndex = dropped.index();
+                                var droppedOnIndex = droppedOn.index();
+
+                                // Prevent moving before the first column or after the last column
+                                if (droppedIndex === 0 && droppedOnIndex === 0) return;
+                                var draggableColCount = ifTable.find("th.draggable").length;
+                                if (droppedIndex === draggableColCount - 1 && droppedOnIndex === draggableColCount - 1) return;
+
+                                // Move the header cell
+                                if (droppedIndex < droppedOnIndex) {
+                                    dropped.insertAfter(droppedOn);
+                                } else {
+                                    dropped.insertBefore(droppedOn);
+                                }
+
+                                // Move the corresponding cells in the body for all rows
+                                ifTable.find("tbody tr").each(function() {
+                                    var cells = $(this).find("td");
+                                    var droppedCell = cells.eq(droppedIndex);  // Get the dropped cell
+                                    var droppedOnCell = cells.eq(droppedOnIndex);  // Get the dropped-on cell
+                                    
+                                    if (droppedIndex < droppedOnIndex) {
+                                        droppedCell.insertAfter(droppedOnCell);
+                                    } else {
+                                        droppedCell.insertBefore(droppedOnCell);
+                                    }
+                                });
+
+                                // Remove the highlight class after drop
+                                $(this).removeClass("highlight");
+
+                                localStorage.setItem($('#module').val() + idSep + $('#project').val() + "_mdFields", JSON.stringify(ifTable.find("thead th:gt(0)").get().filter(t => !$(t).hasClass("dragging-helper")).map(t => $(t).find("div:eq(0)").text())));
+                            }
+                        });
+  
                         $('#progress').modal('hide');
                         displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
                     }, 1);
@@ -1471,7 +1571,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		if ($('#exportPanel').is(':visible'))
 			$('#exportBoxToggleButton').click()
 		$('#asyncProgressButton').hide();
-		$('#ddlWarning').hide();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1671,119 +1770,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
     }
 
-    function buildGenotypeTableContents(jsonResult) {
-        var before = new Date().getTime();
-        var knownAlleles = jsonResult.alternateBases;
-        knownAlleles.unshift(jsonResult.referenceBases);
-
-        var gtTable = new Array();
-        var headerPositions = new Array();
-        for (var call in jsonResult.calls) {
-            var individual = splitId(jsonResult.calls[call].callSetId, 2);
-            var gtRow = new Array();
-            gtRow.push(individual);
-            var gt = '';
-            for (var allele in jsonResult.calls[call].genotype)
-                gt += '<div class="allele">' + knownAlleles[jsonResult.calls[call].genotype[allele]] + '</div>';
-            gtRow.push(gt);
-            for (var header in jsonResult.calls[call].info) {
-                var headerPos = headerPositions[header];
-                if (headerPos == null) {
-                    headerPos = Object.keys(headerPositions).length;
-                    headerPositions[header] = headerPos;
-                }
-                gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
-            }
-            gtTable.push(gtRow);
-        }
-        var tableHeader = new Array(2);
-        for (var header in headerPositions)
-            tableHeader[headerPositions[header] + 2] = header;
-        
-        var indexSample = tableHeader.indexOf("sample");
-        var htmlTableContents = new StringBuffer();
-        htmlTableContents.append('<thead><tr>');
-
-        // Add "Individual" as first column always
-        htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
-        // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
-        if (indexSample !== -1) {
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
-        }
-        // Add "Genotype" as a column
-        htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
-        
-        for (var headerPos in tableHeader) {
-            var header = tableHeader[headerPos];
-            // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
-            if (header === "sample") {
-                continue;
-            }
-            htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
-        }
-        htmlTableContents.append('</tr></thead>');
-
-        var annotationFieldThresholds = {};
-        for (var i = 1; i <= 10; i++)
-            $('#vcfFieldFilterGroup' + i + ' input').each(function () {
-                if (parseFloat($(this).val()) > 0)
-                    annotationFieldThresholds[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-            });
-
-        var activeGroups = $(".genotypeInvestigationDiv").length;
-        var applyThresholds = Object.keys(annotationFieldThresholds).length > 0
-        var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
-
-        var prevFirstElement = null;
-        var prevColor = '#d1d1e0';
-        
-        for (var row in gtTable) {
-            var indivColors = [];
-
-            for (var i = 0; i < individualsByGroup.length; i++) {
-                var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-                if (inGroup)
-                    indivColors.push(groupColors[i]);
-            }
-            var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
-            htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
-
-            for (var i = 0; i < tableHeader.length; i++) {
-                var missingData = false;
-                // Ignore the "sample" column because we will treat it separately
-                if (i !== indexSample) {
-                    // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
-                    if (indexSample !== -1 && i === 1) {
-                    	// Changes the color if the first element in the row is different from the previous row
-                        var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
-                        htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
-                        prevColor = backgroundColor;
-                    }
-                    if (applyThresholds && i >= 2) {
-                        for (var annotation in annotationThresholds) {
-                            if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                                missingData = true;
-                                break;
-                            }
-                        }
-                    }
-                    htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-                }
-            }
-            htmlTableContents.append('</tr>');
-            // Updates the first element of the previous row
-            prevFirstElement = gtTable[row][0];
-        }
-        //console.log("buildGenotypeTableContents took " + (new Date().getTime() - before) + "ms for " + gtTable.length + " individuals");
-        return htmlTableContents.toString();
-    }
-
-    function extractUniqueAlleles(jsonResult) {
-   		var knownAlleles = [jsonResult.referenceBases, ...jsonResult.alternateBases];
-    	var allelesWithDivs = knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join('');
-    	return allelesWithDivs;
-    }
-
 	// update genotype table when the checkbox in annotation panel is checked
 	function loadGenotypes(reload) {
 		var errorEncountered = false;
@@ -1818,8 +1804,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                     $('#varSeq').html("Seq: " + jsonResult.referenceName);
                                     $('#varType').html("Type: " + jsonResult.info.type[0]);
                                     $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-                                     $('#textKnownAlleles').html("Known Allele(s)");
-                                 $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+                                    $('#textKnownAlleles').html("Known Allele(s)");
+                                 	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
                             }
                             var htmlTableContents = buildGenotypeTableContents(jsonResult);
                             
@@ -1869,6 +1855,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		Promise.allSettled(requests).then(function(){
 		    $('#gtTable').html(modalContent);
 			markInconsistentGenotypesAsMissing();
+			calculateVariantStats();
 
 			if (!errorEncountered)
 				$('#variantDetailPanel').modal('show').css({"z-index": 1100}); 
@@ -1930,46 +1917,34 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
 	function exportData() {
-		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 		var indToExport = $('#exportedIndividuals').val() == "choose" ? $('#exportedIndividuals').parent().parent().find("select.individualSelector").val() : ($('#exportedIndividuals').val() == "allGroups" ? getSelectedIndividuals() : ($('#exportedIndividuals').val() == "" ? [] : getSelectedIndividuals([parseInt($('#exportedIndividuals').val())])));
 		exportedIndividualCount = indToExport == null ? indOpt.length : indToExport.length;
-		if (!keepExportOnServer && $('#exportPanel div.individualRelated:visible').size() > 0) {
-			if (exportedIndividualCount * count > 1000000000) {
-				alert("The matrix you are about to export contains more than 1 billion genotypes and is too large to be downloaded directly. Please tick the 'Keep files on server' box.");
-				return;
-			}
-		}
+		var keepExportOnServer = $('#keepExportOnServ').prop('checked');
 
-		var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
-		if (supportedTypes != null) {
-			supportedTypes = supportedTypes.split(";");
-			var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
-			for (var i in selectedTypes)
-				if (!supportedTypes.includes(selectedTypes[i])) {
-					alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+		if (!$("#filterIDsCheckbox").is(":checked")) {	// FIXME: this is just a workaround, we should be able to check the results' contents rather than relying on widget values
+			var supportedTypes = $('#exportFormat').children().filter(':selected').data('type');
+			if (supportedTypes != null) {
+				supportedTypes = supportedTypes.split(";");
+				var selectedTypes = $('#variantTypes').val() === null ? Array.from($('#variantTypes option')).map(opt => opt.innerText) : $('#variantTypes').val();
+				for (var i in selectedTypes)
+					if (!supportedTypes.includes(selectedTypes[i])) {
+						alert("Error: selected export format does not support variant type " + selectedTypes[i]);
+						return;
+					}
+			}
+			var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
+			if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
+				supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
+				if (!supportedPloidyLevels.includes(ploidy)) {
+					alert("Error: selected export format does not support ploidy level " + ploidy);
 					return;
 				}
-		}
-		var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
-		if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
-			supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
-			if (!supportedPloidyLevels.includes(ploidy)) {
-				alert("Error: selected export format does not support ploidy level " + ploidy);
-				return;
 			}
 		}
 		
 		exporting = true;
-		if (keepExportOnServer)
-		{
-			$('#ddlWarning').hide();
-			$('#asyncProgressButton').show();
-		}
-		else
-		{
-			$('#ddlWarning').show();
-			$('#asyncProgressButton').hide();
-		}
+
+		$('#asyncProgressButton').show();
 		$('button#abort').show();
 		$('#progressText').html("Please wait...");
 		$('#progress').modal({
@@ -1980,85 +1955,43 @@ https://doi.org/10.1093/gigascience/giz051</pre>
    		
 		var url = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_DATA_PATH%>" />';
         var query = buildSearchQuery(3, currentPageToken);
-        query["keepExportOnServer"] =  keepExportOnServer;
+        query["keepExportOnServer"] = keepExportOnServer;
         query["exportFormat"] =  $('#exportFormat').val();
         query["exportedIndividuals"] =  indToExport === null ? [] : indToExport;
         query["metadataFields"] =  $('#exportPanel select#exportedIndividualMetadata').prop('disabled') || $('#exportPanel div.individualRelated:visible').size() == 0 ? [] : $("#exportedIndividualMetadata").val();
 
 		processAborted = false;
 		$('button#abort').attr('rel', 'export_' + token);
-		if (keepExportOnServer) {
-            $.ajax({
-                url: url,
-                type: "POST",       
-                contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-                data: JSON.stringify(query),
-                success: function(response) {
-                        downloadURL = response;
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                        downloadURL = null;
-                        $("div#exportPanel").hide();
-                        $("a#exportBoxToggleButton").removeClass("active");
-                        handleError(xhr, thrownError);
-                }
-            });
-		} else {
-			var headers = buildHeader(token, $('#assembly').val());
-            headers["Content-Type"] = "application/json;charset=utf-8"; 
+        $.ajax({
+            url: url,
+            type: "POST",       
+            contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+            data: JSON.stringify(query),
+            success: function(response) {
+                    downloadURL = response;
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                    downloadURL = null;
+                    $("div#exportPanel").hide();
+                    $("a#exportBoxToggleButton").removeClass("active");
+                    handleError(xhr, thrownError);
+            }
+        });
 
-            var request = {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(query)
-            };
-            
-            var filename = '';
-            
-            fetch(url, request).then((response) => {
-                    var header = response.headers.get('Content-Disposition');
-                    var parts = header.split(';');
-                    filename = parts[1].split('=')[1];
-                    return response.blob();
-            })
-            .then((result) => {
-                if (result !== undefined) {
-                    var objectURL = URL.createObjectURL(result);
-                    var link = document.createElement("a");
-                    link.setAttribute("href", objectURL);
-                    link.setAttribute("download", filename);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                }
-            });
-			downloadURL = null;
-			//postDataToIFrame("outputFrame", url, query);
-			$("div#exportPanel").hide();
-			$("a#exportBoxToggleButton").removeClass("active");
-		}
-		displayProcessProgress(2, "export_" + token, null, showServerExportBox);
-	}
-
-	function postDataToIFrame(frameName, url, params)
-	{
-		 var form = document.createElement("form");
-		 form.setAttribute("method", "post");
-		 form.setAttribute("action", url);
-		 form.setAttribute("target", frameName);
-
-		 for (var i in params) {
-			 var input = document.createElement('input');
-			 input.type = 'hidden';
-			 input.name = i;
-			 input.value = params[i];
-			 form.appendChild(input);
-		 }
-
-		 document.body.appendChild(form);
-		 form.submit();
-		 document.body.removeChild(form);
+		displayProcessProgress(2, "export_" + token, null, function() {
+	        if ($('#enableExportPush').prop('checked'))
+				showServerExportBox(keepExportOnServer);
+	        else {
+	        	var link = document.createElement('a');
+	        	link.href = downloadURL;
+	        	link.style.display = 'none';
+	        	link.download = downloadURL.substring(downloadURL.lastIndexOf('/') + 1);
+	        	document.body.appendChild(link);
+	        	link.click();
+	        	document.body.removeChild(link);
+	        }
+		});
 	}
 
 	// split an Id and return element at the corresponding position
@@ -2672,12 +2605,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
             trackIndividuals.forEach(function (individuals, index, array) {
                 trackConfigs.push({
-                    name: array.length > 1 ? "Group " + (index + 1) : "Query",
+                    name: array.length > 1 ? $("input#group" + (index + 1)).val() : "Query",
                     type: "variant",
                     format: "custom",
                     sourceType: "file",
                     order: Number.MAX_SAFE_INTEGER,
                     visibilityWindow: 100000,
+//                     showGenotypes: false,
                     reader: new GigwaSearchReader(
                         individuals, token,
                         "<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_DATA_PATH%>" />")
@@ -2753,9 +2687,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	// Build the list of individuals to display in IGV
     function igvSelectedIndividuals() {
-        let group = $('input[name="igvGroupsButton"]:checked').val();
-        let trackIndividuals;
+        let trackIndividuals, group = $('input[name="igvGroupsButton"]:checked').val();
         switch (group) {
+	        case "none":
+	        	trackIndividuals = [[]];
+	            break;
             case "selected":
             	var groupInds = getSelectedIndividuals(null, false);
             	trackIndividuals = [groupInds.length == 0 ? indOpt : groupInds];
@@ -2777,6 +2713,27 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         }
         return trackIndividuals;
     }
+	
+    function handleRangePaste(event) {
+        event.preventDefault();
+        var paste = (event.originalEvent.clipboardData || window.clipboardData).getData('text');
+        
+        var inputs = {
+            min: $('#minposition'),
+            max: $('#maxposition')
+        };
+
+        if (paste.includes('-')) {
+            var parts = paste.split('-').map(part => part.trim());
+            inputs.min.val(parts[0]);
+            inputs.max.val(parts[1]);
+        } else {
+            $(event.target).val(paste);
+        }
+    }
+
+    // Attach paste handler to the inputs using jQuery
+    $('#minposition, #maxposition').on('paste', handleRangePaste);
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
 
