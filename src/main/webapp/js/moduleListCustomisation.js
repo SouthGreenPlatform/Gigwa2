@@ -39,8 +39,7 @@ function grabNcbiTaxon(inputObj, taxonId)
 	    var taxonDetails = getNcbiTaxonDetails(taxonId), taxonName = taxonDetails['scientificname'], genus = taxonDetails['genus'], species = taxonDetails['species'];
 	    if (taxonName != null && taxonName != '')
 	        $(inputObj).attr('data-id', taxonId);
-	    if (species != null && species != '')
-	        $(inputObj).attr('data-species', genus + " " + species);
+        $(inputObj).attr('data-species', species != null && species != '' ? (genus + " " + species) : null);
 	
 		if (typeof setDirty != 'undefined' && $(inputObj).val() != taxonId)
 			setDirty($(inputObj).closest("tr").attr("id").substring(4), true);
