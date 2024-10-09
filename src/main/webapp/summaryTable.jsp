@@ -26,13 +26,14 @@
 %>
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
 
 <html>
 <head>
 <title>Summary Table</title>
-    <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
-    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
-    <link type="text/css" rel="stylesheet" href="css/main.css">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap-select.min.css ">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
 	<style type="text/css">
 	    #moduleProjectNavbar {
 	    	display:none;

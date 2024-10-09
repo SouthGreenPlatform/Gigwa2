@@ -18,16 +18,18 @@
 <%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <%
 	java.util.Properties prop = new java.util.Properties();
 	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
 	String appVersion = prop.getProperty("Implementation-version");
-	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+	String[] splitAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="appVersionNumber" value='<%= splitAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splitAppVersion.length > 1 ? splitAppVersion[1] : "" %>' />
 <c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
+<c:set var="customCssFolder" value='<%= new java.io.File(application.getRealPath("/custom/css")).isDirectory() ? "custom/" : "" %>' />
 
 <html>
 <head>
@@ -37,10 +39,10 @@
 
 <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
-<link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
-<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
-<link type="text/css" rel="stylesheet" href="css/jquery-ui.min-1.12.1.css">
-<link type="text/css" rel="stylesheet" href="css/main.css">
+<link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap-select.min.css ">
+<link type="text/css" rel="stylesheet" href="${customCssFolder}css/bootstrap.min.css">
+<link type="text/css" rel="stylesheet" href="${customCssFolder}css/main.css">
+<link type="text/css" rel="stylesheet" href="${customCssFolder}css/jquery-ui.min-1.12.1.css">
 <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
 <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
@@ -474,6 +476,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
 			(You will be requested to provide an API key to be able to push exported files there)
+			<hr />
+			<b>Standalone IGV</b> (DEPRECATED in favor of using the embedded IGV.js) 
+			<img id="igvTooltip" style="margin-left:8px; cursor:pointer; cursor:hand;" src="images/logo-igv.jpg" height="25" width="25" title="You may send selected variants to a locally running instance of the standalone IGV application by ticking the 'Keep files on server' box and exporting in VCF format. Click this icon to download IGV" onclick="window.open('https://software.broadinstitute.org/software/igv/download');" />
 			<hr />
 			<p class='bold'>Configuring external tool <select id="onlineOutputTools" onchange="configureSelectedExternalTool();"></select></p>
 			Supported formats (CSV) <input type="text" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" style="font-size:11px; width:260px; margin-bottom:5px;" id="outputToolFormats" placeholder="Refer to export box contents (empty for all formats)" />
@@ -1021,7 +1026,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	function resizeDialogs() {
 	   	$('div.modal-lg div.modal-content').css('max-height', parseInt($(window).height() - 60) + 'px').css('height', parseInt($(window).height() - 60) + "px");
- 		$("div.modal iframe").css({height: ($(window).height() - 80) + 'px'});
+	   	$("div.modal iframe").css({height: ($(window).height() - 80) + 'px'});
 	}
 	
 	function markCurrentProcessAsAborted() {
@@ -2742,5 +2747,4 @@ https://doi.org/10.1093/gigascience/giz051</pre>
   gtag('config', '${googleAnalyticsId}');
 </script>
 </c:if>
-
 </html>
