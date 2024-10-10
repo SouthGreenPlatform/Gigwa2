@@ -17,6 +17,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <sec:authentication property="principal" var="principal"/>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
@@ -125,3 +126,6 @@
 		        show: true
 		    }); // prevent the user from hiding progress modal when clicking outside
 	</script>
+
+	<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>
+	<%= new java.io.File(application.getRealPath("/custom/custom.js")).exists() ? "<script type='text/javascript' src='custom/custom.js'></script>" : "" %>
