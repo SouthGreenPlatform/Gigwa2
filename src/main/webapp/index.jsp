@@ -2720,8 +2720,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
         if (paste.includes('-')) {
             var parts = paste.split('-').map(part => part.trim());
-            inputs.min.val(parts[0]);
-            inputs.max.val(parts[1]);
+            inputs.min.val(parts[0].replace(/\D/g, ''));
+            inputs.max.val(parts[1].replace(/\D/g, ''));
         } else {
             $(event.target).val(paste);
         }
