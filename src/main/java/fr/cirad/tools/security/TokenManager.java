@@ -209,6 +209,7 @@ public class TokenManager extends AbstractTokenManager {
      *
      * @return List<String> readable modules
      */
+    @Override
     public Collection<String> listReadableDBs(String token) {
     	Authentication authentication = getAuthenticationFromToken(token);
     	Collection<String> authorizedModules = listReadableDBs(authentication == null ? null : userDao.getUserAuthorities(authentication));
