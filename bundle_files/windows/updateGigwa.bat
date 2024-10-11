@@ -75,10 +75,7 @@ powershell -Command "$previousPE = $(Select-String -Path %3\%backup_dir%.%d%\WEB
 
 
 :: Changes specific to migration to v2.9
-powershell -Command "
-	if ((Select-String -Path %1\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line -ne (Select-String -Path %2\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line) {
-	    (Get-Content %2\WEB-INF\classes\applicationContext-MVC.xml) -replace '<context:component-scan base-package.*', '<context:component-scan base-package=\"fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api,fr.cirad.web.controller,fr.cirad.service\" />' | Set-Content -Encoding ascii %2\WEB-INF\classes\applicationContext-MVC.xml;
-	}"
+powershell -Command "if ((Select-String -Path %1\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line -ne (Select-String -Path %2\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line) { (Get-Content %2\WEB-INF\classes\applicationContext-MVC.xml) -replace '<context:component-scan base-package.*', '<context:component-scan base-package=\"fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api,fr.cirad.web.controller,fr.cirad.service\" />' | Set-Content -Encoding ascii %2\WEB-INF\classes\applicationContext-MVC.xml; }"
 
 echo -------------------------------
 echo Update complete.
