@@ -916,17 +916,6 @@ public class GigwaRestController extends ControllerInterface {
 			return;
 		}
 		
-		// count variants to display
-		BasicDBList variantLevelQuery = !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList();
-    	List<BasicDBObject> countPipeline = new ArrayList<>();
-        if (!variantLevelQuery.isEmpty())
-        	countPipeline.add(new BasicDBObject("$match", new BasicDBObject("$and", variantLevelQuery)));
-    	countPipeline.add(new BasicDBObject("$count", "count"));
-    	MongoCursor<Document> countCursor = (fWorkingOnTempColl ? collWithPojoCodec : mongoTemplate.getCollection(mongoTemplate.getCollectionName(VariantData.class))).aggregate(countPipeline, Document.class).collation(IExportHandler.collationObj).iterator();
-    	long markerCount = countCursor.hasNext() ? ((Number) countCursor.next().get("count")).longValue() : 0;
-    	if (markerCount == 0)
-    		return;	// no genotypes to show
-
 		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
 		for (GenotypingSample gs : samples)
 			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
@@ -940,8 +929,16 @@ public class GigwaRestController extends ControllerInterface {
 	        annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
 	    }
 
+		// count variants to display
+		BasicDBList variantLevelQuery = !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList();
+    	List<BasicDBObject> countPipeline = new ArrayList<>();
+        if (!variantLevelQuery.isEmpty())
+        	countPipeline.add(new BasicDBObject("$match", new BasicDBObject("$and", variantLevelQuery)));
+    	countPipeline.add(new BasicDBObject("$count", "count"));
+    	MongoCursor<Document> countCursor = (fWorkingOnTempColl ? collWithPojoCodec : mongoTemplate.getCollection(mongoTemplate.getCollectionName(VariantData.class))).aggregate(countPipeline, Document.class).collation(IExportHandler.collationObj).iterator();
+
 		HapMapExportHandler heh = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
-		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
+		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), countCursor.hasNext() ? ((Number) countCursor.next().get("count")).longValue() : 0, null, samples);
 
 		progress.markAsComplete();
 		
