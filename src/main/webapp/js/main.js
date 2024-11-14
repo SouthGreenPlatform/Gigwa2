@@ -1814,6 +1814,7 @@ function extractUniqueAlleles(jsonResult) {
 }
 
 function taxonSelected() {
+	$('#grpProj').hide();
 	let selectedTaxon = $("#taxa").val();
 	$("#module option").each(function() {
 		let showOption = selectedTaxon == "(Any taxon)" || selectedTaxon == $(this).attr("data-taxon");
