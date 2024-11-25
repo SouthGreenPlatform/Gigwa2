@@ -1564,12 +1564,11 @@ public class GigwaRestController extends ControllerInterface {
         
         boolean fAlreadyInASessionAttributeAwareThread = SessionAttributeAwareThread.class.isAssignableFrom(Thread.currentThread().getClass());
         
+        HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
         SessionAttributeAwareThread sessionThread= fAlreadyInASessionAttributeAwareThread ? new SessionAttributeAwareThread((SessionAttributeAwareThread) Thread.currentThread()) : new SessionAttributeAwareThread(session);
         new SessionAttributeAwareThread(sessionThread) {
             public void run() {
-		        HashMap<String, String> filesByExtension = null;
 		        try {
-		        	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 		        	if (progress.getError() == null) {
 		                AtomicInteger nModifiedRecords = new AtomicInteger(-1);
 		                String fastaFile = null, gzFile = filesByExtension.get("gz");
@@ -1714,10 +1713,9 @@ public class GigwaRestController extends ControllerInterface {
 		            progress.setError(e.getMessage());
 		            LOG.error("Error importing metadata", e);
 		        } finally {
-		        	if (filesByExtension != null)
-			        	for (String uri : Arrays.asList(dataUri1, dataUri2))
-			        		if (uri != null && !uri.trim().isEmpty())
-			        			filesByExtension.remove(FilenameUtils.getExtension(uri));
+			       	for (String uri : Arrays.asList(dataUri1, dataUri2))
+		        		if (uri != null && !uri.trim().isEmpty())
+		        			filesByExtension.remove(FilenameUtils.getExtension(uri));
 		        	for (String uri : filesByExtension.values())
 		        		new File(uri).delete();
 		        }
