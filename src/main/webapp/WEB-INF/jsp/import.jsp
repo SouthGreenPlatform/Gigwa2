@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,org.springframework.security.core.context.SecurityContextHolder,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -28,6 +28,9 @@
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
 <c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
+<c:set var="loggedUser" value="<%=SecurityContextHolder.getContext().getAuthentication().getPrincipal()%>" />
+<c:set var='dbCreatorRole' value='<%= IRoleDefinition.ROLE_DB_CREATOR %>' />
+<c:set var="hasDbCreatorRole" value="false" /><c:forEach var="authority" items="${loggedUser.authorities}"><c:if test="${authority == dbCreatorRole}"><c:set var="hasDbCreatorRole" value="true" /></c:if></c:forEach>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 
@@ -75,7 +78,7 @@
    			var brapiGenotypesToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_externalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_externalReferenceSource %>";
-   			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin};
+   			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin}, hasDbCreatorRole = ${hasDbCreatorRole};
    			var supervisedModules = [];
    			<c:if test="${!isAnonymous}">
    				<sec:authentication property="principal.authorities" var="authorities" />
@@ -140,7 +143,7 @@
                                             	<input id="ploidy" name="ploidy" class="form-control text-input input-sm" type='number' step="1" min="1" placeholder="ploidy" title="Specifying ploidy is recommended for HapMap and Flapjack formats (if left blank, guessing will be attempted and import will take longer)">
                                             </div>
                                             <div class="col-md-3" id="newModuleDiv">
-                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
+                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin || hasDbCreatorRole}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
                                             </div>
                                         </div>
                                     </div>
@@ -152,7 +155,7 @@
                                             <div class="col-md-3" id="hostDiv">
                                                 <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
-                                            <c:if test="${!isAdmin}">
+                                            <c:if test="${!isAdmin && !hasDbCreatorRole}">
                                        			<div class="col-md-3 text-red row">
                                             		<div class="col-md-1 glyphicon glyphicon-warning-sign" style="font-size:20px;"></div>
                                             		<div class="col-md-10" style="font-size:10px; margin-top:-1px;">You may only create temporary databases</div>

@@ -1851,6 +1851,7 @@ public class GigwaRestController extends ControllerInterface {
 			progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
 
 		boolean fAdminImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
+		boolean fDbCreatorImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_DB_CREATOR));
 		boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2, dataUri3))
@@ -2051,7 +2052,7 @@ public class GigwaRestController extends ControllerInterface {
 					progress.moveToNextStep();
 
 					try { // create it
-						if (!fAdminImporter) {	// only administrators may create permanent databases
+						if (!fAdminImporter && !fDbCreatorImporter) {	// only administrators and DB creators may create permanent databases
 							expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 	//					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 							
@@ -2070,7 +2071,7 @@ public class GigwaRestController extends ControllerInterface {
 						if (sHost == null || sHost.trim().length() == 0)
 							throw new Exception("No host was specified!");
 	
-						if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, !fAdminImporter, !fAdminImporter, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
+						if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, !fAdminImporter && !fDbCreatorImporter, !fAdminImporter, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
 							LOG.info("Adding database " + sNormalizedModule + " to host " + sHost);
 							fDatasourceExists = true;
 						} 
@@ -2294,8 +2295,8 @@ public class GigwaRestController extends ControllerInterface {
 									else if (!fDatasourceAlreadyExisted.get() && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
 									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsername(auth.getName());
-									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
-									            return; // no need to grant any role to administrators
+//									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
+//									            return; // no need to grant any role to administrators
 		
 									        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
 									        if (!owner.getAuthorities().contains(role)) {
@@ -2309,7 +2310,7 @@ public class GigwaRestController extends ControllerInterface {
 											tokenManager.reloadUserPermissions(securityContext);
 										}
 										catch (IOException e) {
-											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
+											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule, e);
 										}
 		
 									if (scanner != null)
