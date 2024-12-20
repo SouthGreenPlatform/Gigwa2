@@ -1103,13 +1103,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					module = module.replace(new RegExp('#([^\\s]*)', 'g'), '');
 				
 				if (module != null) {
-					$('#module').selectpicker('val', module);
-					$('#module').trigger('change');
-					let moduleTaxon = $('#module option').filter(':selected').attr("data-taxon");
+					let moduleTaxon = $('#module option').filter((_, element) => $(element).text() === module).attr("data-taxon");
 					if (moduleTaxon != null) {
 						$("#taxa").val(moduleTaxon);
 						$("#taxa").selectpicker("refresh").trigger('change');
 					}
+					$('#module').selectpicker('val', module);
+					$('#module').trigger('change');
 				}
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
@@ -1222,9 +1222,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	            success: function(jsonResult) {
 	                    variantTypesCount = jsonResult.length;
 	                    var option = "";
-	                    for (var key in jsonResult) {
-	                            option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-	                    }
+	                    for (var key in jsonResult)
+	                    	option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
 	                    $('#variantTypes').html(option).selectpicker('refresh');
 	            },
 	            error: function(xhr, ajaxOptions, thrownError) {
