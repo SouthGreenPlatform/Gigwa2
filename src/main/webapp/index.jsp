@@ -762,7 +762,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			referenceset = $(this).val();
 
 			if (referenceset == "" || !loadProjects(referenceset)) {
-				$("div.alert").hide();
+				$("div.alert-info").hide();
 				$("div#searchPanel").fadeOut();
 				$("div#welcome").fadeIn();
 				return;
