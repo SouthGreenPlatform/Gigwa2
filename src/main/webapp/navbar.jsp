@@ -88,8 +88,8 @@
 
 	<!-- modal which displays terms of use -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="termsOfUse" aria-hidden="true">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
+		<div class="modal-dialog">
+			<div class="modal-content" style="min-width:600px; padding:0 30px;">
 				<div class="modal-header" id="termsOfUseContainer">
 					<center><h3>Gigwa - Terms of use</h3></center>
 					<h4>1) Limitation of warranty</h4>
