@@ -5348,7 +5348,8 @@
         displayTraits = displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";").filter(function (x) {
           return _this3.dataSet.traitNames == null || _this3.dataSet.traitNames.includes(x);
         });
-        Array.from(document.getElementById("displayTraitSelect").options).forEach(function (option) {
+        var displayTraitSelect = document.getElementById("displayTraitSelect");
+        if (displayTraitSelect != null /* otherwise we have no phenotype data*/) Array.from(displayTraitSelect.options).forEach(function (option) {
           option.selected = displayTraits.includes(option.value);
         });
         var settings = {
