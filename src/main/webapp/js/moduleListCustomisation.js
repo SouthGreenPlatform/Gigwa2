@@ -70,7 +70,7 @@ function customizeModuleList() {
 
 function updateTaxonCell(taxonCell) {
 	let idTaxonSpecies = $(taxonCell).text().split(":"), inputVal = idTaxonSpecies.length < 3 ? idTaxonSpecies[0] : (idTaxonSpecies[1] != '' ? idTaxonSpecies[1]: idTaxonSpecies[2]);
-	if (isAdmin || permissions.has($(taxonCell).parent().attr("id").substring(4) + "$" + supervisorRole)) {
+	if (isAdmin || permissions.has($(taxonCell).parent().attr("id").substring(4) + supervisorRole)) {
 		$(taxonCell).html("<input type='text' readonly='true' value=\"" + inputVal + "\" data-id='" + idTaxonSpecies[0] + "' title='" + inputVal + "\n(Click to change selection)' />");
 		$(taxonCell).find("input").css("width", "200px").css("font-style", "italic").css("text-align", "center").css("border", "none").css("background-color", "inherit !important").css("cursor", "pointer").on("click", function() {
 			grabNcbiTaxon($(this).get(), prompt("Please specify NCBI taxon, preferrably by ID\n(enter blank string to clear out)"));
