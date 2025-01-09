@@ -429,7 +429,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 		</div>
 	</div>
-	<!-- modal which displays density data -->
+	<!-- modal which displays chart data -->
 	<div class="modal fade" role="dialog" id="density" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
@@ -439,7 +439,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	<!-- modal which displays project information -->
 	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">
-		<div class="modal-dialog modal-lg">
+		<div class="modal-dialog modal-sm">
 			<div class="modal-content">
 				<div class="modal-header" id="projectInfoContainer"></div>
 			</div>
@@ -490,7 +490,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	</div>
 	<!-- modal which displays a box for configuring a genome browser -->
 	<div id="genomeBrowserConfigDiv" class="modal" role="dialog">
-		<div class="modal-dialog modal-large" role="document">
+		<div class="modal-dialog modal-sm" role="document">
 		<div class="modal-content" style="padding:10px; text-align:center;">
 			<b>Please specify a URL for the genome browser you want to use</b> <br />
 			<i>indicate * wherever variant location (chr:start..end) needs to appear</i> <br />
@@ -503,7 +503,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	
 	<!-- modal which displays a box for managing saved queries -->
 	<div id="queryManager" class="modal fade" role="dialog">
-		<div class="modal-dialog modal-medium" role="document">
+		<div class="modal-dialog modal-sm" role="document">
 		<div id="loadedQueries" class="modal-content" style="padding:10px; text-align:center;">
 		<b style="font-size:18px">Your bookmarked queries</b>
 		<br>
