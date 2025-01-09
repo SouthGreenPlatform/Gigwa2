@@ -30,7 +30,7 @@
 <c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
 <c:set var="loggedUser" value="<%=SecurityContextHolder.getContext().getAuthentication().getPrincipal()%>" />
 <c:set var='dbCreatorRole' value='<%= IRoleDefinition.ROLE_DB_CREATOR %>' />
-<c:set var="hasDbCreatorRole" value="false" /><c:forEach var="authority" items="${loggedUser.authorities}"><c:if test="${authority == dbCreatorRole}"><c:set var="hasDbCreatorRole" value="true" /></c:if></c:forEach>
+<c:set var="hasDbCreatorRole" value="false" /><c:if test="${'anonymousUser' != loggedUser}"><c:forEach var="authority" items="${loggedUser.authorities}"><c:if test="${authority == dbCreatorRole}"><c:set var="hasDbCreatorRole" value="true" /></c:if></c:forEach></c:if>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 
