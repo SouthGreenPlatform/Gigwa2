@@ -37,7 +37,7 @@
       <UL>
          <LI>
             <P
-               STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               STYLE="margin-top: 0.53in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A1/ IMPORTING DATA</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">Choosing "Manage data" then "Import data" from the main horizontal menu leads to a page dedicated to data imports, split in two sections accessible via tabs named "Genotype import" and "Metadata import".
@@ -88,7 +88,7 @@
                      </P>
                 </LI>
                 <LI>
-                    <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+                    <P STYLE="margin-top: 0.23in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                       <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A1.2/ IMPORTING METADATA, the classical way</FONT></FONT></FONT>
                     </P>
                     <P STYLE="margin-bottom: 0.14in"><u>Providing metadata</u> may be done either for existing individuals / samples, or while importing them along with genotypes. Individual-level metadata aims at enabling users to batch-select them by filtering on it. This is convenient for cases where the individual list is long and / or individual names are not meaningful.
@@ -112,7 +112,7 @@
                     <P STYLE="margin-bottom: 0.14in">As a different extRefSrc may be provided on each line, it is possible to pull data from multiple BrAPI sources at once (user will be prompted for an optional token to use with each of them). In the end, Gigwa will attempt to grab germplasm or sample metadata from BrAPI to supplement user-provided information upon form submission.
                     </P>
 
-                    <IMG class="fullwidth" SRC="shot01bis_import_md.png" BORDER=0>
+                    <IMG class="fullwidth" STYLE="margin-top: 0.33in;" SRC="shot01bis_import_md.png" BORDER=0>
                     <P STYLE="margin-bottom: 0.14in">
                        <BR>
                     </P>
@@ -135,6 +135,7 @@
                 </LI>
             </UL>
       </UL>
+	  <div class="pagebreak"> </div>
       <UL>
          <LI>
             <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
@@ -150,121 +151,137 @@
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.1/ GENERAL FILTERING FEATURES</FONT></FONT></FONT>
                </P>
                <IMG SRC="shot02_variant_filters.png" BORDER=0 style='float:right; width:275px; margin-top:-30px; margin-left:10px;'>
-               <P STYLE="margin-bottom: 0.14in">By default, a single grey filter panel appears, providing means to select variants based on their inherent attributes:
-               </P>
-               <UL>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">variant type (i.e. SNP, INDEL&hellip;);</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">sequence;</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">position;</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, number of known alleles (when several are represented);
-                     </P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file), with gene selection eased by a lookup functionality and support for pasting an externally managed list.
-                     </P>
-               </UL>
-               <P STYLE="margin-bottom: 0.14in">
-               Users may also choose to select variants by IDs, by switching into a mode which is an alternative to using a combination of other filters. Variant selection is then supported via a dropdown with text lookup, clipboard pasting, or the providing of a local file.
-               <br/><br/>
-               As a general rule, a filter widget where no selection has been made will behave as if all its items were selected (no filtering applied on that field).
-               </P>
+				<div>
+	               <P STYLE="margin-bottom: 0.14in">By default, a single grey filter panel appears, providing means to select variants based on their inherent attributes:
+	               </P>
+	               <UL>
+	                  <LI>
+	                     <P STYLE="margin-bottom: 0in; line-height: 100%">variant type (i.e. SNP, INDEL&hellip;);</P>
+	                  <LI>
+	                     <P STYLE="margin-bottom: 0in; line-height: 100%">sequence;</P>
+	                  <LI>
+	                     <P STYLE="margin-bottom: 0in; line-height: 100%">position;</P>
+	                  <LI>
+	                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, number of known alleles (when several are represented);
+	                     </P>
+	                  <LI>
+	                     <P STYLE="margin-bottom: 0in; line-height: 100%">if applicable, functional annotations (if the data was provided as a SnpEff or VEP-annotated VCF file), with gene selection eased by a lookup functionality and support for pasting an externally managed list.
+	                     </P>
+	               </UL>
+	               <P STYLE="margin-bottom: 0.14in">
+	               Users may also choose to select variants by IDs, by switching into a mode which is an alternative to using a combination of other filters. Variant selection is then supported via a dropdown with text lookup, clipboard pasting, or the providing of a local file.
+	               <br/><br/>
+	               As a general rule, a filter widget where no selection has been made will behave as if all its items were selected (no filtering applied on that field).
+	               </P>
+				</div>
          </UL>
          <UL>
             <LI>
-               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <P STYLE="margin-top: 0.33in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.2/ GROUP COMPARISON</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot03_genotype_filters.png" BORDER=0 style='float:right; width:273px; margin-top:50px; margin-left:10px;'>
-               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown may be used to display up to ten additional panels
-                  that allow for more advanced filtering features based on subsets of individuals referred to as groups.
-               </P>
-               <P STYLE="margin-bottom: 0.14in">All of these panels have the same initial contents and each one lets users select a list of individuals
-                  (thus defining group contents). Group names may be set by users by just replacing the default values in the upper-right corner of each panel.
-                  Additionally, some handy tools are available on the right side of the "Individuals" dropdown via tooltipped icons:
-               </P>
-               <UL>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="m3e56342f.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>
-                        Activating the <B>disk</B> icon allows the current selection of
-                        individuals to be memorized within the web browser;
-                     </P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="mb2639ac.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>The
-                        <B>magnifier</B> icon (only present when individual-level metadata are available)
-                        helps selecting individuals according to the metadata attached to
-                        them;
-                     </P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="m6356edb1.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=27 BORDER=0>The
-                        copy <B>icon</B> adds currently selected individuals to clipboard;
-                     </P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">
-                        <IMG SRC="14193476.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>Clicking
-                        the <B>paste</B> icon opens a textbox for pasting / editing a
-                        list of individuals to select.
-                     </P>
-               </UL>
-               <P STYLE="margin-bottom: 0.14in">All other widgets in the same
-                  panel will then let users apply genotype-level filters on the
-                  selected list of individuals:
-               </P>
-               <UL>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">In
-                        the case where data was provided in VCF format containing numeric
-                        genotype-level fields (e.g. depth, genotype quality), a minimum
-                        acceptable value may be provided for each of them. Any genotype
-                        not respecting thus defined constraints is treated as missing for
-                        the rest of the query;
-                     </P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">Ratios of Missing data, Minor Allele Frequency and Heterozygosity can be filtered on via range widgets;
-                     </P>
-                  <LI>
-                     <P  STYLE="margin-bottom: 0.14in; line-height: 100%">The "Genotype pattern" dropdown provides a list of
-                        genotype patterns that may be applied within the group. Descriptions for those are available via the question-mark icon.
-                     </P>
-               </UL>
-     	    <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
-    	        <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within groups but different between two of them, set both
-    	        groups' genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
-    	        lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, setting the "Discriminate with" widget to point to another group
-    	        will ensure that the most frequent genotype in the first group is different from that in the second one. See online video number 4 for a demonstration.</SPAN>
-     	    </P>
-     	    <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
-      	      and genotypes treated as missing because of low quality. MAF &amp; heterozygosity ratios and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
-	  	 	</P>
+			   <table>
+				<tr>					
+					<td>
+		               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown may be used to display up to ten additional panels
+		                  that allow for more advanced filtering features based on subsets of individuals referred to as groups.
+		               </P>
+		               <P STYLE="margin-bottom: 0.14in">All of these panels have the same initial contents and each one lets users select a list of individuals
+		                  (thus defining group contents). Group names may be set by users by just replacing the default values in the upper-right corner of each panel.
+		                  Additionally, some handy tools are available on the right side of the "Individuals" dropdown via tooltipped icons:
+		               </P>
+		               <UL>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+		                        <IMG SRC="m3e56342f.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>
+		                        Activating the <B>disk</B> icon allows the current selection of
+		                        individuals to be memorized within the web browser;
+		                     </P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+		                        <IMG SRC="mb2639ac.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>The
+		                        <B>magnifier</B> icon (only present when individual-level metadata are available)
+		                        helps selecting individuals according to the metadata attached to
+		                        them;
+		                     </P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+		                        <IMG SRC="m6356edb1.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=27 BORDER=0>The
+		                        copy <B>icon</B> adds currently selected individuals to clipboard;
+		                     </P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
+		                        <IMG SRC="14193476.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>Clicking
+		                        the <B>paste</B> icon opens a textbox for pasting / editing a
+		                        list of individuals to select.
+		                     </P>
+		               </UL>
+					     <P STYLE="margin-bottom: 0.14in">All other widgets in the same
+					        panel will then let users apply genotype-level filters on the
+					        selected list of individuals:
+					     </P>
+					     <UL>
+					        <LI>
+					           <P STYLE="margin-bottom: 0in; line-height: 100%">In
+					              the case where data was provided in VCF format containing numeric
+					              genotype-level fields (e.g. depth, genotype quality), a minimum
+					              acceptable value may be provided for each of them. Any genotype
+					              not respecting thus defined constraints is treated as missing for
+					              the rest of the query;
+					           </P>
+					        <LI>
+					           <P STYLE="margin-bottom: 0in; line-height: 100%">Ratios of Missing data, Minor Allele Frequency and Heterozygosity can be filtered on via range widgets;
+					           </P>
+					        <LI>
+					           <P  STYLE="margin-bottom: 0.14in; line-height: 100%">The "Genotype pattern" dropdown provides a list of
+					              genotype patterns that may be applied within the group. Descriptions for those are available via the question-mark icon.
+					           </P>
+					     </UL>
+				   </td>
+				   <td width='40%'><IMG SRC="shot03_genotype_filters.png" BORDER=0 style='width:273px; margin-left:10px;'></td>
+			   </tr>
+			   </table>
+		   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
+		      <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within groups but different between two of them, set both
+		      groups' genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
+		      lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, setting the "Discriminate with" widget to point to another group
+		      will ensure that the most frequent genotype in the first group is different from that in the second one. See online video number 4 for a demonstration.</SPAN>
+		   </P>
+		   <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
+		      and genotypes treated as missing because of low quality. MAF &amp; heterozygosity ratios and genotype pattern queries are then applied at the same time, on the remaining (non-missing) genotypes only.
+		   </P>
      	    <P STYLE="margin-bottom: 0.24in"><u>NB:</u> When working on multi-run projects featuring several samples for a same individual, the following consistency rule had to be defined to be able to apply genotype patterns: for a given individual and variant, if a single most frequent genotype exists, it is the one accounted for, otherwise, this data-point is treated as missing.
       	   	</P>
          </UL>
          <UL>
             <LI>
-               <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <P STYLE="margin-top: 0.33in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.3/ BOOKMARKING QUERIES</FONT></FONT></FONT>
                </P>
-               <IMG SRC="shot03bis_bookmarks.png" BORDER=0 style='float:right; width:479px; margin-top:-30px; margin-left:10px;'>
                <P STYLE="margin-bottom: 0.14in">After executing a query, any logged-in user may bookmark it from the hamburger menu. Each bookmarked query needs to be given a name and thus users may:
                </P>
-               <UL style="height:240px;">
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">consult their list of bookmarked queries;</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">load one of them at any time to be able to re-run it;</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">rename them;</P>
-                  <LI>
-                     <P STYLE="margin-bottom: 0in; line-height: 100%">discard them.
-                     </P>
-               </UL>
+			   <table>				
+			   <tr>
+					<td>
+		               <UL style="height:240px;">
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">consult their list of bookmarked queries;</P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">load one of them at any time to be able to re-run it;</P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">rename them;</P>
+		                  <LI>
+		                     <P STYLE="margin-bottom: 0in; line-height: 100%">discard them.
+		                     </P>
+		               </UL>
+				   </td>
+				   <td>
+				<IMG SRC="shot03bis_bookmarks.png" BORDER=0 style='float:right; width:479px; margin-top:10px; margin-left:10px;'>
+			   	   </td>
+			   </tr>
+			   </table>
             <LI>
-               <P STYLE="margin-top: 0.25in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+               <P STYLE="margin-top: 0.33in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                   <FONT COLOR="#1f4d78"><FONT FACE="Arial, sans-serif"><FONT SIZE=3>A2.4/ BROWSING / VISUALIZING VARIANTS</FONT></FONT></FONT>
                </P>
       		   <P STYLE="margin-bottom: 0.14in">If the "Enable browse and
@@ -294,36 +311,47 @@
                   an additional series can be displayed for each of these fields, on top of the main series;
                </P>
       	      <IMG class="fullwidth" SRC="shot05_charts.png" BORDER=1 style="margin-top:5px;">
-      	      <LI>
-           	     <IMG class="fullwidth" SRC="shot05bis_output_tools.png" BORDER=1 style='margin:5px;' align='right'>
-      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
-      	            <IMG SRC="m448bf72b.png" ALIGN=BOTTOM HEIGHT=25 BORDER=0> An "External tools" box provides
-      	             means to setup the application for interacting with / pushing data into external
-         	         tools: an external online genome browser (e.g., GBrowse, JBrowse) can be configured for viewing
-            	     each variant in its genomic context (via an extra icon at the end
-            	     of each result table row); a running standalone instance of IGV can be fed with a
-            	     VCF export file (refer to tooltip for details)
-            	 </P>
-            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
-            	     Other third-party online systems (e.g. Galaxy, SNiPlay) can also be fed using files exported with the 'Keep files on server'
-            	     box ticked (click online-output-tools icon for configuration details).       	     
-            	 </P>
-            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
-				 	<u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favour of the embedded IGV.js solution
-            	 </P>
-      	      <LI>
-      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
-      	            <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
-      	            Clicking the download button opens a panel where users may select an output
-      	            format, refine the list of individuals to export, select individual metadata fields to include (if available), and choose
-      	            between directly downloading the output, or creating a file on
-      	            the server (in which case its URL may be used later, shared or
-      	            passed to external tools). A prototype version of <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">Flapjack-Bytes</a>
-      	            (&copy; JHI) is embedded and may be switched to after exporting into
-      	            Flapjack format with the "Keep files on server" option (similarly to
-      	            the way in which a standalone IGV instance can be invoked with VCF exports).
-      	         </P>
-        	    </UL>
+				<P STYLE="margin-bottom: 0.14in">
+				   <BR>
+				</P>
+				<LI>
+				<table>
+					<tr>
+						<td>
+		      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
+		      	            <IMG SRC="m448bf72b.png" ALIGN=BOTTOM HEIGHT=25 BORDER=0> An "External tools" box provides
+		      	             means to setup the application for interacting with / pushing data into external
+		         	         tools: an external online genome browser (e.g., GBrowse, JBrowse) can be configured for viewing
+		            	     each variant in its genomic context (via an extra icon at the end
+		            	     of each result table row); a running standalone instance of IGV can be fed with a
+		            	     VCF export file (refer to tooltip for details)
+		            	 </P>
+		            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
+		            	     Other third-party online systems (e.g. Galaxy, SNiPlay) can also be fed using files exported with the 'Keep files on server'
+		            	     box ticked (click online-output-tools icon for configuration details).       	     
+		            	 </P>
+		            	 <P STYLE="margin-bottom: 0in; line-height: 100%">
+						 	<u>NB:</u> Use of external genome browsers or standalone IGV are now discouraged in favour of the embedded IGV.js solution
+		            	 </P>
+		      	      <LI>
+		      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
+		      	            <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
+		      	            Clicking the download button opens a panel where users may select an output
+		      	            format, refine the list of individuals to export, select individual metadata fields to include (if available), and choose
+		      	            between directly downloading the output, or creating a file on
+		      	            the server (in which case its URL may be used later, shared or
+		      	            passed to external tools). A prototype version of <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">Flapjack-Bytes</a>
+		      	            (&copy; JHI) is embedded and may be switched to after exporting into
+		      	            Flapjack format with the "Keep files on server" option (similarly to
+		      	            the way in which a standalone IGV instance can be invoked with VCF exports).
+		      	         </P>
+						</td>
+						<td>
+							<IMG class="fullwidth" SRC="shot05bis_output_tools.png" BORDER=1 style='margin:5px;' align='right'>
+						</td>
+					</tr>
+				</table>
+				</UL>
      	    <P STYLE="margin-bottom: 0.14in">
      	       <BR>
       	   </P>
@@ -562,15 +590,16 @@
             </P>
             <P STYLE="margin-bottom: 0.14in">Administrators can see all
                databases (even if private and/or hidden) and have all privileges on
-               them. Only administrators may create permanent databases. This can
+               them. Only administrators and users with role DB_CREATOR (granted by ticking the "Allowed to create databases" box in the user permission page) may create permanent databases. This can
                be done either at import time, or via the main menu's
                "Manage data" link, by subsequently clicking on
-               "Manage databases". A simple interface allows then to create an empty
-               database on a selected MongoDB host, set the public and hidden flags on existing databases,
-               delete existing runs, projects or databases, and, for administrators and database supervisors, manage dumps.
+               "Manage databases". The simple interface below allows then to create an empty
+               database on a selected MongoDB host. The featured table lists existing databases, and for each of them, provides means to link it to a taxonomy level, set its public and hidden flags,
+               delete existing runs or projects. Administrators and database supervisors may also manage dumps and discard databases.
             </P>
+			<IMG SRC="shot06_manage_dbs.png" BORDER=1 style='margin-top:10px;'>
             <P STYLE="margin-bottom: 0.14in">The dump/restore functionality was implemented in order to provide means
-            to easily generate a copy of an entire database and thus prevent data loss in case of server crash.
+            to easily generate a "backup" of an entire database and thus prevent data loss in case of server crash.
             In the database list, a color code tells whether or not an up to date dump exists for each of them.
             Dump/restore operations can be launched with a few clicks, logs can be viewed while the process is running
             and are kept available for subsequent reference. For this functionality to be enabled,
@@ -579,7 +608,6 @@
             lie on a remote mounted filesystem, ideally backed-up periodically). Dump files may be downloaded
             by administrators and database supervisors who may thus manage an extra copy for even more safety.
             </P>
-          <IMG SRC="shot06_manage_dbs.png" BORDER=1 style='margin-top:10px;'>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -613,6 +641,11 @@
                administrator, via the main menu's "Manage data" item also available to him after authentication. The same applies to users with
                the SUPERVISOR role on a database, who can manage all of its contents.
             </P>
+			<P STYLE="margin-bottom: 0.14in">By clicking on a magnifier icon, any user who has at least the project manager role can configure other user's access to the data he manages. As of v2.9, when logged in as administrator, from that same user permission management page, it is possible to grant users the right to create permanent databases by ticking the "Allowed to create databases" box. When they do create a new permanent database, those users are automatically granted the supervisor role on it (i.e., all actions allowed). 
+			</P>
+			<IMG SRC="shot07bis_manage_permissions.png" BORDER=1 style='margin-top:10px;'>
+			<P STYLE="margin-bottom: 0.14in">Note that the e-mail address field is optional for administrators editing simple users' details, but mandatory for simple users editing their own details. As described in section B4, a valid e-mail address is required for using the password reset functionality. 
+			</P>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
          <BR>
@@ -857,17 +890,30 @@
       <P STYLE="margin-bottom: 0.14in">
          <BR>
       </P>
-      <UL>
+	  <UL>
+	     <LI>
+	        <P
+	           STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
+	           <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
+	              SIZE=3 class='title2'>B9/ MONGODB CACHE CONFIGURATION</FONT></FONT></FONT>
+	        </P>
+	        <P STYLE="margin-bottom: 0.14in">In production environments with large amounts of RAM, we found it worth to tune the --wiredTigerCacheSizeGB parameter. If left unspecified, it defaults to nearly a half of the available RAM, and essentially aims at reserving memory for manipulating indexes.
+	        As Gigwa does not make an enormous use of indexes, we found that <b>in most cases, setting it to <u>10 Gb</u> is more than enough</b>. This leaves the remaining memory available for other operations such as collection-scans, and can significantly improve performance (at least for searches). 
+	        </P>
+	        <P STYLE="margin-bottom: 0.14in">We did not take the responsibility to enforce this as a default value in our bundles or Docker images because 10 Gb would be far too high on small servers with a total of, say 16 Gb of RAM. This really has to be thought of according to the overall "platform" sizing. Checking the size occupied by indexes on your largest DB's variantRunData collection is probably a good starting point. Multiplying that by 3 or 5 is probably safe enough, although a more thorough benchmarking would be worth doing...
+	        </P>
+	  </UL>
+	  <P STYLE="margin-bottom: 0.14in">
+	     <BR>
+	  </P>
+	  <UL>
          <LI>
             <P
                STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT
-                  SIZE=3 class='title2'>B9/ MONGODB CACHE CONFIGURATION</FONT></FONT></FONT>
+                  SIZE=3 class='title2'>B10/ UI CUSTOMIZATION</FONT></FONT></FONT>
             </P>
-            <P STYLE="margin-bottom: 0.14in">In production environments with large amounts of RAM, we found it worth to tune the --wiredTigerCacheSizeGB parameter. If left unspecified, it defaults to nearly a half of the available RAM, and essentially aims at reserving memory for manipulating indexes.
-            As Gigwa does not make an enormous use of indexes, we found that <b>in most cases, setting it to <u>10 Gb</u> is more than enough</b>. This leaves the remaining memory available for other operations such as collection-scans, and can significantly improve performance (at least for searches). 
-            </P>
-            <P STYLE="margin-bottom: 0.14in">We did not take the responsibility to enforce this as a default value in our bundles or Docker images because 10 Gb would be far too high on small servers with a total of, say 16 Gb of RAM. This really has to be thought of according to the overall "platform" sizing. Checking the size occupied by indexes on your largest DB's variantRunData collection is probably a good starting point. Multiplying that by 3 or 5 is probably safe enough, although a more thorough benchmarking would be worth doing...
+            <P STYLE="margin-bottom: 0.14in">As of v2.9, the front-end look can be somewhat customized, by adding a folder named "custom" to the webapp root, containing files named custom.css and custom.js. Any styles defined in the first will override the default ones, and the javascript file, if it exists, will be added via a &lt;script&gt; tag to any page containing the main horizontal navigation menu.
             </P>
       </UL>
       <P STYLE="margin-bottom: 0.14in">
