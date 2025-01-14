@@ -34,14 +34,14 @@ if [ -d "$1" ]; then
 
 		#copy configuration files from saved folder to new gigwa folder
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-data.xml $2/WEB-INF/classes/applicationContext-data.xml
-#		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-security.xml $2/WEB-INF/classes/applicationContext-security.xml
+		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-MVC.xml $2/WEB-INF/classes/applicationContext-MVC.xml
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/datasources.properties $2/WEB-INF/classes/datasources.properties
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/users.properties $2/WEB-INF/classes/users.properties
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/config.properties $2/WEB-INF/classes/config.properties
 		cp -av $3/$backup_dir.$DATE/WEB-INF/classes/log4j.xml $2/WEB-INF/classes/log4j.xml
 
-		# Changes specific to migration to v2.5
 
+		# Changes specific to migration to v2.5
 		sed -i '' 's/project\$CREATOR/SUPERVISOR/g' "$2"/WEB-INF/classes/users.properties # replace the deprecated project-CREATOR role with the new DB-level SUPERVISOR role
 
 		if [ "$(grep -c dumpFolder $2/WEB-INF/classes/config.properties)" -eq 0 ]; then
@@ -55,6 +55,12 @@ if [ -d "$1" ]; then
 		# applicationContext-security.xml has changed much in v2.5 so we don't want to keep that of the previous version. However, still make sure we keep the same passwordEncoder we had
 		if [ "$(grep 'id="passwordEncoder"' $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-security.xml | grep -v '<!--')" != "$(grep 'id="passwordEncoder"' $2/WEB-INF/classes/applicationContext-security.xml | grep -v '<!--')" ]; then
 			sed -i '' "s/.*PasswordEncoder.*//g;s/.*Only one passwordEncoder bean should be enabled at a time.*//g;s|</secur:http>|</secur:http>\n\n\n$(grep 'id="passwordEncoder"' $3/$backup_dir.$DATE/WEB-INF/classes/applicationContext-security.xml | grep -v '<!--')|g;" $2/WEB-INF/classes/applicationContext-security.xml
+		fi
+
+
+		# Changes specific to migration to v2.9
+		if [ "$(grep '<context:component-scan base-package' $1/WEB-INF/classes/applicationContext-MVC.xml)" != "$(grep '<context:component-scan base-package' $2/WEB-INF/classes/applicationContext-MVC.xml)" ]; then
+			sed -i "s|<context:component-scan base-package.*|<context:component-scan base-package=\"fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api,fr.cirad.web.controller,fr.cirad.service\" />|g" $2/WEB-INF/classes/applicationContext-MVC.xml
 		fi
 	fi
 fi

@@ -209,6 +209,7 @@ public class TokenManager extends AbstractTokenManager {
      *
      * @return List<String> readable modules
      */
+    @Override
     public Collection<String> listReadableDBs(String token) {
     	Authentication authentication = getAuthenticationFromToken(token);
     	Collection<String> authorizedModules = listReadableDBs(authentication == null ? null : userDao.getUserAuthorities(authentication));
@@ -435,5 +436,47 @@ public class TokenManager extends AbstractTokenManager {
 	    tokenToAuthenticationMap.put(token, auth);
 	    updateToken(token, System.currentTimeMillis());
 	    return token;
+    }
+    
+    @Override
+    public boolean canUserEditCallsInProject(String token, String sModule, int projectId) {
+    	Authentication authentication = getAuthenticationFromToken(token);
+    	boolean fResult = canUserEditCallsInProject(authentication == null ? null : userDao.getUserAuthorities(authentication), sModule, projectId);
+    	if (fResult)
+            updateToken(token, System.currentTimeMillis());
+        return fResult;
+    }
+    
+    @Override
+    public boolean canUserEditCallsInProject(Collection<? extends GrantedAuthority> authorities, String sModule, int projectId) {
+        if (authorities != null && authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)))
+            return true;
+
+        if (authorities == null)
+            return false;
+
+        if (userDao.getSupervisedModules(authorities).contains(sModule))
+            return true;
+        
+        Map<String, Map<String, Collection<Comparable>>> customRolesByEntityType = userDao.getCustomRolesByModuleAndEntityType(authorities).get(sModule);
+        if (customRolesByEntityType != null) {
+            Map<String, Collection<Comparable>> customRolesOnProjects = customRolesByEntityType.get(ENTITY_PROJECT);
+            if (customRolesOnProjects != null) {
+                Collection<Comparable> snpClustEditionRoles = customRolesOnProjects.get(ENTITY_SNPCLUST_EDITOR_ROLE);
+                if (snpClustEditionRoles == null)
+                    snpClustEditionRoles = customRolesOnProjects.get(IRoleDefinition.ENTITY_MANAGER_ROLE);
+                if (snpClustEditionRoles != null && snpClustEditionRoles.contains(projectId))
+                    return true;
+            }
+        }
+
+        Map<String, Collection<Comparable>> managedEntitesByType = userDao.getManagedEntitiesByModuleAndType(authorities).get(sModule);
+        if (managedEntitesByType != null) {
+                Collection<Comparable> managedProjects = managedEntitesByType.get(ENTITY_PROJECT);
+                if (managedProjects != null && managedProjects.contains(projectId))
+                        return true;
+        }
+        
+        return false;
     }
 }

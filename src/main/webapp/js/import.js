@@ -456,17 +456,23 @@ function isGenotypingDataFormValid(showAlerts) {
 
     if ($("#moduleExistingG").val() != '- new database -')
    		$("#moduleToImport").val($("#moduleExistingG").val());
+   	else if ($("#moduleExistingG option").filter(function(index) { return $(this).text() === $("#moduleToImport").val(); }).length > 0) {
+        $("#moduleExistingG").val($("#moduleToImport").val())
+        $("#moduleExistingG").selectpicker('refresh');
+        $("#moduleExistingG").change();
+    }
+
     if ($("#projectExisting").val() != null && $("#projectExisting").val() != '- new project -')
    		$("#projectToImport").val($("#projectExisting").val());
     if ($("#runExisting").val() != '- new run -')
    		$("#runToImport").val($("#runExisting").val());
 
     if (!isValidNewName($("#moduleToImport").val()) || !isValidNewName($("#projectToImport").val()) || !isValidNewName($("#runToImport").val())) {
-        alert("Database, project and run names must only consist in digits, accentless letters, dashes and hyphens!");
+        alert("Database, project and run names must only consist in digits, unaccented letters, dashes and hyphens!");
         $('#progress').modal('hide');
         return false;
     }
-    if (!isAdmin && $("#moduleToImport").val() == "")
+    if (!isAdmin && !hasDbCreatorRole && $("#moduleToImport").val() == "")
     	$("#moduleToImport").val(hashCode(token).toString(16) + "O" + hashCode(Date.now()).toString(16));
      
     if (importDropzoneG.getRejectedFiles().length > 0) {
@@ -582,11 +588,11 @@ function importGenotypes(importMetadataToo) {
 
     $('#progress').data('error', false);
     var taxonDetailsFieldContents = new Array();
-    if ($("#ncbiTaxon").attr('title') != "")
+    if ($("#ncbiTaxon").attr('data-id') != "")
     {
-    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('title'));
-        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('species') ? "" : $("#ncbiTaxon").val());
-        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('species'));
+    	taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-id'));
+        taxonDetailsFieldContents.push($("#ncbiTaxon").val() == $("#ncbiTaxon").attr('data-species') ? "" : $("#ncbiTaxon").val());
+        taxonDetailsFieldContents.push($("#ncbiTaxon").attr('data-species'));
     }
     
     $('#progressText').html("Please wait...");

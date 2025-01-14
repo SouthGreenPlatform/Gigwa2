@@ -363,7 +363,7 @@ function buildCustomisationDiv(chartInfo) {
                 let fieldName = jsonResult[key];
                 if (i == 0)
               		vcfMetadataSelectionHTML += '<div class="col-md-3" id="vcfFieldPlots"><p align="center">Additional series based on VCF genotype metadata:</p>';
-                vcfMetadataSelectionHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (i + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Cumulated ' + fieldName + ' data</label></div>';
+                vcfMetadataSelectionHTML += '<div><input id="chartVCFSeries_' + fieldName + '" type="checkbox" style="margin-top:0;" class="showHideSeriesBox" onchange="displayOrHideSeries(\'' + fieldName + '\', this.checked, ' + (i + chartTypes.get(currentChartType).series.length) + ')"> <label style="font-weight:normal;" for="chartVCFSeries_' + fieldName + '">Average ' + fieldName + ' data</label></div>';
                 i++;
             }
             if (i > 0)
@@ -754,14 +754,14 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
             chart.addAxis({ // Secondary yAxis
                 id: fieldName,
                 title: {
-                    text: "Cumulated " + fieldName
+                    text: "Average " + fieldName
                 },
                 lineWidth: 3,
                 lineColor: colorTab[colorIndex],
                 opposite: true,
             });
             chart.addSeries({
-                name: fieldName,
+                name: "Average " + fieldName,
                 type: 'spline',
                 lineWidth: 1,
                 color: colorTab[colorIndex],
@@ -889,7 +889,7 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
     if (chart === null)
         return;
         
-	if (isChecked && $("select#plotGroupingMetadataValues").val() == null) {
+	if (isChecked && $("select#plotGroupingMetadataValues").is(":visible") && $("select#plotGroupingMetadataValues").val() == null) {
 		alert("You must select some individuals to show this series");
 		$("input#chartVCFSeries_" + fieldName).prop("checked", false);
 		return;
@@ -908,7 +908,7 @@ function displayOrHideSeries(fieldName, isChecked, colorIndex) {
     }
     else {
         chart.series.forEach(function (element) {
-            if(element.name==fieldName){
+            if(element.name == "Average " + fieldName){
                 chart.get(fieldName).remove();
             }
         });
@@ -983,6 +983,7 @@ function updateAvailableGroups() {
 		            selectOptions += '<option value="' + value + '">' + value + '</option>';
 		        });
 		        groupSelect.html(selectOptions);
+		        $("select#plotGroupingMetadataValues").find('option').prop('selected', true);
 		        groupSelect.change();
 	        }
 	    });

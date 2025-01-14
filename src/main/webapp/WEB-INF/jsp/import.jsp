@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,org.springframework.security.core.context.SecurityContextHolder,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -28,6 +28,9 @@
 <c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
 <c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
 <c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
+<c:set var="loggedUser" value="<%=SecurityContextHolder.getContext().getAuthentication().getPrincipal()%>" />
+<c:set var='dbCreatorRole' value='<%= IRoleDefinition.ROLE_DB_CREATOR %>' />
+<c:set var="hasDbCreatorRole" value="false" /><c:if test="${'anonymousUser' != loggedUser}"><c:forEach var="authority" items="${loggedUser.authorities}"><c:if test="${authority == dbCreatorRole}"><c:set var="hasDbCreatorRole" value="true" /></c:if></c:forEach></c:if>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 
@@ -44,6 +47,7 @@
         <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
         <script type="text/javascript" src="js/common.js"></script>
+        <script type="text/javascript" src="js/moduleListCustomisation.js"></script>
         <script type="text/javascript" src="js/import.js"></script>
         <script type="text/javascript" src="js/dropzone.js"></script>
 		<script type="text/javascript" src="js/brapiV1.1_Client.js"></script>
@@ -74,7 +78,7 @@
    			var brapiGenotypesToken, distinctBrapiMetadataURLs;
    			var extRefIdField = "<%= BrapiService.BRAPI_FIELD_externalReferenceId %>";
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_externalReferenceSource %>";
-   			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin};
+   			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin}, hasDbCreatorRole = ${hasDbCreatorRole};
    			var supervisedModules = [];
    			<c:if test="${!isAnonymous}">
    				<sec:authentication property="principal.authorities" var="authorities" />
@@ -133,14 +137,13 @@
                                               <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."/></a>
                                              </div>
                                              <input type="hidden" id="ncbiTaxonIdNameAndSpecies" name="ncbiTaxonIdNameAndSpecies" />
-                                             <input id="ncbiTaxon" name="ncbiTaxon" onblur="grabNcbiTaxon($(this));" onfocus="if (isNaN($(this).attr('title'))) return; $(this).val($(this).attr('title')); $(this).removeAttr('title'); $(this).removeAttr('species');"
-                                              class="form-control text-input input-sm" style="min-width:100px; max-width:62%;" type="text" placeholder="Taxon id / name">
+                                             <input id="ncbiTaxon" name="ncbiTaxon" onclick="grabNcbiTaxon(this, prompt('Please specify NCBI taxon, preferrably by ID\n(enter blank string to clear out)'));" readonly class="form-control text-input input-sm" style="background-color:white; min-width:100px; max-width:62%;" type="text" title='Click to change selection'>
 											</div>
                                             <div class="col-md-1" style="padding-right:0px;">
                                             	<input id="ploidy" name="ploidy" class="form-control text-input input-sm" type='number' step="1" min="1" placeholder="ploidy" title="Specifying ploidy is recommended for HapMap and Flapjack formats (if left blank, guessing will be attempted and import will take longer)">
                                             </div>
                                             <div class="col-md-3" id="newModuleDiv">
-                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
+                                                <input id="moduleToImport" name="module" class="form-control text-input input-sm" type='<c:choose><c:when test="${isAdmin || hasDbCreatorRole}">text</c:when><c:otherwise>hidden</c:otherwise></c:choose>' placeholder="New database name">                                                    
                                             </div>
                                         </div>
                                     </div>
@@ -152,7 +155,7 @@
                                             <div class="col-md-3" id="hostDiv">
                                                 <select class="selectpicker" id="host" name="host" data-actions-box="true" data-width="100%" data-live-search="true"></select>
                                             </div>
-                                            <c:if test="${!isAdmin}">
+                                            <c:if test="${!isAdmin && !hasDbCreatorRole}">
                                        			<div class="col-md-3 text-red row">
                                             		<div class="col-md-1 glyphicon glyphicon-warning-sign" style="font-size:20px;"></div>
                                             		<div class="col-md-10" style="font-size:10px; margin-top:-1px;">You may only create temporary databases</div>

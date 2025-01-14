@@ -7,40 +7,56 @@
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<bean class="com.fasterxml.jackson.databind.ObjectMapper" />
+    <bean class="com.fasterxml.jackson.databind.ObjectMapper" />
 
     <mvc:annotation-driven>
-        <mvc:message-converters>       
+        <mvc:message-converters>
             <bean class="fr.cirad.rest.json.CustomMappingJackson2HttpMessageConverter" />
         </mvc:message-converters>
     </mvc:annotation-driven>
-    
-     <!-- Controllers, MongoTemplateManager,timer and api documentation-->
-    <context:component-scan base-package="fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api" />
+
+     <!-- Controllers, MongoTemplateManager,timer, api documentation, controller and service -->
+    <context:component-scan base-package="fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api, fr.cirad.web.controller, fr.cirad.service" />
 
     <bean class="fr.cirad.tools.GlobalExceptionHandler" />
-	
+
     <!-- swagger resources config -->
     <mvc:resources mapping="/swagger-ui/**" location="classpath:/META-INF/resources/webjars/springfox-swagger-ui/"/>
-    
+
     <!-- View resolver -->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="order" value="2" />
         <property name="prefix" value="/WEB-INF/jsp/"/>
         <property name="suffix" value=".jsp"/>
     </bean>
-    
+
 	<!-- Multi-part resolver (to handle file uploads) -->
 	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-        <property name="maxUploadSize" value="4294967296"/> <!-- 4 Gb -->
+        <property name="maxUploadSize" value="1073741824"/> <!-- 1 Gb -->
 	</bean>
-	
+
     <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
         <property name="exceptionMappings">
             <props>
                 <prop key="java.lang.Exception">/error/500</prop>
                 <prop key="java.lang.AccessDeniedException">/error/403</prop>
-            </props> 
+            </props>
         </property>
-    </bean> 
+    </bean>
+  
+    <bean class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="defaultEncoding" value="UTF-8"/>
+        <property name="host" value="smtp.host.url"/>	<!-- shall be adapted to point to your mail server -->
+        <!-- <property name="username" value="UN"/> -->	<!-- only used if mail.smtp.auth set to true -->
+        <!-- <property name="password" value="PW"/> -->	<!-- only used if mail.smtp.auth set to true -->
+        <property name="port" value="25"/>    			<!-- should normally be set to 587 if mail.smtp.auth is true, otherwise 25 -->
+        <property name="javaMailProperties">
+            <value>
+                mail.debug=false
+                mail.smtp.auth=false
+                mail.smtp.starttls.enable=false
+                mail.smtp.ssl.enable=false
+            </value>
+        </property>
+    </bean>
 </beans>
