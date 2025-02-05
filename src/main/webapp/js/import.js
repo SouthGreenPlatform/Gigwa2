@@ -29,6 +29,8 @@ window.onbeforeunload = function(e) {
 };
 
 $(document).ready(function () {
+	$('input#skipMonomorphic').prop("checked", localStorage.getItem('skipMonomorphicImport') == 1);
+
     Dropzone.autoDiscover = false;
 	
     $('#moduleProjectNavbar').hide();

@@ -212,7 +212,7 @@
                                         <div class="col-md-3">
                                          <input id="technology" name="technology" placeholder="Name of genotyping technology" class="form-control text-input input-sm" type="text">
                                      	</div>
-                                     	<div class="col-md-4"><input type='checkbox' checked sftyle="margin-top:3px;" id="skipMonomorphic" name="skipMonomorphic" /> <label class="bold text-left" for="skipMonomorphic">Skip monomorphic variants</label></div>
+                                     	<div class="col-md-4"><input type='checkbox' checked id="skipMonomorphic" name="skipMonomorphic" onchange='localStorage.setItem("skipMonomorphicImport", $(this).is(":checked") ? 1 : 0);' /> <label class="bold text-left" for="skipMonomorphic">Skip monomorphic variants</label></div>
                                     </div>
 		                           <hr style="border-style:solid; border-color:lightblue;">
 		                           <div class="text-left">
