@@ -27,6 +27,8 @@ public class HistoryUrlFeeder extends ToolsClientImpl {
     public ClientResponse historyUrlFeedRequest(final UrlFileUploadRequest request) throws IOException {
         final Map<String, String> uploadParameters = new HashMap<String, String>();
         String fileUrl = request.getFileUrl();
+        if (fileUrl.toLowerCase().endsWith(".vcf.gz"))
+        	request.setFileType("vcf_bgzip");
         
         if (isLocalURL(fileUrl)) {
         	if (isBinary(fileUrl)) {
@@ -37,7 +39,7 @@ public class HistoryUrlFeeder extends ToolsClientImpl {
                     
                     ToolsClient toolsClient = getGalaxyInstance().getToolsClient();
                     FileUploadRequest fur = new FileUploadRequest(request.getHistoryId(), tempFile);
-                    fur.setFileType(fileUrl.toLowerCase().endsWith(".vcf.gz") ? "vcf_bgzip" : request.getFileType());
+                    fur.setFileType(request.getFileType());
                     fur.setDatasetName(Paths.get(request.getFileUrl()).getFileName().toString());
                     ClientResponse resp = toolsClient.uploadRequest(fur);
                     
