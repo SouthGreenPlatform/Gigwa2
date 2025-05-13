@@ -239,6 +239,23 @@
     ]
   },
   {
+   "id": "olea_europaea_leccino",
+   "name": "Olea europaea var Leccino",
+   "fastaURL": "https://jbrowse.southgreen.fr/olea_europaea_leccino/seq/Olea_europaea_leccino.assembly.fasta",
+   "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_leccino/seq/Olea_europaea_leccino.assembly.fasta.fai",
+   "tracks": [
+     {
+       "name": "Locus",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://jbrowse.southgreen.fr/olea_europaea_leccino/gff3/Olea_europaea_leccino.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_leccino/gff3/Olea_europaea_leccino.gff3.gz.tbi",
+       "order": 0
+     }
+    ]
+  },
+  {
    "id": "citrus_maxima",
    "name": "Citrus maxima",
    "fastaURL": "https://jbrowse.southgreen.fr/citrus_maxima/seq/CITMA.fasta",
