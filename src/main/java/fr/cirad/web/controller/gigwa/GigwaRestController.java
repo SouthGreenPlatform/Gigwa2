@@ -1313,7 +1313,7 @@ public class GigwaRestController extends ControllerInterface {
 	
     @ApiIgnore
 	@GetMapping(value = BASE_URL + snpclustEditionURL)
-	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
+	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam final String projIDs) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 //		if (auth != null && (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) 
 //                        || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId)))) {
@@ -1322,7 +1322,7 @@ public class GigwaRestController extends ControllerInterface {
                         return "";
 
 	        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(projId));
+	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).in(Arrays.stream(projIDs.split(";")).map(pj -> Integer.parseInt(pj)).toList()));
 	        q.limit(3);
 	        q.fields().include(VariantRunData.FIELDNAME_SAMPLEGENOTYPES);
 	        Iterator<VariantRunData> it = mongoTemplate.find(q, VariantRunData.class).iterator();

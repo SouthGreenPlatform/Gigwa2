@@ -220,7 +220,7 @@ function buildSearchQuery(searchMode, pageToken) {
     let activeGroups = $(".genotypeInvestigationDiv").length;
 
     let query = {
-        "variantSetId": getProjectId(),
+        "variantSetId": getProjectId().join(","),
         "searchMode": searchMode,
         "getGT": false,
 

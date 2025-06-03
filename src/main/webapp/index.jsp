@@ -817,6 +817,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 		
 		$('#project').on('change', function() {
+			let projIDs = getProjectId();
+			if (projIDs == []) {
+				$('#searchPanel').hide();
+				return;
+			}
+
+			$('#searchPanel').show();
 			count = 0;
 			$("table#individualFilteringTable").html("");
 			$('#countResultPanel').hide();
@@ -831,7 +838,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				contentType: "application/json;charset=utf-8",
 		        headers: buildHeader(token, $('#assembly').val()),
 				data: JSON.stringify({
-					"studyDbIds": [getProjectId()]
+					"studyDbIds": projIDs
 				}),
 				success: function(jsonResult) {
 					$('#assembly').html("");
@@ -896,9 +903,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				}
 			});
 			
-			var projId = getProjectId().split("${idSep}");
 	        $.ajax({
-		        url: snpclustEditionURL + '?module=' +  projId[0] + "&project=" +  projId[1],
+		        url: snpclustEditionURL + '?module=' + $('#module').val() + "&projIDs=" + getProjectId().map(t => t.split(idSep[1])),
 		        type: "GET",
 		        dataType: "json",
 		        async: false,
@@ -910,6 +916,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					if (jsonResult == "")
 	      				$('#snpclust').hide();
 	      			else {
+	      				alert("multiProj");
 						$('#snpclust').prop('href', jsonResult + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset);
 						$('#snpclust').show();
 					}
@@ -1214,7 +1221,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 	function loadVariantTypes() {                
 	    $.ajax({
-	            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+	            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId().join(",")),
 	            type: "GET",
 	            dataType: "json",
 	            contentType: "application/json;charset=utf-8",
@@ -1239,7 +1246,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 			data: JSON.stringify({
-				"referenceSetDbIds": [/* $('#module').val() + "${idSep}" +*/ getProjectId() + "${idSep}" + $('#assembly').val()]
+				"referenceSetDbIds": getProjectId().map(t => t + idSep + $('#assembly').val())
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.result.data.length;
@@ -1291,7 +1298,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 "Authorization": "Bearer " + token
             },
             data: JSON.stringify({
-                "variantSetId": getProjectId(),
+                "variantSetId": getProjectId().join(","),
                 "name": null,
                 "pageSize": null,
                 "pageToken": null
@@ -1431,6 +1438,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     }
 
 	function loadVariantEffects() {
+		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1460,6 +1468,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
 	function loadNumberOfAlleles() {
+		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.NUMBER_ALLELE_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1485,6 +1494,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 	
 	function readPloidyLevel() {
+		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1622,6 +1632,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
     function loadVariantIds() {
+		alert("multiProj");
         var options = {
                 ajax:{
                     url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
@@ -1691,6 +1702,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     }
     
     function loadGeneIds() {
+		alert("multiProj");
         var options = {
                 ajax:{
                     url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENES_LOOKUP%>" />',
