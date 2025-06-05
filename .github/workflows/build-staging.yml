@@ -1,0 +1,114 @@
+name: Gigwa Staging Version Build 
+on:
+  push:
+    tags:
+      - 'STAGING'
+jobs:
+  pre-realese:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.6
+
+      - name: Set up Java
+        uses: actions/setup-java@v4.2.1
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Build project
+        run: |
+          wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build-staging.sh
+          chmod +x build-staging.sh
+          ./build-staging.sh -P staging
+          pwd
+          ls
+
+      - name: Delete old prelease and tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=$(basename ${{ github.ref }})
+          echo "Deleting release and tag $TAG_NAME"
+
+          # Get the release ID associated with the tag
+          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+            | jq -r '.id')
+
+          if [ "$RELEASE_ID" != "null" ]; then
+            echo "Deleting release with ID $RELEASE_ID"
+            # Delete the release
+            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+          else
+            echo "No release found for tag $TAG_NAME"
+          fi
+
+          # Delete the tag locally
+          git tag -d $TAG_NAME
+          # Delete the tag from the remote repository
+          git push origin :refs/tags/$TAG_NAME
+
+      - name: Set up variables
+        id: vars
+        run: |
+          echo "DATE=$(date +'%d/%m/%y')" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "NEW_NAME=Gigwa2_STAGING" >> $GITHUB_ENV
+
+      - name: Create prerelease
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "STAGING"
+          release_name: "STAGING"
+          draft: false
+          prerelease: true
+          body: "This is a staging prerelease ${{ env.DATE }} ${{ env.SHORT_SHA }}"
+
+      - name: Grep release version
+        id: grep_release_version
+        run: |
+          # RESULT=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')
+          echo "release_version=$(grep -m 1 project\\\.version ${{ github.event.repository.name }}/pom.xml | sed -n 's/.*<project\.version>\(.*\)<\/project\.version>.*/\1/p')" >>$GITHUB_OUTPUT
+        shell: bash
+
+      - name: Upload main prerelease asset (webapp zip)
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.event.repository.name }}/target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
+          asset_name: ${{ env.NEW_NAME }}.zip
+          asset_content_type: application/zip
+
+#  ssh:
+#    runs-on: ubuntu-latest
+#    needs: build
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: Install OpenVPN
+#        run: |
+#          sudo apt update
+#          sudo apt install -y openvpn openvpn-systemd-resolved
+#      - name: Connect to VPN
+#        uses: "kota65535/github-openvpn-connect-action@v2"
+#        with:
+#          config_file: .github/workflows/client.ovpn
+#          username: ${{ secrets.OVPN_USERNAME }}
+#          password: ${{ secrets.OVPN_PASSWORD }}
+#          client_key: ${{ secrets.USER_KEY }}
+#      - name: Use SSH
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.SERVER_HOST }}
+#          username: ${{ secrets.SERVER_USERNAME }}
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          script: |
+#            ls

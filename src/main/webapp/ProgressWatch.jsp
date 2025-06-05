@@ -16,13 +16,15 @@
 --%>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.web.controller.gigwa.GigwaRestController"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 
 <html>
 
 <head>
     <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="<c:url value="/js/main.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/js/common.js" />"></script>
 	<link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 	<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
     <link type="text/css" rel="stylesheet" href="css/main.css">
@@ -30,12 +32,39 @@
 		var progressUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROGRESS_PATH%>' />";
 		var abortUrl = "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ABORT_PROCESS_PATH%>' />";
 
-		var destinationLink = "${param.successURL}";
-		var fileName = destinationLink.substring(destinationLink.lastIndexOf("/") + 1);
+		var downloadURL = "${param.successURL}";
+		var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
 		if (fileName.startsWith("?"))
 			fileName = location.origin + '<c:url value='/' />' + fileName;
 		
 		var processAborted = false;
+		
+		<c:if test="${param.exportFormat != null}">
+		var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
+		var onlineOutputTools = null;
+		
+		var igvDataLoadPort, igvGenomeListUrl;
+		<c:set var="igvDataLoadPort" value="<%= appConfig.get(\"igvDataLoadPort\") %>"></c:set>
+		<c:set var="igvGenomeListUrl" value="<%= appConfig.get(\"igvGenomeListUrl\") %>"></c:set>
+		<c:if test='${!fn:startsWith(igvDataLoadPort, "??") && !empty igvDataLoadPort && !fn:startsWith(igvGenomeListUrl, "??") && !empty igvGenomeListUrl}'>
+		igvDataLoadPort = ${igvDataLoadPort};
+		igvGenomeListUrl = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.IGV_GENOME_LIST_URL %>" />';
+		</c:if>
+
+		$.ajax({
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_OUTPUT_TOOLS_URL%>" />',
+			async: true,
+			type: "GET",
+			contentType: "application/json;charset=utf-8",
+			success: function(labelsAndURLs) {
+				onlineOutputTools = labelsAndURLs;
+				onlineOutputTools["Custom tool"] = {"url" : "", "formats" : ""};
+			},
+			error: function(xhr, thrownError) {
+				handleError(xhr, thrownError);
+			}
+		});
+		</c:if>
 		
 		function watchProgress()
 		{
@@ -45,19 +74,35 @@
 		        async: false,
 		        <c:if test="${param.token != null}">headers: { "Authorization": "Bearer ${param.token}" },</c:if>
 		        success: function (jsonResult) {
-		            if (jsonResult == null)
-		            	$('body').append('<center><p style="margin-top:60px;" class="bold">No such process is running at the moment.</p><p>Refresh to try again or use the link below to access resulting data in case the process has already finished:<br/><br/><a style="cursor:pointer;" href="' + destinationLink + '">' + (fileName == '?' ? destinationLink : fileName) + '</a></p></center>');
+		            if (jsonResult == null) {
+		            	$('body').append('<center id="defaultMsg"><p style="margin-top:60px;" class="bold">No such process is running at the moment.</p><p>Refresh to try again or use the link below to access resulting data in case the process has already finished:<br/><br/><a style="cursor:pointer;" href="' + downloadURL + '">' + (fileName == '?' ? downloadURL : fileName) + '</a></p></center>');
+		            	<c:if test="${param.exportFormat != null}">
+		            	$.ajax({
+		            	    type: 'HEAD',
+		            	    url: downloadURL,
+		            	    success: function(data, textStatus, jqXHR) {
+		            	        if (jqXHR.status >= 200 && jqXHR.status < 300) {
+				            		successFunction();
+				            		$("#defaultMsg").remove();
+		            	        }
+		            	    }
+		            	});
+		            	</c:if>
+		            }
 		            else
 		            {
 		        		$('#progress').modal({backdrop: 'static', keyboard: false, show: true});
 		        		$('.modal-backdrop.in').css('opacity', '0.1');
-		        		displayProcessProgress(5, <c:choose><c:when test="${param.token != null}">'${param.token}'</c:when><c:otherwise>null</c:otherwise></c:choose>, '${param.process}');
+		        		displayProcessProgress(5, <c:choose><c:when test="${param.token != null}">'${param.token}'</c:when><c:otherwise>null</c:otherwise></c:choose>, '${param.process}'<c:if test="${param.exportFormat != null}">, successFunction</c:if>);
 		        		
 		                $('#progress').on('hidden.bs.modal', function () {
 		                	if (processAborted)
 		                		$('body').append('<center><p style="margin-top:60px;" class="bold">Process aborted</p></center>');
+		                	<c:if test="${param.exportFormat == null}">
 		                	else if (!$('#progress').data('error'))
-		        	            $('body').append('<center><p style="margin-top:60px;" class="bold">Process has completed. Data is now <a style="cursor:pointer;" href="' + destinationLink + '">available here</a></center>');
+		        	            $('body').append('<center><p style="margin-top:60px;" class="bold">Process has completed. Data is now <a style="cursor:pointer;" href="' + downloadURL + '">available here</a></center>');
+		                	</c:if>
+		                	$('#progress').off('hidden.bs.modal');
 		                });
 		            }
 		        },
@@ -67,18 +112,36 @@
 	    	});
 	    	$("div.modal-backdrop").remove();
 		}
+		
+		<c:if test="${param.exportFormat != null}">
+		function successFunction() {
+				let fileExtensions = "${param.exportFormatExtensions}".split(";");
+				<c:if test="${param.exportedTsvMetadata eq true}">
+				fileExtensions.push("tsv");
+				</c:if>
+				showServerExportBox(${param.keepExportOnServ}, fileExtensions);
+		}
+		</c:if>
 	</script>
 	<title>Gigwa process watcher</title>
 </head>
 
-<body style='background-color:#f0f0f0;' onload="$('button#abortButton').css('display', ${param.abortable eq 'true'} ? 'inline' : 'none'); watchProgress();">
+<body style='background-color:#f0f0f0;' onload="$('button#abort').css('display', ${param.abortable eq 'true'} ? 'inline' : 'none'); watchProgress();">
+	<c:if test="${param.exportFormat != null}">
+		<input type="hidden" id="exportFormat" value="${param.exportFormat}" />
+		<input type="hidden" id="module" value="${param.module}" />
+		<input type="hidden" id="galaxyInstanceURL" value="${param.galaxyInstanceUrl}" />
+		<input type="hidden" id="exportedIndividualCount" value="${param.exportedIndividualCount}" />
+		<input type="hidden" id="count" value="${param.exportedVariantCount}" />
+	</c:if>
 	<div style='background-color:white; width:100%; padding:5px;'><img src="<c:url value='/images/logo.png' />" height="25"></div>
 	<div id='progress' style='margin-top:50px; margin-left:20%; width:60%; display:block; text-align:center; display:none;'>
 		<p>This process is running as a background task.</p>
 		<p>You may leave the main Gigwa page and either keep this one open or copy its URL to check again later.</p>
-		<h2 id="progressText" class="loading-message" style='margin-top:50px'>Please wait...</h2>
-		<button class="btn btn-danger btn-sm" id="abortButton" style="display:none;" type="button" name="abort" onclick="if (confirm('Are you sure?')) abort('${param.process}');">Abort</button>
+		<h2 id="progressText" class="loading-message" style='margin-top:100px'>Please wait...</h2>
+		<button class="btn btn-danger btn-sm" id="abort" style="display:none;" type="button" name="abort" onclick="if (confirm('Are you sure?')) abort('${param.process}');">Abort</button>
 	</div>
+	<div id="serverExportBox" class="panel" style="position:absolute; margin:0; top:50px; left:calc(50% - 250px); width:400px;"></div>
 </body>
 
 </html>

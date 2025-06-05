@@ -55,7 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
-import fr.cirad.model.GigwaSearchVariantsRequest;
+import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
@@ -522,7 +522,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchVariantsRequest gsvr) throws IOException {
+    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws IOException {
 
         String token = tokenManager.readToken(request);
         String id = gsvr.getVariantSetId();
