@@ -711,10 +711,9 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -736,7 +735,6 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param resp
 	 * @param gdr
-	 * @param variantSetId
 	 * @return Map<Long, Double> containing Fst data in JSON format
 	 * @throws Exception
 	 */
@@ -745,10 +743,9 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + FST_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -770,7 +767,6 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param resp
 	 * @param gdr
-	 * @param variantSetId
 	 * @return List<Map<Long, Double>> containing TajimaD data in JSON format
 	 * @throws Exception
 	 */
@@ -779,10 +775,9 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
@@ -804,7 +799,6 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @param resp
 	 * @param gdr
-	 * @param variantSetId
 	 * @return Map<Long, Float> containing density data in JSON
 	 *         format
 	 * @throws Exception
@@ -814,10 +808,9 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + MAF_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + MAF_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
