@@ -885,7 +885,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
 			
-			currentChartType = null;
+// 			currentChartType = null;
 			
 			$.ajax({	// load runs
 				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
@@ -2737,6 +2737,81 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             $(event.target).val(paste);
         }
     }
+    
+ 	// Required by chart.js
+    function getChartDistinctSequenceList() {
+    	let result;
+    	$.ajax({
+            url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
+            type: "GET",
+            async: false,
+            headers: buildHeader(token, $('#assembly').val()),
+            success: function (jsonResult) {
+            	result = jsonResult;
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                handleError(xhr, thrownError);
+            }
+        });
+        return result;
+    }
+
+    // Beginning of: Methods for configuring chart.js
+    function getChartDistinctTypes() {
+    	return getSelectedTypes().split(";");
+    }
+    
+    function getChartModule() {
+ 		return referenceset;
+ 	}
+ 	
+    function getChartDensityDataURL() {
+ 		return selectionDensityDataURL;
+ 	}
+ 	
+    function getChartMafDataURL() {
+ 		return selectionMafDataURL;
+ 	}
+ 	
+    function getChartFstDataURL() {
+ 		return selectionFstDataURL;
+ 	}
+ 	
+    function getChartTajimaDDataURL() {
+ 		return selectionTajimaDDataURL;
+ 	}
+ 	
+    function getChartSearchableVcfFieldListURL() {
+ 		return searchableVcfFieldListURL;
+ 	}
+    
+    function getAllIndividuals() {
+    	return indOpt;
+    }
+    
+    function getChartInitialRange() {
+    	return [$('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()), $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())];
+    }
+    
+    function getChartProjectIDs() {
+    	return $('#project :selected').data("id");
+    }
+    
+    function getChartCallSetMetadataFields() {
+    	return callSetMetadataFields;
+    }
+    
+    function getChartIndividualGroupsBasedOnMainUISelection() {
+		let selectOptions = new Object();
+		for (var i=1; i<=getGenotypeInvestigationMode(); i++)
+			selectOptions[i] = $("input#group" + i).val();
+		return selectOptions;
+	}
+    
+    function generateChartProcessID() {
+    	return null;	// means: use token
+    }
+ 	// End of: Methods for configuring chart.js
 
     // Attach paste handler to the inputs using jQuery
     $('#minposition, #maxposition').on('paste', handleRangePaste);
