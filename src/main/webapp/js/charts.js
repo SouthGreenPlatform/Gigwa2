@@ -114,22 +114,17 @@ function initializeChartDisplay() {
         alert("getChartDensityDataURL() is not defined!");
         return;
     }
-    if (typeof getChartProjectIDs == "undefined")
-    {
-        alert("getChartProjectIDs() is not defined!");
-        return;
-    }
-    if (typeof getAllIndividuals == "undefined")
-    {
-        alert("getAllIndividuals() is not defined!");
-        return;
-    }
     if (typeof generateChartProcessID == "undefined")
     {
         alert("generateChartProcessID() is not defined!");
         return;
     }
-	if (typeof getChartIndividualGroupsBasedOnMainUISelection == "undefined")
+	if (typeof buildChartDataPayLoad == "undefined")
+    {
+        alert("buildChartDataPayLoad() is not defined!");
+        return;
+    }
+  	if (typeof getChartIndividualGroupsBasedOnMainUISelection == "undefined")
     {
         alert("getChartIndividualGroupsBasedOnMainUISelection() is not defined!");
         return;
@@ -306,32 +301,7 @@ function initializeChartDisplay() {
 	});
 
 
-    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
-//    var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");
-//    $.ajax({
-//        url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
-//        type: "GET",
-//        headers: buildHeader(token, $('#assembly').val()),
-//        success: function (jsonResult) {
-//        	if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
-//        		selectedSequences = jsonResult;
-//        	feedSequenceSelectAndLoadVariantTypeList(
-//                    selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
-//                    selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
-//    		applyChartType();
-//        },
-//        error: function (xhr, ajaxOptions, thrownError) {
-//            handleError(xhr, thrownError);
-//        }
-//    });
-    
-    
-    
-//    if (selectedSequences.length == 0 || jsonResult.length < selectedSequences.length)
-//		selectedSequences = jsonResult;
-		
-		
-		
+    $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');		
 	let selectedSequences = getChartDistinctSequenceList(), selectedTypes = getChartDistinctTypes();
 	feedSequenceSelectAndLoadVariantTypeList(
             selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
@@ -485,34 +455,6 @@ function applyChartType() {
     loadChart();
 }
 
-function buildDataPayLoad(displayedSequence, displayedVariantType) {
-    let activeGroups = $(".genotypeInvestigationDiv").length;
-	let query = {
-        "variantSetId": getChartProjectIDs(),
-        "discriminate": typeof getDiscriminateArray == "undefined" ? [] : getDiscriminateArray(),
-        "displayedSequence": displayedSequence,
-        "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
-        "displayedRangeMin": localmin,
-        "displayedRangeMax": localmax,
-        "displayedRangeIntervalCount": displayedRangeIntervalCount,
-		"callSetIds": callSetIds.length > 0 ? callSetIds : getAllIndividuals().map(ind => getProjectId() + idSep + ind),
-		"additionalCallSetIds": additionalCallSetIds,
-        "start": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[0],
-        "end": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[1]
-    };
-    
-	query.annotationFieldThresholds = [];
-    for (let i = 0; i < activeGroups; i++) {
-        var threshold = {};
-        $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
-            if (parseInt($(this).val()) > 0)
-                threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
-        });
-        query.annotationFieldThresholds.push(threshold);
-    }
-    return query;
-}
-
 function loadChart(minPos, maxPos) {    
     var zoomApplied = minPos != null && maxPos != null;
     if (zoomApplied)
@@ -565,7 +507,7 @@ function displayChart(minPos, maxPos) {
     
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();
-    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+    var dataPayLoad = buildChartDataPayLoad(displayedSequence, displayedVariantType);
     if (dataPayLoad === null)
     	return;
 
@@ -775,7 +717,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     
     var displayedSequence = $("select#chartSequenceList").val();
     var displayedVariantType = $("select#chartVariantTypeList").val();   
-    var dataPayLoad = buildDataPayLoad(displayedSequence, displayedVariantType);
+    var dataPayLoad = buildChartDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
   
   	let processID = generateChartProcessID();
@@ -1020,7 +962,7 @@ function updateAvailableGroups() {
 	        contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 	        success: function (metaDataValues) {
-				$("#chartGroupSelectionDesc").css("visibility", selectedIndividuals.length == 0 || selectedIndividuals.length == getAllIndividuals().length ? "hidden" : "visible");
+				$("#chartGroupSelectionDesc").css("visibility", selectedIndividuals.length == 0 || selectedIndividuals.length == indOpt.length ? "hidden" : "visible");
 
 				if (Object.keys(metaDataValues).length > 0)
 			        metaDataValues[option].forEach(function (mdVal) {

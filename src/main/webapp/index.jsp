@@ -2785,18 +2785,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
  		return searchableVcfFieldListURL;
  	}
     
-    function getAllIndividuals() {
-    	return indOpt;
-    }
-    
     function getChartInitialRange() {
     	return [$('#minposition').val() === "" ? -1 : parseInt($('#minposition').val()), $('#maxposition').val() === "" ? -1 : parseInt($('#maxposition').val())];
     }
-    
-    function getChartProjectIDs() {
-    	return $('#project :selected').data("id");
-    }
-    
+       
     function getChartCallSetMetadataFields() {
     	return callSetMetadataFields;
     }
@@ -2810,6 +2802,34 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     
     function generateChartProcessID() {
     	return null;	// means: use token
+    }
+    
+    function buildChartDataPayLoad(displayedSequence, displayedVariantType) {
+        let activeGroups = $(".genotypeInvestigationDiv").length;
+    	let query = {
+            "variantSetId": $('#project :selected').data("id"),
+            "discriminate": typeof getDiscriminateArray == "undefined" ? [] : getDiscriminateArray(),
+            "displayedSequence": displayedSequence,
+            "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
+            "displayedRangeMin": localmin,
+            "displayedRangeMax": localmax,
+            "displayedRangeIntervalCount": displayedRangeIntervalCount,
+    		"callSetIds": callSetIds.length > 0 ? callSetIds : indOpt.map(ind => getProjectId() + idSep + ind),
+    		"additionalCallSetIds": additionalCallSetIds,
+            "start": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[0],
+            "end": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[1]
+        };
+        
+    	query.annotationFieldThresholds = [];
+        for (let i = 0; i < activeGroups; i++) {
+            var threshold = {};
+            $(`#vcfFieldFilterGroup${i + 1} input`).each(function() {
+                if (parseInt($(this).val()) > 0)
+                    threshold[this.id.substring(0, this.id.lastIndexOf("_"))] = $(this).val();
+            });
+            query.annotationFieldThresholds.push(threshold);
+        }
+        return query;
     }
  	// End of: Methods for configuring chart.js
 
