@@ -885,7 +885,6 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 * @param gvfpr
-	 * @param variantSetId
 	 * @return Map<String, Map<Long, Long>> containing plot data in JSON format
 	 * @throws Exception
 	 */
@@ -894,9 +893,9 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 400, message = "wrong parameters"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbVcfFieldPlotRequest gvfpr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gvfpr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {

@@ -27,6 +27,7 @@ var emptyResponseCountsByProcess = [];
 var cachedResults;
 var callSetIds = [], additionalCallSetIds = [];
 const chartTypes = new Map();
+let processID;
 
 function chartIndSelectionChanged() {
 	callSetIds = [];
@@ -129,6 +130,11 @@ function initializeChartDisplay() {
         alert("getChartIndividualGroupsBasedOnMainUISelection() is not defined!");
         return;
     }
+  	if (typeof getSelectedIndividuals == "undefined")
+    {
+        alert("getSelectedIndividuals() is not defined!");
+        return;
+    }
     if (abortUrl == null)
     {
         alert("abortUrl is not defined!");
@@ -140,7 +146,11 @@ function initializeChartDisplay() {
         return;
     }
     
-    currentChartType = null;	
+    currentChartType = null;
+    localmin = null;
+    localmax = null;
+    dataBeingLoaded = false;
+    processID = generateChartProcessID();
 	const potentialChartTypes = [
 	    {
 	        key: "density",
@@ -328,11 +338,11 @@ function getGroupingOptions() {
 }
 
 function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
-    const headerHtml = ('<div id="resetZoom" value="Zoom out" style="display:none; float:right; margin-top:3px; height:25px;"><input value="Zoom out" type="button" onclick="displayChart(prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][0], prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][1]);">&nbsp;<input value="Reset zoom" type="button" onclick="displayChart();"></div>' +
-                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:150px; font-weight:bold;">&nbsp;</div>' +
-                        '<form><div style="padding:3px; width:100%; background-color:#f0f0f0;">' +
+    const headerHtml = ('<div id="resetZoom" value="Zoom out" style="display:none; float:right; margin-top:5px; height:25px;"><input value="Zoom out" type="button" onclick="displayChart(prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][0], prevRanges.length == 0 ? null : prevRanges[prevRanges.length - 1][1]);">&nbsp;<input value="Reset zoom" type="button" onclick="displayChart();"></div>' +
+                        '<div id="densityLoadProgress" style="position:absolute; margin:10px; right:250px; font-weight:bold;">&nbsp;</div>' +
+                        '<form><div style="padding:3px; width:100%; background-color:#f0f0f0; padding-left:5px;" class="chartDataSelection">' +
                             'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
-                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="loadChart();"></select>' + 
+                            'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="cachedResults = {}; loadChart();"></select>' + 
                             'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
                         '</div></form>');
     $(headerHtml).insertBefore('div#densityChartArea');
@@ -365,7 +375,7 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 
 function buildCustomisationDiv(chartInfo) {
 	var vcfMetadataSelectionHTML = "";
-	if (typeof getChartSearchableVcfFieldListURL !== "undefined")
+	if (typeof getChartSearchableVcfFieldListURL !== "undefined" && typeof getChartVcfFieldDataURL !== "undefined")
 	    $.ajax({    // load searchable annotations
 	        url: getChartSearchableVcfFieldListURL() + '/' + encodeURIComponent(getProjectId()),
 	        type: "GET",
@@ -517,7 +527,6 @@ function displayChart(minPos, maxPos) {
         if (cachedResult != null)
             displayResult(chartInfo, cachedResult, displayedVariantType, displayedSequence);
         else {
-			let processID = generateChartProcessID();
             $.ajax({
                 url: chartInfo.queryURL + (processID == null ? "" : ("?processID=" + processID)),
                 type: "POST",
@@ -712,6 +721,9 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
+	if (typeof getChartSearchableVcfFieldListURL == "undefined" || typeof getChartVcfFieldDataURL == "undefined")
+		return;
+
     localmin = minPos;
     localmax = maxPos;
     
@@ -720,9 +732,9 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
     var dataPayLoad = buildChartDataPayLoad(displayedSequence, displayedVariantType);
     dataPayLoad["vcfField"] = fieldName;
   
-  	let processID = generateChartProcessID();
+  	let mdProcessID = fieldName + "__" + processID;
     $.ajax({
-        url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")) + (processID == null ? "" : ("?processID=" + processID)),
+        url: getChartVcfFieldDataURL() + (mdProcessID == null ? "" : ("?processID=" + mdProcessID)),
         type: "POST",
         contentType: "application/json;charset=utf-8",
 		headers: buildHeader(token, $('#assembly').val()),
@@ -770,7 +782,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
             finishProcess();
         }
     });
-    startProcess(processID);
+    startProcess(mdProcessID);
 }
 
 function startProcess(processID) {
@@ -809,7 +821,7 @@ function finishProcess() {
 
 function abortOngoingOperation() {
     $.ajax({
-        url: abortUrl,
+        url: abortUrl + (processID == null ? "" : ("?processID=" + processID)),
         type: "DELETE",
 		headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
