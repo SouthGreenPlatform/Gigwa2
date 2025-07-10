@@ -222,9 +222,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</div>
 						</div>
 					</div>
+					<div>
+						<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked'));" class="input-checkbox" schecked="checked"> Work on samples
+					</div>
 				</div>
 			</div>
-			
+
 			<!-- Variant table panel -->
 			<div class="col-md-9">
 				<div id="serverExportBox" class="panel"></div>
@@ -727,7 +730,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var listBookmarkedQueriesURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.LIST_SAVED_QUERIES_URL%>" />';
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
+	var distinctSampleMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SAMPLE_METADATA %>" />';
 	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
+	var filterSampleMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_SAMPLE_METADATA %>" />';
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
 	var downloadURL;
@@ -1281,6 +1286,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         if (individualSubSet.length == 1 && individualSubSet[0] == "")
             individualSubSet = null;
 
+        let workWithSamples = $('#workWithSamples').is(':checked');
         $.ajax({
             url: searchCallSetsUrl,
             type: "POST",
@@ -1288,7 +1294,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             async: false,
             contentType: "application/json;charset=utf-8",
             headers: {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "workWithSamples": workWithSamples
             },
             data: JSON.stringify({
                 "variantSetId": getProjectId(),
@@ -1350,7 +1357,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     });
                     setTimeout(function () {
                         var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
-                        headerRow.append("<thead><tr valign='top'><td></td><th>Individual</th>");
+                        headerRow.append("<thead><tr valign='top'><td></td><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
                         for (var i in callSetMetadataFields) {
                             headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
                             exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
@@ -1595,7 +1602,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
                 timeout:0,
-    	        headers: buildHeader(token, $('#assembly').val()),
+    	        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
                 data: JSON.stringify(query),
                 success: function(jsonResult) {
                         $('#savequery').css('display', jsonResult.count == 0 ? 'none' : 'block');

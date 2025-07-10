@@ -259,7 +259,9 @@ public class GigwaRestController extends ControllerInterface {
     static public final String GENES_LOOKUP = "/genes/lookup";
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
+	static public final String DISTINCT_SAMPLE_METADATA = "/distinctSampleMetadata";
 	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
+	static public final String FILTER_SAMPLE_METADATA = "/filterSamplesFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 
@@ -1051,7 +1053,7 @@ public class GigwaRestController extends ControllerInterface {
 
                 Authentication authentication = tokenManager.getAuthenticationFromToken(token);
                 gsver.setApplyMatrixSizeLimit(!"BED".equals(gsver.getExportFormat()) && (authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))));
-                ga4ghService.exportVariants(gsver, token, resp);
+                ga4ghService.exportVariants(gsver, "true".equalsIgnoreCase(request.getHeader("workWithSamples")), token, resp);
             } else {
                 build403Response(resp);
             }
@@ -1200,7 +1202,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<Object, String> endpointByIndividualOrSample = null;
 		if (MongoTemplateManager.get(sModule) != null) { // Start with what we've currently got in the database
 			endpointByIndividualOrSample = "sample".equals(metadataType) ? 
-					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
+					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
@@ -1569,7 +1571,7 @@ public class GigwaRestController extends ControllerInterface {
 		                            }
 	                        }
 	                        else if ("sample".equals(metadataType)) {
-	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null).values();
+	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
 	                            for (GenotypingSample sample : genotypingSamples)
 	                                if (sample.getAdditionalInfo() != null) {
 	                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -2551,13 +2553,29 @@ public class GigwaRestController extends ControllerInterface {
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
 		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
 	}
-
+    
+    @ApiIgnore
+	@RequestMapping(value = BASE_URL + DISTINCT_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public LinkedHashMap<String, Set<String>> distinctSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().distinctSampleMetadata(module, sUserName, projID, null);
+	}
+    
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
 	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
 		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
+	}
+	
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + FILTER_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+		return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")

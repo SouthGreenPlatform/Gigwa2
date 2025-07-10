@@ -115,6 +115,22 @@ function fillWidgets() {
     loadGeneIds();
 }
 
+function showSamples(samplesRatherThanIndividuals) {
+	loadIndividuals();
+    var multipleSelectOpts = {
+        text: samplesRatherThanIndividuals ? 'Samples' : 'Individuals',
+        data: indOpt,
+        placeholder: 'Lookup'
+    }
+
+    for (var i = 1; i <= getGenotypeInvestigationMode(); i++) {
+   		let individualsElement = $('#Individuals' + i);
+	    individualsElement.selectmultiple(multipleSelectOpts);
+	    var nCount = individualsElement.selectmultiple('count');
+	    $('#individualsLabel' + i + " span").html((nCount == 0 ?  indOpt.length : nCount) + "/" +  indOpt.length);
+	}
+}
+
 function loadSearchableVcfFields() {
     $.ajax({    // load searchable annotations
         url: searchableVcfFieldListURL + '/' + encodeURIComponent(getProjectId()),
@@ -431,6 +447,9 @@ function applyGenomeBrowserURL() {
 }
 
 function markInconsistentGenotypesAsMissing() {
+	if ($('#workWithSamples').is(':checked'))
+		return;	// considering each sample as separate biological material
+
 	var multiSampleIndividuals = new Set();
 	var displayedIndividuals = new Set();
 	$('table.genotypeTable tr th:first-child').map(function() {
@@ -725,7 +744,7 @@ function addSelectionDropDownsToHeaders(tableObj)
         return;
 
     $.ajax({
-        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
         type: "POST",
         data : "{}",
         contentType: "application/json;charset=utf-8",
@@ -796,21 +815,22 @@ function applyDropDownFiltersToTable(tableObj, reset)
 	ifTable.append("<tr><th style='padding:50px; background-color:#eeeeee;' colspan='" + (1 + ifTable.find("tr:eq(0)").children().length) + "'>Loading...<br/><br/><img src='images/progress.gif' /></th></tr>");
 	
     $.ajax({
-        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        url: ($('#workWithSamples').is(':checked') ? filterSampleMetadata : filterIndividualMetadata) + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
         data: JSON.stringify(filters),
         success: function (jsonResult) {
             var dataRows = new StringBuffer();
-            for (var ind in jsonResult) {
-                dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + jsonResult[ind].id + "</span></td>");
-                for (var i in headers) {
-                    var value = jsonResult[ind].additionalInfo[headers[i]];
-                    dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
-                }
-                dataRows.append("</tr>");
-            }
+            for (var ind in jsonResult)
+	            if (jsonResult[ind] !== null) {
+	                dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + jsonResult[ind].id + "</span></td>");
+	                for (var i in headers) {
+	                    var value = jsonResult[ind].additionalInfo[headers[i]];
+	                    dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
+	                }
+	                dataRows.append("</tr>");
+	            }
             $("table#individualFilteringTable tr:eq(1)").replaceWith(dataRows.toString());
             updateFilteredIndividualCount();
         }

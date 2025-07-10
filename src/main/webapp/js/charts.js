@@ -202,7 +202,7 @@ function chartIndSelectionChanged() {
 			        type: "POST",
 			        async: false,
 			        contentType: "application/json;charset=utf-8",
-			        headers: buildHeader(token, $('#assembly').val()),
+			        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
 			        data: JSON.stringify(filters),
 			        success: function (callSetResponse) {
 		                callSetResponse.forEach(function (callset) {
@@ -533,7 +533,7 @@ function displayChart(minPos, maxPos) {
                 url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")),
                 type: "POST",
                 contentType: "application/json;charset=utf-8",
-                headers: buildHeader(token, $('#assembly').val()),
+                headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
                 data: JSON.stringify(dataPayLoad),
                 success: function(jsonResult) {
                     if (jsonResult.length == 0)
@@ -735,7 +735,7 @@ function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
         url: 'rest/gigwa/vcfFieldPlotData/' + encodeURIComponent($('#project :selected').data("id")),
         type: "POST",
         contentType: "application/json;charset=utf-8",
-		headers: buildHeader(token, $('#assembly').val()),
+		headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
         data: JSON.stringify(dataPayLoad),
         success: function(jsonResult) {
             if (jsonResult.length == 0)

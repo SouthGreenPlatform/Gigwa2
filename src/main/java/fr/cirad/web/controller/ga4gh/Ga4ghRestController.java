@@ -18,8 +18,11 @@ package fr.cirad.web.controller.ga4gh;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,6 +55,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
@@ -61,6 +66,7 @@ import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.security.TokenManager;
+import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -102,6 +108,8 @@ public class Ga4ghRestController extends ControllerInterface {
     static public final String REFERENCESETS_SEARCH = "/referencesets/search";
     
     static public final String BASES = "/bases";
+    
+    @Autowired private MgdbDao mgdbDao;
 
     /**
      * get bases from reference sequence
@@ -386,8 +394,73 @@ public class Ga4ghRestController extends ControllerInterface {
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
-	        	callSetsRequest.setRequest(request);
-	            return service.searchCallSets(callSetsRequest);
+	        	if (!"true".equalsIgnoreCase(request.getHeader("workWithSamples"))) {	// "normal" case: return individuals
+		        	callSetsRequest.setRequest(request);
+		            return service.searchCallSets(callSetsRequest);
+	        	}
+	        	
+	            // case when UI is configured for working with samples
+	            String[] info = Helper.getInfoFromId(callSetsRequest.getVariantSetId(), 2);
+	            if (info == null)
+	                return null;
+
+	            GigwaSearchCallSetsRequest gscsr = (GigwaSearchCallSetsRequest) callSetsRequest;
+	            Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(gscsr.getRequest()));
+
+	            CallSet callSet;
+	            int start;
+	            int end;
+	            int pageSize;
+	            int pageToken = 0;
+	            String nextPageToken;
+
+	            String module = info[0];
+
+	            LinkedHashMap<Integer, GenotypingSample> sampleMap = mgdbDao.loadSamplesWithAllMetadata(module, auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth), Arrays.asList(Integer.parseInt(info[1])), null, null);
+
+	            List<CallSet> listCallSet = new ArrayList<>();
+	            int size = sampleMap.size();
+	            // if no pageSize specified, return all results
+	            if (callSetsRequest.getPageSize() != null) {
+	                pageSize = callSetsRequest.getPageSize();
+	            } else {
+	                pageSize = size;
+	            }
+	            if (callSetsRequest.getPageToken() != null) {
+	                pageToken = Integer.parseInt(callSetsRequest.getPageToken());
+	            }
+
+	            start = pageSize * pageToken;
+	            if (size - start <= pageSize) {
+	                end = size;
+	                nextPageToken = null;
+	            } else {
+	                end = pageSize * (pageToken + 1);
+	                nextPageToken = Integer.toString(pageToken + 1);
+	            }
+
+	            // create a callSet for each item in the list
+	            List<String> indList = new ArrayList() {{ addAll(sampleMap.keySet()); }};
+	            for (int i = start; i < end; i++) {
+	                final GenotypingSample sample = sampleMap.get(indList.get(i));
+	                CallSet.Builder csb = CallSet.newBuilder().setId(Helper.createId(module, info[1], sample.getId())).setName("" + sample.getId() /* FIXME: should be name?*/).setVariantSetIds(Arrays.asList(callSetsRequest.getVariantSetId())).setSampleId(""/*Helper.createId(module, info[1], sample.getId(), sample.getId())*/);
+
+	                if (!sample.getAdditionalInfo().isEmpty()) {
+	                                Map<String, String> addInfoMap = new HashMap<>();
+	                                for (String key:sample.getAdditionalInfo().keySet()) {
+	                                    Object value = sample.getAdditionalInfo().get(key);
+	                                    if (value instanceof String) {
+	                                        int spaces = ((String) value).length() - ((String) value).replaceAll(" ", "").length();
+	                                        if (spaces <= 5)
+	                                            addInfoMap.put(key, value.toString());
+	                                    }
+	                                }
+	                                csb.setInfo(addInfoMap.keySet().stream().collect(Collectors.toMap(k -> k, k -> (List<String>) Arrays.asList(addInfoMap.get(k).toString()), (u,v) -> { throw new IllegalStateException(String.format("Duplicate key %s", u)); }, LinkedHashMap::new)));
+	                            }
+	                callSet = csb.build();
+	                listCallSet.add(callSet);
+	            }
+	            return SearchCallSetsResponse.newBuilder().setCallSets(listCallSet).setNextPageToken(nextPageToken).build();
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;
@@ -540,7 +613,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            gsvr.setRequest(request);
 				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
 				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)));
-	            return service.searchVariants(gsvr);
+	            return service.searchVariants(gsvr, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;

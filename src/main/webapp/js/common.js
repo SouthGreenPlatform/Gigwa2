@@ -280,12 +280,12 @@ function containsHtmlTags(xStr)
     return xStr != xStr.replace(/<\/?[^>]+>/gi,"");
 }
 
-function buildHeader(token, assemblyId, individuals) {
+function buildHeader(token, assemblyId, workWithSamples) {
     var headers = { "Authorization": "Bearer " + token };
     if (assemblyId != null)
     	headers["assembly"] = assemblyId;
-    if (individuals != null)
-    	headers["ind"] = individuals;
+    if (workWithSamples)
+    	headers["workWithSamples"] = true;
 	return headers;
 }
 
