@@ -6,6 +6,8 @@
 	margin-bottom: 0.35in
 }
 
+.pagebreak { page-break-before: always; }
+
 P {
 	font-family: "Arial", sans-serif;
 	margin-bottom: 0.08in;

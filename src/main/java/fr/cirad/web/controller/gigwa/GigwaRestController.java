@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -74,7 +73,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.brapi.v2.api.ServerinfoApi;
-import org.bson.Document;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
@@ -118,10 +116,6 @@ import com.github.jmchilton.blend4j.galaxy.GalaxyResponseException;
 import com.github.jmchilton.blend4j.galaxy.HistoriesClient;
 import com.github.jmchilton.blend4j.galaxy.HistoryUrlFeeder;
 import com.github.jmchilton.blend4j.galaxy.beans.History;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.result.DeleteResult;
 import com.sun.jersey.api.client.ClientResponse;
 
@@ -143,37 +137,32 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
 import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
 import fr.cirad.mgdb.model.mongo.maintypes.Individual;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
 import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
-import fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongo.subtypes.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.VisualizationService;
-import fr.cirad.model.GigwaDensityRequest;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
-import fr.cirad.model.GigwaSearchVariantsRequest;
-import fr.cirad.model.GigwaVcfFieldPlotRequest;
+import fr.cirad.model.MgdbDensityRequest;
+import fr.cirad.model.MgdbSearchVariantsRequest;
+import fr.cirad.model.MgdbVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.service.PasswordResetService;
-import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
 import fr.cirad.tools.SessionAttributeAwareThread;
 import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
-import fr.cirad.tools.mgdb.VariantQueryBuilder;
-import fr.cirad.tools.mgdb.VariantQueryWrapper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
@@ -246,7 +235,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String SEARCHABLE_ANNOTATION_FIELDS_URL = "/searchableAnnotationFields";
 	static public final String PROGRESS_PATH = "/progress";
 	static public final String SEQUENCE_FILTER_COUNT_PATH = "/sequencesFilterCount";
-	static public final String CLEAR_SELECTED_SEQUENCE_LIST_PATH = "/clearSelectedSequenceList";
+//	static public final String CLEAR_SELECTED_SEQUENCE_LIST_PATH = "/clearSelectedSequenceList";
 	static public final String ABORT_PROCESS_PATH = "/abortProcess";
 	static public final String DROP_TEMP_COL_PATH = "/dropTempCol";
 	static public final String CLEAR_TOKEN_PATH = "/clearToken";
@@ -598,61 +587,61 @@ public class GigwaRestController extends ControllerInterface {
 		return progress;
 	}
 
-	/**
-	 * get sequence filter count
-	 *
-	 * @param request
-	 * @param referenceSetId
-	 * @return ap<String, Integer> containing filter count in JSON format
-	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = SEQUENCE_FILTER_COUNT_PATH, notes = "get sequence filter count in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCE_FILTER_COUNT_PATH + "/{referenceSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, Integer> getSequencesFilterCount(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
-		String token = tokenManager.readToken(request);
-		Map<String, Integer> response = new HashMap<>();
-		try {
-			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				response.put(Constants.SEQUENCE_FILTER_COUNT, ga4ghService.getSequenceFilterCount(request, referenceSetId));
-			} else
-				build403Response(resp);
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-			return null;
-		}
-		return response;
-	}
-
-	/**
-	 * clear the result list. No need to display it in swagger as it is used
-	 * only from gigwa interface
-	 *
-	 * @param request
-	 * @param referenceSetId
-	 * @return Map<String, Boolean> true id could clear selection
-	 */
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL + CLEAR_SELECTED_SEQUENCE_LIST_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
-	public Map<String, Boolean> clearSelectedSequenceList(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
-		Map<String, Boolean> response = new HashMap<>();
-		String token = tokenManager.readToken(request);
-		boolean success = false;
-		try {
-			if (tokenManager.canUserReadDB(token, referenceSetId)) {
-				ga4ghService.clearSequenceFilterFile(request, referenceSetId);
-				success = true;
-			} else
-				build403Response(resp);
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-			return null;
-		}
-		response.put(Constants.SUCCESS, success);
-		return response;
-	}
+//	/**
+//	 * get sequence filter count
+//	 *
+//	 * @param request
+//	 * @param referenceSetId
+//	 * @return ap<String, Integer> containing filter count in JSON format
+//	 */
+//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = SEQUENCE_FILTER_COUNT_PATH, notes = "get sequence filter count in a referenceSet and variantSet. ")
+//	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+//			@ApiResponse(code = 400, message = "wrong parameters"),
+//			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+//	@ApiIgnore
+//	@RequestMapping(value = BASE_URL + SEQUENCE_FILTER_COUNT_PATH + "/{referenceSetId}", method = RequestMethod.GET, produces = "application/json")
+//	public Map<String, Integer> getSequencesFilterCount(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
+//		String token = tokenManager.readToken(request);
+//		Map<String, Integer> response = new HashMap<>();
+//		try {
+//			if (tokenManager.canUserReadDB(token, referenceSetId)) {
+//				response.put(Constants.SEQUENCE_FILTER_COUNT, ga4ghService.getSequenceFilterCount(request, referenceSetId));
+//			} else
+//				build403Response(resp);
+//		} catch (ObjectNotFoundException e) {
+//			build404Response(resp);
+//			return null;
+//		}
+//		return response;
+//	}
+//
+//	/**
+//	 * clear the result list. No need to display it in swagger as it is used
+//	 * only from gigwa interface
+//	 *
+//	 * @param request
+//	 * @param referenceSetId
+//	 * @return Map<String, Boolean> true id could clear selection
+//	 */
+//	@ApiIgnore
+//	@RequestMapping(value = BASE_URL + CLEAR_SELECTED_SEQUENCE_LIST_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
+//	public Map<String, Boolean> clearSelectedSequenceList(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException {
+//		Map<String, Boolean> response = new HashMap<>();
+//		String token = tokenManager.readToken(request);
+//		boolean success = false;
+//		try {
+//			if (tokenManager.canUserReadDB(token, referenceSetId)) {
+//				ga4ghService.clearSequenceFilterFile(request, referenceSetId);
+//				success = true;
+//			} else
+//				build403Response(resp);
+//		} catch (ObjectNotFoundException e) {
+//			build404Response(resp);
+//			return null;
+//		}
+//		response.put(Constants.SUCCESS, success);
+//		return response;
+//	}
 
 	/**
 	 * abort process with a specific Id
@@ -736,7 +725,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -770,7 +759,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -804,7 +793,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -839,7 +828,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MAF_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp,
-			@RequestBody GigwaDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+			@RequestBody MgdbDensityRequest gdr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -870,9 +859,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
-    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaDensityRequest gr) throws Exception {
-		long before = System.currentTimeMillis();
-
+    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
         String info[] = Helper.getInfoFromId(gr.getVariantSetId(), 2);
         if (!tokenManager.canUserReadDB(token, info[0])) {
@@ -884,76 +871,9 @@ public class GigwaRestController extends ControllerInterface {
         	build400Response(resp, "Missing parameter: displayedSequence");
         	return;
         }
-
-        String processId = "igvViz_" + token;
-		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] {"Preparing data for visualization"});
-		ProgressIndicator.registerProgressIndicator(progress);
-		int projId = Integer.parseInt(info[1]);
-
-		boolean fNoGenotypesRequested = gr.getAllCallSetIds().isEmpty() || (gr.getAllCallSetIds().size() == 1 && gr.getAllCallSetIds().get(0).isEmpty());
-		Collection<GenotypingSample> samples = fNoGenotypesRequested ? new ArrayList<>() :  MgdbDao.getSamplesForProject(info[0], projId, gr.getCallSetIds().stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
-        MongoCollection<Document> tempVarColl = ga4ghService.getTemporaryVariantCollection(info[0], token, false);
-        boolean fWorkingOnTempColl = tempVarColl.countDocuments() > 0;
         
-        VariantQueryWrapper varQueryWrapper = VariantQueryBuilder.buildVariantDataQuery(gr, ga4ghService.getSequenceIDsBeingFilteredOn(request.getSession(), info[0]), true);
-        BasicDBList variantQueryDBList = varQueryWrapper.getVariantDataQueries().iterator().next();
-
-		MongoCollection<Document> collWithPojoCodec = mongoTemplate.getDb().withCodecRegistry(ExportManager.pojoCodecRegistry).getCollection(fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : mongoTemplate.getCollectionName(fNoGenotypesRequested ? VariantData.class : VariantRunData.class));		
-
 		resp.setContentType("text/tsv;charset=UTF-8");
-		OutputStream os = resp.getOutputStream();
-        
-		if (fNoGenotypesRequested) {	// simplest case where we're not returning genotypes: querying on variants collection will be faster
-			Map<String, Integer> individualPositions = new LinkedHashMap<>();
-			for (String ind : samples.stream().map(gs -> gs.getIndividual()).distinct().sorted(new AlphaNumericComparator<String>()).collect(Collectors.toList()))
-				individualPositions.put(ind, individualPositions.size());
-
-			String header = "variant\talleles\tchrom\tpos";
-			os.write(header.getBytes());
-	        for (String individual : individualPositions.keySet())
-	            os.write(("\t" + individual).getBytes());
-	        os.write("\n".getBytes());
-
-			MongoCursor<VariantData> varIt = collWithPojoCodec.find(new BasicDBObject("$and", variantQueryDBList), VariantData.class).projection(new BasicDBObject(VariantData.FIELDNAME_KNOWN_ALLELES, 1).append(Assembly.getThreadBoundVariantRefPosPath(), 1)).iterator();
-			while (varIt.hasNext()) {
-				VariantData variant = varIt.next();
-            	ReferencePosition rp = variant.getReferencePosition(Assembly.getThreadBoundAssembly());
-				os.write((variant.getId() + "\t" + StringUtils.join(variant.getKnownAlleles(), "/") + "\t" + (rp == null ? 0 : rp.getSequence()) + "\t" + (rp == null ? 0 : rp.getStartSite()) + "\n").getBytes());
-			}
-			return;
-		}
-		
-		// count variants to display
-		BasicDBList variantLevelQuery = !variantQueryDBList.isEmpty() ? variantQueryDBList : new BasicDBList();
-    	List<BasicDBObject> countPipeline = new ArrayList<>();
-        if (!variantLevelQuery.isEmpty())
-        	countPipeline.add(new BasicDBObject("$match", new BasicDBObject("$and", variantLevelQuery)));
-    	countPipeline.add(new BasicDBObject("$count", "count"));
-    	MongoCursor<Document> countCursor = (fWorkingOnTempColl ? collWithPojoCodec : mongoTemplate.getCollection(mongoTemplate.getCollectionName(VariantData.class))).aggregate(countPipeline, Document.class).collation(IExportHandler.collationObj).iterator();
-    	long markerCount = countCursor.hasNext() ? ((Number) countCursor.next().get("count")).longValue() : 0;
-    	if (markerCount == 0)
-    		return;	// no genotypes to show
-
-		final Map<Integer, String> sampleIdToIndividualMap = new HashMap<>();
-		for (GenotypingSample gs : samples)
-			sampleIdToIndividualMap.put(gs.getId(), gs.getIndividual());
-
-	    Collection<BasicDBList> variantRunDataQueries = varQueryWrapper.getVariantRunDataQueries();
-	    Map<String, Collection<String>> individualsByPop = new HashMap<>();
-	    Map<String, HashMap<String, Float>> annotationFieldThresholdsByPop = new HashMap<>();
-	    List<List<String>> callsetIds = gr.getAllCallSetIds();
-	    for (int i = 0; i < callsetIds.size(); i++) {
-	        individualsByPop.put(gr.getGroupName(i), callsetIds.get(i).isEmpty() ? MgdbDao.getProjectIndividuals(info[0], projId) /* no selection means all selected */ : callsetIds.get(i).stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toSet()));
-	        annotationFieldThresholdsByPop.put(gr.getGroupName(i), gr.getAnnotationFieldThresholds(i));
-	    }
-
-		HapMapExportHandler heh = (HapMapExportHandler) AbstractMarkerOrientedExportHandler.getMarkerOrientedExportHandlers().get("HAPMAP");
-		heh.writeGenotypeFile(true, true, true, true, os, info[0], mongoTemplate.findOne(new Query(Criteria.where("_id").is(Assembly.getThreadBoundAssembly())), Assembly.class), individualsByPop, sampleIdToIndividualMap, annotationFieldThresholdsByPop, progress, fWorkingOnTempColl ? tempVarColl.getNamespace().getCollectionName() : null, !variantRunDataQueries.isEmpty() ? variantRunDataQueries.iterator().next() : new BasicDBList(), markerCount, null, samples);
-
-		progress.markAsComplete();
-		
-		LOG.debug("getSelectionIgvData processed range " + gr.getDisplayedSequence() + ":" + gr.getDisplayedRangeMin() + "-" + gr.getDisplayedRangeMax() + " for " + new HashSet<>(sampleIdToIndividualMap.values()).size() + " individuals in " + (System.currentTimeMillis() - before) / 1000f + "s");
+		resp.getOutputStream().write(vizService.igvData(gr, token).getBytes());
 	}
 
 	/**
@@ -994,7 +914,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH + "/{variantSetId}", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbVcfFieldPlotRequest gvfpr, @PathVariable String variantSetId, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -1200,7 +1120,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + GALAXY_HISTORY_PUSH, method = RequestMethod.GET, produces = "application/json")
 	public void pushFileToGalaxyHistory(HttpServletRequest request, HttpServletResponse response, @RequestParam("galaxyUrl") String galaxyInstanceUrl, @RequestParam("galaxyApiKey") String galaxyApiKey, @RequestParam("fileUrl") String fileUrl)
 	{
-      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, true);
+      	GalaxyInstance gi = GalaxyInstanceFactory.get(galaxyInstanceUrl, galaxyApiKey, false);
       	HistoriesClient hc = gi.getHistoriesClient();
       	String targetHistName = "GIGWA-" + request.getServerName();
       	History targetHist = null;
@@ -1575,12 +1495,11 @@ public class GigwaRestController extends ControllerInterface {
         
         boolean fAlreadyInASessionAttributeAwareThread = SessionAttributeAwareThread.class.isAssignableFrom(Thread.currentThread().getClass());
         
+        HashMap<String, String> filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
         SessionAttributeAwareThread sessionThread= fAlreadyInASessionAttributeAwareThread ? new SessionAttributeAwareThread((SessionAttributeAwareThread) Thread.currentThread()) : new SessionAttributeAwareThread(session);
         new SessionAttributeAwareThread(sessionThread) {
             public void run() {
-		        HashMap<String, String> filesByExtension = null;
 		        try {
-		        	filesByExtension = getImportFilesByExtension(Arrays.asList(uploadedFile1, uploadedFile2), Arrays.asList(dataUri1, dataUri2));
 		        	if (progress.getError() == null) {
 		                AtomicInteger nModifiedRecords = new AtomicInteger(-1);
 		                String fastaFile = null, gzFile = filesByExtension.get("gz");
@@ -1725,10 +1644,9 @@ public class GigwaRestController extends ControllerInterface {
 		            progress.setError(e.getMessage());
 		            LOG.error("Error importing metadata", e);
 		        } finally {
-		        	if (filesByExtension != null)
-			        	for (String uri : Arrays.asList(dataUri1, dataUri2))
-			        		if (uri != null && !uri.trim().isEmpty())
-			        			filesByExtension.remove(FilenameUtils.getExtension(uri));
+			       	for (String uri : Arrays.asList(dataUri1, dataUri2))
+		        		if (uri != null && !uri.trim().isEmpty())
+		        			filesByExtension.remove(FilenameUtils.getExtension(uri));
 		        	for (String uri : filesByExtension.values())
 		        		new File(uri).delete();
 		        }
@@ -1864,6 +1782,7 @@ public class GigwaRestController extends ControllerInterface {
 			progress.setError("Uploaded data is larger than your allowed maximum (" + maxUploadSize + " Mb).");
 
 		boolean fAdminImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN));
+		boolean fDbCreatorImporter = auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_DB_CREATOR));
 		boolean fAnonymousImporter = auth == null || "anonymousUser".equals(auth.getName());
 		if (progress.getError() == null) {
 			for (String uri : Arrays.asList(dataUri1, dataUri2, dataUri3))
@@ -2042,7 +1961,7 @@ public class GigwaRestController extends ControllerInterface {
 						if (fMayOnlyWriteTmpData)
 							progress.setError("You may only write to temporary databases");
 						else if (!writableDBs.contains(sNormalizedModule))
-							progress.setError("You may now write to database " + sNormalizedModule);
+							progress.setError("You may not write to database " + sNormalizedModule);
 					}
 
 					if (progress.getError() != null)
@@ -2064,7 +1983,7 @@ public class GigwaRestController extends ControllerInterface {
 					progress.moveToNextStep();
 
 					try { // create it
-						if (!fAdminImporter) {	// only administrators may create permanent databases
+						if (!fAdminImporter && !fDbCreatorImporter) {	// only administrators and DB creators may create permanent databases
 							expiryDate = System.currentTimeMillis() + 1000 * 60 * 60 * 24 /* 1 day */;
 	//					 	expiryDate = System.currentTimeMillis() + 1000*60*5 /* 5 mn */;
 							
@@ -2083,7 +2002,7 @@ public class GigwaRestController extends ControllerInterface {
 						if (sHost == null || sHost.trim().length() == 0)
 							throw new Exception("No host was specified!");
 	
-						if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, !fAdminImporter, !fAdminImporter, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
+						if (MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sNormalizedModule, !fAdminImporter && !fDbCreatorImporter, !fAdminImporter, sHost, ncbiTaxonIdNameAndSpecies, expiryDate)) {
 							LOG.info("Adding database " + sNormalizedModule + " to host " + sHost);
 							fDatasourceExists = true;
 						} 
@@ -2107,7 +2026,7 @@ public class GigwaRestController extends ControllerInterface {
 						        return processId;
 						    }
 						}
-						else if (expiryDate == null && !tokenManager.canUserCreateProjectInDB(authToken, sModule)) // if it's a temp db then don't check for permissions
+						else if (expiryDate == null && !(!fDatasourceAlreadyExisted.get() && fDbCreatorImporter) && !tokenManager.canUserCreateProjectInDB(authToken, sModule)) // if it's a temp db then don't check for permissions
 						{
 							progress.setError("You are not allowed to create a project in database '" + sModule + "'!");
 							return processId;
@@ -2306,10 +2225,7 @@ public class GigwaRestController extends ControllerInterface {
 									}
 									else if (!fDatasourceAlreadyExisted.get() && !fAnonymousImporter && !fAdminImporter) // a new permanent database was created so we give this user supervisor role on it
 										try {
-									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsername(auth.getName());
-									        if (owner.getAuthorities() != null && (owner.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))))
-									            return; // no need to grant any role to administrators
-		
+									        UserWithMethod owner = (UserWithMethod) userDao.loadUserByUsername(auth.getName());		
 									        SimpleGrantedAuthority role = new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR);
 									        if (!owner.getAuthorities().contains(role)) {
 									            HashSet<GrantedAuthority> authoritiesToSave = new HashSet<>();
@@ -2322,7 +2238,7 @@ public class GigwaRestController extends ControllerInterface {
 											tokenManager.reloadUserPermissions(securityContext);
 										}
 										catch (IOException e) {
-											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule);
+											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule, e);
 										}
 		
 									if (scanner != null)
@@ -2504,7 +2420,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode jsonNode = (ObjectNode) mapper.readTree(body);
-		GigwaSearchVariantsRequest gsvr = mapper.readValue(jsonNode, GigwaSearchVariantsRequest.class);
+		MgdbSearchVariantsRequest gsvr = mapper.readValue(jsonNode, MgdbSearchVariantsRequest.class);
 
         String token = tokenManager.readToken(request);
     	Authentication authentication = tokenManager.getAuthenticationFromToken(token);

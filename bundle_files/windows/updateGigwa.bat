@@ -60,6 +60,8 @@ xcopy /seyi "%3\%backup_dir%.%d%\WEB-INF\classes\datasources.properties" "%2\WEB
 xcopy /seyi "%3\%backup_dir%.%d%\WEB-INF\classes\users.properties" "%2\WEB-INF\classes\users.properties"
 xcopy /seyi "%3\%backup_dir%.%d%\WEB-INF\classes\config.properties" "%2\WEB-INF\classes\config.properties"
 xcopy /seyi "%3\%backup_dir%.%d%\WEB-INF\classes\log4j.xml" "%2\WEB-INF\classes\log4j.xml"
+xcopy /seyi "%3\%backup_dir%.%d%\custom" "%2\custom"
+
 
 :: Changes specific to migration to v2.5
 powershell -Command "(gc %2\WEB-INF\classes\users.properties) -replace 'project$CREATOR', 'SUPERVISOR' | Out-File -Encoding ascii %2\WEB-INF\classes\users.properties"		# replace the deprecated project-CREATOR role with the new DB-level SUPERVISOR role
@@ -70,6 +72,10 @@ powershell -Command "if ($(Select-String -Path %2\WEB-INF\classes\config.propert
 
 :: applicationContext-security.xml has changed much in v2.5 so we don't want to keep that of the previous version. However, still make sure we keep the same passwordEncoder as in the previous version
 powershell -Command "$previousPE = $(Select-String -Path %3\%backup_dir%.%d%\WEB-INF\classes\applicationContext-security.xml -Pattern 'id=\"passwordEncoder\"' | Select-String -Pattern '<!--' -NotMatch | ForEach-Object {$_.Line}); if ($(Select-String -Path %2\WEB-INF\classes\applicationContext-security.xml -Pattern 'id=\"passwordEncoder\"' | Select-String -Pattern '<!--' -NotMatch | ForEach-Object {$_.Line}) -ne $previousPE) {(gc %1\WEB-INF\classes\applicationContext-security.xml) -creplace '.*PasswordEncoder.*', '' -creplace '.*Only one passwordEncoder bean should be enabled at a time.*', '' -creplace '.*</beans>.*', '' | Out-File -Encoding ascii %2\WEB-INF\classes\applicationContext-security.xml; Add-Content -Path %2\WEB-INF\classes\applicationContext-security.xml -value $previousPE; Add-Content -Path %2\WEB-INF\classes\applicationContext-security.xml -value '</beans>'} else {Write-Host 'same'}"
+
+
+:: Changes specific to migration to v2.9
+powershell -Command "if ((Select-String -Path %1\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line -ne (Select-String -Path %2\WEB-INF\classes\applicationContext-MVC.xml -Pattern '<context:component-scan base-package').Line) { (Get-Content %2\WEB-INF\classes\applicationContext-MVC.xml) -replace '<context:component-scan base-package.*', '<context:component-scan base-package=\"fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api,fr.cirad.web.controller,fr.cirad.service\" />' | Set-Content -Encoding ascii %2\WEB-INF\classes\applicationContext-MVC.xml; }"
 
 echo -------------------------------
 echo Update complete.

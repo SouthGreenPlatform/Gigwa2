@@ -807,7 +807,7 @@ function applyDropDownFiltersToTable(tableObj, reset)
                 dataRows.append("<tr><td><div style='margin-right:5px;' title='Remove from selection' class='close' onclick='$(this).parent().parent().hide(); updateFilteredIndividualCount();'>x</div></td><td><span class='bold'>" + jsonResult[ind].id + "</span></td>");
                 for (var i in headers) {
                     var value = jsonResult[ind].additionalInfo[headers[i]];
-                    dataRows.append("<td>" + value + "</td>");
+                    dataRows.append("<td>" + (value == null ? "" : value) + "</td>");
                 }
                 dataRows.append("</tr>");
             }
@@ -1814,6 +1814,7 @@ function extractUniqueAlleles(jsonResult) {
 }
 
 function taxonSelected() {
+	$('#grpProj').hide();
 	let selectedTaxon = $("#taxa").val();
 	$("#module option").each(function() {
 		let showOption = selectedTaxon == "(Any taxon)" || selectedTaxon == $(this).attr("data-taxon");

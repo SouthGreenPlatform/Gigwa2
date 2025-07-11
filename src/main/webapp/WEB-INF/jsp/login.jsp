@@ -29,6 +29,7 @@
         <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
 		<link type="text/css" rel="stylesheet" href="css/main.css">
         <link type="text/css" rel="stylesheet" href="css/login.css">
+		<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>
         <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
 		<script type="text/javascript">
 			var currentWindow = this;

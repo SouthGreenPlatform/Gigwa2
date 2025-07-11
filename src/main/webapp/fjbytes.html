@@ -3,7 +3,7 @@
     <title>Flapjack Bytes</title>
     <meta charset="UTF-8">
   </head>
-  <body>
+  <body style="overflow:hidden;">
       <div id="canvas-holder">
         <!-- Empty div that we can insert a canvas into from javascript. -->
       </div>
@@ -37,7 +37,7 @@
         let renderer = GenotypeRenderer();
         setTimeout( function() { renderer.renderGenotypesUrl({
             domParent: "#canvas-holder",
-            width: window.innerWidth - 30,
+            width: window.innerWidth - 15,
             height: Math.max(window.innerHeight - 400, 600),
             overviewHeight: 400,
             mapFileURL: mFile,

@@ -107,7 +107,7 @@ public class ScheduledTaskManager implements ServletContextAware {
 	/**
 	 * Cleanup old finished processes regularly
 	 */
-	@Scheduled(fixedRate = 1000*60/*60*/ /* 1 hour */)
+	@Scheduled(fixedRate = 1000*60*60 /* 1 hour */)
 	public void cleanupExpiredExportFiles() {
         new Thread() {
         	public void run() {

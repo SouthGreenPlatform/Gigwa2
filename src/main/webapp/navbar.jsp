@@ -17,6 +17,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.gigwa.GigwaRestController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <sec:authentication property="principal" var="principal"/>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
@@ -92,8 +93,8 @@
 
 	<!-- modal which displays terms of use -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="termsOfUse" aria-hidden="true">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
+		<div class="modal-dialog">
+			<div class="modal-content" style="min-width:600px; padding:0 30px;">
 				<div class="modal-header" id="termsOfUseContainer">
 					<center><h3>Gigwa - Terms of use</h3></center>
 					<h4>1) Limitation of warranty</h4>
@@ -130,3 +131,6 @@
 		        show: true
 		    }); // prevent the user from hiding progress modal when clicking outside
 	</script>
+
+	<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>
+	<%= new java.io.File(application.getRealPath("/custom/custom.js")).exists() ? "<script type='text/javascript' src='custom/custom.js'></script>" : "" %>
