@@ -1,6 +1,3 @@
-trackerUrl = https://gigwa-dev.southgreen.fr/GigwaInstanceTracker
-instanceUUID = devInstance
-
 # You may specify under this property, a csv list of hosts for which this instance will drop temporary variant collections on startup (e.g. 127.0.0.1:27017,another.server.com:27018).
 # Temporary variant collections are often used once a search has been completed, for browsing/exporting results. They are normally dropped upon user interface unload, but some may remain if the web-browser is exited ungracefully or the application goes down while someone is using the search interface.
 # If this property does not exist then the instance will drop all found temp collections, if it exists but is empty, none will be dropped.
