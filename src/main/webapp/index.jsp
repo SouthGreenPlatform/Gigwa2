@@ -1967,7 +1967,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             url: url,
             type: "POST",       
             contentType: "application/json;charset=utf-8",
-	        headers: buildHeader(token, $('#assembly').val()),
+	        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
             data: JSON.stringify(query),
             success: function(response) {
                     downloadURL = response;
