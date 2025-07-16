@@ -5362,23 +5362,24 @@
           colorSchemeId: "nucleotide",
           traitColors: customColors == null ? {} : JSON.parse(customColors)
         };
-
-        // We use trait values as keys in inner arrays for persisting to Local-storage, so we need to convert those back to list indexes on reload
-        Object.entries(settings.traitColors).forEach(function (_ref) {
-          var _ref2 = _slicedToArray(_ref, 2),
-            traitName = _ref2[0],
-            colorByValue = _ref2[1];
-          return Object.entries(colorByValue).forEach(function (_ref3) {
-            var _ref4 = _slicedToArray(_ref3, 2),
-              traitValue = _ref4[0],
-              traitValueColor = _ref4[1];
-            var trait = _this3.dataSet.traits.get(traitName),
-              traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
-              traitColorMap = settings.traitColors[traitName];
-            if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
-            delete traitColorMap[traitValue];
+        if (displayTraitSelect != null) {
+          // We use trait values as keys in inner arrays for persisting to Local-storage, so we need to convert those back to list indexes on reload
+          Object.entries(settings.traitColors).forEach(function (_ref) {
+            var _ref2 = _slicedToArray(_ref, 2),
+              traitName = _ref2[0],
+              colorByValue = _ref2[1];
+            return Object.entries(colorByValue).forEach(function (_ref3) {
+              var _ref4 = _slicedToArray(_ref3, 2),
+                traitValue = _ref4[0],
+                traitValueColor = _ref4[1];
+              var trait = _this3.dataSet.traits.get(traitName),
+                traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
+                traitColorMap = settings.traitColors[traitName];
+              if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
+              delete traitColorMap[traitValue];
+            });
           });
-        });
+        }
         switch (sortId) {
           case "importing":
             settings.lineSort = new ImportingOrderLineSort();
@@ -6708,7 +6709,7 @@
                 this.processedLines = 0;
                 lines = fileContents.split(/\r?\n/);
                 this.totalLineCount = lines.length;
-                batchSize = Math.floor(this.totalLineCount / 10);
+                batchSize = Math.max(1, Math.floor((this.totalLineCount - 2) / 10));
                 self = this; // Throttle the advancementCallback to reduce frequent UI updates
                 throttledCallback = function () {
                   var lastCallTime = 0;
