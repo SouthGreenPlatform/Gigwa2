@@ -755,7 +755,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionFst(gdr, token);
+				return vizService.selectionFst(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
@@ -789,7 +789,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionTajimaD(gdr, token);
+				return vizService.selectionTajimaD(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
@@ -824,7 +824,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
-				return vizService.selectionMaf(gdr, token);
+				return vizService.selectionMaf(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
