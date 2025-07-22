@@ -1281,7 +1281,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 	}
 
-    function loadIndividuals() {
+    function loadIndividuals(showDataSummary) {
         individualSubSet = "${param.individualSubSet}".trim().split(";");
         if (individualSubSet.length == 1 && individualSubSet[0] == "")
             individualSubSet = null;
@@ -1328,21 +1328,23 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         indOpt.push(callSetResponse[ind].name);
                 }
 
-                var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
-                $.ajax({
-                    url: brapiBaseUrl,
-                    async: false,
-                    type: "GET",
-                    contentType: "application/json;charset=utf-8",
-                    success: function (jsonResult) {
-                        dbDesc = jsonResult['description'].replace('germplasm', 'individual');
-                        if ((dbDesc.match(/; 0/g) || []).length == 2)
-                            dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
-                    },
-                    error: function (xhr, thrownError) {
-                        handleError(xhr, thrownError);
-                    }
-                });
+	            if (showDataSummary) {
+	                var brapiBaseUrl = location.origin + '<c:url value="<%=GigwaRestController.REST_PATH %>" />/' + referenceset + '<%= BrapiRestController.URL_BASE_PREFIX %>';
+	                $.ajax({
+	                    url: brapiBaseUrl,
+	                    async: false,
+	                    type: "GET",
+	                    contentType: "application/json;charset=utf-8",
+	                    success: function (jsonResult) {
+	                        dbDesc = jsonResult['description'].replace('germplasm', 'individual');
+	                        if ((dbDesc.match(/; 0/g) || []).length == 2)
+	                            dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
+	                    },
+	                    error: function (xhr, thrownError) {
+	                        handleError(xhr, thrownError);
+	                    }
+	                });
+	            }
                 $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('checked', false);
                 $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('disabled', !gotMetaData);
                 $('#exportPanel input#exportedIndividualMetadataCheckBox').change();
@@ -1424,10 +1426,12 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         });
   
                         $('#progress').modal('hide');
-                        displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+                        if (showDataSummary)
+                        	displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
                     }, 1);
                 } else {
-                    displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
+                    if (showDataSummary)
+	                    displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
                     $("#exportedIndividualMetadata").html("");
                 }
             },

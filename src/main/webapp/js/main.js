@@ -107,7 +107,7 @@ function fillWidgets() {
     loadVariantEffects();
 //    loadSearchableVcfFields();
     loadVcfFieldHeaders();
-    loadIndividuals();
+    loadIndividuals(true);
     loadNumberOfAlleles();
     loadGenotypePatterns();
     readPloidyLevel();
@@ -116,7 +116,7 @@ function fillWidgets() {
 }
 
 function showSamples(samplesRatherThanIndividuals) {
-	loadIndividuals();
+	loadIndividuals(false);
     var multipleSelectOpts = {
         text: samplesRatherThanIndividuals ? 'Samples' : 'Individuals',
         data: indOpt,
