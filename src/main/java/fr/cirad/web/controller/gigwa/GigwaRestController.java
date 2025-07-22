@@ -863,7 +863,7 @@ public class GigwaRestController extends ControllerInterface {
         }
         
 		resp.setContentType("text/tsv;charset=UTF-8");
-		resp.getOutputStream().write(vizService.igvData(gr, token).getBytes());
+		resp.getOutputStream().write(vizService.igvData(gr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples"))).getBytes());
 	}
 
 	/**
