@@ -222,8 +222,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</div>
 						</div>
 					</div>
-					<div>
-						<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked'));" class="input-checkbox" schecked="checked"> Work on samples
+					<div id="workWithSamplesDiv" class="row">
+						<div class="panel panel-grey panel-default text-center bold">
+							<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked'));" class="input-checkbox" checked="checked" title="At least some individuals in this dataset have multiple samples attached. With this box clicked, each sample will be considered separately (genotypes will not be expected to be the same for samples of a same individual, and data will be exported per-sample rather than applying an individual-level synthesis)"> Work on samples
+						</div>
 					</div>
 				</div>
 			</div>
@@ -1336,7 +1338,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	                    type: "GET",
 	                    contentType: "application/json;charset=utf-8",
 	                    success: function (jsonResult) {
-	                        dbDesc = jsonResult['description'].replace('germplasm', 'individual');
+	                    	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";");
+	                    	$('#workWithSamplesDiv').css('display', descFigures[1] == descFigures[2] ? "none" : "block");
+	                        dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
 	                        if ((dbDesc.match(/; 0/g) || []).length == 2)
 	                            dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
 	                    },
