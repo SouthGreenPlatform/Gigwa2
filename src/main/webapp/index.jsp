@@ -697,7 +697,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	};
 	var rangeMin = 0;
 	var rangeMax = -1;
-	var runList = [];
+	var runList = {};
 	var seqCount;
 	var variantTypesCount;
 	var variantId;
@@ -844,7 +844,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				success: function(jsonResult) {
 					$('#assembly').html("");
 					jsonResult.result.data.forEach(refSet => {
-						var asmId = refSet["referenceSetDbId"].split("${idSep}")[2];
+						var asmId = refSet["referenceSetDbId"].split("${idSep}")[1];
 						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
 					});
 					if (jsonResult.result.data.length > 1)
@@ -895,9 +895,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				contentType: "application/json;charset=utf-8",
     	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
-					runList = [];
-					for (var run in jsonResult.runs)
-						runList.push(jsonResult.runs[run]);
+					runList = jsonResult;
 				},
 				error: function(xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);
@@ -917,7 +915,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					if (jsonResult == "")
 	      				$('#snpclust').hide();
 	      			else {
-	      				alert("multiProj");
+	      				alert("snpclust");
 						$('#snpclust').prop('href', jsonResult + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset);
 						$('#snpclust').show();
 					}
@@ -1247,7 +1245,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 			data: JSON.stringify({
-				"referenceSetDbIds": getProjectId().map(t => t + idSep + $('#assembly').val())
+				"referenceSetDbIds": [$('#module').val() + idSep + $('#assembly').val()]
 			}),
 			success: function(jsonResult) {
 				seqCount = jsonResult.result.data.length;
@@ -1257,6 +1255,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					referenceNames.push(ref["referenceName"]);
 				});
 
+				$('#Sequences').empty([]);
 				$('#Sequences').selectmultiple({
 					text: 'Sequences',
 					data: referenceNames,
@@ -1439,7 +1438,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     }
 
 	function loadVariantEffects() {
-		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1469,7 +1467,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
 	function loadNumberOfAlleles() {
-		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.NUMBER_ALLELE_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1495,7 +1492,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 	
 	function readPloidyLevel() {
-		alert("multiProj");
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1633,55 +1629,54 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 
     function loadVariantIds() {
-		alert("multiProj");
-        var options = {
-                ajax:{
-                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
-                    type: "GET",
-                    headers: {
-                            "Authorization": "Bearer " + token
-                    },
-                    dataType: "json",
-                    contentType: "application/json;charset=utf-8",
-                    data: {
-                        projectId: getProjectId(),
-                        q: '{{{q}}}'
-                    },
-                    success: function(jsonResult) {
-                        return jsonResult;
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        handleError(xhr, thrownError);
-                    }
+    	var options = {
+            ajax:{
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.VARIANTS_LOOKUP%>" />',
+                type: "GET",
+                headers: {
+                        "Authorization": "Bearer " + token
                 },
-                cache : false,
-                preserveSelectedPosition : "before",
-                preserveSelected: true,
-                log: 2 /*warn*/,
-                locale: {
-                    statusInitialized: "Start typing a query",
-                    emptyTitle: "Input IDs here",
-                    statusTooShort: "Please type more"
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: {
+                    projectId: encodeURIComponent(getProjectId().join(",")),
+                    q: '{{{q}}}'
                 },
-                minLength: 2,
-                clearOnEmpty: true,
-                preprocessData: function (data) {
-                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
-                    var asp = this;
-                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
-                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
-                        return;
-                    }
-                    
-                    var array = [];
-                    for (i=0; i<data.length; i++) {
-                        array.push($.extend(true, data[i], {
-                            value: data[i]
-                        }));
-                    }
-                    return array;
+                success: function(jsonResult) {
+                    return jsonResult;
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    handleError(xhr, thrownError);
                 }
-            };
+            },
+            cache : false,
+            preserveSelectedPosition : "before",
+            preserveSelected: true,
+            log: 2 /*warn*/,
+            locale: {
+                statusInitialized: "Start typing a query",
+                emptyTitle: "Input IDs here",
+                statusTooShort: "Please type more"
+            },
+            minLength: 2,
+            clearOnEmpty: true,
+            preprocessData: function (data) {
+                $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                var asp = this;
+                if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                    setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                    return;
+                }
+                
+                var array = [];
+                for (i=0; i<data.length; i++) {
+                    array.push($.extend(true, data[i], {
+                        value: data[i]
+                    }));
+                }
+                return array;
+            }
+        };
         
         $('#variantIdsSelect').parent().html($('#variantIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
         $('#variantIdsSelect').selectpicker().ajaxSelectPicker(options);
@@ -1703,55 +1698,54 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     }
     
     function loadGeneIds() {
-		alert("multiProj");
         var options = {
-                ajax:{
-                    url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENES_LOOKUP%>" />',
-                    type: "GET",
-                    headers: {
-                            "Authorization": "Bearer " + token
-                    },
-                    dataType: "json",
-                    contentType: "application/json;charset=utf-8",
-                    data: {
-                        projectId: getProjectId(),
-                        q: '{{{q}}}'
-                    },
-                    success: function(jsonResult) {
-                        return jsonResult;
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        handleError(xhr, thrownError);
-                    }
+            ajax:{
+                url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENES_LOOKUP%>" />',
+                type: "GET",
+                headers: {
+                        "Authorization": "Bearer " + token
                 },
-                cache : false,
-                preserveSelectedPosition : "before",
-                preserveSelected: true,
-                log: 2 /*warn*/,
-                locale: {
-                    statusInitialized: "Start typing a query",
-                    emptyTitle: "Input Names here",
-                    statusTooShort: "Please type more"
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: {
+                    projectId: encodeURIComponent(getProjectId().join(",")),
+                    q: '{{{q}}}'
                 },
-                minLength: 2,
-                clearOnEmpty: true,
-                preprocessData: function (data) {
-                    $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
-                    var asp = this;
-                    if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
-                        setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
-                        return;
-                    }
-                    
-                    var array = [];
-                    for (i=0; i<data.length; i++) {
-                        array.push($.extend(true, data[i], {
-                            value: data[i]
-                        }));
-                    }
-                    return array;
+                success: function(jsonResult) {
+                    return jsonResult;
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    handleError(xhr, thrownError);
                 }
-            };
+            },
+            cache : false,
+            preserveSelectedPosition : "before",
+            preserveSelected: true,
+            log: 2 /*warn*/,
+            locale: {
+                statusInitialized: "Start typing a query",
+                emptyTitle: "Input Names here",
+                statusTooShort: "Please type more"
+            },
+            minLength: 2,
+            clearOnEmpty: true,
+            preprocessData: function (data) {
+                $("div.bs-container.dropdown.bootstrap-select.show-tick.open > div > div.inner.open > ul").css("margin-bottom", "0");
+                var asp = this;
+                if (data.length == 1 && data[0].indexOf("Too many results") == 0) {
+                    setTimeout(function() {asp.plugin.list.setStatus(data[0]);}, 50);
+                    return;
+                }
+                
+                var array = [];
+                for (i=0; i<data.length; i++) {
+                    array.push($.extend(true, data[i], {
+                        value: data[i]
+                    }));
+                }
+                return array;
+            }
+        };
         
         $('#geneIdsSelect').parent().html($('#geneIdsSelect').prop('outerHTML'));	// best way we found to cleanly reset the widget
         $('#geneIdsSelect').selectpicker().ajaxSelectPicker(options);
@@ -1795,68 +1789,72 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		var addedRunCount = 0;
 		
 		let requests = [];
-		var firstValidRun = null;
-		for (var runIndex in runList) {
-            requests.push($.ajax({        // result of a run for a variant has an id as module§project§variant§run
-                    url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + runList[runIndex],
-                    type: "POST",
-                    data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
-                    async: false,
-                    dataType: "json",
-                    contentType: "application/json;charset=utf-8",
-     				headers: buildHeader(token, $('#assembly').val()),
-                    success: function(jsonResult) {
-                            if (addedRunCount == 0) {
-                                    $('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-                                    $('#varSeq').html("Seq: " + jsonResult.referenceName);
-                                    $('#varType').html("Type: " + jsonResult.info.type[0]);
-                                    $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-                                    $('#textKnownAlleles').html("Known Allele(s)");
-                                 	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-                            }
-                            var htmlTableContents = buildGenotypeTableContents(jsonResult);
-                            
-                            // Initialize a flag to track if the current run has non-empty genotypes
-                            var hasNonEmptyGenotype = false;
-                            // Iterate over the calls in the JSON result for the current run
-                            for (var callIndex in jsonResult.calls) {
-                                var genotype = jsonResult.calls[callIndex].genotype;
-                                // Check if the genotype exists and has a length greater than zero
-                                if (genotype && genotype.length > 0) {
-                                    // Set the flag to true and exit the loop
-                                    hasNonEmptyGenotype = true;
-                                    break;
-                                }
-                            }
-
-                            // If the current run has non-empty genotypes
-                            if (hasNonEmptyGenotype) {
-                                // Check if the first valid run has not been set yet
-                                if (firstValidRun === null) {
-                                    // Set the index of the first valid run
-                                    firstValidRun = runIndex;
-                                }
-
-                                // Displays the buttons and table of valid runs and directly displays the table of the first valid run
-                                $("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == firstValidRun ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == firstValidRun ? ' checked' : '') + (addedRunCount == firstValidRun ? ' active' : '') + '>' + runList[runIndex] + '</label>');
-                                    modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == firstValidRun ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
-                            }
-                            if ($('#varId').html() == "") {
-                                $('#varId').html("Variant: " + variantId.split("${idSep}")[2]);
-                                $('#varSeq').html("Seq: " + jsonResult.referenceName);
-                                $('#varType').html("Type: " + jsonResult.info.type[0]);
-                                $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-                                $('#textKnownAlleles').html("Known Allele(s)");
-                                $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-                            }
-                            addedRunCount++;
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                            handleError(xhr, thrownError);
-                            errorEncountered = true;
-                    }
-            }));
-    	}
+		var firstValidRun = null, runIndex = 0;
+		for (var projId in runList) {
+			for (var runId of runList[projId]) {
+	            requests.push($.ajax({        // result of a run for a variant has an id as module§variant§project§run
+		            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + projId + "${idSep}" + runId,
+		            type: "POST",
+		            data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
+		            async: false,
+		            dataType: "json",
+		            contentType: "application/json;charset=utf-8",
+					headers: buildHeader(token, $('#assembly').val()),
+		            success: function(jsonResult) {
+		                    if (addedRunCount == 0) {
+		                            $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
+		                            $('#varSeq').html("Seq: " + jsonResult.referenceName);
+		                            $('#varType').html("Type: " + jsonResult.info.type[0]);
+		                            $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+		                            $('#textKnownAlleles').html("Known Allele(s)");
+		                         	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+		                    }
+		                    var htmlTableContents = buildGenotypeTableContents(jsonResult);
+		                    
+		                    // Initialize a flag to track if the current run has non-empty genotypes
+		                    var hasNonEmptyGenotype = false;
+		                    // Iterate over the calls in the JSON result for the current run
+		                    for (var callIndex in jsonResult.calls) {
+		                        var genotype = jsonResult.calls[callIndex].genotype;
+		                        // Check if the genotype exists and has a length greater than zero
+		                        if (genotype && genotype.length > 0) {
+		                            // Set the flag to true and exit the loop
+		                            hasNonEmptyGenotype = true;
+		                            break;
+		                        }
+		                    }
+		
+		                    // If the current run has non-empty genotypes
+		                    if (hasNonEmptyGenotype) {
+		                        // Check if the first valid run has not been set yet
+		                        if (firstValidRun === null) {
+		                            // Set the index of the first valid run
+		                            firstValidRun = runIndex;
+		                        }
+		
+		                        // Displays the buttons and table of valid runs and directly displays the table of the first valid run
+		                        let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
+		                        $("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == firstValidRun ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == firstValidRun ? ' checked' : '') + (addedRunCount == firstValidRun ? ' active' : '') + '>' + projNames[projId] + ', run ' + runId + '</label>');
+		                            modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == firstValidRun ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
+		                    }
+		                    if ($('#varId').html() == "") {
+		                        $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
+		                        $('#varSeq').html("Seq: " + jsonResult.referenceName);
+		                        $('#varType').html("Type: " + jsonResult.info.type[0]);
+		                        $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
+		                        $('#textKnownAlleles').html("Known Allele(s)");
+		                        $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
+		                    }
+		                    addedRunCount++;
+		            },
+		            error: function(xhr, ajaxOptions, thrownError) {
+		                    handleError(xhr, thrownError);
+		                    errorEncountered = true;
+		            }
+	            }));
+	            runIndex++;
+	    	}
+		}
 
 		
 		Promise.allSettled(requests).then(function(){

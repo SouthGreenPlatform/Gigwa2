@@ -269,11 +269,11 @@ public class Ga4ghRestController extends ControllerInterface {
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
 
         String token = tokenManager.readToken(request);
-        try
-        {
+//        try
+//        {
         	String[] info = id.split(Helper.ID_SEPARATOR);
-        	int projId = Integer.parseInt(info[1]);
-	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
+//        	int projId = Integer.parseInt(info[1]);
+//	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
                 List<String> callSetIds = ((List<String>) body.get("callSetIds"));
                 Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
                 if (variant == null) {
@@ -281,14 +281,14 @@ public class Ga4ghRestController extends ControllerInterface {
                     return null;
                 } else
                     return variant;
-            } else {
-                buildForbiddenAccessResponse(token, response);
-                return null;
-            }
-        } catch (ObjectNotFoundException e) {
-            build404Response(response);
-            return null;
-        }
+//            } else {
+//                buildForbiddenAccessResponse(token, response);
+//                return null;
+//            }
+//        } catch (ObjectNotFoundException e) {
+//            build404Response(response);
+//            return null;
+//        }
     }
 
     /**
@@ -559,7 +559,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param request
      * @param id of the variant
      * @return Variant Annotation
-     * @throws IOException 
+     * @throws Exception 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantAnnotationById", notes = "get a VariantAnnotation from its ID. ")
     @ApiResponses(value = {
@@ -568,7 +568,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no VariantAnnotation with this ID")
     })
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws Exception {
 
         String token = tokenManager.readToken(request);
         try

@@ -324,7 +324,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
         for (var gene in jsonResult.variants[variant].info["EFF_ge"]) {
             geneName += jsonResult.variants[variant].info["EFF_ge"][gene] + '</br>';
         }
-        var id = splitId(jsonResult.variants[variant].id, 2);
+        var id = splitId(jsonResult.variants[variant].id, 1);
         if (idLooksGenerated(id))
             id = "";
         row = '<tr class="clickable-row" data-id="' + jsonResult.variants[variant].id + '">' +
@@ -1635,7 +1635,7 @@ function buildGenotypeTableContents(jsonResult) {
 	const headerPositions = [];
 
 	for (const call in jsonResult.calls) {
-		const individual = splitId(jsonResult.calls[call].callSetId, 2);
+		const individual = splitId(jsonResult.calls[call].callSetId, 1);
 		const gtRow = [individual];
 		let gt = '';
 		const alleles = [];
