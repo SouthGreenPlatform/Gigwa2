@@ -499,8 +499,9 @@
             }
 
             function loadRuns() {
+            	let projId = $('#projectExisting :selected').data("id");
                 $.ajax({
-                    url: "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>' />/" + encodeURIComponent($('#projectExisting :selected').data("id")),
+                    url: "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>' />/" + encodeURIComponent(projId),
                     type: "GET",
                     dataType: "json",
                     contentType: "application/json;charset=utf-8",
@@ -509,9 +510,8 @@
                     },
                     success: function (jsonResult) {
                         var option = "";
-                        for (var run in jsonResult.runs) {
-                            option += '<option>' + jsonResult.runs[run] + '</option>';
-                        }
+                        for (var run in jsonResult.runs)
+                            option += '<option>' + jsonResult.runs[run].split(idSep)[2] + '</option>';
                         $('#runExisting').html(option).selectpicker('refresh');
                         $('#runExisting').val(0).selectpicker('refresh');
                     },

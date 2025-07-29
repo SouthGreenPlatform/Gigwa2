@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,org.springframework.security.core.context.SecurityContextHolder,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.security.base.IRoleDefinition,org.springframework.security.core.context.SecurityContextHolder,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.SamplesApi" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -80,6 +80,7 @@
    			var extRefSrcField = "<%= BrapiService.BRAPI_FIELD_externalReferenceSource %>";
    			var isAnonymous = ${isAnonymous}, isAdmin = ${isAdmin}, hasDbCreatorRole = ${hasDbCreatorRole};
    			var supervisedModules = [];
+   			var idSep ="<%= Helper.ID_SEPARATOR %>";
    			<c:if test="${!isAnonymous}">
    				<sec:authentication property="principal.authorities" var="authorities" />
    				<c:forEach items="${authorities}" var="authority"><c:if test='${fn:endsWith(authority.authority, supervisorRoleSuffix)}'>supervisedModules.push("${authority.authority.split('\\$')[0]}");</c:if></c:forEach>

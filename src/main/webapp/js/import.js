@@ -890,9 +890,8 @@ function loadRuns() {
         },
         success: function (jsonResult) {
             var option = "<option>- new run -</option>";
-            for (var run in jsonResult.runs) {
-                option += '<option>' + jsonResult.runs[run] + '</option>';
-            }
+            for (var run in jsonResult.runs)
+                option += '<option>' + jsonResult.runs[run].split(idSep)[2] + '</option>';
             $('#runExisting').html(option).selectpicker('refresh');
             $('#runExisting').val(0).selectpicker('refresh');
         },

@@ -221,7 +221,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String GET_SESSION_TOKEN = "/generateToken";
 	static public final String VARIANT_TYPES_PATH = "/variantTypes";
 	static public final String NUMBER_ALLELE_PATH = "/numberOfAllele";
-	static public final String SEQUENCES_PATH = "/sequences";
+//	static public final String SEQUENCES_PATH = "/sequences";
 	static public final String EFFECT_ANNOTATION_PATH = "/effectAnnotations";
 	static public final String SEARCHABLE_ANNOTATION_FIELDS_URL = "/searchableAnnotationFields";
 	static public final String PROGRESS_PATH = "/progress";
@@ -360,18 +360,20 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<Integer, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+	public Map<String, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
         Integer[] projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toArray(Integer[]::new);
 
 		String token = tokenManager.readToken(request);
-		Map<Integer, List<String>> response = new HashMap<>();
+		List<String> response = new ArrayList<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0]))
-				response.putAll(ga4ghService.getRunsByProjects(info[0], projIDs));
+				for (Map.Entry<Integer, List<String>> entry : ga4ghService.getRunsByProjects(info[0], projIDs).entrySet())
+					for (String run : entry.getValue())
+						response.add(info[0] + Helper.ID_SEPARATOR + entry.getKey() + Helper.ID_SEPARATOR + run);
 			else
 				build403Response(resp);
-			return response;
+			return new HashMap<>() {{ put("runs", response); }};
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -434,38 +436,38 @@ public class GigwaRestController extends ControllerInterface {
 //		}
 	}
 
-	/**
-	 * get sequence list for the project
-	 *
-	 * @param request
-	 * @param variantSetId
-	 * @return Map<String, List<String>> containing the sequences in JSON format
-	 * @throws Exception 
-	 */
-	@Deprecated
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
-    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
-        Integer[] projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toArray(Integer[]::new);
-
-		String token = tokenManager.readToken(request);
-		Map<String, List<String>> response = new HashMap<>();
-		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.SEQUENCES, ga4ghService.listSequences(request, info[0], projIDs));
-			} else {
-				build403Response(resp);
-			}
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-			return null;
-		}
-		return response;
-	}
+//	/**
+//	 * get sequence list for the project
+//	 *
+//	 * @param request
+//	 * @param variantSetId
+//	 * @return Map<String, List<String>> containing the sequences in JSON format
+//	 * @throws Exception 
+//	 */
+//	@Deprecated
+//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
+//	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+//			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+//	@ApiIgnore
+//	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+//	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+//    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
+//        Integer[] projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toArray(Integer[]::new);
+//
+//		String token = tokenManager.readToken(request);
+//		Map<String, List<String>> response = new HashMap<>();
+//		try {
+//			if (tokenManager.canUserReadDB(token, info[0])) {
+//				response.put(Constants.SEQUENCES, ga4ghService.listSequences(request, info[0], projIDs));
+//			} else {
+//				build403Response(resp);
+//			}
+//		} catch (ObjectNotFoundException e) {
+//			build404Response(resp);
+//			return null;
+//		}
+//		return response;
+//	}
 
 	/**
 	 * get the Annoations effect for the project
@@ -1325,8 +1327,8 @@ public class GigwaRestController extends ControllerInterface {
 	}
 	
     @ApiIgnore
-	@GetMapping(value = BASE_URL + snpclustEditionURL)
-	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam final String projIDs) {
+	@GetMapping(value = BASE_URL + snpclustEditionURL, produces = "text/plain")
+	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 //		if (auth != null && (auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + IRoleDefinition.ROLE_DB_SUPERVISOR)) 
 //                        || auth.getAuthorities().contains(new SimpleGrantedAuthority(sModule + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_PROJECT + UserPermissionController.ROLE_STRING_SEPARATOR + TokenManager.ENTITY_SNPCLUST_EDITOR_ROLE + UserPermissionController.ROLE_STRING_SEPARATOR + projId)))) {
@@ -1335,7 +1337,7 @@ public class GigwaRestController extends ControllerInterface {
                         return "";
 
 	        MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).in(Arrays.stream(projIDs.split(";")).map(pj -> Integer.parseInt(pj)).toList()));
+	        Query q = new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(projId));
 	        q.limit(3);
 	        q.fields().include(VariantRunData.FIELDNAME_SAMPLEGENOTYPES);
 	        Iterator<VariantRunData> it = mongoTemplate.find(q, VariantRunData.class).iterator();
@@ -1351,6 +1353,7 @@ public class GigwaRestController extends ControllerInterface {
 		
 		return "";
 	}
+
 
 //	@ApiIgnore
 //	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = germplasmWithBrapiMappingURL, notes = "Lists IDs of germplasm with external reference source & ID")

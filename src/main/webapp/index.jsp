@@ -304,7 +304,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							</div>
 							<div class="col-md-7 panel panel-default panel-grey shadowed-panel" style="padding:3px 10px;">
 								External tools
-								<a target="_blank" id="snpclust"><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Edit genotypes with SnpClust" src="images/logo_snpclust.png" height="20" width="20" /></a>
+								<span id="snpclust" style="text-align:right;">
+									<a target="_blank"><img style="margin-left:8px; cursor:pointer; cursor:hand;" onclick="$('#snpClustProjLinks').toggle();" title="Edit genotypes with SnpClust" src="images/logo_snpclust.png" height="20" width="20" /></a>
+									<div id="snpClustProjLinks" style="position:absolute; right:70px; margin-top:6px; padding:5px; background-color:#eeeeee; border:1px solid #51518b; z-index:10; display:none;"></div>
+								</span>
 								<a href="#" onclick='$("div#genomeBrowserConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="(DEPRECATED in favor of using the embedded IGV.js) Click to configure an external genome browser for this database" src="images/icon_genome_browser.gif" height="20" width="20" /></a>
 								<a href="#" onclick='$("div#outputToolConfigDiv").modal("show");'><img style="margin-left:8px; cursor:pointer; cursor:hand;" title="Click to configure online output tools" src="images/outputTools.png" height="20" width="20" /></a>
 							</div>
@@ -895,35 +898,39 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				contentType: "application/json;charset=utf-8",
     	        headers: buildHeader(token, $('#assembly').val()),
 				success: function(jsonResult) {
-					runList = jsonResult;
+					runList = jsonResult.runs.reduce((acc, item) => { const parts = item.split('§'); const key = parseInt(parts[1], 10); acc[key] = [...(acc[key] || []), parts[2]]; return acc; }, {});
 				},
 				error: function(xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);
 				}
 			});
 			
-	        $.ajax({
-		        url: snpclustEditionURL + '?module=' + $('#module').val() + "&projIDs=" + getProjectId().map(t => t.split(idSep[1])),
-		        type: "GET",
-		        dataType: "json",
-		        async: false,
-		        contentType: "application/json;charset=utf-8",
-		        headers: {
-		            "Authorization": "Bearer " + token
-		        },
-		        success: function(jsonResult) {
-					if (jsonResult == "")
-	      				$('#snpclust').hide();
-	      			else {
-	      				alert("snpclust");
-						$('#snpclust').prop('href', jsonResult + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset);
-						$('#snpclust').show();
-					}
-		        },
-		        error: function(xhr, ajaxOptions, thrownError) {
-		            handleError(xhr, thrownError);
-		        }
-		    });
+			$('#snpclust').hide();
+			let htmlSnpClustProjLinks = "";
+            let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
+			for (let projId of getProjectId()) {
+				let shortProjId = projId.split(idSep)[1];
+		        $.ajax({
+			        url: snpclustEditionURL + '?module=' + $('#module').val() + "&project=" + shortProjId,
+			        type: "GET",
+			        dataType: "text",
+			        async: false,
+			        contentType: "application/json;charset=utf-8",
+			        headers: {
+			            "Authorization": "Bearer " + token
+			        },
+			        success: function(url) {
+						if (url != "") {
+							htmlSnpClustProjLinks += "<a onclick=\"$(this).parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
+							$('#snpclust').show();
+						}
+			        },
+			        error: function(xhr, ajaxOptions, thrownError) {
+			            handleError(xhr, thrownError);
+			        }
+			    });
+			}
+			$('#snpClustProjLinks').html(htmlSnpClustProjLinks);
 		});
 
 		$('#numberOfAlleles').on('change', function() {
