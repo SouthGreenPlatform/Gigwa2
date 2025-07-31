@@ -71,9 +71,9 @@ public class GigwaAuthenticationController {
 	}
 
 	@PostMapping(LOGIN_LOST_PASSWORD_URL)
-	public String sendResetPasswordEmail(@RequestParam String email, HttpSession session, HttpServletRequest request, Model model) {
+	public String sendResetPasswordEmail(@RequestParam String email, HttpServletRequest request, Model model) {
 		try {
-			passwordResetService.sendResetPasswordEmail(email, session, request);
+			passwordResetService.sendResetPasswordEmail(email, request);
 			model.addAttribute("message", "If this e-mail address matches a user account, a 5-minute valid code has just been sent to it.");
 			return "redirect:" + LOGIN_RESET_PASSWORD_URL;
 		}
@@ -89,13 +89,13 @@ public class GigwaAuthenticationController {
 	}
 
 	@PostMapping(LOGIN_RESET_PASSWORD_URL)
-	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, HttpSession session, Model model) {
+	public String resetPassword(@RequestParam String code, @RequestParam String newPassword, Model model) {
 		if (newPassword.length() > 20) {
 			model.addAttribute("error", "Password must not exceed 20 characters.");
 			return "redirect:" + LOGIN_RESET_PASSWORD_URL;
 		}
 
-		boolean updated = passwordResetService.updatePassword(code, newPassword, session);
+		boolean updated = passwordResetService.updatePassword(code, newPassword);
 		if (updated) {
 			model.addAttribute("message", "Password updated successfully. You may now login.");
 			return "redirect:" + LOGIN_FORM_URL;

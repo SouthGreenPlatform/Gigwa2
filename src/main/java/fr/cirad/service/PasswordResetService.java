@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.time.LocalDateTime;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -13,7 +12,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +21,7 @@ import org.springframework.stereotype.Service;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.security.UserWithMethod;
 import fr.cirad.tools.AppConfig;
+import fr.cirad.tools.ExpiringHashMap;
 import fr.cirad.web.controller.BackOfficeController;
 import fr.cirad.web.controller.GigwaAuthenticationController;
 
@@ -30,10 +29,8 @@ import fr.cirad.web.controller.GigwaAuthenticationController;
 public class PasswordResetService {
 
 	private static final Logger LOG = Logger.getLogger(PasswordResetService.class);
-	
-    public static final String RESET_CODE_KEY = "resetCode";
-    public static final String RESET_EMAIL_KEY = "resetEmail";
-    public static final String RESET_EXPIRATION_KEY = "resetExpiration";
+
+    private static final ExpiringHashMap<String, String> resetInfo = new ExpiringHashMap<>(1000 * 60 * 5 /* expiration delay: 5 minutes */);
 
     @Autowired(required=false)
     private JavaMailSenderImpl mailSender;
@@ -60,7 +57,7 @@ public class PasswordResetService {
         return String.format("%08d", new java.util.Random().nextInt(100000000));
     }
 
-    public boolean sendResetPasswordEmail(String email, HttpSession session, HttpServletRequest request) throws MessagingException, SocketException, UnknownHostException {
+    public boolean sendResetPasswordEmail(String email, HttpServletRequest request) throws MessagingException, SocketException, UnknownHostException {
         UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
         if (user == null /* don't disclose if the email exists */|| !user.getMethod().isEmpty() /* only local accounts are concerned */)
             return true;
@@ -116,9 +113,7 @@ public class PasswordResetService {
 
         mailSender.send(message);
 
-        session.setAttribute(RESET_CODE_KEY, resetCode);
-        session.setAttribute(RESET_EMAIL_KEY, email);
-        session.setAttribute(RESET_EXPIRATION_KEY, LocalDateTime.now().plusMinutes(5));
+        resetInfo.put(resetCode, email);
 
         LOG.info("Sent password reset code to " + email);
         return true;
@@ -147,31 +142,18 @@ public class PasswordResetService {
         return noReplyAddress;
     }
 
-    public boolean validateResetCode(String code, HttpSession session) {
-        LocalDateTime expiration = (LocalDateTime) session.getAttribute(RESET_EXPIRATION_KEY);
-
-        String storedCode = (String) session.getAttribute(RESET_CODE_KEY);
-        if (expiration == null || storedCode == null || expiration.isBefore(LocalDateTime.now())) { // Clear expired or invalid reset information
-            session.removeAttribute(RESET_CODE_KEY);
-            session.removeAttribute(RESET_EMAIL_KEY);
-            session.removeAttribute(RESET_EXPIRATION_KEY);
+    public boolean updatePassword(String code, String newPassword) {
+    	String emailAssociatedToCode = resetInfo.get(code);
+        if (emailAssociatedToCode == null) {
+        	LOG.debug("Password reset code validation failed for code '" + code/* + "' and newPassword '" + newPassword + "'"*/);
             return false;
         }
 
-        if (!storedCode.equals(code))
-            return false;	// failed attempt
-
-        return true;
-    }
-
-    public boolean updatePassword(String code, String newPassword, HttpSession session) {
-        if (!validateResetCode(code, session))
+        UserWithMethod user = userDao.getUserWithMethodByEmailAddress(emailAssociatedToCode);
+        if (user == null) {
+        	LOG.warn("Unable to find user by email address '" + emailAssociatedToCode + "' for resetting password");
             return false;
-
-        String email = (String) session.getAttribute(RESET_EMAIL_KEY);
-        UserWithMethod user = userDao.getUserWithMethodByEmailAddress(email);
-        if (user == null)
-            return false;
+        }
 
         try {
             userDao.saveOrUpdateUser(user.getUsername(), newPassword, user.getAuthorities(), user.isEnabled(), user.getMethod(), user.getEmail());
@@ -181,10 +163,8 @@ public class PasswordResetService {
             return false;
         }
 
-        // Clear the reset information from the session
-        session.removeAttribute(RESET_CODE_KEY);
-        session.removeAttribute(RESET_EMAIL_KEY);
-        session.removeAttribute(RESET_EXPIRATION_KEY);
+        // Clear the reset information
+        resetInfo.remove(code);
 
         return true;
     }
