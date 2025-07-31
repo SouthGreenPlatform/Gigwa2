@@ -18,8 +18,10 @@ package fr.cirad.web.controller.ga4gh;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.avro.AvroRemoteException;
+import org.apache.commons.collections.CollectionUtils;
 import org.ga4gh.methods.ListReferenceBasesRequest;
 import org.ga4gh.methods.ListReferenceBasesResponse;
 import org.ga4gh.methods.SearchCallSetsResponse;
@@ -44,6 +47,8 @@ import org.ga4gh.models.Variant;
 import org.ga4gh.models.VariantAnnotation;
 import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,6 +57,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
@@ -60,6 +67,7 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
+import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
 import io.swagger.annotations.ApiOperation;
@@ -228,27 +236,9 @@ public class Ga4ghRestController extends ControllerInterface {
     })
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
-        String token = tokenManager.readToken(request);
-        try
-        {
-        	String[] info = id.split(Helper.ID_SEPARATOR);
-        	int projId = Integer.parseInt(info[1]);
-	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
-	            String indHeader = request.getHeader("ind");
-	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
-	            if (variant == null) {
-	                build404Response(response);
-	                return null;
-	            } else
-	                return variant;
-	        } else {
-	            buildForbiddenAccessResponse(token, response);
-	            return null;
-	        }
-		} catch (ObjectNotFoundException e) {
-            build404Response(response);
-            return null;
-		}
+        String indHeader = request.getHeader("ind");
+    	Map<String, Object> body = new HashMap<>() {{put("callSetIds", indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";")); }};
+    	return getVariantByPost(request, response, id, body);
     }
     
     /**
@@ -258,6 +248,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param id
      * @return Variant
      * @throws IOException 
+     * @throws ObjectNotFoundException 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantByPost", notes = "get a Variant from its ID. ")
     @ApiResponses(value = {
@@ -268,14 +259,39 @@ public class Ga4ghRestController extends ControllerInterface {
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
 
-        String token = tokenManager.readToken(request);
+//        String token = tokenManager.readToken(request);
 //        try
 //        {
         	String[] info = id.split(Helper.ID_SEPARATOR);
 //        	int projId = Integer.parseInt(info[1]);
 //	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
+        	
+        		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+        		
+        		List<Integer> allowedProjects;
+    			try {
+    				allowedProjects = MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true);
+				} catch (ObjectNotFoundException e) {	// user is not allowed to see any project
+					allowedProjects = new ArrayList<>();
+				}
+        		
+        		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(Integer.parseInt(info[2])) : allowedProjects;
+        		
+        		Collection<Integer> projectsToSearchIn = CollectionUtils.intersection(targetProjects, allowedProjects);
+        		if (projectsToSearchIn.isEmpty()) {
+                    build404Response(response);
+                    return null;
+                }
+        		
+        		// implement security restrictions via the list of individuals
                 List<String> callSetIds = ((List<String>) body.get("callSetIds"));
-                Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+        		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
+        		if (callSetIds != null && !callSetIds.isEmpty())
+        			crits.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
+
+//        		System.err.println(projectsToSearchIn + " -> " + allowedIndividuals);
+
+                Variant variant = service.getVariantWithGenotypes(id, MongoTemplateManager.get(info[0]).findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class));
                 if (variant == null) {
                     build404Response(response);
                     return null;
