@@ -47,6 +47,7 @@ import org.ga4gh.models.Variant;
 import org.ga4gh.models.VariantAnnotation;
 import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.Authentication;
@@ -268,12 +269,10 @@ public class Ga4ghRestController extends ControllerInterface {
         	
         		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
         		
-        		List<Integer> allowedProjects;
+        		List<Integer> allowedProjects = new ArrayList<>();
     			try {
-    				allowedProjects = MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true);
-				} catch (ObjectNotFoundException e) {	// user is not allowed to see any project
-					allowedProjects = new ArrayList<>();
-				}
+    				allowedProjects.addAll(MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true));
+				} catch (ObjectNotFoundException e) {}	// user may not be allowed to see any project
         		
         		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(Integer.parseInt(info[2])) : allowedProjects;
         		
@@ -283,15 +282,35 @@ public class Ga4ghRestController extends ControllerInterface {
                     return null;
                 }
         		
-        		// implement security restrictions via the list of individuals
+        		// implement security restrictions via the list of samples
                 List<String> callSetIds = ((List<String>) body.get("callSetIds"));
         		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
-        		if (callSetIds != null && !callSetIds.isEmpty())
+        		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
+        		if (fGotCallSetIDs)
         			crits.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
 
 //        		System.err.println(projectsToSearchIn + " -> " + allowedIndividuals);
+        		
+        		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
+        		
+        		List<String> listInd = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class);
+        		Collection<GenotypingSample> samples;
+        		if (fGotCallSetIDs && listInd.isEmpty())
+        			samples = new ArrayList<>();	// some were passed but none was found
+        		else {
+                    List<Criteria> sampleQueryCriteria = new ArrayList<>();
+                    sampleQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(listInd));
+                    if (info.length > 2)	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
+                    	sampleQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
+                    if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run
+                        sampleQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_RUN).is(info[3]));
+                    Criteria criteria = new Criteria();
+                    if (!sampleQueryCriteria.isEmpty())
+                    	criteria.andOperator(sampleQueryCriteria.toArray(new Criteria[sampleQueryCriteria.size()]));
+                    samples = mongoTemplate.find(new Query(criteria), GenotypingSample.class);
+        		}
 
-                Variant variant = service.getVariantWithGenotypes(id, MongoTemplateManager.get(info[0]).findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class));
+                Variant variant = service.getVariantWithGenotypes(id, samples.stream().filter(sp -> allowedProjects.contains(sp.getProjectId())).toList());
                 if (variant == null) {
                     build404Response(response);
                     return null;
