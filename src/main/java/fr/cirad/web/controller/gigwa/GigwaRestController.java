@@ -61,6 +61,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import fr.cirad.mgdb.importing.parameters.FileImportParameters;
+import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
+import fr.cirad.mgdb.importing.parameters.PlinkParameters;
+import fr.cirad.mgdb.importing.parameters.VCFParameters;
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -1205,7 +1209,7 @@ public class GigwaRestController extends ControllerInterface {
 					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-			    		.collect(Collectors.toMap(e -> e.getValue().getSampleName(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
+			    		.collect(Collectors.toMap(e -> e.getValue().getId(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
 		    		: 
 		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
@@ -1593,7 +1597,7 @@ public class GigwaRestController extends ControllerInterface {
 	                                        brapiUrlToIndsOrSamples.put(endPointUrl, individualsCurrentEndpointHasDataFor);
 	                                    }
 	
-	                                    individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(sample.getSampleName());
+	                                    individualsCurrentEndpointHasDataFor.get(extRefIdValue).add(sample.getId());
 	                                }
 	                        }
 	                        else
@@ -2075,84 +2079,174 @@ public class GigwaRestController extends ControllerInterface {
 									}
 									else {
 										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
-										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
-											Criteria crit = Criteria.where(GenotypingSample.FIELDNAME_NAME).in(sampleToIndividualMapping.keySet());
-											if (project != null && Boolean.TRUE.equals(fClearProjectData))
-												crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
-											if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
-										        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
-										        return;
-											}
-									    }
+//										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
+//											Criteria crit = Criteria.where("_id").in(sampleToIndividualMapping.keySet());
+//											if (project != null && Boolean.TRUE.equals(fClearProjectData))
+//												crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
+//											if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
+//										        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
+//										        return;
+//											}
+//									    }
 										if (providingSamples && sampleToIndividualMapping == null)
 											sampleToIndividualMapping = new HashMap<>();	 // empty means no mapping file but sample names provided: individuals shall be named same just like samples
 
-										if (!filesByExtension.containsKey("gz")) {
-											if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
-												Serializable mapFile = filesByExtension.get("map");
-												boolean fIsGenotypingFileLocal = mapFile instanceof File;
-												genotypeImporter.set(new PlinkImport(processId));
-												if (retrieveIndNamesViaBrapi)
-													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-												newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("ped"), sampleToIndividualMapping, fSkipMonomorphic, false, assemblyName, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-											}
-											else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
-												Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
-												boolean fIsGenotypingFileLocal = s instanceof File;
-												genotypeImporter.set(new VcfImport(processId));
-												if (retrieveIndNamesViaBrapi)
-													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-												newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(filesByExtension.get("bcf") != null, sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-											}
-		                                    else if (filesByExtension.containsKey("intertek")) {
-		                                        Serializable s = filesByExtension.get("intertek");                                                                               
-		                                        boolean fIsGenotypingFileLocal = s instanceof File;
-		                                        genotypeImporter.set(new IntertekImport(processId));
-												if (retrieveIndNamesViaBrapi)
-													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-		                                        newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-		                                    }
-											else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
-												Serializable mapFile = filesByExtension.get("map");
-												boolean fIsGenotypingFileLocal = mapFile instanceof File;
-												genotypeImporter.set(new FlapjackImport(processId));
-												if (retrieveIndNamesViaBrapi)
-													genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-												newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile, (File) filesByExtension.get("genotype"), assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-											}
-											else if (filesByExtension.containsKey("dart")) {
-												Serializable s = filesByExtension.values().iterator().next();
-												boolean fIsGenotypingFileLocal = s instanceof File;
-												genotypeImporter.set(new DartImport(processId));
-												newProjId = ((DartImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-											}
-											else {
-												Serializable s = filesByExtension.values().iterator().next();                                                                                
-												boolean fIsGenotypingFileLocal = s instanceof File;
-												scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-												if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
-													genotypeImporter.set(new HapMapImport(processId));
-													if (retrieveIndNamesViaBrapi)
-														genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-													newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, nPloidy, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-												}
-												else
-													throw new Exception("Unsupported format or extension for genotyping data file: " + s);
-											}
-										}
-										else { // looks like a compressed file
-											Serializable s = filesByExtension.get("gz");
-											boolean fIsGenotypingFileLocal = s instanceof File;
-											if (fIsGenotypingFileLocal)
-												BlockCompressedInputStream.assertNonDefectiveFile((File) s);
-											else
-												LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
-											
-											genotypeImporter.set(new VcfImport(processId));
-											if (retrieveIndNamesViaBrapi)
-												genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-											newProjId = ((VcfImport) genotypeImporter.get()).importToMongo((fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"), sNormalizedModule, sProject, sRun, sTechnology == null ? "" : sTechnology, fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s, assemblyName, sampleToIndividualMapping, fSkipMonomorphic, Boolean.TRUE.equals(fClearProjectData) ? 1 : 0);
-										}
+                                        if (!filesByExtension.containsKey("gz")) {
+                                            if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
+                                                Serializable mapFile = filesByExtension.get("map");
+                                                boolean fIsGenotypingFileLocal = mapFile instanceof File;
+                                                genotypeImporter.set(new PlinkImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                PlinkParameters params = new PlinkParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        null, //ploidy
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0, //importMode
+                                                        fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile,
+                                                        (File) filesByExtension.get("ped"),
+                                                        false
+                                                );
+                                                newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("vcf") || filesByExtension.containsKey("bcf")) {
+                                                Serializable s = filesByExtension.containsKey("bcf") ? filesByExtension.get("bcf") : filesByExtension.get("vcf");
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new VcfImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                VCFParameters params = new VCFParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        null, //ploidy
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0, //importMode
+                                                        filesByExtension.get("bcf") != null,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("intertek")) {
+                                                Serializable s = filesByExtension.get("intertek");
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new IntertekImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        null, //ploidy
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
+                                                Serializable mapFile = filesByExtension.get("map");
+                                                boolean fIsGenotypingFileLocal = mapFile instanceof File;
+                                                genotypeImporter.set(new FlapjackImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                FlapjackImportParameters params = new FlapjackImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile,
+                                                        (File) filesByExtension.get("genotype")
+                                                );
+                                                newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("dart")) {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new DartImport(processId));
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((DartImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
+                                                if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
+                                                    genotypeImporter.set(new HapMapImport(processId));
+                                                    if (retrieveIndNamesViaBrapi)
+                                                        genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                    FileImportParameters params = new FileImportParameters(
+                                                            sNormalizedModule,
+                                                            sProject,
+                                                            sRun,
+                                                            sTechnology == null ? "" : sTechnology,
+                                                            nPloidy,
+                                                            assemblyName,
+                                                            sampleToIndividualMapping,
+                                                            fSkipMonomorphic,
+                                                            Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                            fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                    );
+                                                    newProjId = ((HapMapImport) genotypeImporter.get()).importToMongo(params);
+                                                }
+                                                else
+                                                    throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+                                            }
+                                        }
+                                        else { // looks like a compressed file
+                                            Serializable s = filesByExtension.get("gz");
+                                            boolean fIsGenotypingFileLocal = s instanceof File;
+                                            if (fIsGenotypingFileLocal)
+                                                BlockCompressedInputStream.assertNonDefectiveFile((File) s);
+                                            else
+                                                LOG.info("Could not invoke assertNonDefectiveFile on remote file: " + s);
+
+                                            genotypeImporter.set(new VcfImport(processId));
+                                            if (retrieveIndNamesViaBrapi)
+                                                genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                            VCFParameters params = new VCFParameters(
+                                                    sNormalizedModule,
+                                                    sProject,
+                                                    sRun,
+                                                    sTechnology == null ? "" : sTechnology,
+                                                    null, //ploidy
+                                                    assemblyName,
+                                                    sampleToIndividualMapping,
+                                                    fSkipMonomorphic,
+                                                    Boolean.TRUE.equals(fClearProjectData) ? 1 : 0, //importMode
+                                                    (fIsGenotypingFileLocal ? ((File) s).getName() : ((URL) s).toString()).toLowerCase().endsWith(".bcf.gz"),
+                                                    fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                            );
+                                            newProjId = ((VcfImport) genotypeImporter.get()).importToMongo(params);
+                                        }
 									}
 
 									createdProjectId.set(newProjId != null ? newProjId : -1);

@@ -416,7 +416,7 @@ public class Ga4ghRestController extends ControllerInterface {
 
 	            String module = info[0];
 
-	            LinkedHashMap<Integer, GenotypingSample> sampleMap = mgdbDao.loadSamplesWithAllMetadata(module, auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth), Arrays.asList(Integer.parseInt(info[1])), null, null);
+	            LinkedHashMap<String, GenotypingSample> sampleMap = mgdbDao.loadSamplesWithAllMetadata(module, auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth), Arrays.asList(Integer.parseInt(info[1])), null, null);
 
 	            List<CallSet> listCallSet = new ArrayList<>();
 	            int size = sampleMap.size();
