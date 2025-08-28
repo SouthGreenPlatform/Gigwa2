@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
+import fr.cirad.mgdb.importing.parameters.VCFParameters;
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.GAException;
 import org.junit.AfterClass;
@@ -29,7 +31,20 @@ public class GigwaUnitTests {
 		Properties p = new Properties();
 		p.load(datasources);
 		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
-		new VcfImport().importToMongo(false, "testModule", "testProject", "testRun", "testTechnology", new File("test/sample.vcf").toURI().toURL(), null, null, false, 0);
+        VCFParameters params = new VCFParameters(
+                "testModule",
+                "testProject",
+                "testRun",
+                "testTechnology",
+                null, //ploidy
+                null,
+                null,
+                false,
+                0, //importMode
+                false,
+                new File("test/sample.vcf").toURI().toURL()
+        );
+        new VcfImport().importToMongo(params);
 		Assembly.setThreadAssembly(0);
 	}
 

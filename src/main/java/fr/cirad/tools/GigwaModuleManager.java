@@ -42,6 +42,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import fr.cirad.mgdb.model.mongo.maintypes.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -73,10 +74,6 @@ import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
 import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -604,7 +601,7 @@ public class GigwaModuleManager implements IModuleManager {
                 Query q = new Query(Criteria.where("_id").is(nProjId));
                 q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
                 q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
-                return (int) mongoTemplate.count(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class) + " samples";
+                return (int) mongoTemplate.count(new Query(new Criteria().andOperator(Criteria.where(CallSet.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(CallSet.FIELDNAME_RUN).is(sRun))), CallSet.class) + " callsets";
 
             }
         }
