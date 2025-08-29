@@ -375,8 +375,6 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					<a class="btn btn-sm icon-btn btn-default active" id="toggleVariantMetadata" data-toggle="button" class-toggle="btn-inverse" style="padding:5px 10px; margin-right:30px;" href="#" onclick="$('#variantMetadata').toggle(100);">
 						View variant metadata
 					</a>
-					Run:
-					<div class="btn-group" data-toggle="buttons" id="runButtons"></div>
 				</div>
 				<div class="modal-header">
 					<h4 class="modal-title" id="variantDetailsLabel">Variant details</h4>
@@ -401,7 +399,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div class="d-flex flex-column">
 							<div>
-								<p id="textKnownAlleles" class="text-bold"></p>
+								<p id="textKnownAlleles" class="text-bold">Known Allele(s)</p>
 							</div>
 							<div>
 								<div id="varKnownAlleles" class="text-bold d-flex d-row" style="gap:5px"></div>
@@ -1792,9 +1790,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		
 		if (!reload)
 			$("#displayAllGtOption").toggle(ind.length > 0);
-		$("#runButtons").html("");
 		var addedRunCount = 0;
 		
+		
+		let responseObjects = {};
 		let requests = [];
 		var firstValidRun = null, runIndex = 0;
 		for (var projId in runList) {
@@ -1808,51 +1807,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		            contentType: "application/json;charset=utf-8",
 					headers: buildHeader(token, $('#assembly').val()),
 		            success: function(jsonResult) {
-		                    if (addedRunCount == 0) {
-		                            $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
-		                            $('#varSeq').html("Seq: " + jsonResult.referenceName);
-		                            $('#varType').html("Type: " + jsonResult.info.type[0]);
-		                            $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-		                            $('#textKnownAlleles').html("Known Allele(s)");
-		                         	$('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-		                    }
-		                    var htmlTableContents = buildGenotypeTableContents(jsonResult);
-		                    
-		                    // Initialize a flag to track if the current run has non-empty genotypes
-		                    var hasNonEmptyGenotype = false;
-		                    // Iterate over the calls in the JSON result for the current run
-		                    for (var callIndex in jsonResult.calls) {
-		                        var genotype = jsonResult.calls[callIndex].genotype;
-		                        // Check if the genotype exists and has a length greater than zero
-		                        if (genotype && genotype.length > 0) {
-		                            // Set the flag to true and exit the loop
-		                            hasNonEmptyGenotype = true;
-		                            break;
-		                        }
-		                    }
-		
-		                    // If the current run has non-empty genotypes
-		                    if (hasNonEmptyGenotype) {
-		                        // Check if the first valid run has not been set yet
-		                        if (firstValidRun === null) {
-		                            // Set the index of the first valid run
-		                            firstValidRun = runIndex;
-		                        }
-		
-		                        // Displays the buttons and table of valid runs and directly displays the table of the first valid run
-		                        let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
-		                        $("#runButtons").append('<label onclick="$(\'div#gtTable\').children().hide(); $(\'div#gtTable div#run' + runIndex + '\').fadeIn();" class="btn btn-sm btn-primary' + (addedRunCount == firstValidRun ? ' active' : '') + '"><input type="radio" name="options" id="' + runIndex + '"' + (addedRunCount == firstValidRun ? ' checked' : '') + (addedRunCount == firstValidRun ? ' active' : '') + '>' + projNames[projId] + ', run ' + runId + '</label>');
-		                            modalContent += '<div id="run' + runIndex + '"' + (addedRunCount == firstValidRun ? '' : ' style="display:none;"') + '><table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + htmlTableContents + '</table></div>';
-		                    }
-		                    if ($('#varId').html() == "") {
-		                        $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
-		                        $('#varSeq').html("Seq: " + jsonResult.referenceName);
-		                        $('#varType').html("Type: " + jsonResult.info.type[0]);
-		                        $('#varPos').html("Pos: " + jsonResult.start + "-" + jsonResult.end);
-		                        $('#textKnownAlleles').html("Known Allele(s)");
-		                        $('#varKnownAlleles').html(extractUniqueAlleles(jsonResult));
-		                    }
-		                    addedRunCount++;
+		            	responseObjects[projId + idSep + runId] = jsonResult;
 		            },
 		            error: function(xhr, ajaxOptions, thrownError) {
 		                    handleError(xhr, thrownError);
@@ -1863,8 +1818,51 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	    	}
 		}
 
-		
-		Promise.allSettled(requests).then(function(){
+	    let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
+
+		Promise.allSettled(requests).then(function() {
+			let mergedJsonContents = null;
+			for (let projAndRun in responseObjects) {
+				if (requests.length > 1)
+					responseObjects[projAndRun].calls.forEach(function(call) {
+						let splitProjAndRun = projAndRun.split(idSep);
+						call.info.project = [projNames[splitProjAndRun[0]]];
+						call.info.run = [splitProjAndRun[1]];
+					});
+				if (mergedJsonContents === null)
+					mergedJsonContents = responseObjects[projAndRun];
+				else {	// merge additional contents 
+					if (mergedJsonContents.id !== responseObjects[projAndRun].id) {
+						console.log("Cannot merge genotypes for different variants ( " + mergedJsonContents.id  + "!=" + responseObjects[projAndRun].id + " )");
+						continue;
+					}
+					mergedJsonContents.calls = mergedJsonContents.calls.concat(responseObjects[projAndRun].calls);
+				}
+			}
+			
+			// Sort the `calls` so that table contents are readable
+			mergedJsonContents.calls.sort((a, b) => {
+			    if (a.callSetId < b.callSetId) return -1;
+			    if (a.callSetId > b.callSetId) return 1;
+
+			    if (a.info.project[0] < b.info.project[0]) return -1;
+			    if (a.info.project[0] > b.info.project[0]) return 1;
+
+			    if (a.info.run[0] < b.info.run[0]) return -1;
+			    if (a.info.run[0] > b.info.run[0]) return 1;
+
+			    return 0;
+			});
+
+            modalContent += '<table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + buildGenotypeTableContents(mergedJsonContents) + '</table>';
+
+            if ($('#varId').html() == "") {
+                $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
+                $('#varSeq').html("Seq: " + mergedJsonContents.referenceName);
+                $('#varType').html("Type: " + mergedJsonContents.info.type[0]);
+                $('#varPos').html("Pos: " + mergedJsonContents.start + "-" + mergedJsonContents.end);
+            }
+
 		    $('#gtTable').html(modalContent);
 			markInconsistentGenotypesAsMissing();
 			calculateVariantStats();
