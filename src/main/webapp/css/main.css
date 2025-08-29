@@ -785,7 +785,7 @@ table#individualFilteringTable td {
     padding: 3px 6px;
 }
 
-table.genotypeTable>tbody>tr>th {
+table#genotypeTable>tbody>tr>th {
 	padding:2px;
 }
 
