@@ -541,14 +541,14 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 * @param variantSetId
-	 * @return Map<String, Integer> containing ploidy level in JSON format
+	 * @return List<Integer> containing distinct ploidy levels found among specified variantSets
 	 * @throws Exception 
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getPloidyLevel", notes = "return the ploidy level in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+	public List<Integer> getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
         Integer[] projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toArray(Integer[]::new);
 
