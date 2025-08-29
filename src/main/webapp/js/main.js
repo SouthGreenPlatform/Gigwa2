@@ -433,7 +433,7 @@ function applyGenomeBrowserURL() {
 function markInconsistentGenotypesAsMissing() {
 	var multiSampleIndividuals = new Set();
 	var displayedIndividuals = new Set();
-	$('table.genotypeTable tr th:first-child').map(function() {
+	$('table#genotypeTable tr th:first-child').map(function() {
 	    var indName = $(this).text();
 	    if (indName != "Individual") {
 		    if (displayedIndividuals.has(indName))
@@ -446,7 +446,7 @@ function markInconsistentGenotypesAsMissing() {
 		return; // no multi-sample individuals displayed
 
 	multiSampleIndividuals.forEach(function(ind) {
-		let rowsToConsider = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
+		let rowsToConsider = $("table#genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
 		var indGTs = rowsToConsider.map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();
@@ -589,7 +589,7 @@ function setGenotypeInvestigationMode(mode) {
 
     for (var i = 1; i <= mode; i++) {
 		if (i >= count + 1) {
-            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><input type="text" class="groupName" onchange="groupNameChanged(${i});" onfocus="select();" title="You may give a name to this group" maxlength="12" style="border:1px solid lightgrey; text-align:center; float:right; height:17px; margin:6px 2px 1px 2px; padding:0 1px; width:85px; font-weight:bold;" id="group${i}" value="Group${i}"></input><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals <span style="font-weight:normal;"></span></div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"  style="cursor:pointer; cursor:hand; float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Select another group here to limit search to variants for which the major genotype differs between both groups.\n\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups."></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
+            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><input type="text" class="groupName" onchange="groupNameChanged(${i});" onfocus="select();" title="You may give a name to this group" maxlength="12" style="border:1px solid lightgrey; text-align:center; float:right; height:17px; margin:6px 2px 1px 2px; padding:0 1px; width:85px; font-weight:bold;" id="group${i}" value="Group${i}"></input><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">Individuals <span style="font-weight:normal;"></span></div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div${ploidy.length === 1 && ploidy[0] === 1 ? " class='hidden'" : ""}><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"  style="cursor:pointer; cursor:hand; float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Select another group here to limit search to variants for which the major genotype differs between both groups.\n\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups."></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
             childContainer.append(htmlContent);
             $('#discriminate' + i).selectpicker();
 
@@ -1014,9 +1014,12 @@ function clearGeneIdSelection() {
     $('#geneIdsSelect').selectpicker('refresh');
 }
 
-function displayProjectInfo(projName)
+function displayProjectInfo(projNames)
 {
-    $("#projectInfoContainer").html("<h4>Information on project " + projName + "</h4><div style='font-weight:bold; float:right;'>" + dbDesc + "</div><p>This project contains " + runList.length + " run(s) of data.</p><pre>" + projectDescriptions[projName] + "</pre>");
+    let projIDs =  $("select#project").find('option').toArray().reduce((acc, option) => (acc[$(option).text()] = splitId(option.dataset.id, 1), acc), {});
+    $("#projectInfoContainer").html("<div style='font-weight:bold; float:right;'>" + dbDesc + "</div><h4 class='bold'>Project information</h4>");
+    for (let projName of projNames)
+    	$("#projectInfoContainer").append("<h4 class='margin-top'>" + projName + "</h4><p>This project contains " + runList[projIDs[projName]].length + " run(s) of data.</p><pre>" + projectDescriptions[projName] + "</pre>");
     $("#projectInfo").modal({
         opacity: 80,
         overlayCss: {
@@ -1638,10 +1641,8 @@ function buildGenotypeTableContents(jsonResult) {
 	for (const call in jsonResult.calls) {
 		let gt = '';
 		const alleles = [];
-		for (const allele in jsonResult.calls[call].genotype) {
-			const alleleIndex = jsonResult.calls[call].genotype[allele];
-			alleles.push(knownAlleles[alleleIndex]);
-		}
+		for (const allele in jsonResult.calls[call].genotype)
+			alleles.push(knownAlleles[jsonResult.calls[call].genotype[allele]]);
 
 		alleles.forEach(function(allele) {
 			gt += '<div class="allele">' + allele + '</div>';
@@ -1662,12 +1663,9 @@ function buildGenotypeTableContents(jsonResult) {
 
 		const sortedInfoEntries = sortedKeys.map(key => [key, jsonResult.calls[call].info[key]]);
 		for (const [header, value] of sortedInfoEntries) {
-			let headerPos = headerPositions[header];
-			if (headerPos == null) {
-				headerPos = Object.keys(headerPositions).length;
-				headerPositions[header] = headerPos;
-			}
-			gtRow[headerPos + 2] = value[0];
+			if (headerPositions[header] == null)
+				headerPositions[header] = Object.keys(headerPositions).length;
+			gtRow[headerPositions[header] + 2] = value[0];
 		}
 		gtTable.push(gtRow);
 	}
@@ -1676,19 +1674,15 @@ function buildGenotypeTableContents(jsonResult) {
     for (var header in headerPositions)
         tableHeader[headerPositions[header] + 2] = header;
     
-    var toggledColorColumnIndices = [tableHeader.indexOf("sample"), tableHeader.indexOf("project"), tableHeader.indexOf("run")].filter(x => x != -1);
+    var toggledColorColumnIndices = gtTable.length == new Set(gtTable.map(rows => rows[0])).size ? [] /*if each individual appears once we don't need to toggle bgcolors*/ : [tableHeader.indexOf("sample"), tableHeader.indexOf("project"), tableHeader.indexOf("run")].filter(x => x != -1);
     var htmlTableContents = new StringBuffer();
     htmlTableContents.append('<thead><tr>');
 
-    // Add "Individual" as first column always
-    htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
-    // Add "Genotype" as a column
-    htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
+    // Always add "Individual" and "Genotype" as first columns
+    htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th><th>&nbsp;Genotype&nbsp;</th>');
     
-    for (var headerPos in tableHeader) {
-        var header = tableHeader[headerPos];
-        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
-    }
+    for (var headerPos in tableHeader)
+        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[tableHeader[headerPos]] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[tableHeader[headerPos]] + '"') + '>&nbsp;' + tableHeader[headerPos] + '&nbsp;</th>');
     htmlTableContents.append('</tr></thead>');
 
     var annotationFieldThresholds = {};
@@ -1703,13 +1697,12 @@ function buildGenotypeTableContents(jsonResult) {
     var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
 
     var prevFirstElement = null;
-    var toggledColor = '#d1d1e0';
+    var toggledColor = '#e0e0f0';
     for (var row in gtTable) {
     	var indivColors = [];
 
         for (var i = 0; i < individualsByGroup.length; i++) {
-            var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-            if (inGroup)
+            if (individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]))
                 indivColors.push(groupColors[i]);
         }
         var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
@@ -1720,16 +1713,15 @@ function buildGenotypeTableContents(jsonResult) {
 		
         for (var i = 0; i < tableHeader.length; i++) {
             var missingData = false;
-            if (applyThresholds && i >= 2 + toggledColorColumnIndices.length) {
+            if (applyThresholds && i >= 2 + toggledColorColumnIndices.length)
                 for (var annotation in annotationThresholds) {
                     if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
                         missingData = true;
                         break;
                     }
                 }
-            }
 
-			var bgColorStyle = toggledColorColumnIndices.length > 0 && toggledColorColumnIndices.includes(i) && toggledColor != null ? (" style='background-color:" + toggledColor + "'") : "";
+			let bgColorStyle = toggledColorColumnIndices.length > 0 && toggledColorColumnIndices.includes(i) && toggledColor != null ? (" style='background-color:" + toggledColor + "'") : "";
 	    	htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td" + bgColorStyle) + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
 	    }
 
@@ -1739,11 +1731,9 @@ function buildGenotypeTableContents(jsonResult) {
     return htmlTableContents.toString();}
 
 function calculateVariantStats() {
-	let individuals = new Set($('table.genotypeTable tr th:first-child').filter(function() {
-		    return $(this).text().trim() != "Individual";
-		}).map(function() {
-		    return $(this).text();
-		}));
+	let individuals = new Set($('table#genotypeTable tbody tr th:first-child').map(function() {
+	    return $(this).text();
+	}));
 		
     const nGroupCount = getGenotypeInvestigationMode() + 1;
 	const groupsContent = [nGroupCount == 2 && !$("#displayAllGt").prop('checked') ? null : []];
@@ -1758,9 +1748,9 @@ function calculateVariantStats() {
 	let treatedIndividuals = new Set();
 	let alleleCounts = Array.from({ length: nGroupCount }, () => ({}));
 	let hetZcount = new Array(nGroupCount).fill(0);
-	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = ploidy != [1];
+	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = !(ploidy.length === 1 && ploidy[0] === 1);
 	
-	$("table.genotypeTable tbody tr").each(function() {
+	$("table#genotypeTable tbody tr").each(function() {
 		let indName = $(this).find('th:first-child').text();
 		if ($(this).find("td.missingData").length > 0)
 			return;

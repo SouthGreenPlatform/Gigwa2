@@ -439,7 +439,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays project information -->
-	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px;">
+	<div class="modal fade" role="dialog" id="projectInfo" aria-hidden="true" style="margin-top:200px; z-index:2100;">
 		<div class="modal-dialog modal-sm">
 			<div class="modal-content">
 				<div class="modal-header" id="projectInfoContainer"></div>
@@ -763,6 +763,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			
 			referenceset = $(this).val();
 
+			projectDescriptions = [];
 			if (referenceset == "" || !loadProjects(referenceset)) {
 				$("div.alert-info").hide();
 				$("div#searchPanel").fadeOut();
@@ -820,7 +821,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		
 		$('#project').on('change', function() {
 			let projIDs = getProjectId();
-			if (projIDs == []) {
+			if (projIDs.length == 0) {
 				$('#searchPanel').hide();
 				return;
 			}
@@ -880,11 +881,14 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			}
 
 			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
-			var projectDesc = projectDescriptions[$(this).val()];
-			if (projectDesc != null)
+			var projectDesc = "";
+			for (let pjName of $(this).val()) {
+				projectDesc += projectDescriptions[pjName];
+			}
+// 			if (projectDesc != null)
 				$("#projectInfoLink").show();
-			else
-				$("#projectInfoLink").hide();
+// 			else
+// 				$("#projectInfoLink").hide();
 			$('#searchPanel').fadeIn();
 			
 // 			currentChartType = null;
@@ -1173,11 +1177,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								else
 									projectDescriptions[project.name] = project.metadata[mdObjKey].value + "\n\n" + projectDescriptions[project.name];
 							}
-							else if ("<%= Constants.GENOTYPING_TECHNOLOGY %>" == project.metadata[mdObjKey].key) {
+							else if ("<%= Constants.GENOTYPING_TECHNOLOGY %>" == project.metadata[mdObjKey].key || "<%= Constants.PLOIDY %>" == project.metadata[mdObjKey].key) {
 								if (projectDescriptions[project.name] == null)
-									projectDescriptions[project.name] = project.metadata[mdObjKey].value;
+									projectDescriptions[project.name] = "<u>" + project.metadata[mdObjKey].key + ":</u> " + project.metadata[mdObjKey].value;
 								else
-									projectDescriptions[project.name] += "\n\n<u><%= Constants.GENOTYPING_TECHNOLOGY %>:</u> " + project.metadata[mdObjKey].value;
+									projectDescriptions[project.name] += "\n\n<u>" + project.metadata[mdObjKey].key + ":</u> " + project.metadata[mdObjKey].value;
 							}
 						option += '<option data-id="' + jsonResult.variantSets[set].id + '">' + jsonResult.variantSets[set].name + '</option>';
 						projNames.push(jsonResult.variantSets[set].name);
@@ -1818,7 +1822,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	    	}
 		}
 
-	    let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
+		let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
 
 		Promise.allSettled(requests).then(function() {
 			let mergedJsonContents = null;
@@ -1854,7 +1858,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			    return 0;
 			});
 
-            modalContent += '<table class="table table-overflow table-bordered genotypeTable" style="width: auto;">' + buildGenotypeTableContents(mergedJsonContents) + '</table>';
+            modalContent += '<table class="table table-overflow table-bordered" id="genotypeTable" style="width: auto;">' + buildGenotypeTableContents(mergedJsonContents) + '</table>';
 
             if ($('#varId').html() == "") {
                 $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
