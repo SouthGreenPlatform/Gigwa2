@@ -110,7 +110,7 @@ function fillWidgets() {
     loadIndividuals();
     loadNumberOfAlleles();
     loadGenotypePatterns();
-    readPloidyLevel();
+    readPloidyLevels();
     loadVariantIds();
     loadGeneIds();
 }
@@ -167,7 +167,7 @@ function loadVcfFieldHeaders() {
 
 function resetMafWidgetsIfNecessary(nGroup) {
     var onlyBiAllelicInSelection = ($('#numberOfAlleles').children().length == 1 && $('#numberOfAlleles').children()[0].innerText == "2") || $('#numberOfAlleles').val() == 2;
-    var enableMaf = onlyBiAllelicInSelection && !$("#filterIDsCheckbox").is(":checked") && ploidy <= 2 && $('#Genotypes' + nGroup).val() != null && !$('#Genotypes' + nGroup).val().startsWith("All Homozygous");
+    var enableMaf = onlyBiAllelicInSelection && !$("#filterIDsCheckbox").is(":checked") && $('#Genotypes' + nGroup).val() != null && !$('#Genotypes' + nGroup).val().startsWith("All Homozygous");
     if (!enableMaf) {
         $('#minMaf' + nGroup).val(0);
         $('#maxMaf' + nGroup).val(50);
@@ -1758,7 +1758,7 @@ function calculateVariantStats() {
 	let treatedIndividuals = new Set();
 	let alleleCounts = Array.from({ length: nGroupCount }, () => ({}));
 	let hetZcount = new Array(nGroupCount).fill(0);
-	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = ploidy > 1;
+	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = ploidy != [1];
 	
 	$("table.genotypeTable tbody tr").each(function() {
 		let indName = $(this).find('th:first-child').text();

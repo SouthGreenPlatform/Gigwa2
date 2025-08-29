@@ -707,7 +707,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var exporting = false;
 	var isAnnotated = false;
 	var gtTable;
-	var ploidy = 2;
+	var ploidy = [2];
 	var projectDescriptions = [];
 	var dbDesc;
 	var searchableVcfFieldListURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SEARCHABLE_ANNOTATION_FIELDS_URL %>" />';
@@ -1496,7 +1496,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 	}
 	
-	function readPloidyLevel() {
+	function readPloidyLevels() {
 		$.ajax({
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
@@ -1505,8 +1505,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			headers: {
 				"Authorization": "Bearer " + token
 			},
-			success: function(ploidyLevel) {
-				ploidy = ploidyLevel;
+			success: function(ploidyLevels) {
+				ploidy = ploidyLevels;
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1945,10 +1945,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			var supportedPloidyLevels = $('#exportFormat').children().filter(':selected').data('pdy');
 			if (supportedPloidyLevels != null && supportedPloidyLevels !== undefined && supportedPloidyLevels != "undefined") {
 				supportedPloidyLevels = supportedPloidyLevels.toString().split(";").map(s => parseInt(s));
-				if (!supportedPloidyLevels.includes(ploidy)) {
-					alert("Error: selected export format does not support ploidy level " + ploidy);
-					return;
-				}
+				for (let ploidyLevel of ploidy)
+					if (!supportedPloidyLevels.includes(ploidyLevel)) {
+						alert("Error: selected export format does not support ploidy level " + ploidyLevel);
+						return;
+					}
 			}
 		}
 		
