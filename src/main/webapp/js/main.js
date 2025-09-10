@@ -725,7 +725,7 @@ function addSelectionDropDownsToHeaders(tableObj)
         return;
 
     $.ajax({
-        url: distinctIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        url: distinctIndividualMetadata + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
         type: "POST",
         data : "{}",
         contentType: "application/json;charset=utf-8",
@@ -796,7 +796,7 @@ function applyDropDownFiltersToTable(tableObj, reset)
 	ifTable.append("<tr><th style='padding:50px; background-color:#eeeeee;' colspan='" + (1 + ifTable.find("tr:eq(0)").children().length) + "'>Loading...<br/><br/><img src='images/progress.gif' /></th></tr>");
 	
     $.ajax({
-        url: filterIndividualMetadata + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        url: filterIndividualMetadata + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),

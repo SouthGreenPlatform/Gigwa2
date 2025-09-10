@@ -51,7 +51,7 @@ function chartIndSelectionChanged() {
 				var targetGroup = i == 0 ? callSetIds : additionalCallSetIds[i - 1];
 				filters[groupOption] = [selectedValues[i]];
 			    $.ajax({
-			        url: filterIndividualMetadata + '/' + getChartModule() + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+			        url: filterIndividualMetadata + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
 			        type: "POST",
 			        async: false,
 			        contentType: "application/json;charset=utf-8",
@@ -968,7 +968,7 @@ function updateAvailableGroups() {
     if (option != "__") {
 	    let selectedIndividuals = getSelectedIndividuals();
         $.ajax({
-	        url: distinctIndividualMetadata + '/' + getChartModule() + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+	        url: distinctIndividualMetadata + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
 	        type: "POST",
 	        data: JSON.stringify({"individuals" : selectedIndividuals.length == 0 ? null : selectedIndividuals}),
 	        contentType: "application/json;charset=utf-8",

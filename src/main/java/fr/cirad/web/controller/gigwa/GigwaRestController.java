@@ -2562,18 +2562,20 @@ public class GigwaRestController extends ControllerInterface {
 
     @ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final String projIDs, @RequestBody HashMap<String, Object> reqBody) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
+		String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), (Collection<String>) reqBody.get("individuals"));
 	}
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
+		String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")

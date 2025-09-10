@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.ejb.ObjectNotFoundException;
@@ -407,7 +409,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param request
      * @param callSetsRequest
      * @return SearchCallSetsResponse in JSON format
-     * @throws IOException 
+     * @throws Exception 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchCallSets", notes = "get a list of CallSet matching values from SearchCallSetsRequest. ")
     @ApiResponses(value = {
@@ -415,14 +417,37 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws IOException {
+    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws Exception {
         String token = tokenManager.readToken(request);
-        String id = callSetsRequest.getVariantSetId();
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(callSetsRequest.getVariantSetId());
+        Set<Integer> projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).collect(Collectors.toSet());
+
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
+	        if (tokenManager.canUserReadDB(token, info[0])) {
 	        	callSetsRequest.setRequest(request);
-	            return service.searchCallSets(callSetsRequest);
+	        	SearchCallSetsResponse result = service.searchCallSets(callSetsRequest);
+	        	
+                // find out which projects each individual is involved in 
+	            HashMap<String, TreeSet<String>> individualProjects = new HashMap<>();
+	        	Collection<String> indIDs = result.getCallSets().stream().map(cs -> cs.getId().split(Helper.ID_SEPARATOR)[1]).toList();
+	        	Query q = new Query(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(indIDs));
+	        	for (GenotypingSample sample : MongoTemplateManager.get(info[0]).find(q, GenotypingSample.class)) {
+	        		TreeSet<String> projectsInvolvingIndividual = individualProjects.get(sample.getIndividual());
+	        		if (projectsInvolvingIndividual == null) {
+	        			projectsInvolvingIndividual = new TreeSet<>();
+	        			individualProjects.put(sample.getIndividual(), projectsInvolvingIndividual);
+	        		}
+	        		if (projIDs.contains(sample.getProjectId()))
+	        			projectsInvolvingIndividual.add("" + sample.getProjectId());
+	        	}
+	        	
+	        	boolean fMultipleProjectsInvolved = individualProjects.values().stream().filter(projSet -> projSet.size() > 1).count() > 0;
+	            for (CallSet callSet : result.getCallSets())
+	            	if (fMultipleProjectsInvolved && !callSet.getInfo().containsKey("projects"))
+	            		callSet.getInfo().put("projects", new ArrayList<>(individualProjects.get(callSet.getId().split(Helper.ID_SEPARATOR)[1])));
+
+	            return result;
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;
