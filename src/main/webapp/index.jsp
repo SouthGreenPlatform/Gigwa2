@@ -1826,23 +1826,24 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 		Promise.allSettled(requests).then(function() {
 			let mergedJsonContents = null;
-			for (let projAndRun in responseObjects) {
-				if (requests.length > 1)
-					responseObjects[projAndRun].calls.forEach(function(call) {
-						let splitProjAndRun = projAndRun.split(idSep);
-						call.info.project = [projNames[splitProjAndRun[0]]];
-						call.info.run = [splitProjAndRun[1]];
-					});
-				if (mergedJsonContents === null)
-					mergedJsonContents = responseObjects[projAndRun];
-				else {	// merge additional contents 
-					if (mergedJsonContents.id !== responseObjects[projAndRun].id) {
-						console.log("Cannot merge genotypes for different variants ( " + mergedJsonContents.id  + "!=" + responseObjects[projAndRun].id + " )");
-						continue;
+			for (let projAndRun in responseObjects)
+			 if (responseObjects[projAndRun].calls.map(call => call.genotype).filter(gt => gt.length > 0).length > 0) /* ignore empty runs */ {
+					if (requests.length > 1)
+						responseObjects[projAndRun].calls.forEach(function(call) {
+							let splitProjAndRun = projAndRun.split(idSep);
+							call.info.project = [projNames[splitProjAndRun[0]]];
+							call.info.run = [splitProjAndRun[1]];
+						});
+					if (mergedJsonContents === null)
+						mergedJsonContents = responseObjects[projAndRun];
+					else {	// merge additional contents 
+						if (mergedJsonContents.id !== responseObjects[projAndRun].id) {
+							console.log("Cannot merge genotypes for different variants ( " + mergedJsonContents.id  + "!=" + responseObjects[projAndRun].id + " )");
+							continue;
+						}
+						mergedJsonContents.calls = mergedJsonContents.calls.concat(responseObjects[projAndRun].calls);
 					}
-					mergedJsonContents.calls = mergedJsonContents.calls.concat(responseObjects[projAndRun].calls);
 				}
-			}
 			
 			// Sort the `calls` so that table contents are readable
 			mergedJsonContents.calls.sort((a, b) => {
@@ -2820,14 +2821,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     function buildChartDataPayLoad(displayedSequence, displayedVariantType) {
         let activeGroups = $(".genotypeInvestigationDiv").length;
     	let query = {
-            "variantSetId": $('#project :selected').data("id"),
+            "variantSetId": getProjectId().join(","),
             "discriminate": typeof getDiscriminateArray == "undefined" ? [] : getDiscriminateArray(),
             "displayedSequence": displayedSequence,
             "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
             "displayedRangeMin": localmin,
             "displayedRangeMax": localmax,
             "displayedRangeIntervalCount": displayedRangeIntervalCount,
-    		"callSetIds": callSetIds.length > 0 ? callSetIds : indOpt.map(ind => getProjectId() + idSep + ind),
+    		"callSetIds": getSelectedIndividuals(null, true),
+    		//callSetIds.length > 0 ? callSetIds : indOpt.map(ind => getProjectId() + idSep + ind),
     		"additionalCallSetIds": additionalCallSetIds,
             "start": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[0],
             "end": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[1]
