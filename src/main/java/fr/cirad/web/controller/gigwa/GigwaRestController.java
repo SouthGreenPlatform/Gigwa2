@@ -861,7 +861,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
-        String info[] = Helper.getInfoFromId(gr.getVariantSetId(), 2);
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gr.getVariantSetId());
         if (!tokenManager.canUserReadDB(token, info[0])) {
 			build404Response(resp);
 			return;
@@ -2439,7 +2439,7 @@ public class GigwaRestController extends ControllerInterface {
     		return;
     	}
 
-    	String info[] = Helper.getInfoFromId(gsvr.getVariantSetId(), 2);
+		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gsvr.getVariantSetId());
         String sModule = info[0];
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 

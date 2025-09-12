@@ -60,7 +60,7 @@ function chartIndSelectionChanged() {
 			        success: function (callSetResponse) {
 		                callSetResponse.forEach(function (callset) {
 		                    if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
-								targetGroup.push(getProjectId() + idSep + callset.id)
+								targetGroup.push(referenceset + idSep + callset.id)
 		                });
 			        }
 			    });
@@ -146,7 +146,6 @@ function initializeChartDisplay() {
         return;
     }
     
-    currentChartType = null;
     localmin = null;
     localmax = null;
     dataBeingLoaded = false;
@@ -310,13 +309,15 @@ function initializeChartDisplay() {
 	    }
 	});
 
-
     $('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');		
 	let selectedSequences = getChartDistinctSequenceList(), selectedTypes = getChartDistinctTypes();
 	feedSequenceSelectAndLoadVariantTypeList(
             selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
             selectedTypes == "" ? $('#variantTypes option').map(function() {return $(this).val();}).get() : selectedTypes);
 	applyChartType();
+	
+	if ($("#plotGroupingMetadataValues").length > 0)
+		chartIndSelectionChanged();	// in case groups changed at the main UI level 
 }
 
 function onManualIndividualSelection() {

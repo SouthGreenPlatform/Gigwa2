@@ -420,34 +420,11 @@ public class Ga4ghRestController extends ControllerInterface {
     public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws Exception {
         String token = tokenManager.readToken(request);
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(callSetsRequest.getVariantSetId());
-        Set<Integer> projIDs = Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).collect(Collectors.toSet());
-
         try
         {
 	        if (tokenManager.canUserReadDB(token, info[0])) {
 	        	callSetsRequest.setRequest(request);
-	        	SearchCallSetsResponse result = service.searchCallSets(callSetsRequest);
-	        	
-                // find out which projects each individual is involved in 
-	            HashMap<String, TreeSet<String>> individualProjects = new HashMap<>();
-	        	Collection<String> indIDs = result.getCallSets().stream().map(cs -> cs.getId().split(Helper.ID_SEPARATOR)[1]).toList();
-	        	Query q = new Query(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(indIDs));
-	        	for (GenotypingSample sample : MongoTemplateManager.get(info[0]).find(q, GenotypingSample.class)) {
-	        		TreeSet<String> projectsInvolvingIndividual = individualProjects.get(sample.getIndividual());
-	        		if (projectsInvolvingIndividual == null) {
-	        			projectsInvolvingIndividual = new TreeSet<>();
-	        			individualProjects.put(sample.getIndividual(), projectsInvolvingIndividual);
-	        		}
-	        		if (projIDs.contains(sample.getProjectId()))
-	        			projectsInvolvingIndividual.add("" + sample.getProjectId());
-	        	}
-	        	
-	        	boolean fMultipleProjectsInvolved = individualProjects.values().stream().filter(projSet -> projSet.size() > 1).count() > 0;
-	            for (CallSet callSet : result.getCallSets())
-	            	if (fMultipleProjectsInvolved && !callSet.getInfo().containsKey("projects"))
-	            		callSet.getInfo().put("projects", new ArrayList<>(individualProjects.get(callSet.getId().split(Helper.ID_SEPARATOR)[1])));
-
-	            return result;
+	        	return service.searchCallSets(callSetsRequest);
 	        } else {
 	            buildForbiddenAccessResponse(token, response);
 	            return null;

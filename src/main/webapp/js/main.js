@@ -100,19 +100,19 @@ function getGenotypeInvestigationMode(){
 }
 
 // fill all widgets for a specific module & project
-function fillWidgets() {
-    loadVariantTypes();
-    loadSequences();
-    fillExportFormat();
-    loadVariantEffects();
-//    loadSearchableVcfFields();
+async function fillWidgets() {
     loadVcfFieldHeaders();
     loadIndividuals();
     loadNumberOfAlleles();
     loadGenotypePatterns();
-    readPloidyLevels();
     loadVariantIds();
     loadGeneIds();
+
+    return loadSequences()
+        .then(() => loadVariantTypes())
+        .then(() => fillExportFormat())
+        .then(() => loadVariantEffects())
+        .then(() => readPloidyLevels());
 }
 
 function loadSearchableVcfFields() {
@@ -490,7 +490,7 @@ const mostFrequentString = strings => {
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
     const selectedIndividuals = new Set();
     const groups = groupNumber == null ? Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1) : groupNumber;
-    const ga4ghId = getProjectId() + idSep;
+    const ga4ghIdPrefix = referenceset + idSep;
     for (let groupKey in groups) {
         const groupIndex = groups[groupKey];
         let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
@@ -501,7 +501,7 @@ function getSelectedIndividuals(groupNumber, provideGa4ghId) {
             return [];
 
         for (let indKey in groupIndividuals)
-            selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+            selectedIndividuals.add((provideGa4ghId ? ga4ghIdPrefix : "") + groupIndividuals[indKey]);
     }
     return selectedIndividuals.size ===  indOpt.length ? [] : Array.from(selectedIndividuals);
 }
@@ -1138,7 +1138,7 @@ function saveQuery() {
     let activeGroups = $(".genotypeInvestigationDiv").length;
 
     var query = {
-        "variantSetId": getProjectId(),
+        "variantSetId": getProjectId().join(","),
         "getGT": false,
         "queryLabel": queryName,
 
@@ -1270,7 +1270,7 @@ function listQueries(){
             },
             success: function (jsonResult) {
                 var requestData = {
-                    "variantSetId": getProjectId(),
+                    "variantSetId": getProjectId().join(","),
                     "getGT": false,
                     "queryLabel": queryName,
 
@@ -1333,8 +1333,7 @@ function listQueries(){
     $('#loadedQueries p .glyphicon-folder-open').click(function(){
         var queryId = $(this).parent('p').attr('id');
         $.ajax({    // load queries 
-            url: loadBookmarkedQueryURL + '?module=' + referenceset 
-            + '&queryId='+ queryId,
+            url: loadBookmarkedQueryURL + '?module=' + referenceset + '&queryId='+ queryId,
             type: "GET",
             dataType: "json",
             async: false,
@@ -1343,101 +1342,103 @@ function listQueries(){
                 "Authorization": "Bearer " + token
             },
             success: function(jsonResult) {
-                resetFilters();
-                
-                var filterByVariantIDs = jsonResult['selectedVariantIds'] != null && jsonResult['selectedVariantIds'] != "";
-                $("#filterIDsCheckbox").prop("checked", !filterByVariantIDs);	// make it the opposite of what we want
-       		    $("#filterIDsCheckbox").click();	// toggle it and let event handlers launch interface update
-				if (filterByVariantIDs) {
-					var optionSB = new StringBuffer();
-			        selectTitle = "Select to enter IDs";
-			        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
-			        jsonResult['selectedVariantIds'].split(";").forEach(function (varId) {
-			            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
-			        });
-			        $("#variantIdsSelect").append(optionSB.toString());
-			        $('#copyVariantIds').show();
-			        $('#clearVariantIdSelection').hide();
-			   		$('#variantIdsSelect').trigger('change');
-				}
-				else {                
-	                if(jsonResult["start"] != -1) // if there is a start position
-	                $('#minposition').val(jsonResult["start"]); 
-	                
-	                if(jsonResult["end"] != -1) // if there is a end position
-	                $('#maxposition').val(jsonResult["end"]);
-	                
-	                if(jsonResult['referenceName'] != ""){
-	                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
-	                    $('#Sequences div select').val(tabRefs); //change the 'select' values
-	                    $('#Sequences div select').trigger('change');//trigger the change event
-	                }
-	                
-	                if(jsonResult['selectedVariantTypes'] != ""){
-	                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
-	                    $('#variantTypes').selectpicker('val', tabTypes);
-	                }
-	                
-	                if(jsonResult['variantEffect'] != ""){
-	                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
-	                    $('#variantEffects').selectpicker('val', tabEffects);
-	                }
-	                
-	                var names = jsonResult['geneName']; //change gene name value
-	                if (names == "-")
-	                	$('#minusMode').click();
-	                else if (names == "+")
-	                	$('#plusMode').click();
-	                else if (names.trim() != "") {
-	                	$('#editMode').click();
-				        var optionSB = new StringBuffer();
-				        names.split(",").forEach(function (varId) {
+                let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[option.dataset.id] = $(option).text(), acc), {});
+                $('#project').selectpicker('val', jsonResult.variantSetId.split(",").map(pjId => projNames[pjId]));
+                onProjectChange().then(function() {
+					var filterByVariantIDs = jsonResult['selectedVariantIds'] != null && jsonResult['selectedVariantIds'] != "";
+	                $("#filterIDsCheckbox").prop("checked", !filterByVariantIDs);	// make it the opposite of what we want
+	       		    $("#filterIDsCheckbox").click();	// toggle it and let event handlers launch interface update
+					if (filterByVariantIDs) {
+						var optionSB = new StringBuffer();
+				        selectTitle = "Select to enter IDs";
+				        $('#variantIdsSelect').removeAttr('disabled').selectpicker('refresh');
+				        jsonResult['selectedVariantIds'].split(";").forEach(function (varId) {
 				            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
 				        });
-	    				$("#geneIdsSelect").append(optionSB.toString());
-	    				$('#geneIdsSelect').trigger('change');
+				        $("#variantIdsSelect").append(optionSB.toString());
+				        $('#copyVariantIds').show();
+				        $('#clearVariantIdSelection').hide();
+				   		$('#variantIdsSelect').trigger('change');
+					}
+					else {
+		                if(jsonResult["start"] != -1) // if there is a start position
+		                $('#minposition').val(jsonResult["start"]); 
+		                
+		                if(jsonResult["end"] != -1) // if there is a end position
+		                $('#maxposition').val(jsonResult["end"]);
+		                
+		                if(jsonResult['referenceName'] != ""){
+		                    var tabRefs = jsonResult['referenceName'].split(';'); //make an array with the references names
+		                    $('#Sequences div select').val(tabRefs); //change the 'select' values
+		                    $('#Sequences div select').trigger('change');//trigger the change event
+		                }
+		                
+		                if(jsonResult['selectedVariantTypes'] != ""){
+		                    var tabTypes = jsonResult['selectedVariantTypes'].split(';'); //same but with variants types
+		                    $('#variantTypes').selectpicker('val', tabTypes);
+		                }
+		                
+		                if(jsonResult['variantEffect'] != ""){
+		                    var tabEffects = jsonResult['variantEffect'].split(','); //same but with variants effects
+		                    $('#variantEffects').selectpicker('val', tabEffects);
+		                }
+		                
+		                var names = jsonResult['geneName']; //change gene name value
+		                if (names == "-")
+		                	$('#minusMode').click();
+		                else if (names == "+")
+		                	$('#plusMode').click();
+		                else if (names.trim() != "") {
+		                	$('#editMode').click();
+					        var optionSB = new StringBuffer();
+					        names.split(",").forEach(function (varId) {
+					            optionSB.append('<option selected value="'+varId+'">'+varId+'</option>');
+					        });
+		    				$("#geneIdsSelect").append(optionSB.toString());
+		    				$('#geneIdsSelect').trigger('change');
+		                }
+		                
+		                if(jsonResult['alleleCount'] != ""){
+		                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
+		                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
+		                }
+		            }
+	
+	                $('#genotypeInvestigationMode').selectpicker('val', jsonResult['gtPattern'].length);
+	                  $('#genotypeInvestigationMode').trigger('change');
+	
+	                for (var i= 0 ; i < jsonResult['gtPattern'].length ; i++) {
+		                  var tabIds = i == 0 ? jsonResult['callSetIds'] : jsonResult['additionalCallSetIds'][i - 1];
+		                  if (tabIds.length != 0) {
+							$("#Individuals" + (i + 1) + " button").filter(function() {
+							    return $(this).text() === "load all";
+							}).click();
+		                    $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
+		                        return x.split(idSep)[1];
+		                    }));
+		                    $('#Individuals'+ (i + 1) +' div select').trigger('change');
+		                  }
+		                  
+		                  let groupThresholds = jsonResult['annotationFieldThresholds'][i];
+		                  for (var key in groupThresholds)
+		                      $('#vcfFieldFilterGroup'+ (i + 1) +' #' + key + '_threshold' + (i + 1)).val(groupThresholds[key]);
+		                  $('#minMissingData'+ (i + 1)).val(jsonResult['minMissingData'][i]);
+		                  $('#maxMissingData'+ (i + 1)).val(jsonResult['maxMissingData'][i]);
+		                  $('#minHeZ'+ (i + 1)).val(jsonResult['minHeZ'][i]);
+		                  $('#maxHeZ'+ (i + 1)).val(jsonResult['maxHeZ'][i]);
+		                  $('#minMaf'+ (i + 1)).val(jsonResult['minMaf'][i]);
+		                  $('#maxMaf'+ (i + 1)).val(jsonResult['maxMaf'][i]);
+						  $('#group'+ (i + 1)).val(jsonResult['groupName'][i]);
+		                  $('#Genotypes'+ (i + 1)).selectpicker('val', jsonResult['gtPattern'][i]);
+		                  $('#mostSameRatio'+ (i + 1)).val(jsonResult['mostSameRatio'][i]);
+		                  $('#Genotypes'+ (i + 1)).trigger('change');
+		                  $('#discriminate' + (i + 1)).selectpicker('val', jsonResult['discriminate'][i]);
+		                  $('#discriminate'+ (i + 1)).trigger('change');
+		                  groupNameChanged(i + 1);
 	                }
-	                
-	                if(jsonResult['alleleCount'] != ""){
-	                    var tabAlleles = jsonResult['alleleCount'].split(';'); 
-	                    $('#numberOfAlleles').selectpicker('val', tabAlleles);
-	                }
-	            }
-
-                $('#genotypeInvestigationMode').selectpicker('val', jsonResult['gtPattern'].length);
-                  $('#genotypeInvestigationMode').trigger('change');
-
-                for (var i= 0 ; i < jsonResult['gtPattern'].length ; i++) {
-	                  var tabIds = i == 0 ? jsonResult['callSetIds'] : jsonResult['additionalCallSetIds'][i - 1];
-	                  if (tabIds.length != 0) {
-						$("#Individuals" + (i + 1) + " button").filter(function() {
-						    return $(this).text() === "load all";
-						}).click();
-	                    $('#Individuals'+ (i + 1) +' div select').val(tabIds.map(function(x) {
-	                        return x.split(idSep)[2];
-	                    }));
-	                    $('#Individuals'+ (i + 1) +' div select').trigger('change');
-	                  }
-	                  
-	                  let groupThresholds = jsonResult['annotationFieldThresholds'][i];
-	                  for (var key in groupThresholds)
-	                      $('#vcfFieldFilterGroup'+ (i + 1) +' #' + key + '_threshold' + (i + 1)).val(groupThresholds[key]);
-	                  $('#minMissingData'+ (i + 1)).val(jsonResult['minMissingData'][i]);
-	                  $('#maxMissingData'+ (i + 1)).val(jsonResult['maxMissingData'][i]);
-	                  $('#minHeZ'+ (i + 1)).val(jsonResult['minHeZ'][i]);
-	                  $('#maxHeZ'+ (i + 1)).val(jsonResult['maxHeZ'][i]);
-	                  $('#minMaf'+ (i + 1)).val(jsonResult['minMaf'][i]);
-	                  $('#maxMaf'+ (i + 1)).val(jsonResult['maxMaf'][i]);
-					  $('#group'+ (i + 1)).val(jsonResult['groupName'][i]);
-	                  $('#Genotypes'+ (i + 1)).selectpicker('val', jsonResult['gtPattern'][i]);
-	                  $('#mostSameRatio'+ (i + 1)).val(jsonResult['mostSameRatio'][i]);
-	                  $('#Genotypes'+ (i + 1)).trigger('change');
-	                  $('#discriminate' + (i + 1)).selectpicker('val', jsonResult['discriminate'][i]);
-	                  $('#discriminate'+ (i + 1)).trigger('change');
-	                  groupNameChanged(i + 1);
-                }
-               
-                $('#queryManager').modal("hide");
+	               
+	                $('#queryManager').modal("hide");
+				});
             },
             
             error: function(xhr, ajaxOptions, thrownError) {

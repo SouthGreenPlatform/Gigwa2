@@ -745,6 +745,120 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     var stringVariantIdsFromUploadFile = null, callSetMetadataFields = null
     const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
+    async function onProjectChange() {
+		let projIDs = getProjectId();
+		if (projIDs.length === 0)
+			localStorage.removeItem("projectSelection" + "::" + $('#module').val());
+		else
+			localStorage.setItem("projectSelection" + "::" + $('#module').val(), projIDs.join(","));
+		if (projIDs.length == 0) {
+			$('#searchPanel').hide();
+			return;
+		}
+
+		$('#searchPanel').show();
+		count = 0;
+		$("table#individualFilteringTable").html("");
+		$('#countResultPanel').hide();
+		$('#rightSidePanel').hide();
+		$("#grpAsm").hide();
+		
+		$.ajax({	// load assemblies
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
+			type: "POST",
+			dataType: "json",
+			async: false,
+			contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+			data: JSON.stringify({
+				"studyDbIds": projIDs
+			}),
+			success: function(jsonResult) {
+				$('#assembly').html("");
+				jsonResult.result.data.forEach(refSet => {
+					var asmId = refSet["referenceSetDbId"].split("${idSep}")[1];
+					$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
+				});
+				if (jsonResult.result.data.length > 1)
+					$("#grpAsm").show();
+				$('#assembly').selectpicker('refresh');
+			},
+			error: function(xhr, ajaxOptions, thrownError) {
+				handleError(xhr, thrownError);
+			}
+		});
+
+		await fillWidgets();
+		resetFilters();
+		
+		for (var groupNumber = groupColors.length; groupNumber >= 1; groupNumber--) {
+			var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
+			if (localValue == null)
+				localValue = [];
+			else
+				localValue = JSON.parse(localValue);
+			if (localValue.length > 0)
+			{
+				if ($("#genotypeInvestigationMode").val() == 0) {
+					setGenotypeInvestigationMode(groupNumber);
+					$("#genotypeInvestigationMode").val(groupNumber);
+					$('#genotypeInvestigationMode').selectpicker('refresh');
+				}
+				$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
+				$("button#groupMemorizer" + groupNumber).addClass("active");
+			}
+			applyGroupMemorizing(groupNumber, localValue);
+		}
+
+		toggleIndividualSelector($('#exportedIndividuals').parent(), false);
+		var projectDesc = "";
+		for (let pjName of $("#project").val())
+			projectDesc += projectDescriptions[pjName];
+		$("#projectInfoLink").show();
+		$('#searchPanel').fadeIn();
+		
+		$.ajax({	// load runs
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
+			type: "GET",
+			dataType: "json",
+			contentType: "application/json;charset=utf-8",
+	        headers: buildHeader(token, $('#assembly').val()),
+			success: function(jsonResult) {
+				runList = jsonResult.runs.reduce((acc, item) => { const parts = item.split('§'); const key = parseInt(parts[1], 10); acc[key] = [...(acc[key] || []), parts[2]]; return acc; }, {});
+			},
+			error: function(xhr, ajaxOptions, thrownError) {
+				handleError(xhr, thrownError);
+			}
+		});
+		
+		$('#snpclust').hide();
+		let htmlSnpClustProjLinks = "";
+        let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
+		for (let projId of getProjectId()) {
+			let shortProjId = projId.split(idSep)[1];
+	        $.ajax({
+		        url: snpclustEditionURL + '?module=' + $('#module').val() + "&project=" + shortProjId,
+		        type: "GET",
+		        dataType: "text",
+		        async: false,
+		        contentType: "application/json;charset=utf-8",
+		        headers: {
+		            "Authorization": "Bearer " + token
+		        },
+		        success: function(url) {
+					if (url != "") {
+						htmlSnpClustProjLinks += "<a onclick=\"$('#project').parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
+						$('#snpclust').show();
+					}
+		        },
+		        error: function(xhr, ajaxOptions, thrownError) {
+		            handleError(xhr, thrownError);
+		        }
+		    });
+		}
+		$('#snpClustProjLinks').html(htmlSnpClustProjLinks);
+	}
+
 	// when HTML/CSS is fully loaded
 	$(document).ready(function() {
 		for (var i=0; i<groupColors.length; i++) {
@@ -817,123 +931,9 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			$('input#browsingAndExportingEnabled').change();
 			igvRemoveExistingBrowser();
 			igvChangeModule(referenceset);
-		});
+		});		
 		
-		$('#project').on('change', function() {
-			let projIDs = getProjectId();
-			if (projIDs.length == 0) {
-				$('#searchPanel').hide();
-				return;
-			}
-
-			$('#searchPanel').show();
-			count = 0;
-			$("table#individualFilteringTable").html("");
-			$('#countResultPanel').hide();
-			$('#rightSidePanel').hide();
-			$("#grpAsm").hide();
-			
-			$.ajax({	// load assemblies
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesetsApi.searchReferenceSetsPost_url%>" />',
-				type: "POST",
-				dataType: "json",
-				async: false,
-				contentType: "application/json;charset=utf-8",
-		        headers: buildHeader(token, $('#assembly').val()),
-				data: JSON.stringify({
-					"studyDbIds": projIDs
-				}),
-				success: function(jsonResult) {
-					$('#assembly').html("");
-					jsonResult.result.data.forEach(refSet => {
-						var asmId = refSet["referenceSetDbId"].split("${idSep}")[1];
-						$('#assembly').append('<option value="' + asmId + '">' + (refSet["assemblyPUI"] == null ? '(unnamed assembly)' : refSet["assemblyPUI"]) + '</option>');
-					});
-					if (jsonResult.result.data.length > 1)
-						$("#grpAsm").show();
-					$('#assembly').selectpicker('refresh');
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					handleError(xhr, thrownError);
-				}
-			});
-
-			fillWidgets();
-			resetFilters();
-			
-			for (var groupNumber = groupColors.length; groupNumber >= 1; groupNumber--) {
-				var localValue = localStorage.getItem("groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val());
-				if (localValue == null)
-					localValue = [];
-				else
-					localValue = JSON.parse(localValue);
-				if (localValue.length > 0)
-				{
-					if ($("#genotypeInvestigationMode").val() == 0) {
-						setGenotypeInvestigationMode(groupNumber);
-						$("#genotypeInvestigationMode").val(groupNumber);
-						$('#genotypeInvestigationMode').selectpicker('refresh');
-					}
-					$("button#groupMemorizer" + groupNumber).attr("aria-pressed", "true");
-					$("button#groupMemorizer" + groupNumber).addClass("active");
-				}
-				applyGroupMemorizing(groupNumber, localValue);
-			}
-
-			toggleIndividualSelector($('#exportedIndividuals').parent(), false);
-			var projectDesc = "";
-			for (let pjName of $(this).val()) {
-				projectDesc += projectDescriptions[pjName];
-			}
-// 			if (projectDesc != null)
-				$("#projectInfoLink").show();
-// 			else
-// 				$("#projectInfoLink").hide();
-			$('#searchPanel').fadeIn();
-			
-// 			currentChartType = null;
-			
-			$.ajax({	// load runs
-				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PROJECT_RUN_PATH%>" />/' + encodeURIComponent(getProjectId()),
-				type: "GET",
-				dataType: "json",
-				contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-				success: function(jsonResult) {
-					runList = jsonResult.runs.reduce((acc, item) => { const parts = item.split('§'); const key = parseInt(parts[1], 10); acc[key] = [...(acc[key] || []), parts[2]]; return acc; }, {});
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					handleError(xhr, thrownError);
-				}
-			});
-			
-			$('#snpclust').hide();
-			let htmlSnpClustProjLinks = "";
-            let projNames = $("select#project").find('option').toArray().reduce((acc, option) => (acc[splitId(option.dataset.id, 1)] = $(option).text(), acc), {});
-			for (let projId of getProjectId()) {
-				let shortProjId = projId.split(idSep)[1];
-		        $.ajax({
-			        url: snpclustEditionURL + '?module=' + $('#module').val() + "&project=" + shortProjId,
-			        type: "GET",
-			        dataType: "text",
-			        async: false,
-			        contentType: "application/json;charset=utf-8",
-			        headers: {
-			            "Authorization": "Bearer " + token
-			        },
-			        success: function(url) {
-						if (url != "") {
-							htmlSnpClustProjLinks += "<a onclick=\"$(this).parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
-							$('#snpclust').show();
-						}
-			        },
-			        error: function(xhr, ajaxOptions, thrownError) {
-			            handleError(xhr, thrownError);
-			        }
-			    });
-			}
-			$('#snpClustProjLinks').html(htmlSnpClustProjLinks);
-		});
+		$('#project').on('change', onProjectChange);
 
 		$('#numberOfAlleles').on('change', function() {
 			updateGtPatterns();
@@ -1163,10 +1163,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							alert("This data will be accessible only via the current URL. It will be erased 24h after its creation.");
 					}
 				}
-				var passedProject = $_GET("project");
+
 				if (jsonResult.variantSets.length > 0) {
 					var option = "";
-					var projNames = [];
+					var projNames = {};
 					for (var set in jsonResult.variantSets) {
 						var project = jsonResult.variantSets[set];
 						projectDescriptions[project.name] = null;
@@ -1183,25 +1183,26 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 								else
 									projectDescriptions[project.name] += "\n\n<u>" + project.metadata[mdObjKey].key + ":</u> " + project.metadata[mdObjKey].value;
 							}
-						option += '<option data-id="' + jsonResult.variantSets[set].id + '">' + jsonResult.variantSets[set].name + '</option>';
-						projNames.push(jsonResult.variantSets[set].name);
+						projNames[jsonResult.variantSets[set].id] = jsonResult.variantSets[set].name;
 					}
-					// project id is stored in each <option> tag, project name is displayed. 
-					// project id is formatted as follows: moduleId§projId
+					
+					var selectedProjects = $_GET("project");
+					if (selectedProjects !== null) {
+						selectedProjects = selectedProjects.replace(new RegExp('#([^\\s]*)', 'g'), '');	// sometimes a # appears at the end of the url so we remove it with regexp
+						selectedProjects = selectedProjects.split(",");					
+					}
+					else {
+						selectedProjects = localStorage.getItem("projectSelection" + "::" + $('#module').val());
+						selectedProjects = selectedProjects === null ? [] : selectedProjects.split(",").map(pj => projNames[pj]);
+					}
+					
+					// project id (formatted as follows: moduleId§projId) is stored in each <option> tag, project name is displayed. 
 					// we can retrieve it with encodeURIComponent(getProjectId())
-					$('#project').html(option).selectpicker('refresh');
-					if (passedProject !== null) {
-						// sometimes a # appears at the end of the url so we remove it with regexp
-						passedProject = passedProject.replace(new RegExp('#([^\\s]*)', 'g'), '');
-						// make sure that project in url is available in this module 
-						if (projNames.indexOf(passedProject) !== -1) {
-							$('#project').selectpicker('val', passedProject);
-						} else {
-							$('#project').selectpicker('val', jsonResult.variantSets[0].name);
-						}
-					} else {
+					$('#project').html(Object.keys(projNames).map(projId => '<option data-id="' + projId + '">' + projNames[projId] + '</option>')).selectpicker('refresh');
+					if (selectedProjects.length > 0)
+						$('#project').selectpicker('val', selectedProjects);
+					else if (Object.keys(projNames).length == 1)
 						$('#project').selectpicker('val', jsonResult.variantSets[0].name);
-					}
 
 					$('#grpProj').show();
 					$('#project').trigger('change');
@@ -1227,69 +1228,75 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		return success;
 	}
 
-	function loadVariantTypes() {                
-	    $.ajax({
-	            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId().join(",")),
-	            type: "GET",
-	            dataType: "json",
-	            contentType: "application/json;charset=utf-8",
-    	        headers: buildHeader(token, $('#assembly').val()),
-	            success: function(jsonResult) {
-	                    variantTypesCount = jsonResult.length;
-	                    var option = "";
-	                    for (var key in jsonResult)
-	                    	option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
-	                    $('#variantTypes').html(option).selectpicker('refresh');
-	            },
-	            error: function(xhr, ajaxOptions, thrownError) {
-	                    handleError(xhr, thrownError);
-	            }
+	async function loadVariantTypes() {
+	    return new Promise((resolve, reject) => {
+		    $.ajax({
+		            url: variantTypesListURL + '/' + encodeURIComponent(getProjectId()),
+		            type: "GET",
+		            dataType: "json",
+		            contentType: "application/json;charset=utf-8",
+	    	        headers: buildHeader(token, $('#assembly').val()),
+		            success: function(jsonResult) {
+		                    variantTypesCount = jsonResult.length;
+		                    var option = "";
+		                    for (var key in jsonResult)
+		                    	option += '<option value="'+jsonResult[key]+'">' + jsonResult[key] + '</option>';
+		                    $('#variantTypes').html(option).selectpicker('refresh');
+		                    resolve(jsonResult);
+		            },
+		            error: function(xhr, ajaxOptions, thrownError) {
+		                    handleError(xhr, thrownError);
+		            }
+		    });
 	    });
 	}
-	function loadSequences() {
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesApi.searchReferencesPost_url%>" />',
-			type: "POST",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-	        headers: buildHeader(token, $('#assembly').val()),
-			data: JSON.stringify({
-				"referenceSetDbIds": [$('#module').val() + idSep + $('#assembly').val()]
-			}),
-			success: function(jsonResult) {
-				seqCount = jsonResult.result.data.length;
-				$('#sequencesLabel span').text( seqCount + "/" + seqCount + "");
-				referenceNames = [];
-				jsonResult.result.data.forEach(ref => {
-					referenceNames.push(ref["referenceName"]);
-				});
-
-				$('#Sequences').empty([]);
-				$('#Sequences').selectmultiple({
-					text: 'Sequences',
-					data: referenceNames,
-					placeholder: 'sequence'
-				});
-                if (seqCount == 0 || localStorage.getItem($('#module').val() + "${idSep}" + $('#project').val() + '_filterByIds')) {
-                	if (seqCount == 0) {
-	                    $('#sequenceFilter').hide();
-	                    $('#positions').hide();
+	async function loadSequences() {
+	    return new Promise((resolve, reject) => {
+		    $.ajax({
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + '/' + ReferencesApi.searchReferencesPost_url%>" />',
+				type: "POST",
+				dataType: "json",
+				contentType: "application/json;charset=utf-8",
+		        headers: buildHeader(token, $('#assembly').val()),
+				data: JSON.stringify({
+					"referenceSetDbIds": [$('#module').val() + idSep + $('#assembly').val()]
+				}),
+				success: function(jsonResult) {
+					seqCount = jsonResult.result.data.length;
+					$('#sequencesLabel span').text( seqCount + "/" + seqCount + "");
+					referenceNames = [];
+					jsonResult.result.data.forEach(ref => {
+						referenceNames.push(ref["referenceName"]);
+					});
+	
+					$('#Sequences').empty([]);
+					$('#Sequences').selectmultiple({
+						text: 'Sequences',
+						data: referenceNames,
+						placeholder: 'sequence'
+					});
+	                if (seqCount == 0 || localStorage.getItem($('#module').val() + "${idSep}" + $('#project').val() + '_filterByIds')) {
+	                	if (seqCount == 0) {
+		                    $('#sequenceFilter').hide();
+		                    $('#positions').hide();
+		                }
+	                    $('#filterIDsCheckbox').prop('checked', true);
+	                    onFilterByIds(true);
+	                } else {
+	                	if (seqCount > 0) {
+		                    $('#sequenceFilter').show();
+		                    $('#positions').show();
+		                }
+	                    $('#filterIDsCheckbox').prop('checked', false);
+	                    onFilterByIds(false);
 	                }
-                    $('#filterIDsCheckbox').prop('checked', true);
-                    onFilterByIds(true);
-                } else {
-                	if (seqCount > 0) {
-	                    $('#sequenceFilter').show();
-	                    $('#positions').show();
-	                }
-                    $('#filterIDsCheckbox').prop('checked', false);
-                    onFilterByIds(false);
-                }
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+	                resolve(jsonResult);
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
+				}
+			});
+	    });
 	}
 
     function loadIndividuals() {
@@ -1446,33 +1453,36 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         });
     }
 
-	function loadVariantEffects() {
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent(getProjectId()),
-			type: "GET",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-	        headers: buildHeader(token, $('#assembly').val()),
-			success: function(jsonResult) {
-				if (jsonResult.effectAnnotations.length > 0) {
-					var option = "";
-					for (var effect in jsonResult.effectAnnotations) {
-						option += '<option value"'+jsonResult.effectAnnotations[effect]+'>' + jsonResult.effectAnnotations[effect] + '</option>';
+	async function loadVariantEffects() {
+	    return new Promise((resolve, reject) => {
+		    $.ajax({
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EFFECT_ANNOTATION_PATH%>"/>/' + encodeURIComponent(getProjectId()),
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json;charset=utf-8",
+		        headers: buildHeader(token, $('#assembly').val()),
+				success: function(jsonResult) {
+					if (jsonResult.effectAnnotations.length > 0) {
+						var option = "";
+						for (var effect in jsonResult.effectAnnotations) {
+							option += '<option value"'+jsonResult.effectAnnotations[effect]+'>' + jsonResult.effectAnnotations[effect] + '</option>';
+						}
+						$('#variantEffects').html(option).selectpicker('refresh');
+						$('#varEffGrp').show();
+						$('#GeneIds').show();
+						isAnnotated = true;
+					} else {
+						isAnnotated = false;
+						$('#GeneIds').hide();
+						$('#varEffGrp').hide();
 					}
-					$('#variantEffects').html(option).selectpicker('refresh');
-					$('#varEffGrp').show();
-					$('#GeneIds').show();
-					isAnnotated = true;
-				} else {
-					isAnnotated = false;
-					$('#GeneIds').hide();
-					$('#varEffGrp').hide();
+					resolve(jsonResult);
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
 				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+			});
+	    });
 	}
 
 	function loadNumberOfAlleles() {
@@ -1480,7 +1490,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.NUMBER_ALLELE_PATH%>" />/' + encodeURIComponent(getProjectId()),
 			type: "GET",
 			dataType: "json",
-			async:false,
+			async: false,
 			contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
@@ -1500,22 +1510,25 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 	}
 	
-	function readPloidyLevels() {
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
-			type: "GET",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			success: function(ploidyLevels) {
-				ploidy = ploidyLevels;
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+	async function readPloidyLevels() {
+	    return new Promise((resolve, reject) => {
+		    $.ajax({
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.PLOIDY_LEVEL_PATH%>" />/' + encodeURIComponent(getProjectId()),
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json;charset=utf-8",
+				headers: {
+					"Authorization": "Bearer " + token
+				},
+				success: function(ploidyLevels) {
+					ploidy = ploidyLevels;
+					resolve(ploidyLevels);
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
+				}
+			});
+	    });
 	}
 	
 	function loadGenotypePatterns() {
@@ -1523,7 +1536,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GENOTYPE_PATTERNS_PATH%>" />',
 			type: "GET",
 			dataType: "json",
-			async:false,
+			async: false,
 			contentType: "application/json;charset=utf-8",
 			success: function(jsonResult) {
 				gtTable = jsonResult;
@@ -1542,37 +1555,40 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		});
 	}
 
-	function fillExportFormat()
+	async function fillExportFormat()
 	{
-		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_FORMAT_PATH%>" />',
-			type: "GET",
-			dataType: "json",
-			contentType: "application/json;charset=utf-8",
-			headers: {
-				"Authorization": "Bearer " + token
-			},
-			success: function(jsonResult) {
-				var gotVCF = false;
-				var option = '';
-				for (var format in jsonResult) {
-					if (format == "VCF")
-						gotVCF = true;
-					option += '<option '
-					if (jsonResult[format].supportedPloidyLevels !== undefined)
-					    option += 'data-pdy="' + jsonResult[format].supportedPloidyLevels + '" ';
-					option += 'data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+	    return new Promise((resolve, reject) => {
+		    $.ajax({
+				url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.EXPORT_FORMAT_PATH%>" />',
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json;charset=utf-8",
+				headers: {
+					"Authorization": "Bearer " + token
+				},
+				success: function(jsonResult) {
+					var gotVCF = false;
+					var option = '';
+					for (var format in jsonResult) {
+						if (format == "VCF")
+							gotVCF = true;
+						option += '<option '
+						if (jsonResult[format].supportedPloidyLevels !== undefined)
+						    option += 'data-pdy="' + jsonResult[format].supportedPloidyLevels + '" ';
+						option += 'data-ext="' + jsonResult[format].dataFileExtensions + '" data-desc="' + jsonResult[format].desc + '" ' + (jsonResult[format].supportedVariantTypes != null ? 'data-type="' + jsonResult[format].supportedVariantTypes + '"' : '') + '">' + format + '</option>';
+					}
+					if (!gotVCF)
+						$("img#igvTooltip").hide();
+					$('#exportFormat').html(option);
+					$('#exportFormat').val("VCF").selectpicker('refresh');
+					$('#formatDesc').html($('#exportFormat').children().filter(':selected').data('desc'));
+					resolve(jsonResult);
+				},
+				error: function(xhr, ajaxOptions, thrownError) {
+					handleError(xhr, thrownError);
 				}
-				if (!gotVCF)
-					$("img#igvTooltip").hide();
-				$('#exportFormat').html(option);
-				$('#exportFormat').val("VCF").selectpicker('refresh');
-				$('#formatDesc').html($('#exportFormat').children().filter(':selected').data('desc'));
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				handleError(xhr, thrownError);
-			}
-		});
+			});
+	    });
 	}
 	
 	// main search method
@@ -1648,7 +1664,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
                 data: {
-                    projectId: encodeURIComponent(getProjectId().join(",")),
+                    projectId: encodeURIComponent(getProjectId()),
                     q: '{{{q}}}'
                 },
                 success: function(jsonResult) {
@@ -1717,7 +1733,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
                 data: {
-                    projectId: encodeURIComponent(getProjectId().join(",")),
+                    projectId: encodeURIComponent(getProjectId()),
                     q: '{{{q}}}'
                 },
                 success: function(jsonResult) {
@@ -2828,8 +2844,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             "displayedRangeMin": localmin,
             "displayedRangeMax": localmax,
             "displayedRangeIntervalCount": displayedRangeIntervalCount,
-    		"callSetIds": getSelectedIndividuals(null, true),
-    		//callSetIds.length > 0 ? callSetIds : indOpt.map(ind => getProjectId() + idSep + ind),
+    		"callSetIds": callSetIds.length > 0 ? callSetIds : indOpt.map(ind => referenceset + idSep + ind),
     		"additionalCallSetIds": additionalCallSetIds,
             "start": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[0],
             "end": typeof getChartInitialRange == "undefined" ? -1 : getChartInitialRange()[1]
