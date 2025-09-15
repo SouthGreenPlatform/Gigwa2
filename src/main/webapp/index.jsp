@@ -753,6 +753,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			localStorage.setItem("projectSelection" + "::" + $('#module').val(), projIDs.join(","));
 		if (projIDs.length == 0) {
 			$('#searchPanel').hide();
+			$("#grpAsm").hide();
 			return;
 		}
 
