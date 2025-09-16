@@ -22,10 +22,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.ejb.ObjectNotFoundException;
@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.ga4gh.methods.ListReferenceBasesRequest;
 import org.ga4gh.methods.ListReferenceBasesResponse;
 import org.ga4gh.methods.SearchCallSetsResponse;
@@ -53,7 +54,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,9 +65,8 @@ import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
 import fr.cirad.model.GigwaSearchReferencesRequest;
-import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
-import fr.cirad.security.base.IRoleDefinition;
+import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -551,7 +550,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param request
      * @param gsvr
      * @return SearchVariantsResponse in JSON format
-     * @throws IOException 
+     * @throws Exception 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchVariant", notes = "get a list of Variant matching values from GigwaSearchVariantsResponse. ")
     @ApiResponses(value = {
@@ -559,29 +558,61 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws IOException {
-
-        String token = tokenManager.readToken(request);
-        String id = gsvr.getVariantSetId();
-        if (id == null) {
-            build400Response(response, "Parameter variantSetId is required");
-            return null;
-        }
-        if (gsvr.getCallSetIds() == null) {
-            build400Response(response, "Parameter callSetIds is required");
-            return null;
-        }
+    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws Exception {
+    	
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gsvr.getVariantSetId());
+    	Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+    	
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
-	            gsvr.setRequest(request);
-				Authentication authentication = tokenManager.getAuthenticationFromToken(token);
-				gsvr.setApplyMatrixSizeLimit(authentication == null || !authentication.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)));
-	            return service.searchVariants(gsvr);
-	        } else {
-	            buildForbiddenAccessResponse(token, response);
-	            return null;
-	        }
+    		List<Integer> allowedProjects = MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true);
+            List<Integer> targetProjects = info.length > 2 ? Arrays.asList(Integer.parseInt(info[2])) : allowedProjects;
+            
+            Collection<Integer> projectsToSearchIn = CollectionUtils.intersection(targetProjects, allowedProjects);
+            if (projectsToSearchIn.isEmpty()) {
+                build404Response(response, "No variantSets available for search");
+                return null;
+            }
+        	
+            if (gsvr.isGetGT()) {
+	            // implement security restrictions via the list of samples
+	            MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
+	            Set<String> callSetIds = gsvr.getAllCallSetIds().stream().flatMap(List::stream).collect(Collectors.toSet());
+	            List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
+	            boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
+	            if (fGotCallSetIDs)
+	              crits.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
+	            List<String> listInd = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class);
+	            Collection<String> authorizedCallSetIds;
+	            if (fGotCallSetIDs && listInd.isEmpty())
+	            	authorizedCallSetIds = new HashSet<>();  // some were passed but none was found
+	            else {
+	                List<Criteria> sampleQueryCriteria = new ArrayList<>();
+	                sampleQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(listInd));
+	                sampleQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).in(projectsToSearchIn));
+	                Criteria criteria = new Criteria();
+	                if (!sampleQueryCriteria.isEmpty())
+	                  criteria.andOperator(sampleQueryCriteria.toArray(new Criteria[sampleQueryCriteria.size()]));
+	                authorizedCallSetIds = mongoTemplate.find(new Query(criteria), GenotypingSample.class).stream().map(sp -> info[0] + Helper.ID_SEPARATOR + sp.getIndividual()).collect(Collectors.toSet());
+	            }
+
+	            if (callSetIds.isEmpty())
+	            	gsvr.setCallSetIds(new ArrayList<>(authorizedCallSetIds));	// just get the allowed ones
+	            else if (authorizedCallSetIds.size() < callSetIds.size()) {
+	                build404Response(response, "Unknown or forbidden callSets: " + StringUtils.join(CollectionUtils.disjunction(callSetIds, authorizedCallSetIds), ", "));
+	                return null;
+//	              	// ... or remove forbidden ones? this screws up the genotype-level filters
+//		            gsvr.setCallSetIds(gsvr.getCallSetIds().stream().filter(id -> keptIndividuals.contains(id.split(Helper.ID_SEPARATOR)[1])).toList());
+//		            List<List<String>> keptAdditionalCallSetIds = new ArrayList<>();
+//		            for (int i=0; i<gsvr.getNumberGroups() - 1; i++)
+//		            	keptAdditionalCallSetIds.add(gsvr.getAdditionalCallSetIds(i).stream().filter(id -> keptIndividuals.contains(id.split(Helper.ID_SEPARATOR)[1])).toList());
+//		            gsvr.setAdditionalCallSetIds(keptAdditionalCallSetIds);
+	            }
+
+            }
+        	
+            gsvr.setRequest(request);
+            return service.searchVariants(gsvr);
 		}
         catch (ObjectNotFoundException e)
         {
@@ -649,5 +680,11 @@ public class Ga4ghRestController extends ControllerInterface {
     {
     	resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
     	resp.getWriter().write("This resource does not exist");
+    }
+    
+    public void build404Response(HttpServletResponse resp, String message) throws IOException
+    {
+    	resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    	resp.getWriter().write(message);
     }
 }
