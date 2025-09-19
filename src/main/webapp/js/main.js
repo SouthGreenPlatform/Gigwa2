@@ -1220,9 +1220,7 @@ function saveQuery() {
         type: "POST",
         contentType: "application/json;charset=utf-8",
         timeout: 0,
-        headers: {
-            "Authorization": "Bearer " + token,
-        },
+        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
         data: JSON.stringify(query),
         success: function (jsonResult) {
             $('#savequery').append('<span id="okIcon" class="glyphicon glyphicon-ok" aria-hidden="true"> </span>');
@@ -1324,9 +1322,7 @@ function listQueries(){
                     type: "POST",
                     contentType: "application/json;charset=utf-8",
                     timeout: 0,
-                    headers: {
-                        "Authorization": "Bearer " + token,
-                    },
+                    headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
                     data: JSON.stringify(requestData),
                     success: function(jsonResult) {
                         $('#' + queryId + ' .NameQuery').html(queryName);
@@ -1453,6 +1449,9 @@ function listQueries(){
 	                  $('#discriminate'+ (i + 1)).trigger('change');
 	                  groupNameChanged(i + 1);
                 }
+
+                $("#workWithSamples").prop("checked", !jsonResult['workWithSamples']);	// make it the opposite of what we want
+                $("#workWithSamples").click();	// toggle it and let event handlers launch interface update
                
                 $('#queryManager').modal("hide");
             },
