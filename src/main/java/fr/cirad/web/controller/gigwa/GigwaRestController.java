@@ -2495,6 +2495,7 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
     public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        boolean workWithSamples = "true".equalsIgnoreCase(request.getHeader("workWithSamples"));
 		String body = IOUtils.toString(request.getReader());
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -2518,7 +2519,7 @@ public class GigwaRestController extends ControllerInterface {
         String sModule = info[0];
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 
-        String queryKey = ga4ghService.getQueryKey(gsvr);
+        String queryKey = ga4ghService.getQueryKey(gsvr, workWithSamples);
         
         BookmarkedQuery existingQueryWithThisName = mongoTemplate.findOne(new Query(Criteria.where(BookmarkedQuery.FIELDNAME_LABELS_FOR_USERS + "." + authentication.getName()).is(sQueryLabel.trim())), BookmarkedQuery.class);
         if (existingQueryWithThisName != null && !existingQueryWithThisName.getId().equals(queryKey)) {
@@ -2535,6 +2536,8 @@ public class GigwaRestController extends ControllerInterface {
 		jsonNode.remove("sortBy");
 		jsonNode.remove("sortDir");
 		jsonNode.remove("queryLabel");
+
+        jsonNode.put("workWithSamples",workWithSamples);
 
         BookmarkedQuery cachedQuery = new BookmarkedQuery(queryKey);
         cachedQuery.getLabelsForUsers().put(authentication.getName(), sQueryLabel.trim());
