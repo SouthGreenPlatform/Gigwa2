@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.avro.AvroRemoteException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.ga4gh.methods.ListReferenceBasesRequest;
 import org.ga4gh.methods.ListReferenceBasesResponse;
 import org.ga4gh.methods.SearchCallSetsResponse;
@@ -47,6 +48,9 @@ import org.ga4gh.models.Variant;
 import org.ga4gh.models.VariantAnnotation;
 import org.ga4gh.models.VariantSet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,6 +69,7 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
+import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
@@ -236,27 +241,35 @@ public class Ga4ghRestController extends ControllerInterface {
     })
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
-        String token = tokenManager.readToken(request);
-        try
-        {
-        	String[] info = id.split(Helper.ID_SEPARATOR);
-        	int projId = Integer.parseInt(info[1]);
-	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
-	            String indHeader = request.getHeader("ind");
-	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
-	            if (variant == null) {
-	                build404Response(response);
-	                return null;
-	            } else
-	                return variant;
-	        } else {
-	            buildForbiddenAccessResponse(token, response);
-	            return null;
-	        }
-		} catch (ObjectNotFoundException e) {
-            build404Response(response);
-            return null;
-		}
+//    	if (!"true".equalsIgnoreCase(request.getHeader("workWithSamples"))) {	// "normal" case: return individuals
+////        	callSetsRequest.setRequest(request);
+////            return service.searchCallSets(callSetsRequest);
+//    		System.err.println(123);
+//    	}
+//        String token = tokenManager.readToken(request);
+//        try
+//        {
+//        	String[] info = id.split(Helper.ID_SEPARATOR);
+//        	int projId = Integer.parseInt(info[1]);
+//	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
+//	            String indHeader = request.getHeader("ind");
+//	            Variant variant = service.getVariantWithGenotypes(id, indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";"));
+//	            if (variant == null) {
+//	                build404Response(response);
+//	                return null;
+//	            } else
+//	                return variant;
+//	        } else {
+//	            buildForbiddenAccessResponse(token, response);
+//	            return null;
+//	        }
+//		} catch (ObjectNotFoundException e) {
+//            build404Response(response);
+//            return null;
+//		}
+        String indHeader = request.getHeader("ind");
+    	Map<String, Object> body = new HashMap<>() {{put("callSetIds", indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";")); }};
+    	return getVariantByPost(request, response, id, body);
     }
     
     /**
@@ -275,28 +288,86 @@ public class Ga4ghRestController extends ControllerInterface {
     })
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
-
-        String token = tokenManager.readToken(request);
-        try
-        {
+////    	if (!"true".equalsIgnoreCase(request.getHeader("workWithSamples"))) {	// "normal" case: return individuals
+//////        	callSetsRequest.setRequest(request);
+//////            return service.searchCallSets(callSetsRequest);
+////    		System.err.println(123);
+////    	}
+//        String token = tokenManager.readToken(request);
+//        try
+//        {
         	String[] info = id.split(Helper.ID_SEPARATOR);
-        	int projId = Integer.parseInt(info[1]);
-	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
-                List<String> callSetIds = ((List<String>) body.get("callSetIds"));
-                Variant variant = service.getVariantWithGenotypes(id, callSetIds == null ? new ArrayList<>() : callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
-                if (variant == null) {
-                    build404Response(response);
-                    return null;
-                } else
-                    return variant;
-            } else {
-                buildForbiddenAccessResponse(token, response);
-                return null;
-            }
-        } catch (ObjectNotFoundException e) {
+////        	int projId = Integer.parseInt(info[1]);
+//	        if (tokenManager.canUserReadProject(token, info[0], projId)) {
+//                List<String> ga4ghCallSetIds = ((List<String>) body.get("callSetIds"));
+//                ArrayList<GenotypingSample> samplesToExport = "true".equalsIgnoreCase(request.getHeader("workWithSamples")) ? new ArrayList<>(MgdbDao.getSamplesByIDs(info[0], materialToExport, true).values()) : MgdbDao.getSamplesForProject(sModule, projId, materialToExport);
+//                Variant variant = service.getVariantWithGenotypes(id, ga4ghCallSetIds == null ? new ArrayList<>() : ga4ghCallSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList()));
+//                if (variant == null) {
+//                    build404Response(response);
+//                    return null;
+//                } else
+//                    return variant;
+//            } else {
+//                buildForbiddenAccessResponse(token, response);
+//                return null;
+//            }
+//        } catch (ObjectNotFoundException e) {
+//            build404Response(response);
+//            return null;
+//        }
+    	
+    	
+    	
+    	
+		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+		
+		List<Integer> allowedProjects = new ArrayList<>();
+		try {
+			allowedProjects.addAll(MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true));
+		} catch (ObjectNotFoundException e) {}	// user may not be allowed to see any project
+		
+		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(Integer.parseInt(info[2])) : allowedProjects;
+		
+		Collection<Integer> projectsToSearchIn = CollectionUtils.intersection(targetProjects, allowedProjects);
+		if (projectsToSearchIn.isEmpty()) {
             build404Response(response);
             return null;
         }
+		
+		// implement security restrictions via the list of samples
+        List<String> callSetIds = ((List<String>) body.get("callSetIds"));
+		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
+		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
+		if (fGotCallSetIDs)
+			crits.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
+
+//		System.err.println(projectsToSearchIn + " -> " + allowedIndividuals);
+		
+		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
+		
+		List<String> listInd = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class);
+		Collection<fr.cirad.mgdb.model.mongo.maintypes.CallSet> callsets;
+		if (fGotCallSetIDs && listInd.isEmpty())
+			callsets = new ArrayList<>();	// some were passed but none was found
+		else {
+            List<Criteria> csQueryCriteria = new ArrayList<>();
+            csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_INDIVIDUAL).in(listInd));
+            if (info.length > 2)	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
+            	csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
+            if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run
+                csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_RUN).is(info[3]));
+            Criteria criteria = new Criteria();
+            if (!csQueryCriteria.isEmpty())
+            	criteria.andOperator(csQueryCriteria.toArray(new Criteria[csQueryCriteria.size()]));
+            callsets = mongoTemplate.find(new Query(criteria), fr.cirad.mgdb.model.mongo.maintypes.CallSet.class);
+		}
+
+        Variant variant = service.getVariantWithGenotypes(id, callsets.stream().filter(sp -> allowedProjects.contains(sp.getProjectId())).toList());
+        if (variant == null) {
+            build404Response(response);
+            return null;
+        } else
+            return variant;
     }
 
     /**
@@ -380,7 +451,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param request
      * @param callSetsRequest
      * @return SearchCallSetsResponse in JSON format
-     * @throws IOException 
+     * @throws Exception 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchCallSets", notes = "get a list of CallSet matching values from SearchCallSetsRequest. ")
     @ApiResponses(value = {
@@ -388,7 +459,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws IOException {
+    public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws Exception {
         String token = tokenManager.readToken(request);
         String id = callSetsRequest.getVariantSetId();
         try
@@ -400,7 +471,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	        	}
 	        	
 	            // case when UI is configured for working with samples
-	            String[] info = Helper.getInfoFromId(callSetsRequest.getVariantSetId(), 2);
+	        	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(callSetsRequest.getVariantSetId());
 	            if (info == null)
 	                return null;
 
@@ -416,7 +487,7 @@ public class Ga4ghRestController extends ControllerInterface {
 
 	            String module = info[0];
 
-	            LinkedHashMap<String, GenotypingSample> sampleMap = mgdbDao.loadSamplesWithAllMetadata(module, auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth), Arrays.asList(Integer.parseInt(info[1])), null, null);
+	            LinkedHashMap<String, GenotypingSample> sampleMap = mgdbDao.loadSamplesWithAllMetadata(module, auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth), Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList(), null, null);
 
 	            List<CallSet> listCallSet = new ArrayList<>();
 	            int size = sampleMap.size();
@@ -632,7 +703,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param request
      * @param id of the variant
      * @return Variant Annotation
-     * @throws IOException 
+     * @throws Exception 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantAnnotationById", notes = "get a VariantAnnotation from its ID. ")
     @ApiResponses(value = {
@@ -641,7 +712,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no VariantAnnotation with this ID")
     })
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws Exception {
 
         String token = tokenManager.readToken(request);
         try

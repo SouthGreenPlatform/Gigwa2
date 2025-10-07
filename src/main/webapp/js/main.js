@@ -100,19 +100,19 @@ function getGenotypeInvestigationMode(){
 }
 
 // fill all widgets for a specific module & project
-function fillWidgets() {
-    loadVariantTypes();
-    loadSequences();
-    fillExportFormat();
-    loadVariantEffects();
-//    loadSearchableVcfFields();
+async function fillWidgets() {
     loadVcfFieldHeaders();
     loadIndividuals(true);
     loadNumberOfAlleles();
     loadGenotypePatterns();
-    readPloidyLevel();
     loadVariantIds();
     loadGeneIds();
+
+    return loadSequences()
+        .then(() => loadVariantTypes())
+        .then(() => fillExportFormat())
+        .then(() => loadVariantEffects())
+        .then(() => readPloidyLevels());
 }
 
 function showSamples(samplesRatherThanIndividuals) {
@@ -236,7 +236,7 @@ function buildSearchQuery(searchMode, pageToken) {
     let activeGroups = $(".genotypeInvestigationDiv").length;
 
     let query = {
-        "variantSetId": getProjectId(),
+        "variantSetId": getProjectId().join(","),
         "searchMode": searchMode,
         "getGT": false,
 
@@ -340,7 +340,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
         for (var gene in jsonResult.variants[variant].info["EFF_ge"]) {
             geneName += jsonResult.variants[variant].info["EFF_ge"][gene] + '</br>';
         }
-        var id = splitId(jsonResult.variants[variant].id, 2);
+        var id = splitId(jsonResult.variants[variant].id, 1);
         if (idLooksGenerated(id))
             id = "";
         row = '<tr class="clickable-row" data-id="' + jsonResult.variants[variant].id + '">' +
@@ -1155,7 +1155,7 @@ function saveQuery() {
     let activeGroups = $(".genotypeInvestigationDiv").length;
 
     var query = {
-        "variantSetId": getProjectId(),
+        "variantSetId": getProjectId().join(","),
         "getGT": false,
         "queryLabel": queryName,
 
@@ -1285,7 +1285,7 @@ function listQueries(){
             },
             success: function (jsonResult) {
                 var requestData = {
-                    "variantSetId": getProjectId(),
+                    "variantSetId": getProjectId().join(","),
                     "getGT": false,
                     "queryLabel": queryName,
 

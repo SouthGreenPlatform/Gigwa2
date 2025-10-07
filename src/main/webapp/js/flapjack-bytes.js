@@ -7466,8 +7466,8 @@
       var range = document.createElement('input');
       range.id = 'zoom-control';
       range.setAttribute('type', 'range');
-      range.min = 2;
-      range.max = 64;
+      range.min = 1;
+      range.max = 32;
       range.value = boxSize;
       range.style.width = "250px";
       var zoomPreviewLabel = document.createElement('label');

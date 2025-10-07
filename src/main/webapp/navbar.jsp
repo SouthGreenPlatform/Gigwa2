@@ -65,7 +65,7 @@
                     <select class="selectpicker" id="module" data-actions-box="true" data-live-search="true" name="module" title="Database"></select>
                     <div class="form-group" id="grpProj">&nbsp;
                         <label for="project" class="label-light" id="projectLabel">Project </label>
-                        <select class="selectpicker" id="project" data-actions-box="true" data-live-search="true" name="project"></select>
+                        <select class="selectpicker" multiple id="project" data-actions-box="true" data-live-search="true" name="project"></select>
 	                    <a href="#" onclick="displayProjectInfo($('#project').val());" id="projectInfoLink" style="display:none;"><span role='button' title="Click for project information" class="glyphicon glyphicon-info-sign" id="formatHelp" style="color:yellow;"></span></a>
                     </div>
                     <div class="form-group" id="grpAsm" style="display:none;">

@@ -339,12 +339,12 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + VARIANT_TYPES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return ga4ghService.listVariantTypesSorted(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.listVariantTypesSorted(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList());
 			} else {
 				build403Response(resp);
 				return null;
@@ -360,17 +360,19 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getRunList(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public Map<String, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
+
 		String token = tokenManager.readToken(request);
-		Map<String, List<String>> response = new HashMap<>();
+		List<String> response = new ArrayList<>();
 		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.RUNS, ga4ghService.getRunList(info[0], Integer.parseInt(info[1])));
-			} else {
+			if (tokenManager.canUserReadDB(token, info[0]))
+				for (Map.Entry<Integer, List<String>> entry : ga4ghService.getRunsByProjects(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList()).entrySet())
+					for (String run : entry.getValue())
+						response.add(info[0] + Helper.ID_SEPARATOR + entry.getKey() + Helper.ID_SEPARATOR + run);
+			else
 				build403Response(resp);
-			}
-			return response;
+			return new HashMap<>() {{ put("runs", response); }};
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -403,21 +405,21 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 * @param variantSetId
-	 * @return Map<String, List<Integer>> containing distinct number of alleles
-	 *         inb JSON format
+	 * @return Map<String, List<Integer>> containing distinct number of alleles in JSON format
+	 * @throws Exception 
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getNumberOfAlleles", notes = "get availables alleles count in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + NUMBER_ALLELE_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 		String token = tokenManager.readToken(request);
 		Map<String, List<Integer>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				List<Integer> result = new ArrayList<Integer>(ga4ghService.getDistinctAlleleCounts(info[0], Integer.parseInt(info[1])));
+				List<Integer> result = new ArrayList<Integer>(ga4ghService.getDistinctAlleleCounts(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList()));
 				Collections.sort(result);
 				response.put(Constants.NUMBER_OF_ALLELE, result);
 			} else {
@@ -430,35 +432,35 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	/**
-	 * get sequence list for the project
-	 *
-	 * @param request
-	 * @param variantSetId
-	 * @return Map<String, List<String>> containing the sequences in JSON format
-	 */
-	@Deprecated
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
-		String token = tokenManager.readToken(request);
-		Map<String, List<String>> response = new HashMap<>();
-		try {
-			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.SEQUENCES, ga4ghService.listSequences(request, info[0], Integer.parseInt(info[1])));
-			} else {
-				build403Response(resp);
-			}
-		} catch (ObjectNotFoundException e) {
-			build404Response(resp);
-			return null;
-		}
-		return response;
-	}
+//	/**
+//	 * get sequence list for the project
+//	 *
+//	 * @param request
+//	 * @param variantSetId
+//	 * @return Map<String, List<String>> containing the sequences in JSON format
+//	 */
+//	@Deprecated
+//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequences", notes = "get availables sequences in a referenceSet and variantSet. ")
+//	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+//			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+//	@ApiIgnore
+//	@RequestMapping(value = BASE_URL + SEQUENCES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+//	public Map<String, List<String>> getSequences(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
+//		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+//		String token = tokenManager.readToken(request);
+//		Map<String, List<String>> response = new HashMap<>();
+//		try {
+//			if (tokenManager.canUserReadDB(token, info[0])) {
+//				response.put(Constants.SEQUENCES, ga4ghService.listSequences(request, info[0], Integer.parseInt(info[1])));
+//			} else {
+//				build403Response(resp);
+//			}
+//		} catch (ObjectNotFoundException e) {
+//			build404Response(resp);
+//			return null;
+//		}
+//		return response;
+//	}
 
 	/**
 	 * get the Annoations effect for the project
@@ -467,20 +469,20 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return Map<String, TreeSet<String>> containing the annotation effect in
 	 *         JSON format
+	 * @throws Exception 
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getEffectAnnotations", notes = "get availables effect annotations in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + EFFECT_ANNOTATION_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 		String token = tokenManager.readToken(request);
 		Map<String, TreeSet<String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.EFFECT_ANNOTATIONS,
-						ga4ghService.getProjectEffectAnnotations(info[0], Integer.parseInt(info[1])));
+				response.put(Constants.EFFECT_ANNOTATIONS, ga4ghService.getProjectEffectAnnotations(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList()));
 			} else {
 				build403Response(resp);
 			}
@@ -502,15 +504,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + SEARCHABLE_ANNOTATION_FIELDS_URL
-			+ "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Collection<String> listSearchableAnnotationFields(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	@RequestMapping(value = BASE_URL + SEARCHABLE_ANNOTATION_FIELDS_URL + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
+	public Collection<String> listSearchableAnnotationFields(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return ga4ghService.searchableAnnotationFields(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.searchableAnnotationFields(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList());
 			} else {
 				build403Response(resp);
 				return null;
@@ -526,18 +526,19 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 * @param variantSetId
-	 * @return Map<String, Integer> containing ploidy level in JSON format
+	 * @return List<Integer> containing distinct ploidy levels found among specified variantSets
+	 * @throws Exception 
 	 */
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getPloidyLevel", notes = "return the ploidy level in a referenceSet and variantSet. ")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Integer getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public List<Integer> getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return ga4ghService.getProjectPloidyLevel(info[0], Integer.parseInt(info[1]));
+				return ga4ghService.getProjectPloidyLevel(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList());
 			} else {
 				build403Response(resp);
 				return null;
@@ -932,12 +933,13 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
-			@PathVariable String variantSetId) throws IOException, NumberFormatException, InterruptedException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+			@PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
+
 		String token = tokenManager.readToken(request);
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				return ga4ghService.distinctSequencesInSelection(request, info[0], Integer.parseInt(info[1]), token);
+				return ga4ghService.distinctSequencesInSelection(request, info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList(), token);
 			} else {
 				build403Response(resp);
 				return null;
@@ -996,13 +998,14 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ANNOTATION_HEADERS_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws IOException {
-		String[] info = variantSetId.split(Helper.ID_SEPARATOR);
+	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
+
 		String token = tokenManager.readToken(request);
 		Map<String, Map<String, String>> response = new HashMap<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
-				response.put(Constants.ANN_HEADERS, ga4ghService.getAnnotationHeaders(info[0], Integer.parseInt(info[1])));
+				response.put(Constants.ANN_HEADERS, ga4ghService.getAnnotationHeaders(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList()));
 			} else
 				build403Response(resp);
 			return response;
@@ -2494,7 +2497,7 @@ public class GigwaRestController extends ControllerInterface {
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
-    public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws Exception {
         boolean workWithSamples = "true".equalsIgnoreCase(request.getHeader("workWithSamples"));
 		String body = IOUtils.toString(request.getReader());
 
@@ -2640,10 +2643,11 @@ public class GigwaRestController extends ControllerInterface {
 
     @ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final String projIDs, @RequestBody HashMap<String, Object> reqBody) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, projID, (Collection<String>) reqBody.get("individuals"));
+		String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), (Collection<String>) reqBody.get("individuals"));
 	}
     
     @ApiIgnore

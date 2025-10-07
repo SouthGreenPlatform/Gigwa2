@@ -73,8 +73,9 @@ function idLooksGenerated(id)
 }
 
 function getProjectId(){
-    return $('#project :selected').data("id");
+    return $('#project option:selected').get().map(t => $(t).attr("data-id"));
 }
+
 
 function getModuleName(){
     return $('#module').val();
