@@ -1650,61 +1650,56 @@ function onVariantIdsSelect() {
 function buildGenotypeTableContents(jsonResult) {
 	const knownAlleles = jsonResult.alternateBases;
 	knownAlleles.unshift(jsonResult.referenceBases);
+    $('#varKnownAlleles').html(knownAlleles.map(allele => '<div class="allele" style="background-color:transparent; margin:0;">' + allele + '</div>').join(''));
+
 	const gtTable = [];
 	const headerPositions = [];
-
+	const priorityKeys = ["sample", "callSet", "project", "run"];
 	for (const call in jsonResult.calls) {
-		const individual = splitId(jsonResult.calls[call].callSetId, 2);
-		const gtRow = [individual];
 		let gt = '';
 		const alleles = [];
-
-		for (const allele in jsonResult.calls[call].genotype) {
-			const alleleIndex = jsonResult.calls[call].genotype[allele];
-			alleles.push(knownAlleles[alleleIndex]);
-		}
+		for (const allele in jsonResult.calls[call].genotype)
+			alleles.push(knownAlleles[jsonResult.calls[call].genotype[allele]]);
 
 		alleles.forEach(function(allele) {
 			gt += '<div class="allele">' + allele + '</div>';
 		});
 
-		gtRow.push(gt);
+		const gtRow = [splitId(jsonResult.calls[call].callSetId, 1), gt];
+		
+		// Sort the keys: priority keys first, then the rest
+		const sortedKeys = Object.keys(jsonResult.calls[call].info).sort((a, b) => {
+		    const aIsPriority = priorityKeys.includes(a);
+		    const bIsPriority = priorityKeys.includes(b);
+		
+		    if (aIsPriority && !bIsPriority) return -1;
+		    if (!aIsPriority && bIsPriority) return 1;
+		    return 0; // Maintain original order for non-priority keys
+		});
 
-		for (const header in jsonResult.calls[call].info) {
-			let headerPos = headerPositions[header];
-			if (headerPos == null) {
-				headerPos = Object.keys(headerPositions).length;
-				headerPositions[header] = headerPos;
-			}
-			gtRow[headerPos + 2] = jsonResult.calls[call].info[header][0];
+		const sortedInfoEntries = sortedKeys.map(key => [key, jsonResult.calls[call].info[key]]);
+		for (const [header, value] of sortedInfoEntries) {
+			if (headerPositions[header] == null)
+				headerPositions[header] = Object.keys(headerPositions).length;
+			gtRow[headerPositions[header] + 2] = value[0];
 		}
 		gtTable.push(gtRow);
 	}
-	var tableHeader = new Array(2);
+	
+	var tableHeader = ["&nbsp;individual&nbsp;", "&nbsp;genotype&nbsp;"];
+    let workWithSamples = ($('#workWithSamples').is(':checked'));
+   	if (workWithSamples)
+		priorityKeys.shift();	// in this case we don't apply toggled background color on that column
     for (var header in headerPositions)
         tableHeader[headerPositions[header] + 2] = header;
-    
-    var indexSample = tableHeader.indexOf("sample");
+        
+	let groupStripeColumn = workWithSamples ? tableHeader.indexOf("sample") : 0;
+    var toggledColorColumnIndices = gtTable.length == new Set(gtTable.map(rows => rows[0])).size ? [] /*if each individual appears once we don't need to toggle bgcolors*/ : priorityKeys.map(fieldName => tableHeader.indexOf(fieldName)).filter(x => x != -1);
     var htmlTableContents = new StringBuffer();
     htmlTableContents.append('<thead><tr>');
 
-    // Add "Individual" as first column always
-    htmlTableContents.append('<th style="min-width:172px;">&nbsp;Individual&nbsp;</th>');
-    // If "sample" is present in the query, add a specific column for it between "Individual" and "Genotype"
-    if (indexSample !== -1) {
-        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders["sample"] + '"') + '>&nbsp;Sample&nbsp;</th>');
-    }
-    // Add "Genotype" as a column
-    htmlTableContents.append('<th>&nbsp;Genotype&nbsp;</th>');
-    
-    for (var headerPos in tableHeader) {
-        var header = tableHeader[headerPos];
-        // If the header is equal to "sample", skip this iteration because we have already added it outside the loop.
-        if (header === "sample") {
-            continue;
-        }
-        htmlTableContents.append('<th' + (typeof vcfFieldHeaders[header] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[header] + '"') + '>&nbsp;' + header + '&nbsp;</th>');
-    }
+    for (var headerPos in tableHeader)
+        htmlTableContents.append('<th' + (headerPos == groupStripeColumn ? ' style="min-width:172px;"' : '') + (typeof vcfFieldHeaders[tableHeader[headerPos]] == 'undefined' ? '' : ' title="' + vcfFieldHeaders[tableHeader[headerPos]] + '"') + '>&nbsp;' + tableHeader[headerPos] + '&nbsp;</th>');
     htmlTableContents.append('</tr></thead>');
 
     var annotationFieldThresholds = {};
@@ -1719,54 +1714,45 @@ function buildGenotypeTableContents(jsonResult) {
     var individualsByGroup = Array.from({ length: activeGroups }, (_, index) => index + 1).map(group => getSelectedIndividuals([group]));
 
     var prevFirstElement = null;
-    var prevColor = '#d1d1e0';
+    var toggledColor = '#e0e0f0';
     for (var row in gtTable) {
-        var indivColors = [];
+    	var indivColors = [];
 
         for (var i = 0; i < individualsByGroup.length; i++) {
-            var inGroup = individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][0]);
-            if (inGroup)
+            if (individualsByGroup[i].length == 0 || individualsByGroup[i].includes(gtTable[row][groupStripeColumn]))
                 indivColors.push(groupColors[i]);
         }
-        var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][0], individualsByGroup);
+        var annotationThresholds = !applyThresholds ? null : getAnnotationThresholds(gtTable[row][groupStripeColumn], individualsByGroup);
         htmlTableContents.append('<tr class="ind_' + gtTable[row][0].replaceAll(" ", "_") + '">');
 
+        if ((gtTable[row][groupStripeColumn] !== prevFirstElement))
+        	toggledColor = toggledColor === '#d1d1e0' ? null : '#d1d1e0';
+		
         for (var i = 0; i < tableHeader.length; i++) {
             var missingData = false;
-            // Ignore the "sample" column because we will treat it separately
-            if (i !== indexSample) {
-                // Adding sample elements to the second column if "sample" is returned in the query and if we are in the second column
-                if (indexSample !== -1 && i === 1) {
-                	// Changes the color if the first element in the row is different from the previous row
-                    var backgroundColor = (gtTable[row][0] !== prevFirstElement) ? (prevColor === '#d1d1e0' ? '#ffffff' : '#d1d1e0') : prevColor;
-                    htmlTableContents.append('<th style=background-color:' + backgroundColor + '>' + gtTable[row][indexSample] + '</th>');
-                    prevColor = backgroundColor;
-                }
-                if (applyThresholds && i >= 2) {
-                    for (var annotation in annotationThresholds) {
-                        if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
-                            missingData = true;
-                            break;
-                        }
+            if (applyThresholds && i >= 2 + toggledColorColumnIndices.length)
+                for (var annotation in annotationThresholds) {
+                    if (tableHeader[i] == annotation && gtTable[row][i] < annotationThresholds[annotation]) {
+                        missingData = true;
+                        break;
                     }
                 }
-                htmlTableContents.append((i == 0 ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : "<td") + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == 0 ? "</th>" : "</td>"));
-            }
-        }
-        htmlTableContents.append('</tr>');
 
-        // Updates the first element of the previous row
+			let bgColorStyle = toggledColorColumnIndices.length > 0 && toggledColorColumnIndices.includes(i) && toggledColor != null ? (" style='background-color:" + toggledColor + "'") : "";
+			let groupStripedStyle = " style='font-weight:bold; background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'";
+	    	htmlTableContents.append("<td" + (i == groupStripeColumn ? groupStripedStyle : bgColorStyle) + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + "</td>");
+	    }
+
+        htmlTableContents.append('</tr>');
         prevFirstElement = gtTable[row][0];
     }
     return htmlTableContents.toString();
 }
 
 function calculateVariantStats() {
-	let individuals = new Set($('table.genotypeTable tr th:first-child').filter(function() {
-		    return $(this).text().trim() != "Individual";
-		}).map(function() {
-		    return $(this).text();
-		}));
+	let individuals = new Set($('table#genotypeTable tbody tr th:first-child').map(function() {
+	    return $(this).text();
+	}));
 		
     const nGroupCount = getGenotypeInvestigationMode() + 1;
 	const groupsContent = [nGroupCount == 2 && !$("#displayAllGt").prop('checked') ? null : []];
@@ -1781,13 +1767,13 @@ function calculateVariantStats() {
 	let treatedIndividuals = new Set();
 	let alleleCounts = Array.from({ length: nGroupCount }, () => ({}));
 	let hetZcount = new Array(nGroupCount).fill(0);
-	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = ploidy > 1;
+	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = !(ploidy.length === 1 && ploidy[0] === 1);
 	
-	$("table.genotypeTable tr").each(function() {
+	$("table#genotypeTable tbody tr").each(function() {
+		let indName = $(this).find('th:first-child').text();
 		if ($(this).find("td.missingData").length > 0)
 			return;
 
-		let indName = $(this).find('th:first-child').text();
 		if (treatedIndividuals.has(indName))
 			return;
 
@@ -1802,7 +1788,8 @@ function calculateVariantStats() {
 	
 				distinctIndAlleles.add(allele);
 			});
-			treatedIndividuals.add(indName);
+			if (distinctIndAlleles.size > 0)
+				treatedIndividuals.add(indName);
 			if (doHetZ && distinctIndAlleles.size > 1)
 				hetZcount[i]++;
 		}
@@ -1813,13 +1800,13 @@ function calculateVariantStats() {
 	for (let i = 0; i < groupsContent.length; i++)
 		if (groupsContent[i] != null) {
 			let groupSize = groupsContent[i].length == 0 ? individuals.size : groupsContent[i].length;
-			let missingCount = groupSize - Object.keys(alleleCounts[i]).map(key => alleleCounts[i][key] || 0).reduce((sum, value) => sum + value, 0) / ploidy;
 			let groupStats = '<div style="border:1px solid lightgrey; padding:8px;" class="margin-top-md group' + i + '">';
 			groupStats += "<div style='text-decoration:underline;'>" + (i > 0 ? $("input#group" + i).val() : "Overall figures") + " (" + groupSize + " individuals)</div>";
-			groupStats += "<div>Missing data: " + (missingCount * 100 / groupSize).toFixed(2) + "%</div>";
-			if (doHetZ)
-				groupStats += "<div>Heterozygous: " + (hetZcount[i] == 0 ? 0 : hetZcount[i] * 100 / (groupSize - missingCount)).toFixed(2) + "%</div>";
-			if (doMaf)
+			let numberOfGroupIndividualsWithGenotype = Array.from(treatedIndividuals).filter(x => groupsContent[i].length == 0 || groupsContent[i].includes(x)).length;
+			groupStats += "<div>Missing data: " + (100 - numberOfGroupIndividualsWithGenotype * 100 / groupSize).toFixed(2) + "%</div>";
+			if (numberOfGroupIndividualsWithGenotype > 0 && doHetZ)
+				groupStats += "<div>Heterozygous: " + (hetZcount[i] == 0 ? 0 : hetZcount[i] * 100 / numberOfGroupIndividualsWithGenotype).toFixed(2) + "%</div>";
+			if (numberOfGroupIndividualsWithGenotype > 0 && doMaf)
 				groupStats += "<div>MAF: " + (Object.keys(alleleCounts[i]).length < 2 ? 0 : Math.min(...Object.values(alleleCounts[i]))*100/Object.values(alleleCounts[i]).reduce((sum, num) => sum + num, 0)).toFixed(2) + "%</div>";
 			groupStats += '</div>';
 			qvs.append(groupStats);

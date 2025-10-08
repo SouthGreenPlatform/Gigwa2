@@ -334,24 +334,27 @@ public class Ga4ghRestController extends ControllerInterface {
             return null;
         }
 		
+//		boolean workWithSamples = "true".equalsIgnoreCase(request.getHeader("workWithSamples"));
+		String topLevelMaterialField = "true".equalsIgnoreCase(request.getHeader("workWithSamples")) ? fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_SAMPLE : fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_INDIVIDUAL;
+		
 		// implement security restrictions via the list of samples
         List<String> callSetIds = ((List<String>) body.get("callSetIds"));
 		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
 		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
 		if (fGotCallSetIDs)
-			crits.add(Criteria.where(GenotypingSample.FIELDNAME_INDIVIDUAL).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
+			crits.add(Criteria.where(topLevelMaterialField).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
 
 //		System.err.println(projectsToSearchIn + " -> " + allowedIndividuals);
 		
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
 		
-		List<String> listInd = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), GenotypingSample.FIELDNAME_INDIVIDUAL, GenotypingSample.class, String.class);
+		List<String> individualsOrSamples = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), topLevelMaterialField, fr.cirad.mgdb.model.mongo.maintypes.CallSet.class, String.class);
 		Collection<fr.cirad.mgdb.model.mongo.maintypes.CallSet> callsets;
-		if (fGotCallSetIDs && listInd.isEmpty())
+		if (fGotCallSetIDs && individualsOrSamples.isEmpty())
 			callsets = new ArrayList<>();	// some were passed but none was found
 		else {
             List<Criteria> csQueryCriteria = new ArrayList<>();
-            csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_INDIVIDUAL).in(listInd));
+            csQueryCriteria.add(Criteria.where(topLevelMaterialField).in(individualsOrSamples));
             if (info.length > 2)	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
             	csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
             if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run

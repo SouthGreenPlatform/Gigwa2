@@ -1842,7 +1842,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		            async: false,
 		            dataType: "json",
 		            contentType: "application/json;charset=utf-8",
-					headers: buildHeader(token, $('#assembly').val()),
+					headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
 		            success: function(jsonResult) {
 		            	responseObjects[projId + idSep + runId] = jsonResult;
 		            },
