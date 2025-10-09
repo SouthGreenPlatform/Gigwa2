@@ -1322,7 +1322,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 success: function (jsonResult) {
                 	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";"), mayWorkOnSamples = descFigures[descFigures.length - 2] > descFigures[descFigures.length - 3];
                 	$('input#workWithSamples').prop("checked", mayWorkOnSamples && localStorage.getItem('workWithSamples') == 1);
-                	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "none" : "block");
+                	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "block" : "block");
                     dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
                     if ((dbDesc.match(/; 0/g) || []).length == 2)
                         dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
@@ -1838,11 +1838,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	            requests.push($.ajax({        // result of a run for a variant has an id as module§variant§project§run
 		            url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANTS%>"/>/' + encodeURIComponent(variantId + "${idSep}") + projId + "${idSep}" + runId,
 		            type: "POST",
-		            data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + $('#project').val() + "${idSep}" + i)}),
+		            data: JSON.stringify({"callSetIds": ind.map(i => $('#module').val() + "${idSep}" + i)}),
 		            async: false,
 		            dataType: "json",
 		            contentType: "application/json;charset=utf-8",
-					headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
+		            headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
 		            success: function(jsonResult) {
 		            	responseObjects[projId + idSep + runId] = jsonResult;
 		            },

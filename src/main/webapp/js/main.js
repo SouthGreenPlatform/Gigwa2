@@ -452,8 +452,10 @@ function markInconsistentGenotypesAsMissing() {
 
 	var multiSampleIndividuals = new Set();
 	var displayedIndividuals = new Set();
-	$('table.genotypeTable tr th:first-child').map(function() {
-	    var indName = $(this).text();
+	
+	
+	$('table#genotypeTable tbody tr').each(function() {
+	    var indName = $(this).find('th').first().text();
 	    if (indName != "Individual") {
 		    if (displayedIndividuals.has(indName))
 		    	multiSampleIndividuals.add(indName);
@@ -509,18 +511,18 @@ const mostFrequentString = strings => {
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
     const selectedIndividuals = new Set();
     const groups = groupNumber == null ? Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1) : groupNumber;
-    const ga4ghId = getProjectId() + idSep;
+    const ga4ghIdPrefix = referenceset + idSep;
     for (let groupKey in groups) {
         const groupIndex = groups[groupKey];
         let groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('value');
-        if (groupIndividuals == null)
+        if (groupIndividuals == null || groupIndividuals.length === 0)
             groupIndividuals = $('#Individuals' + groupIndex).selectmultiple('option');
         // All individuals are selected in a single group, no need to look further
         if (groupIndividuals.length ===  indOpt.length)
             return [];
 
         for (let indKey in groupIndividuals)
-            selectedIndividuals.add((provideGa4ghId ? ga4ghId : "") + groupIndividuals[indKey]);
+            selectedIndividuals.add((provideGa4ghId ? ga4ghIdPrefix : "") + groupIndividuals[indKey]);
     }
     return selectedIndividuals.size ===  indOpt.length ? [] : Array.from(selectedIndividuals);
 }
@@ -1739,8 +1741,8 @@ function buildGenotypeTableContents(jsonResult) {
                 }
 
 			let bgColorStyle = toggledColorColumnIndices.length > 0 && toggledColorColumnIndices.includes(i) && toggledColor != null ? (" style='background-color:" + toggledColor + "'") : "";
-			let groupStripedStyle = " style='font-weight:bold; background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'";
-	    	htmlTableContents.append("<td" + (i == groupStripeColumn ? groupStripedStyle : bgColorStyle) + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + "</td>");
+			let groupStripedCell = i == groupStripeColumn ? "<th style='background-image:repeating-linear-gradient(to right, " + indivColors.map((color, index) => { return color + " " + (index*17) + "px, " + color + " " + ((index+1) * 17) + "px"; }).join(', ') + ");'" : ("<td" + bgColorStyle);
+	    	htmlTableContents.append(groupStripedCell + (missingData ? ' class="missingData"' : '') + ">" + (gtTable[row][i] != null ? gtTable[row][i] : "") + (i == groupStripeColumn ? "</th>" : "</td>"));
 	    }
 
         htmlTableContents.append('</tr>');
@@ -1750,9 +1752,10 @@ function buildGenotypeTableContents(jsonResult) {
 }
 
 function calculateVariantStats() {
-	let individuals = new Set($('table#genotypeTable tbody tr th:first-child').map(function() {
-	    return $(this).text();
-	}));
+	let individuals = new Set();
+	$('table#genotypeTable tbody tr').each(function() {
+		individuals.add($(this).find('th').first().text());
+	});
 		
     const nGroupCount = getGenotypeInvestigationMode() + 1;
 	const groupsContent = [nGroupCount == 2 && !$("#displayAllGt").prop('checked') ? null : []];
@@ -1770,7 +1773,7 @@ function calculateVariantStats() {
 	let doMaf = $("#varKnownAlleles").children().length == 2, doHetZ = !(ploidy.length === 1 && ploidy[0] === 1);
 	
 	$("table#genotypeTable tbody tr").each(function() {
-		let indName = $(this).find('th:first-child').text();
+		let indName = $(this).find('th:first').text();
 		if ($(this).find("td.missingData").length > 0)
 			return;
 
