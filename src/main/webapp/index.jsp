@@ -1322,7 +1322,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 success: function (jsonResult) {
                 	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";"), mayWorkOnSamples = descFigures[descFigures.length - 2] > descFigures[descFigures.length - 3];
                 	$('input#workWithSamples').prop("checked", mayWorkOnSamples && localStorage.getItem('workWithSamples') == 1);
-                	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "block" : "block");
+                	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "none" : "block");
                     dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
                     if ((dbDesc.match(/; 0/g) || []).length == 2)
                         dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
@@ -1893,15 +1893,13 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			});
 
             modalContent += '<table class="table table-overflow table-bordered" id="genotypeTable" style="width: auto;">' + buildGenotypeTableContents(mergedJsonContents) + '</table>';
-
-            if ($('#varId').html() == "") {
-                $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
-                $('#varSeq').html("Seq: " + mergedJsonContents.referenceName);
-                $('#varType').html("Type: " + mergedJsonContents.info.type[0]);
-                $('#varPos').html("Pos: " + mergedJsonContents.start + "-" + mergedJsonContents.end);
-            }
-
 		    $('#gtTable').html(modalContent);
+
+		    $('#varId').html("Variant: " + variantId.split("${idSep}")[1]);
+            $('#varSeq').html("Seq: " + mergedJsonContents.referenceName);
+            $('#varType').html("Type: " + mergedJsonContents.info.type[0]);
+            $('#varPos').html("Pos: " + mergedJsonContents.start + "-" + mergedJsonContents.end);
+
 			markInconsistentGenotypesAsMissing();
 			calculateVariantStats();
 
