@@ -443,7 +443,7 @@ function submitBrapiForm() {
 	     	mapListSelect += "</select>";
 	     	var studyListSelect = "Select a study <select id='brapiStudyList'>";
 	     	for (var i=0; i<studyList.length; i++)
-	     		studyListSelect += "<option value=\"" + studyList[i]['studyDbId'] + "\">" + studyList[i]['name'] + " [" + readMarkerProfiles(studyList[i]['studyDbId']).length + " samples]" + "</option>";
+	     		studyListSelect += "<option value=\"" + studyList[i]['studyDbId'] + "\">" + studyList[i]['name'] + " [" + readMarkerProfiles(studyList[i]['studyDbId']).length + " markerProfiles]" + "</option>";
 	     	studyListSelect += "</select>";
 	     	$("div#brapiDataSelectionDiv").html("<div style='float:right; color:#ffffff; font-weight:bold;'><a href='#' title='Close' style='font-weight:bold; float:right; color:#ff0000;' onclick=\"$('div#brapiDataSelectionDiv').remove(); BRAPI_V1_URL_ENDPOINT = null;\">X</a><div style='margin-top:20px;'>Select map and study<br/>then submit again</div></div>" + mapListSelect + "<br/>" + studyListSelect + ($("#skipMonomorphic").is(":checked") ? "<div class='margin-top-md bold' style='color:#ff6600;'>BrAPI import doesn't support skipping monomorphic variants!</div>" : ""));
 	 	}, 1);
@@ -890,9 +890,8 @@ function loadRuns() {
         },
         success: function (jsonResult) {
             var option = "<option>- new run -</option>";
-            for (var run in jsonResult.runs) {
-                option += '<option>' + jsonResult.runs[run] + '</option>';
-            }
+            for (var run of jsonResult[Object.keys(jsonResult)[0]])
+                option += '<option>' + run + '</option>';
             $('#runExisting').html(option).selectpicker('refresh');
             $('#runExisting').val(0).selectpicker('refresh');
         },
