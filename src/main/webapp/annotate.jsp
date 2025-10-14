@@ -509,9 +509,8 @@
                     },
                     success: function (jsonResult) {
                         var option = "";
-                        for (var run in jsonResult.runs) {
-                            option += '<option>' + jsonResult.runs[run] + '</option>';
-                        }
+                        for (var run of jsonResult[Object.keys(jsonResult)[0]])
+                            option += '<option>' + run + '</option>';
                         $('#runExisting').html(option).selectpicker('refresh');
                         $('#runExisting').val(0).selectpicker('refresh');
                     },

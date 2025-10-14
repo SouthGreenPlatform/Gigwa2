@@ -832,7 +832,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val()),
 			success: function(jsonResult) {
-				runList = jsonResult.runs.reduce((acc, item) => { const parts = item.split('§'); const key = parseInt(parts[1], 10); acc[key] = [...(acc[key] || []), parts[2]]; return acc; }, {});
+				runList = jsonResult;
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				handleError(xhr, thrownError);
@@ -1320,7 +1320,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 type: "GET",
                 contentType: "application/json;charset=utf-8",
                 success: function (jsonResult) {
-                	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";"), mayWorkOnSamples = descFigures[descFigures.length - 2] > descFigures[descFigures.length - 3];
+                	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";"), mayWorkOnSamples = descFigures[descFigures.length - 2] != descFigures[descFigures.length - 3];
                 	$('input#workWithSamples').prop("checked", mayWorkOnSamples && localStorage.getItem('workWithSamples') == 1);
                 	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "none" : "block");
                     dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
@@ -1878,19 +1878,21 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					}
 				}
 			
-			// Sort the `calls` so that table contents are readable
-			mergedJsonContents.calls.sort((a, b) => {
-			    if (a.callSetId < b.callSetId) return -1;
-			    if (a.callSetId > b.callSetId) return 1;
-
-			    if (a.info.project[0] < b.info.project[0]) return -1;
-			    if (a.info.project[0] > b.info.project[0]) return 1;
-
-			    if (a.info.run[0] < b.info.run[0]) return -1;
-			    if (a.info.run[0] > b.info.run[0]) return 1;
-
-			    return 0;
-			});
+			if (mergedJsonContents != null)
+				mergedJsonContents.calls.sort((a, b) => {	// Sort the `calls` so that table contents are readable
+				    if (a.callSetId < b.callSetId) return -1;
+				    if (a.callSetId > b.callSetId) return 1;
+	
+				    if (a.info.project[0] < b.info.project[0]) return -1;
+				    if (a.info.project[0] > b.info.project[0]) return 1;
+	
+				    if (a.info.run[0] < b.info.run[0]) return -1;
+				    if (a.info.run[0] > b.info.run[0]) return 1;
+	
+				    return 0;
+				});
+			else
+				mergedJsonContents = responseObjects[Object.keys(responseObjects)[0]];
 
             modalContent += '<table class="table table-overflow table-bordered" id="genotypeTable" style="width: auto;">' + buildGenotypeTableContents(mergedJsonContents) + '</table>';
 		    $('#gtTable').html(modalContent);
