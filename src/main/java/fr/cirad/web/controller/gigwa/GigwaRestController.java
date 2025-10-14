@@ -360,19 +360,17 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
-	public Map<String, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
+	public Map<Integer, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
 
 		String token = tokenManager.readToken(request);
 		List<String> response = new ArrayList<>();
 		try {
 			if (tokenManager.canUserReadDB(token, info[0]))
-				for (Map.Entry<Integer, List<String>> entry : ga4ghService.getRunsByProjects(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList()).entrySet())
-					for (String run : entry.getValue())
-						response.add(info[0] + Helper.ID_SEPARATOR + entry.getKey() + Helper.ID_SEPARATOR + run);
-			else
-				build403Response(resp);
-			return new HashMap<>() {{ put("runs", response); }};
+				return ga4ghService.getRunsByProjects(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList());
+			
+			build403Response(resp);
+			return null;
 		} catch (ObjectNotFoundException e) {
 			build404Response(resp);
 			return null;
@@ -1717,6 +1715,7 @@ public class GigwaRestController extends ControllerInterface {
 
 		final String processId = "import::" + auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
+		progress.setPercentageEnabled(false);
         ProgressIndicator.registerProgressIndicator(progress);
 
 		Object metadataFileOrEndpoint = null;
