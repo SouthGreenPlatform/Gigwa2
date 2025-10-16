@@ -221,7 +221,7 @@ function parseFeatures(data, dataHeader){
 	
 	let individualCols = new Map();
 	dataHeader.callSetIds.forEach(function (callsetId){
-		individualCols.set(callsetId, cols.get(callsetId.split(idSep)[2]));
+		individualCols.set(callsetId, cols.get(callsetId.split(idSep)[1]));
 	})
 	
 	// Parse the actual data
@@ -274,8 +274,8 @@ class GigwaSearchReader {
 	// Retrieve the "header" data (the callsets)
 	async updateHeader() {
 		this.header = {};
-		this.header.callSetIds = this.selectedIndividuals.map(ind => getProjectId() + idSep + ind);
-		this.header.callSets = this.selectedIndividuals.map(ind => { return {"id" : getProjectId() + idSep + ind, "name" : ind}; });
+		this.header.callSetIds = this.selectedIndividuals.map(ind => referenceset + idSep + ind);
+		this.header.callSets = this.selectedIndividuals.map(ind => { return {"id" : referenceset + idSep + ind, "name" : ind}; });
 		this.header.callSets.sort(function (a, b){
 			if (a.id < b.id) return -1;
 			if (a.id > b.id) return 1;
@@ -354,7 +354,7 @@ class GigwaSearchReader {
 			
 			let query = {
 			    ...buildSearchQuery(2, 0),
-				variantSetId: getProjectId(),
+				variantSetId: getProjectId().join(","),
 				displayedSequence: chr,
 				callSetIds: self.header.callSetIds,
 				additionalCallSetIds: null	// not being used for this kind of query so let's remove it from the payload
@@ -380,7 +380,7 @@ class GigwaSearchReader {
 				type: "POST",
 				dataType: "text",
 				contentType: "application/json;charset=utf-8",
-				headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
+				headers: buildHeader(token, $('#assembly').val()),
 				data: JSON.stringify(query),
 				error: function (xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);

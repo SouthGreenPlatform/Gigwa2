@@ -849,7 +849,7 @@ public class GigwaRestController extends ControllerInterface {
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
-        String info[] = Helper.getInfoFromId(gr.getVariantSetId(), 2);
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gr.getVariantSetId());
         if (!tokenManager.canUserReadDB(token, info[0])) {
 			build404Response(resp);
 			return;
@@ -2517,7 +2517,7 @@ public class GigwaRestController extends ControllerInterface {
     		return;
     	}
 
-    	String info[] = Helper.getInfoFromId(gsvr.getVariantSetId(), 2);
+		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gsvr.getVariantSetId());
         String sModule = info[0];
         MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
 
@@ -2733,7 +2733,11 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("description", project.getDescription());
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
-				pj.put("callsets", mongoTemplate.count(new Query(Criteria.where(CallSet.FIELDNAME_PROJECT_ID).is(project.getId())), CallSet.class));
+				Query sampleQuery = new Query(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + CallSet.FIELDNAME_PROJECT_ID).is(project.getId()));
+				sampleQuery.fields().include(GenotypingSample.FIELDNAME_CALLSETS + "._id");
+				List<GenotypingSample> samples = mongoTemplate.find(sampleQuery, GenotypingSample.class);
+				pj.put("samples", samples.size());				
+				pj.put("callsets", samples.stream().map(sp -> sp.getCallSets()).flatMap(Collection::stream).filter(cs -> cs.getProjectId() == project.getId()).count());
 				pj.put("runs", project.getRuns());
 				resultObject.put("Project" + j, pj);
 				j++;

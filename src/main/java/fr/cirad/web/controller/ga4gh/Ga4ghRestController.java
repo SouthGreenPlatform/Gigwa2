@@ -232,6 +232,8 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param id
      * @return Variant
      * @throws IOException 
+     * @throws ObjectNotFoundException 
+     * @throws NumberFormatException 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariant", notes = "get a Variant from its ID. ")
     @ApiResponses(value = {
@@ -240,7 +242,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, NumberFormatException, ObjectNotFoundException {
         String indHeader = request.getHeader("ind");
     	Map<String, Object> body = new HashMap<>() {{put("callSetIds", indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";")); }};
     	return getVariantByPost(request, response, id, body);
@@ -253,6 +255,8 @@ public class Ga4ghRestController extends ControllerInterface {
      * @param id
      * @return Variant
      * @throws IOException 
+     * @throws ObjectNotFoundException 
+     * @throws NumberFormatException 
      */
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantByPost", notes = "get a Variant from its ID. ")
     @ApiResponses(value = {
@@ -261,7 +265,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
-    public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException {
+    public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException, NumberFormatException, ObjectNotFoundException {
        	String[] info = id.split(Helper.ID_SEPARATOR);
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		
@@ -278,11 +282,11 @@ public class Ga4ghRestController extends ControllerInterface {
             return null;
         }
 		
-		String topLevelMaterialField = "true".equalsIgnoreCase(request.getHeader("workWithSamples")) ? fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_SAMPLE : fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_INDIVIDUAL;
+		String topLevelMaterialField = "true".equalsIgnoreCase(request.getHeader("workWithSamples")) ? "_id" : GenotypingSample.FIELDNAME_INDIVIDUAL;
 		
 		// implement security restrictions via the list of samples
         List<String> callSetIds = ((List<String>) body.get("callSetIds"));
-		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
+		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
 		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
 		if (fGotCallSetIDs)
 			crits.add(Criteria.where(topLevelMaterialField).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
@@ -290,21 +294,22 @@ public class Ga4ghRestController extends ControllerInterface {
 		
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
 		
-		List<String> individualsOrSamples = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), topLevelMaterialField, fr.cirad.mgdb.model.mongo.maintypes.CallSet.class, String.class);
+		List<String> individualsOrSamples = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), topLevelMaterialField, GenotypingSample.class, String.class);
 		Collection<fr.cirad.mgdb.model.mongo.maintypes.CallSet> callsets;
 		if (fGotCallSetIDs && individualsOrSamples.isEmpty())
 			callsets = new ArrayList<>();	// some were passed but none was found
 		else {
             List<Criteria> csQueryCriteria = new ArrayList<>();
             csQueryCriteria.add(Criteria.where(topLevelMaterialField).in(individualsOrSamples));
-            if (info.length > 2)	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
-            	csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
-            if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run
-                csQueryCriteria.add(Criteria.where(fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_RUN).is(info[3]));
+            if (info.length > 2) {	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
+	            csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." +fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
+	            if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run
+	                csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_RUN).is(info[3]));
+            }
             Criteria criteria = new Criteria();
             if (!csQueryCriteria.isEmpty())
             	criteria.andOperator(csQueryCriteria.toArray(new Criteria[csQueryCriteria.size()]));
-            callsets = mongoTemplate.find(new Query(criteria), fr.cirad.mgdb.model.mongo.maintypes.CallSet.class);
+            callsets = mongoTemplate.find(new Query(criteria), fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample.class).stream().map(sp -> sp.getCallSets()).flatMap(Collection::stream).toList();
 		}
 
         Variant variant = service.getVariantWithGenotypes(id, callsets.stream().filter(sp -> allowedProjects.contains(sp.getProjectId())).toList());
