@@ -63,7 +63,7 @@ import javax.servlet.http.HttpSession;
 
 import fr.cirad.mgdb.importing.parameters.FileImportParameters;
 import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
-import fr.cirad.mgdb.importing.parameters.PlinkParameters;
+import fr.cirad.mgdb.importing.parameters.PlinkImportParameters;
 import fr.cirad.mgdb.importing.parameters.VCFParameters;
 import fr.cirad.mgdb.model.mongo.maintypes.*;
 import org.apache.avro.AvroRemoteException;
@@ -133,6 +133,7 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongo.subtypes.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
@@ -2090,12 +2091,12 @@ public class GigwaRestController extends ControllerInterface {
 
                                         if (!filesByExtension.containsKey("gz")) {
                                             if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
-                                                Serializable mapFile = filesByExtension.get("map");
-                                                boolean fIsGenotypingFileLocal = mapFile instanceof File;
+                                                Serializable mapFile = filesByExtension.get("map"), genotypeFile = filesByExtension.get("ped");
+                                                boolean fIsMapFileLocal = mapFile instanceof File, fIsGenotypingFileLocal = genotypeFile instanceof File;
                                                 genotypeImporter.set(new PlinkImport(processId));
                                                 if (retrieveIndNamesViaBrapi)
                                                     genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-                                                PlinkParameters params = new PlinkParameters(
+                                                PlinkImportParameters params = new PlinkImportParameters(
                                                         sNormalizedModule,
                                                         sProject,
                                                         sRun,
@@ -2105,8 +2106,8 @@ public class GigwaRestController extends ControllerInterface {
                                                         sampleToIndividualMapping,
                                                         fSkipMonomorphic,
                                                         Boolean.TRUE.equals(fClearProjectData) ? 1 : 0, //importMode
-                                                        fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile,
-                                                        (File) filesByExtension.get("ped"),
+                                                		fIsGenotypingFileLocal ? ((File) genotypeFile).toURI().toURL() : (URL) genotypeFile,
+                                           				fIsMapFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile,
                                                         false
                                                 );
                                                 newProjId = ((PlinkImport) genotypeImporter.get()).importToMongo(params);
@@ -2154,8 +2155,8 @@ public class GigwaRestController extends ControllerInterface {
                                                 newProjId = ((IntertekImport) genotypeImporter.get()).importToMongo(params);
                                             }
                                             else if (filesByExtension.containsKey("genotype") && filesByExtension.containsKey("map")) {
-                                                Serializable mapFile = filesByExtension.get("map");
-                                                boolean fIsGenotypingFileLocal = mapFile instanceof File;
+                                                Serializable mapFile = filesByExtension.get("map"), genotypeFile = filesByExtension.get("genotype");
+                                                boolean fIsMapFileLocal = mapFile instanceof File, fIsGenotypingFileLocal = genotypeFile instanceof File;
                                                 genotypeImporter.set(new FlapjackImport(processId));
                                                 if (retrieveIndNamesViaBrapi)
                                                     genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
@@ -2169,8 +2170,9 @@ public class GigwaRestController extends ControllerInterface {
                                                         sampleToIndividualMapping,
                                                         fSkipMonomorphic,
                                                         Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
-                                                        fIsGenotypingFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile,
-                                                        (File) filesByExtension.get("genotype")
+                                                		fIsGenotypingFileLocal ? ((File) genotypeFile).toURI().toURL() : (URL) genotypeFile,
+                                           				fIsMapFileLocal ? ((File) mapFile).toURI().toURL() : (URL) mapFile
+                                                        
                                                 );
                                                 newProjId = ((FlapjackImport) genotypeImporter.get()).importToMongo(params);
                                             }
@@ -2733,7 +2735,7 @@ public class GigwaRestController extends ControllerInterface {
 				pj.put("description", project.getDescription());
 				pj.put("variantType", project.getVariantTypes());
 				pj.put("ploidy", project.getPloidyLevel());
-				Query sampleQuery = new Query(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + CallSet.FIELDNAME_PROJECT_ID).is(project.getId()));
+				Query sampleQuery = new Query(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_PROJECT_ID).is(project.getId()));
 				sampleQuery.fields().include(GenotypingSample.FIELDNAME_CALLSETS + "._id");
 				List<GenotypingSample> samples = mongoTemplate.find(sampleQuery, GenotypingSample.class);
 				pj.put("samples", samples.size());				

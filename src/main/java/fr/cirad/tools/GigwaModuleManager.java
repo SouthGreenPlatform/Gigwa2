@@ -43,6 +43,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import fr.cirad.mgdb.model.mongo.maintypes.*;
+import fr.cirad.mgdb.model.mongo.subtypes.Callset;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -597,7 +599,7 @@ public class GigwaModuleManager implements IModuleManager {
         	if (variantSet != null)
         		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
         	else
-                return mongoTemplate.findDistinct(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + CallSet.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + CallSet.FIELDNAME_RUN).is(sRun))), GenotypingSample.FIELDNAME_CALLSETS + "." + "_id", GenotypingSample.class, Integer.class).size() + " callsets";
+                return mongoTemplate.findDistinct(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_RUN).is(sRun))), GenotypingSample.FIELDNAME_CALLSETS + "." + "_id", GenotypingSample.class, Integer.class).size() + " callsets";
         }
         else
         	throw new Exception("Not managing entities of type " + entityType);

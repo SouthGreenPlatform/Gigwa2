@@ -60,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.model.GigwaSearchCallSetsRequest;
@@ -274,7 +275,8 @@ public class Ga4ghRestController extends ControllerInterface {
 			allowedProjects.addAll(MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true));
 		} catch (ObjectNotFoundException e) {}	// user may not be allowed to see any project
 		
-		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(Integer.parseInt(info[2])) : allowedProjects;
+		int nProjId = Integer.parseInt(info[2]);
+		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(nProjId) : allowedProjects;
 		
 		Collection<Integer> projectsToSearchIn = CollectionUtils.intersection(targetProjects, allowedProjects);
 		if (projectsToSearchIn.isEmpty()) {
@@ -286,7 +288,7 @@ public class Ga4ghRestController extends ControllerInterface {
 		
 		// implement security restrictions via the list of samples
         List<String> callSetIds = ((List<String>) body.get("callSetIds"));
-		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
+		List<Criteria> crits = new ArrayList<>() {{ add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_PROJECT_ID).in(projectsToSearchIn)); }};
 		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
 		if (fGotCallSetIDs)
 			crits.add(Criteria.where(topLevelMaterialField).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
@@ -294,24 +296,26 @@ public class Ga4ghRestController extends ControllerInterface {
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
 		
 		List<String> individualsOrSamples = mongoTemplate.findDistinct(new Query(new Criteria().andOperator(crits)), topLevelMaterialField, GenotypingSample.class, String.class);
-		Collection<fr.cirad.mgdb.model.mongo.maintypes.CallSet> callsets;
+		Collection<Callset> callsets;
 		if (fGotCallSetIDs && individualsOrSamples.isEmpty())
 			callsets = new ArrayList<>();	// some were passed but none was found
 		else {
             List<Criteria> csQueryCriteria = new ArrayList<>();
             csQueryCriteria.add(Criteria.where(topLevelMaterialField).in(individualsOrSamples));
             if (info.length > 2) {	// project id may optionally be appended to variant id, to restrict samples to those involved in the project
-	            csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." +fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_PROJECT_ID).is(Integer.parseInt(info[2])));
+	            csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." +Callset.FIELDNAME_PROJECT_ID).is(nProjId));
 	            if (info.length == 4)	// run id may optionally be appended to project id, to restrict samples to those involved in the run
-	                csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + fr.cirad.mgdb.model.mongo.maintypes.CallSet.FIELDNAME_RUN).is(info[3]));
+	                csQueryCriteria.add(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_RUN).is(info[3]));
             }
             Criteria criteria = new Criteria();
             if (!csQueryCriteria.isEmpty())
             	criteria.andOperator(csQueryCriteria.toArray(new Criteria[csQueryCriteria.size()]));
-            callsets = mongoTemplate.find(new Query(criteria), fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample.class).stream().map(sp -> sp.getCallSets()).flatMap(Collection::stream).toList();
+            callsets = mongoTemplate.find(new Query(criteria), GenotypingSample.class)
+	        		.stream().map(sp -> sp.getCallSets()).flatMap(Collection::stream)
+	        		.filter(cs -> info.length < 3 || (cs.getProjectId() == nProjId && (info.length < 4 || info[3].equals(cs.getRun())))).toList();
 		}
 
-        Variant variant = service.getVariantWithGenotypes(id, callsets.stream().filter(sp -> allowedProjects.contains(sp.getProjectId())).toList());
+        Variant variant = service.getVariantWithGenotypes(id, callsets.stream().filter(cs -> allowedProjects.contains(cs.getProjectId())).toList());
         if (variant == null) {
             build404Response(response);
             return null;
