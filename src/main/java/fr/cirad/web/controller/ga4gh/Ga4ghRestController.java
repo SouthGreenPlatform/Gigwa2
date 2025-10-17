@@ -290,7 +290,6 @@ public class Ga4ghRestController extends ControllerInterface {
 		boolean fGotCallSetIDs = callSetIds != null && !callSetIds.isEmpty();
 		if (fGotCallSetIDs)
 			crits.add(Criteria.where(topLevelMaterialField).in(callSetIds.stream().map(csi -> csi.substring(1 + csi.lastIndexOf(Helper.ID_SEPARATOR))).collect(Collectors.toList())));
-
 		
 		MongoTemplate mongoTemplate = MongoTemplateManager.get(info[0]);
 		
