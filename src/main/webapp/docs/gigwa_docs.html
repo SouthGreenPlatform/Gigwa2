@@ -885,6 +885,10 @@
                <P>
                   <B>maxQueryThreads_HOST</B> - Any property named maxQueryThreads_HOST where HOST stands for a mongo-client id specified in applicationContext-data.xml allows to set the number of CPU-threads Gigwa is allowed to use for querying a given host. This may be used to modulate allocation of MongoDB server resources to a given webapp instance. Setting this value to little less than its number of cores may lead to a substantial performance gain. If this not set, the system, as it always used to, attempts to regulate the number of concurrent queries by monitoring response times. 
                </P>
+		   <LI>
+		         <P>
+		            <B>alleleSearchMaxTotalCount</B> - The default implementation of Brapi V2's /search/allelematrix call limits the number of genotypes per invocation to 10,000. Set this parameter to a different value if you need to modify that limit 
+		         </P>
       	</UL>
       </UL>
       <P STYLE="margin-bottom: 0.14in">

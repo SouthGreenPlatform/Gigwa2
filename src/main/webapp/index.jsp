@@ -224,7 +224,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<div id="workWithSamplesDiv" class="row">
 						<div class="panel panel-grey panel-default text-center bold">
-							<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked')); localStorage.setItem('workWithSamples', $(this).is(':checked') ? 1 : 0);" class="input-checkbox" title="At least some individuals in this dataset have multiple samples attached. With this box clicked, each sample will be considered separately (genotypes will not be expected to be the same for samples of a same individual, and data will be exported per-sample rather than applying an individual-level synthesis)"> Work on samples
+							<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked')); localStorage.setItem('workWithSamples', $(this).is(':checked') ? 1 : 0);" class="input-checkbox" title="At least some individuals in this dataset have multiple samples attached. With this box clicked, each sample will be considered separately (genotypes will not be expected to be the same for samples of a same individual, and data will be exported per-sample rather than applying an individual-level synthesis)"><label style="margin-left:5px;" for="workWithSamples">Work on samples</label>
 						</div>
 					</div>
 				</div>
@@ -1320,9 +1320,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 type: "GET",
                 contentType: "application/json;charset=utf-8",
                 success: function (jsonResult) {
-                	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";"), mayWorkOnSamples = descFigures[descFigures.length - 2] != descFigures[descFigures.length - 3];
-                	$('input#workWithSamples').prop("checked", mayWorkOnSamples && localStorage.getItem('workWithSamples') == 1);
-                	$('#workWithSamplesDiv').css('display', !mayWorkOnSamples ? "none" : "block");
+                	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";");
+                	$('input#workWithSamples').prop("checked", localStorage.getItem('workWithSamples') == 1);
                     dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
                     if ((dbDesc.match(/; 0/g) || []).length == 2)
                         dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
@@ -2785,7 +2784,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     function getChartDistinctSequenceList() {
     	let result;
     	$.ajax({
-            url: distinctSequencesInSelectionURL + "/" + $('#project :selected').data("id"),
+            url: distinctSequencesInSelectionURL + "/" + getProjectId().join(","),
             type: "GET",
             async: false,
             headers: buildHeader(token, $('#assembly').val()),

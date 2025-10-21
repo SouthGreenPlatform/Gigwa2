@@ -86,7 +86,7 @@ function chartIndSelectionChanged() {
 	let allCallsetIDs = new Set(callSetIds);
 	for (let i = 0; additionalCallSetIds != null && i < additionalCallSetIds.length; i++)
 		additionalCallSetIds[i].forEach(cs => allCallsetIDs.add(cs));
-	$('#indSelectionCount').text("(" + allCallsetIDs.size + " selected)");
+	$('#indSelectionCount').text("(" + allCallsetIDs.size + " biological entities selected)");
 }
 
 function initializeChartDisplay() {
@@ -178,7 +178,7 @@ function initializeChartDisplay() {
 	
 	                return (
 						'<div class="col-md-3">' +
-	                    '<div class="margin-top"><span class="bold">Individuals accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
 	                    '</div>' +
 	                    '<div id="plotMetadata" class="col-md-3">' +
 	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/>' +
@@ -213,7 +213,7 @@ function initializeChartDisplay() {
 	
 	                return (
 						'<div class="col-md-3">' +
-	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Individuals accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
 	                    '</div>' +
 	                    '<div id="plotMetadata" class="col-md-3">' +
 	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/>' +
@@ -290,7 +290,7 @@ function initializeChartDisplay() {
 	                    return "";
 	
 	                return ('<div class="col-md-3">' +
-	                    '<div class="margin-top"><span class="bold">Individuals accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
 	                    '</div>' +
 	                    '<div id="plotMetadata" class="col-md-3">' +
 	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
@@ -321,7 +321,7 @@ function initializeChartDisplay() {
 }
 
 function onManualIndividualSelection() {
-	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " selected)"));
+	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " biological entities selected)"));
 	$('.showHideSeriesBox').prop('checked', false);
 	$('.showHideSeriesBox').change();
 }
@@ -529,7 +529,7 @@ function displayChart(minPos, maxPos) {
             displayResult(chartInfo, cachedResult, displayedVariantType, displayedSequence);
         else {
             $.ajax({
-				url: chartInfo.queryURL + '/' + encodeURIComponent($('#project :selected').data("id")) + (processID == null ? "" : ("?processID=" + processID)),
+				url: chartInfo.queryURL + (processID == null ? "" : ("?processID=" + processID)),
                 type: "POST",
                 contentType: "application/json;charset=utf-8",
                 headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
