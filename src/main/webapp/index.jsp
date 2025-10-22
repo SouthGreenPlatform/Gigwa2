@@ -2795,6 +2795,10 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 handleError(xhr, thrownError);
             }
         });
+    	
+        var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");		
+    	if (result.length == 0 || selectedSequences.length < result.length)
+    		result = selectedSequences;
         return result;
     }
 
@@ -2855,6 +2859,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     	let query = {
             "variantSetId": getProjectId().join(","),
             "discriminate": typeof getDiscriminateArray == "undefined" ? [] : getDiscriminateArray(),
+            "alleleCount": getSelectedNumberOfAlleles(),
             "displayedSequence": displayedSequence,
             "displayedVariantType": displayedVariantType != "" ? displayedVariantType : null,
             "displayedRangeMin": localmin,
