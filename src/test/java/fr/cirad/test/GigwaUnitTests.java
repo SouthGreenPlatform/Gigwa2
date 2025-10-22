@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 
 import fr.cirad.mgdb.importing.parameters.VCFParameters;
@@ -51,6 +50,7 @@ public class GigwaUnitTests {
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		Assembly.cleanupThreadAssembly();
+		MongoTemplateManager.closeApplicationContextIfOffline();
 		MongoTemplateManager.get("testModule").getDb().drop();
 	}
 
