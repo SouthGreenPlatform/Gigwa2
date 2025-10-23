@@ -2613,21 +2613,13 @@ public class GigwaRestController extends ControllerInterface {
     @RequestMapping(value = BASE_URL + VARIANTS_LOOKUP, method = RequestMethod.GET, produces = "application/json")
     public List<Comparable> searchableVariantsLookup(
             HttpServletRequest request, HttpServletResponse resp,
-            @RequestParam("projectId") String projectId,
+            @RequestParam("projectId") String projectIDs,
             @RequestParam("q") String lookupText) throws Exception {
 
         String token = tokenManager.readToken(request);
-
-        try {
-            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
-            int project = Integer.parseInt(info[1]);
-            if (tokenManager.canUserReadDB(token, info[0])) {            
-                return ga4ghService.searchVariantsLookup(info[0], project, lookupText);
-            }
-
-        } catch (UnsupportedEncodingException ex) {
-            LOG.debug("Error decoding projectId: " + projectId, ex);
-        }
+        String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(URLDecoder.decode(projectIDs, "UTF-8"));
+        if (tokenManager.canUserReadDB(token, info[0]))           
+            return ga4ghService.searchVariantsLookup(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList(), lookupText);
 
         return null;
     }
@@ -2674,22 +2666,14 @@ public class GigwaRestController extends ControllerInterface {
     @RequestMapping(value = BASE_URL + GENES_LOOKUP, method = RequestMethod.GET, produces = "application/json")
     public List<String> searchableGenesLookup(
             HttpServletRequest request, HttpServletResponse resp,
-            @RequestParam("projectId") String projectId,
+            @RequestParam("projectId") String projectIDs,
             @RequestParam("q") String lookupText) throws Exception {
         
         String token = tokenManager.readToken(request);
+    	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(URLDecoder.decode(projectIDs, "UTF-8"));
+        if (tokenManager.canUserReadDB(token, info[0]))       
+            return ga4ghService.searchGenesLookup(info[0], Arrays.stream(info[1].split(",")).map(pi -> Integer.parseInt(pi)).toList(), lookupText);
 
-        try {
-            String[] info = URLDecoder.decode(projectId, "UTF-8").split(Helper.ID_SEPARATOR);
-            int project = Integer.parseInt(info[1]);
-            if (tokenManager.canUserReadDB(token, info[0])) {            
-                return ga4ghService.searchGenesLookup(info[0], project, lookupText);
-            }
-                
-        } catch (UnsupportedEncodingException ex) {
-            LOG.debug("Error decoding projectId: " + projectId, ex);
-        }
-        
         return null;
     }
     

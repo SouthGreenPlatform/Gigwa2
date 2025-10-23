@@ -207,8 +207,7 @@ function arrayToString(value, delim) {
 
 function parseFeatures(data, dataHeader){
 	let variants = [];
-	let projectId = getProjectId() + "§";
-	
+		
 	// Split the tabular data in rows and columns, filtering out the empty lines
 	let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
 	let header = rows.shift();
@@ -241,7 +240,7 @@ function parseFeatures(data, dataHeader){
 		
 		let alleles = row[cols.get("alleles")].split("/");
 		let refAllele = alleles.shift();
-		let variant = new GigwaVariant(projectId + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
+		let variant = new GigwaVariant(referenceset + idSep + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
 		if (!variant.isRefBlock()){
 			variants.push(variant);
 		}

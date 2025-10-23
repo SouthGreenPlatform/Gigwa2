@@ -855,7 +855,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		        },
 		        success: function(url) {
 					if (url != "") {
-						htmlSnpClustProjLinks += "<a onclick=\"$('#project').parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + getProjectId() + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
+						htmlSnpClustProjLinks += "<a onclick=\"$('#project').parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + projId + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
 						$('#snpclust').show();
 					}
 		        },
