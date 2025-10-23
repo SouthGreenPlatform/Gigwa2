@@ -2650,19 +2650,21 @@ public class GigwaRestController extends ControllerInterface {
 	}
     
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
-		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
-		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
-	}
-	
+    @RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+    public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
+        Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
+        String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
+        String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
+    }
+
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final Integer projID) throws IOException {
+	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.asList(projID), null, filters).values();
+        String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+        return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
