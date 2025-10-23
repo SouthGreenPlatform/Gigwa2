@@ -746,7 +746,7 @@ function addSelectionDropDownsToHeaders(tableObj)
         return;
 
     $.ajax({
-        url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projID=" + document.getElementById('project').options[document.getElementById('project').options.selectedIndex].dataset.id.split(idSep)[1],
+        url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
         type: "POST",
         data : "{}",
         contentType: "application/json;charset=utf-8",
