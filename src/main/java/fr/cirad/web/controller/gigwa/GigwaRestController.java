@@ -2643,10 +2643,11 @@ public class GigwaRestController extends ControllerInterface {
     
     @ApiIgnore
 	@RequestMapping(value = BASE_URL + DISTINCT_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public LinkedHashMap<String, Set<String>> distinctSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final Integer projID, @RequestBody HashMap<String, Object> reqBody) throws IOException {
+	public LinkedHashMap<String, Set<String>> distinctSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final String projIDs, @RequestBody HashMap<String, Object> reqBody) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
-		return MgdbDao.getInstance().distinctSampleMetadata(module, sUserName, projID, null);
+        String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
+        return MgdbDao.getInstance().distinctSampleMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null);
 	}
     
 	@ApiIgnore
