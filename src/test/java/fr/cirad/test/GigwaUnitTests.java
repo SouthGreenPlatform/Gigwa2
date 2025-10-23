@@ -50,8 +50,8 @@ public class GigwaUnitTests {
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		Assembly.cleanupThreadAssembly();
+        MongoTemplateManager.get("testModule").getDb().drop();
 		MongoTemplateManager.closeApplicationContextIfOffline();
-		MongoTemplateManager.get("testModule").getDb().drop();
 	}
 
 //	@Before
