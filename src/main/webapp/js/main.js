@@ -1694,7 +1694,29 @@ function buildGenotypeTableContents(jsonResult) {
     for (var header in headerPositions)
         tableHeader[headerPositions[header] + 2] = header;
         
-	let groupStripeColumn = workWithSamples ? tableHeader.indexOf("sample") : 0;
+	// --- Sort the table before rendering ---
+	const sampleIndex = tableHeader.indexOf("sample");
+	const projectIndex = tableHeader.indexOf("project");
+	const runIndex = tableHeader.indexOf("run");
+	gtTable.sort((a, b) => {
+	    const indivComp = a[0].localeCompare(b[0]);
+	    if (indivComp !== 0) return indivComp;
+	    if (projectIndex !== -1) {
+	        const projA = a[projectIndex] || "";
+	        const projB = b[projectIndex] || "";
+	        const projComp = projA.localeCompare(projB);
+	        if (projComp !== 0) return projComp;
+	    }
+	    if (runIndex !== -1) {
+	        const runA = a[runIndex] || "";
+	        const runB = b[runIndex] || "";
+	        const runComp = runA.localeCompare(runB);
+	        if (runComp !== 0) return runComp;
+	    }
+	    return 0;
+	});
+        
+	let groupStripeColumn = workWithSamples ? sampleIndex : 0;
     var toggledColorColumnIndices = gtTable.length == new Set(gtTable.map(rows => rows[0])).size ? [] /*if each individual appears once we don't need to toggle bgcolors*/ : priorityKeys.map(fieldName => tableHeader.indexOf(fieldName)).filter(x => x != -1);
     var htmlTableContents = new StringBuffer();
     htmlTableContents.append('<thead><tr>');
