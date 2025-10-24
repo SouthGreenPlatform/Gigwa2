@@ -1882,11 +1882,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				    if (a.callSetId < b.callSetId) return -1;
 				    if (a.callSetId > b.callSetId) return 1;
 	
-				    if (a.info.project[0] < b.info.project[0]) return -1;
-				    if (a.info.project[0] > b.info.project[0]) return 1;
+				    if (a.info.project != null && b.info.project != null) {
+					    if (a.info.project[0] < b.info.project[0]) return -1;
+					    if (a.info.project[0] > b.info.project[0]) return 1;
+				    }
 	
-				    if (a.info.run[0] < b.info.run[0]) return -1;
-				    if (a.info.run[0] > b.info.run[0]) return 1;
+				    if (a.info.run != null && b.info.run != null) {
+					    if (a.info.run[0] < b.info.run[0]) return -1;
+					    if (a.info.run[0] > b.info.run[0]) return 1;
+				    }
 	
 				    return 0;
 				});
