@@ -345,7 +345,29 @@ public class GigwaModuleManager implements IModuleManager {
         String dumpPath = this.getDumpPath(sModule);
 
         // List files in the database's dump directory, filter out subdirectories and logs
-        File[] fileList = new File(dumpPath).listFiles();
+        File[] fileList = null;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<File[]> future = executor.submit(new Callable<File[]>() {
+            @Override
+            public File[] call() throws Exception {
+            	return new File(dumpPath).listFiles();
+            }
+        });
+
+        try {
+        	fileList = future.get(10, TimeUnit.SECONDS); // Timeout after 10 seconds
+        } catch (TimeoutException e) {
+            future.cancel(true); // Cancel the task if it times out
+            LOG.error("Timeout while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted status
+            LOG.error("Interrupted while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (ExecutionException e) {
+            LOG.error("Error while listing dump files for database " + sModule + ": " + e.getCause().getMessage());
+        } finally {
+            executor.shutdownNow();
+        }
+
         ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
         if (fileList != null) {
             DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
