@@ -3,7 +3,10 @@ package fr.cirad.tools;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Locale;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,18 @@ public class InstanceTracker {
 	
 	private static final String defaultTrackerUrl = "https://webtools.southgreen.fr/GigwaInstanceTracker";
 
+	@PostConstruct
+	public void onInstanceTrackerCreation() throws IOException { // tracker-config fix (should be removed at some point)
+        String sTrackerUrl = appConfig.get("trackerUrl");
+        if (sTrackerUrl != null && !sTrackerUrl.contains("/GigwaInstanceTrackerDev")) {
+        	HashMap<String, String> propsToSet = new HashMap<>();
+        	propsToSet.put("trackerUrl", null);	// clearing it will make Gigwa use the default value
+    		String sInstanceID = appConfig.getInstanceUUID();
+    		if ("devInstance".equals(sInstanceID))
+    			propsToSet.put("instanceUUID", null);	// clearing it will make Gigwa generate a new one
+    		appConfig.saveProperties(propsToSet);
+        }
+	}
     /**
      * runs every 28 days
      */
@@ -35,16 +50,15 @@ public class InstanceTracker {
 		String language = Locale.getDefault().getLanguage();
 	
 		String locale = "";
-		if(!country.isEmpty()) {
+		if (!country.isEmpty()) {
 			locale = "&country=" + country;
 		}
-		if(!language.isEmpty()) {
+		if (!language.isEmpty()) {
 			locale = locale + "&language=" + language;
 		}
 		
 		String trackerUrl = appConfig.get("trackerUrl");
 		URL url = null;
-
 		try {
 			url = new URL((trackerUrl == null ? defaultTrackerUrl : trackerUrl) + "?instance=" + appConfig.getInstanceUUID() + locale + "&users=" + users + "&databases=" + databases);
 			LOG.debug("Invoking instance tracker with URL: " + url);
