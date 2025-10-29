@@ -355,7 +355,7 @@ public class GigwaModuleManager implements IModuleManager {
         });
 
         try {
-        	fileList = future.get(10, TimeUnit.SECONDS); // Timeout after 10 seconds
+        	fileList = future.get(5, TimeUnit.SECONDS); // Timeout after 5 seconds
         } catch (TimeoutException e) {
             future.cancel(true); // Cancel the task if it times out
             LOG.error("Timeout while listing dump files for database " + sModule + ": " + e.getMessage());
