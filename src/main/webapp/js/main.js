@@ -610,16 +610,12 @@ function setGenotypeInvestigationMode(mode) {
 
     for (var i = 1; i <= mode; i++) {
 		if (i >= count + 1) {
-            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><input type="text" class="groupName" onchange="groupNameChanged(${i});" onfocus="select();" title="You may give a name to this group" maxlength="12" style="border:1px solid lightgrey; text-align:center; float:right; height:17px; margin:6px 2px 1px 2px; padding:0 1px; width:85px; font-weight:bold;" id="group${i}" value="Group${i}"></input><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">` + ($('#workWithSamples').is(':checked') ? "Samples" : "Individuals") + ` <span style="font-weight:normal;"></span></div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search hidden" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"  style="cursor:pointer; cursor:hand; float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Select another group here to limit search to variants for which the major genotype differs between both groups.\n\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups."></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
+            var htmlContent = `<div class="row genotypeInvestigationDiv" id="genotypeInvestigationDiv${i}" style="display:none;"><input type="text" class="groupName" onchange="groupNameChanged(${i});" onfocus="select();" title="You may give a name to this group" maxlength="12" style="border:1px solid lightgrey; text-align:center; float:right; height:17px; margin:6px 2px 1px 2px; padding:0 1px; width:85px; font-weight:bold;" id="group${i}" value="Group${i}"></input><div class="panel panel-default group${i} shadowed-panel"><div class="panel-body"><form class="form" role="form"><div class="custom-label" id="individualsLabel${i}">` + ($('#workWithSamples').is(':checked') ? "Samples" : "Individuals") + ` <span style="font-weight:normal;"></span></div><div id="Individuals${i}" class="indListBox"></div><div style="margin-top:-25px; text-align:right;"><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-floppy-save" data-toggle="button" aria-pressed="false" id="groupMemorizer${i}" onclick="setTimeout('applyGroupMemorizing(${i});', 100);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-search groupSelector" title="Filter using metadata" id="groupSelector${i}" onclick="selectGroupUsingMetadata(${i});"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-copy" title="Copy current selection to clipboard" onclick="copyIndividuals(${i}); var infoDiv=$('<div style=\\'margin-top:-40px; right:55px; position:absolute;\\'>Copied!</div>'); $(this).before(infoDiv); setTimeout(function() {infoDiv.remove();}, 1200);"></button><button type="button" class="btn btn-default btn-xs glyphicon glyphicon-paste" aria-pressed="false" title="Paste filtered list from clipboard" id="pasteIndividuals${i}" onclick="toggleIndividualPasteBox(${i});"></button></div><div class="col margin-top-md vcfFieldFilters"><label class="custom-label">Minimum per-sample...</label><br/><div class="container-fluid"><div class="row" id="vcfFieldFilterGroup${i}"></div></div><small class="text-muted">(other data seen as missing)</small></div><div class="margin-top-md"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMissingData${i}" value="0" id="minMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px; margin-top:-3px;"><label class="custom-label">Missing %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMissingData${i}" value="100" id="maxMissingData${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('MissingData', ${i}, 0, 100);"></div></div></div></div></div><div class="mafZone"><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minMaf${i}" value="0" id="minMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; display:flex; flex-direction:column; padding:0 2px; margin-top:-1px;"><label class="custom-label">MAF %</label><small style="margin-top: -5px;" >(for bi-allelic)</small></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxMaf${i}" value="50" id="maxMaf${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="50" onblur="rangeChanged('Maf', ${i}, 0, 50);"></div></div></div></div></div><div><div class="container-fluid"><div class="row" style="padding-bottom:5px;"><div class="col-md-4" style="padding:0;"><div class="input-group"><input name="minHeZ${i}" value="0" id="minHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"><span class="input-group-addon input-sm">&le;</span></div></div><div class="col-md-4" style="text-align:center; padding:7px 2px;"><label class="custom-label">HeteroZ %</label></div><div class="col-md-4" style="padding:0;"><div class="input-group"><span class="input-group-addon input-sm">&le;</span><input name="maxHeZ${i}" value="100" id="maxHeZ${i}" class="form-control input-sm" type="number" step="0.1" maxlength="2" min="0" max="100" onblur="rangeChanged('HeZ', ${i}, 0, 100);"></div></div></div></div></div><div class="margin-top-md"><div id="mostSameRatioSpan${i}" style="position:absolute; right:10px; margin-top:-2px;">&nbsp;Similarity ratio <input id="mostSameRatio${i}" class="input-xs" style="width:35px;" value="100" maxlength="3" onkeypress="return isNumberKey(event);" onblur="if ($(this).val().trim() == '' || isNaN($(this).val()) || $(this).val() > 100) $(this).val(100);">%</div><label for="Genotypes${i}" class="custom-label">Genotype patterns</label>&nbsp;<br/><span class="glyphicon glyphicon-question-sign" id="genotypeHelp${i}"  style="cursor:pointer; cursor:hand; float:right; margin-top:7px;"></span><select class="selectpicker gtPatterns" id="Genotypes${i}" data-actions-box="true" data-width="calc(100% - 20px)" data-live-search="true" name="Genotypes${i}"></select></div><div class="margin-top-md row discriminationDiv"><div class="margin-top-md col-md-6" style="white-space:nowrap; text-align:right;"><span class="glyphicon glyphicon-question-sign" id="genotypeDiscriminateHelp" style="cursor:pointer; cursor:hand;" title="Select another group here to limit search to variants for which the major genotype differs between both groups.\n\nTotal discrimination can be achieved by selecting pattern 'All or mostly the same' with Similarity ratio at 100% in both groups."></span>&nbsp;<b>Discriminate with</b></div><div class="col-md-5" style="text-align:left; width:92px;"><select class="selectpicker" id="discriminate${i}" data-width="100%" name="discriminate${i}" onchange="checkGroupOverlap(${i});"></select></div><div class="col-md-1 group${i}" id="overlapWarning${i}" hidden style="position:absolute; font-weight:bold; padding:5px; border-radius:3px; z-index:2; border:1px solid black; right:-90px; width:80px; cursor:pointer; cursor:hand; color:black;" title="Some individuals are selected in both groups">Overlap&nbsp;<img align="left" src="images/warning.png" height="15" width="18"/></div></div></form></div></div></div>`;
             childContainer.append(htmlContent);
             $('#discriminate' + i).selectpicker();
 
-            if (gotMetaData)
-                $("button#groupSelector" + i).removeClass("hidden");
-            else {
-                $("button#groupSelector" + i).addClass("hidden");
+            if (!gotMetaData)
                 $("table#loadIndividualsindividualFilteringTable").html("");
-            }
 
             if (individualSubSet != null)
                 multipleSelectOpts['size'] = individualSubSet.length;
@@ -653,6 +649,7 @@ function setGenotypeInvestigationMode(mode) {
         }
         $("#igvGroupsMenu ul").append('<li id="igvGroups' + i + '"><a href="#"><label><input type="radio" name="igvGroupsButton" value="group' + i + '" onchange="igvSelectGroup();" /> <span>Group ' + i + '</span></label></a></li>');
     }
+    $(".groupSelector").css("display", gotMetaData ? "inline" : "none");
     
     $('#igvGroupsMenu ul li:first input').prop("checked", true);
     
@@ -740,6 +737,54 @@ function updateFilteredIndividualCount()
     $("span#filteredIndCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
 }
 
+function displayedMetadataFieldListChanged() {
+	let remainingFields = new Set();	// should be all except the ones removes because not relevant
+    let selectedMdFields = new Set($("#displayedMetadataSelect").val());
+    let $table = $('table#individualFilteringTable');
+    let $thead = $table.find('thead tr');
+    let $tbody = $table.find('tbody');
+
+    // Step 1: Determine which columns (starting from index 2) should be visible
+    let visibleHeaderIndices = [0, 1]; // Always show columns 0 and 1
+    let dropdownContentsChanged = false;
+    $thead.find('th:gt(1)').each(function() {
+        let $this = $(this);
+        let headerText = $this.find('div:first').text();
+        remainingFields.add(headerText);
+        let ignoredField = $(this).find("select").length == 0 /* still hide those that don't deserve being filtered on */;
+        if (!ignoredField && selectedMdFields.has(headerText))
+            visibleHeaderIndices.push($this.index());
+        else {
+            let headerSelect = $this.find('select:first');
+            if (headerSelect.val() != null && headerSelect.val() != []) {
+                headerSelect.val([]).selectpicker('refresh')/*.change()*/;
+                dropdownContentsChanged = true;
+            }
+        }
+    });
+    if (dropdownContentsChanged)
+    	applyDropDownFiltersToTable(document.getElementById("individualFilteringTable"));
+    for (let field of $("#displayedMetadataSelect option"))
+    	if (!remainingFields.has($(field).text()))
+    		$(field).remove();
+    $("#displayedMetadataSelect").selectpicker('refresh')
+
+    // Step 2: Hide all header and body cells in columns starting from index 2
+    $thead.find('th:gt(1)').hide();
+    $tbody.find('tr').each(function() {
+        $(this).find('td:gt(1)').hide();
+    });
+
+    // Step 3: Show header and body cells in visible columns (including 0 and 1)
+    visibleHeaderIndices.forEach(function(columnIndex) {
+        $thead.find('th').eq(columnIndex).show();
+        $tbody.find('tr').each(function() {
+            $(this).find('td').eq(columnIndex).show();
+        });
+    });
+    localStorage.setItem($('#module').val() + idSep + $('#project').val() + "_mdFields_" + ($('#workWithSamples').is(':checked') ? "samples" : "individuals"), JSON.stringify($("table#individualFilteringTable thead th").get().map(t => $(t).find("div:first").text()).filter(t => selectedMdFields.has(t))));
+}
+
 function addSelectionDropDownsToHeaders(tableObj)
 {
     if (tableObj.rows.length < 1)
@@ -749,6 +794,7 @@ function addSelectionDropDownsToHeaders(tableObj)
         url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
         type: "POST",
         data : "{}",
+        async: false,
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
         success: function (jsonResult) {
@@ -757,7 +803,7 @@ function addSelectionDropDownsToHeaders(tableObj)
             for (c=2; c<columnCount; c++) {
                 distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
                 if (distinctValuesForColumn == null || distinctValuesForColumn.length <= 1) {
-					colsToIgnore.push(c - 1 - colsToIgnore.length);
+					colsToIgnore.push(c - colsToIgnore.length);
 					console.log("Ignoring metadata field filter because it " + (distinctValuesForColumn == null ? "is empty" : "contains less than 2 values") + ": " + tableObj.rows[0].cells[c].innerText);
 					continue;
 	            }
@@ -792,6 +838,64 @@ function addSelectionDropDownsToHeaders(tableObj)
         }
     });
 }
+
+//function addSelectionDropDownsToHeaders(tableObj) {
+//  if (tableObj.rows.length < 1) return;
+//
+//  $.ajax({
+//    url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+//    type: "POST",
+//    data: "{}",
+//    async: false,
+//    contentType: "application/json;charset=utf-8",
+//    headers: buildHeader(token, $('#assembly').val()),
+//    success: function (jsonResult) {
+//      columnCount = tableObj.rows[0].cells.length;
+//      let colsToIgnore = [];
+//
+//      for (c = 2; c < columnCount; c++) {
+//        distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
+//        if (distinctValuesForColumn == null || distinctValuesForColumn.length <= 1) {
+//          colsToIgnore.push(c - colsToIgnore.length);
+//          console.log("Ignoring metadata field filter because it " + (distinctValuesForColumn == null ? "is empty" : "contains less than 2 values") + ": " + tableObj.rows[0].cells[c].innerText);
+//          continue;
+//        }
+//
+//        distinctValuesForColumn.sort();
+//        dropDown = document.createElement("select");
+//        dropDown.multiple = 'multiple';
+//        dropDown.className = "selectpicker btn-sm";
+//        $(dropDown).attr('data-actions-box', "true");
+//        $(dropDown).attr('data-none-selected-text', "Any");
+//        $(dropDown).attr('data-select-all-text', "All");
+//        $(dropDown).attr('data-deselect-all-text', "None");
+//        $(dropDown).attr('data-selected-text-format', "count>2");
+//        $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
+//
+//        for (i = 0; i < distinctValuesForColumn.length; i++) {
+//          dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
+//        }
+//
+//        tableObj.rows[0].cells[c].appendChild(dropDown);
+//        filtersToColumns[c] = dropDown;
+//      }
+//
+//      var ifTable = $("table#individualFilteringTable");
+//      colsToIgnore.forEach(function (c) {
+//        ifTable.find("tr:eq(0) th:eq(" + c + ")").remove();
+//      });
+//
+//      // Initialize selectpicker
+//      $(tableObj).find("th select.selectpicker").selectpicker();
+//
+//      // Use event delegation for change events
+//      $(tableObj).off('change', 'th select.selectpicker').on('change', 'th select.selectpicker', function () {
+//        applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+//      });
+//    }
+//  });
+//}
+
 
 function applyDropDownFiltersToTable(tableObj, reset)
 {
@@ -835,6 +939,7 @@ function applyDropDownFiltersToTable(tableObj, reset)
 	            }
             $("table#individualFilteringTable tr:eq(1)").replaceWith(dataRows.toString());
             updateFilteredIndividualCount();
+ 			$('#displayedMetadataSelect').change();
         }
     });
 }
@@ -854,7 +959,7 @@ function resetDropDownFilterTable(tableObj)
 function selectGroupUsingMetadata(groupNumber) {
 	if ($("input#resetMetadataFiltersOnDialogShown").prop('checked'))
 		resetDropDownFilterTable(document.getElementById('individualFilteringTable'));
-
+	
     $("span#filteredGroupNumber").html(groupNumber);
     $("table#individualFilteringTable tr:eq(0)").attr("class", "group" + groupNumber);
     $("#individualFiltering").modal({

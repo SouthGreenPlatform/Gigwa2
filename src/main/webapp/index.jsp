@@ -455,14 +455,22 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	<div class="modal fade" role="dialog" id="individualFiltering" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content" style="padding:10px; min-height:90vh;">
-				<div class="bold" style='float:right;'>
-					Click to set group <span id="filteredGroupNumber"></span> to currently selected <span id="filteredIndCount"></span> individuals
-					<button class="btn btn-primary btn-sm" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
-				</div>
-				<div class="modal-header bold">
-					Please apply filters to select individuals
-					<input class="btn btn-primary btn-sm" style="margin-left:150px;" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
-					<label style="margin-left:20px;">Always reset filters before using this dialog <input type="checkbox" id="resetMetadataFiltersOnDialogShown" checked></label>
+				<div class="row bold modal-header" style="margin:15px 0;">
+					<div class="col-md-4">
+						<h5 style="margin:0 0 5px 0;">Apply filters to select biological material</h5>
+						<label>Always reset filters before using this dialog <input type="checkbox" id="resetMetadataFiltersOnDialogShown" checked></label>
+					</div>
+					<div class="col-md-2" style="padding-right:0;">
+						<input class="btn btn-primary btn-sm" style="" type="button" value="Reset filters" onclick="resetDropDownFilterTable(document.getElementById('individualFilteringTable'));"/>
+					</div>
+					<div class="col-md-2" id="displayedMetadataSelectionDiv" style="padding-left:0; padding-right:0;">
+						Displayed fields (up to <span id="maxShownFields"></span>)<br/>
+						<select id='displayedMetadataSelect' name="displayedMetadataSelect" data-selected-text-format="count > 0" data-live-search="true" class="selectpicker" multiple onchange="displayedMetadataFieldListChanged();"></select>
+					</div>
+					<div class="col-md-4" style="padding-left:0; text-align:right;">
+						<button class="btn btn-primary btn-sm" style="float:right; margin-top:2px; margin-left:5px;" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
+						Click to set group <span id="filteredGroupNumber"></span> to currently<br/>selected <span id="filteredIndCount"></span> individuals
+					</div>
 				</div>
 				<table id="individualFilteringTable" style="width:98%;" class="draggableColumnTable"></table>
 			</div>
@@ -680,6 +688,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var currentPageToken;
 	var graph;
 	var idSep ="${idSep}";
+	$("#maxShownFields").html(10);
 	
 	// plot graph option 
 	var options = {
@@ -1018,6 +1027,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 fileReader.readAsText(selectedFile, "UTF-8");                       
             }
         });
+        $('#displayedMetadataSelect').data('maxOptions', parseInt($("#maxShownFields").text()));
+        $('#displayedMetadataSelect').selectpicker('refresh');
 	});
 	
 	var onbeforeunloadCalled = false;
@@ -1356,7 +1367,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
                 // first pass to compile an exhaustive field list
                 try {
-                	callSetMetadataFields = JSON.parse(localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields"));
+                	callSetMetadataFields = JSON.parse(localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields_" + ($('#workWithSamples').is(':checked') ? "samples" : "individuals")));
                 }
                 catch (ignored)
                 {}
@@ -1372,6 +1383,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     if (individualSubSet == null || $.inArray(callSetResponse[ind].name, individualSubSet) != -1)
                         indOpt.push(callSetResponse[ind].name);
                 }
+                $(".groupSelector").css("display", gotMetaData ? "inline" : "none");
 
                 $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('checked', false);
                 $('#exportPanel input#exportedIndividualMetadataCheckBox').prop('disabled', !gotMetaData);
@@ -1387,7 +1399,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     });
                     setTimeout(function () {
                         var headerRow = new StringBuffer(), exportedMetadataSelectOptions = "";
-                        headerRow.append("<thead><tr valign='top'><td></td><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
+                        headerRow.append("<thead><tr valign='top'><th></th><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
                         for (var i in callSetMetadataFields) {
                             headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
                             exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
@@ -1398,8 +1410,27 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         if (headerRow != "")
                             ifTable.prepend(headerRow + "</tr></thead>");
 
-                        addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));  
+                        addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));
                         
+                    	let options = new Set();
+                    	let tableObj = $('table#individualFilteringTable');
+                    	$('table#individualFilteringTable thead tr th:gt(0)').each(function() {
+                    		let headerField = $(this).find('div:first').text();
+                    		if (headerField !== "")
+                    			options.add(headerField);
+                    	});
+                    	let displayedMD = localStorage.getItem($('#module').val() + idSep + $('#project').val() + "_mdFields_" + ($('#workWithSamples').is(':checked') ? "samples" : "individuals"));
+                    	displayedMD = displayedMD == null ? new Set() : new Set(JSON.parse(displayedMD));
+                    	let selectedMdCount = 0;
+                    	$('#displayedMetadataSelect').html([...options].sort().map(function (field) {
+                    		let mdSelected = displayedMD.size == 0 || displayedMD.has(field);
+                    		if (mdSelected)
+                    			selectedMdCount++;
+                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + ">" + field + "</option>";
+                    	}).join("")).selectpicker('refresh');
+                    	
+                        $("#displayedMetadataSelectionDiv").css("display", options.length <= $("#maxShownFields").text() ? "none" : "block");
+
                      	// Make the table headers draggable & droppable
                         ifTable.find("th.draggable").draggable({
                             helper: function() {
@@ -1449,7 +1480,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                                 // Remove the highlight class after drop
                                 $(this).removeClass("highlight");
 
-                                localStorage.setItem($('#module').val() + idSep + $('#project').val() + "_mdFields", JSON.stringify(ifTable.find("thead th:gt(0)").get().filter(t => !$(t).hasClass("dragging-helper")).map(t => $(t).find("div:eq(0)").text())));
+                            	let selectedMdFields = new Set($("#displayedMetadataSelect").val());
+                                localStorage.setItem($('#module').val() + idSep + $('#project').val() + "_mdFields_" + ($('#workWithSamples').is(':checked') ? "samples" : "individuals"), JSON.stringify($("table#individualFilteringTable thead th").get().map(t => !$(t).hasClass("dragging-helper") && $(t).find("div:first").text()).filter(t => selectedMdFields.has(t))));
                             }
                         });
   
