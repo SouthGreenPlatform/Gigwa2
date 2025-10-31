@@ -224,7 +224,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<div id="workWithSamplesDiv" class="row">
 						<div class="panel panel-grey panel-default text-center bold">
-							<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked')); localStorage.setItem('workWithSamples', $(this).is(':checked') ? 1 : 0);" class="input-checkbox" title="At least some individuals in this dataset have multiple samples attached. With this box clicked, each sample will be considered separately (genotypes will not be expected to be the same for samples of a same individual, and data will be exported per-sample rather than applying an individual-level synthesis)"><label style="margin-left:5px;" for="workWithSamples">Work on samples</label>
+							<input type="checkbox" id="workWithSamples" onchange="showSamples($(this).is(':checked')); localStorage.setItem($('#module').val() + '_workWithSamples', $(this).is(':checked') ? 1 : 0);" class="input-checkbox" title="At least some individuals in this dataset have multiple samples attached. With this box clicked, each sample will be considered separately (genotypes will not be expected to be the same for samples of a same individual, and data will be exported per-sample rather than applying an individual-level synthesis)"><label style="margin-left:5px;" for="workWithSamples">Work on samples</label>
 						</div>
 					</div>
 				</div>
@@ -1332,7 +1332,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 contentType: "application/json;charset=utf-8",
                 success: function (jsonResult) {
                 	let descFigures = jsonResult['description'].replace(/[^\d;]+/g, '').split(";");
-                	$('input#workWithSamples').prop("checked", localStorage.getItem('workWithSamples') == 1);
+                	$('input#workWithSamples').prop("checked", localStorage.getItem($('#module').val() + '_workWithSamples') == 1);
                     dbDesc = jsonResult['description'].replace('germplasm', 'individuals');
                     if ((dbDesc.match(/; 0/g) || []).length == 2)
                         dbDesc += "<p class='bold'>This database contains no genotyping data, please contact administrator</p>";
