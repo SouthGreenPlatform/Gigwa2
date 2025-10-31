@@ -469,7 +469,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					</div>
 					<div class="col-md-4" style="padding-left:0; text-align:right;">
 						<button class="btn btn-primary btn-sm" style="float:right; margin-top:2px; margin-left:5px;" onclick="var groupN=$('span#filteredGroupNumber').text(); $('#Individuals' + groupN).selectmultiple('batchSelect', [$('table#individualFilteringTable tr:gt(0):not([style*=\'display: none\']) td span').map(function(index, value) { return $(value).text(); }).get()]); $('#Individuals' + groupN).change(); applyGroupMemorizing(groupN); $('#individualFiltering').modal('hide');">Apply</button>
-						Click to set group <span id="filteredGroupNumber"></span> to currently<br/>selected <span id="filteredIndCount"></span> individuals
+						Click to set group <span id="filteredGroupNumber"></span> to currently<br/>selected <span id="filteredIndCount"></span> biological entities
 					</div>
 				</div>
 				<table id="individualFilteringTable" style="width:98%;" class="draggableColumnTable"></table>
