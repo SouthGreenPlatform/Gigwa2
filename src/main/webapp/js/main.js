@@ -904,6 +904,9 @@ function applyDropDownFiltersToTable(tableObj, reset)
 
     var headers = [];
     var filters = {};
+    var loadSamples = $('#workWithSamples').is(':checked');
+    var indFilters = {};
+
     for (var i = 2; i < tableObj.rows[0].cells.length; i++) {
         var columnName = $(tableObj.rows[0].cells[i]).find("div:eq(0)").text();
         headers.push(columnName);
@@ -913,7 +916,21 @@ function applyDropDownFiltersToTable(tableObj, reset)
         	for (var j = 0; j < selectedOptions.length; j++)
 	            values.push(selectedOptions[j].value);
 	    }
-        filters[columnName] = values;
+	    if (columnName.startsWith("ind.")) {
+            indFilters[columnName.replace("ind.", "")] = values;
+        } else {
+            filters[columnName] = values;
+        }
+    }
+
+    var colFilters;
+    if (loadSamples) {
+        colFilters = {
+            "individual": indFilters,
+            "sample": filters
+        }
+    } else {
+        colFilters = filters;
     }
     
 	let ifTable = $("table#individualFilteringTable");
@@ -925,7 +942,7 @@ function applyDropDownFiltersToTable(tableObj, reset)
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
-        data: JSON.stringify(filters),
+        data: JSON.stringify(colFilters),
         success: function (jsonResult) {
             var dataRows = new StringBuffer();
             for (var ind in jsonResult)

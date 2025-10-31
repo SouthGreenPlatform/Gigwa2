@@ -1193,7 +1193,7 @@ public class GigwaRestController extends ControllerInterface {
 		Map<Object, String> endpointByIndividualOrSample = null;
 		if (MongoTemplateManager.get(sModule) != null) { // Start with what we've currently got in the database
 			endpointByIndividualOrSample = "sample".equals(metadataType) ? 
-					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
+					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null, false)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(e -> e.getValue().getId(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
@@ -1562,7 +1562,7 @@ public class GigwaRestController extends ControllerInterface {
 		                            }
 	                        }
 	                        else if ("sample".equals(metadataType)) {
-	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
+	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null, null, false).values();
 	                            for (GenotypingSample sample : genotypingSamples)
 	                                if (sample.getAdditionalInfo() != null) {
 	                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -2653,11 +2653,11 @@ public class GigwaRestController extends ControllerInterface {
 
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FILTER_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
+	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, LinkedHashMap<String, Set<String>>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
         String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
-        return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
+        return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters, true).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
