@@ -258,6 +258,17 @@ form#importDropzone .form-group {
 	padding:5px;
 }
 
+#dropZonePreviewsMD > div > div.dz-error-message > span {
+    font-size: 12px;
+    width: 540px;
+    display: inline-block;
+    word-break: break-word;
+    white-space: normal;
+    margin-left: -370px;
+    text-align: center;
+    margin-top: 10px;
+}
+
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {
 	cursor: not-allowed;
 }
