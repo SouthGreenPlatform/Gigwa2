@@ -819,9 +819,28 @@ function addSelectionDropDownsToHeaders(tableObj)
                 $(dropDown).attr('data-deselect-all-text', "None");
                 $(dropDown).attr('data-selected-text-format', "count>2");
                 $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
-                $(dropDown).on('change', function () {
-                    applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+
+                let pendingChange = false;
+                
+                $(dropDown).on('show.bs.select', function() {
+                    console.log('📋 Dropdown opened');
                 });
+                
+                $(dropDown).on('hide.bs.select', function() {
+                    console.log('📋 Dropdown closed');
+                    if (pendingChange) {
+                        console.log('🎯 Applying filters after dropdown closed');
+                        applyDropDownFiltersToTable(document.getElementById(tableObj.id));
+                        pendingChange = false;
+                    }
+                });
+                
+                $(dropDown).on('change', function() {
+                    console.log('📋 Selection changed, waiting for dropdown close');
+                    pendingChange = true;
+                });
+
+
                 for (i = 0; i < distinctValuesForColumn.length; i++)
                     dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
 
