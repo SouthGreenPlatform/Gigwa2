@@ -951,3 +951,46 @@ function updateMdEntityTypeDiv() {
 		$("#mdImportTargetedEntities #byFile select option").filter(function() { return $(this).text() === ''; }).remove();	// remove dummy empty entry
 	$("#metadataFile1").change();	// force server-side validation of the metadata form contents
 }
+
+function downloadExampleFile() {
+	let mandatoryMetadataFields = null;
+	if ($("#moduleExistingMD").val() != "")
+    $.ajax({
+        url: mandatoryMetadataFieldsURL + "/" + $("#moduleExistingMD").val(),
+        async: false,
+        type: "GET",
+        contentType: "application/json;charset=utf-8",
+  	  	headers: {
+  	  		"Authorization": "Bearer " + token
+  	  	},
+        success: function(jsonResult) {
+			mandatoryMetadataFields = jsonResult;
+        },
+        error: function(xhr, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+	
+    let content = $("#metadataType").val() + "\t";
+	if (mandatoryMetadataFields !== null && Object.keys(mandatoryMetadataFields).length != 0)
+		content += mandatoryMetadataFields[toPascalCase($("#metadataType").val())].map(f => f.trim()).join("\t");
+	content += "\tsome_field1\tsome_field2";
+	let colCount = content.split("\t").length;
+
+    for (let i=1; i<5; i++) {
+		content += "\n" + $("#metadataType").val() + i;
+		for (let j=1; j<colCount; j++)
+			content += "\tvalue" + i + "_" + j;
+	}
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'example_' + $("#metadataType").val() + '_metadata.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    URL.revokeObjectURL(url);
+}

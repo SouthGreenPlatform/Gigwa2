@@ -500,3 +500,5 @@ function sendToIGV(genomeID)
         }
     });
 }
+
+const toPascalCase = (str) => str.trim().toLowerCase().replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '').replace(/^(.)/, c => c.toUpperCase());

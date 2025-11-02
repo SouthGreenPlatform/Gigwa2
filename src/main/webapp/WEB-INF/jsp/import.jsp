@@ -66,6 +66,7 @@
 	    	var searchSamplesUrl = '<c:url value="<%=GigwaRestController.REST_PATH + ServerinfoApi.URL_BASE_PREFIX + \"/\" + SamplesApi.searchSamplesPost_url %>" />';
 	    	var metadataValidationURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataValidationURL %>" />';
 			var metadataImportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.metadataImportSubmissionURL %>" />';
+			var mandatoryMetadataFieldsURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MANDATORY_MD_FIELDS %>" />';
 	    	var webappUrl = "<c:url value='/' />";
             var token;
             var processAborted = false;
@@ -314,15 +315,16 @@
                                 	<div id="mdModuleZone" class="form-group text-left">
                                         <label for="moduleExistingMD">Database</label>
                                         <select class="selectpicker mandatoryMdField" id="moduleExistingMD" name="moduleExistingMD" data-actions-box="true" data-width="100%" data-live-search="true"><option></option></select>
-                                    </div>                  
+                                    </div>
                                 </div>
                                 <div class="col-md-5" id="mdImportTargetedEntities">                     
                                     <div class="form-group text-left" id="byFile">
-                                        <label>Import metadata on</label>
-                                        <select class="selectpicker mandatoryMdField" id="metadataType" name="metadataType" data-actions-box="true" data-width="100%">
+                                        <label>Import metadata on</label><br/>
+                                        <select class="selectpicker mandatoryMdField" id="metadataType" name="metadataType" data-actions-box="true" data-width="80%">
                                             <option value="individual">Individuals</option>
                                             <option value="sample">Samples</option>
                                         </select>
+                                        <a class="text-nowrap" style="position:absolute; margin:5px 10px;" href="javascript:downloadExampleFile($('#exampleMetadata').val());">Download example file</a>
                                     </div>
 									<div class="form-group text-left orange" id="directViaBrapi" style="display:none;">
                                     </div> 
