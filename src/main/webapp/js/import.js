@@ -90,7 +90,8 @@ $(document).ready(function () {
 		        $(this).removeClass('dz-processing');
 		        $(this).removeClass('dz-success');
 		        $(this).removeClass('dz-complete');
-		        $(this).removeClass('dz-error');
+		        if (importDropzoneMD.files.length === 1 && importDropzoneMD.files[0].accepted)
+		        	$(this).removeClass('dz-error');
 		    });
 		
 		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue
@@ -971,9 +972,10 @@ function downloadExampleFile() {
         }
     });
 	
-    let content = $("#metadataType").val() + "\t";
+	let mandatoryFieldArray = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())].map(f => f.trim())
+    let content = (mandatoryFieldArray == [] ? "" : "# Mandatory fields: " + mandatoryFieldArray.join(", ") + "\n") + $("#metadataType").val() + "\t";
 	if (mandatoryMetadataFields !== null && Object.keys(mandatoryMetadataFields).length != 0)
-		content += mandatoryMetadataFields[toPascalCase($("#metadataType").val())].map(f => f.trim()).join("\t");
+		content += mandatoryFieldArray.join("\t");
 	content += "\tsome_field1\tsome_field2";
 	let colCount = content.split("\t").length;
 
