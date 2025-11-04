@@ -821,25 +821,16 @@ function addSelectionDropDownsToHeaders(tableObj)
                 $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
 
                 let pendingChange = false;
-                
-                $(dropDown).on('show.bs.select', function() {
-                    console.log('📋 Dropdown opened');
-                });
-                
                 $(dropDown).on('hide.bs.select', function() {
-                    console.log('📋 Dropdown closed');
                     if (pendingChange) {
-                        console.log('🎯 Applying filters after dropdown closed');
                         applyDropDownFiltersToTable(document.getElementById(tableObj.id));
                         pendingChange = false;
                     }
                 });
                 
                 $(dropDown).on('change', function() {
-                    console.log('📋 Selection changed, waiting for dropdown close');
                     pendingChange = true;
                 });
-
 
                 for (i = 0; i < distinctValuesForColumn.length; i++)
                     dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
@@ -857,64 +848,6 @@ function addSelectionDropDownsToHeaders(tableObj)
         }
     });
 }
-
-//function addSelectionDropDownsToHeaders(tableObj) {
-//  if (tableObj.rows.length < 1) return;
-//
-//  $.ajax({
-//    url: ($('#workWithSamples').is(':checked') ? distinctSampleMetadata : distinctIndividualMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
-//    type: "POST",
-//    data: "{}",
-//    async: false,
-//    contentType: "application/json;charset=utf-8",
-//    headers: buildHeader(token, $('#assembly').val()),
-//    success: function (jsonResult) {
-//      columnCount = tableObj.rows[0].cells.length;
-//      let colsToIgnore = [];
-//
-//      for (c = 2; c < columnCount; c++) {
-//        distinctValuesForColumn = jsonResult[tableObj.rows[0].cells[c].innerText];
-//        if (distinctValuesForColumn == null || distinctValuesForColumn.length <= 1) {
-//          colsToIgnore.push(c - colsToIgnore.length);
-//          console.log("Ignoring metadata field filter because it " + (distinctValuesForColumn == null ? "is empty" : "contains less than 2 values") + ": " + tableObj.rows[0].cells[c].innerText);
-//          continue;
-//        }
-//
-//        distinctValuesForColumn.sort();
-//        dropDown = document.createElement("select");
-//        dropDown.multiple = 'multiple';
-//        dropDown.className = "selectpicker btn-sm";
-//        $(dropDown).attr('data-actions-box', "true");
-//        $(dropDown).attr('data-none-selected-text', "Any");
-//        $(dropDown).attr('data-select-all-text', "All");
-//        $(dropDown).attr('data-deselect-all-text', "None");
-//        $(dropDown).attr('data-selected-text-format', "count>2");
-//        $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
-//
-//        for (i = 0; i < distinctValuesForColumn.length; i++) {
-//          dropDown.options[dropDown.length] = new Option(distinctValuesForColumn[i], distinctValuesForColumn[i]);
-//        }
-//
-//        tableObj.rows[0].cells[c].appendChild(dropDown);
-//        filtersToColumns[c] = dropDown;
-//      }
-//
-//      var ifTable = $("table#individualFilteringTable");
-//      colsToIgnore.forEach(function (c) {
-//        ifTable.find("tr:eq(0) th:eq(" + c + ")").remove();
-//      });
-//
-//      // Initialize selectpicker
-//      $(tableObj).find("th select.selectpicker").selectpicker();
-//
-//      // Use event delegation for change events
-//      $(tableObj).off('change', 'th select.selectpicker').on('change', 'th select.selectpicker', function () {
-//        applyDropDownFiltersToTable(document.getElementById(tableObj.id));
-//      });
-//    }
-//  });
-//}
-
 
 function applyDropDownFiltersToTable(tableObj, reset)
 {
