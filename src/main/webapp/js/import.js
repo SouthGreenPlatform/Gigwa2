@@ -973,7 +973,7 @@ function downloadExampleFile() {
     });
 	
 	let mandatoryFieldArray = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())].map(f => f.trim())
-    let content = (mandatoryFieldArray == [] ? "" : "# Mandatory fields: " + mandatoryFieldArray.join(", ") + "\n") + $("#metadataType").val() + "\t";
+    let content = (mandatoryFieldArray.length === 0 ? "" : "# Mandatory fields: " + mandatoryFieldArray.join(", ") + "\n") + $("#metadataType").val() + "\t";
 	if (mandatoryMetadataFields !== null && Object.keys(mandatoryMetadataFields).length != 0)
 		content += mandatoryFieldArray.join("\t");
 	content += "\tsome_field1\tsome_field2";
@@ -989,7 +989,7 @@ function downloadExampleFile() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'example_' + $("#metadataType").val() + '_metadata.txt';
+    a.download = 'example_' + $("#metadataType").val() + '_metadata.tsv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
