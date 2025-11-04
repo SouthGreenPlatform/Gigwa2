@@ -1266,8 +1266,9 @@ public class GigwaRestController extends ControllerInterface {
                 Collection<String> mandatoryFieldColl = mandatoryFields == null ? null : Helper.split(mandatoryFields, ",").stream().map(f -> f.trim()).toList();
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
-                    if (sLine.isEmpty() || sLine.replaceAll("\\s+", "").equals("#fjFile=PHENOTYPE")) {
-                    	if (!sLine.isEmpty())
+                    String sCleanLine = sLine.replaceAll("\\s+", "");
+                    if (sLine.isEmpty() || sCleanLine.startsWith("#")) {
+                    	if (sCleanLine.equals("#fjFile=PHENOTYPE"))
                     		fFlapjackFormat = true;
                     	continue;
                     }
