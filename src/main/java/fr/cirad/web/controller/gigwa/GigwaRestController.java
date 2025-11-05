@@ -912,7 +912,7 @@ public class GigwaRestController extends ControllerInterface {
 		try {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gvfpr.setRequest(request);
-				return vizService.selectionVcfFieldPlotData(gvfpr, token);
+				return vizService.selectionVcfFieldPlotData(gvfpr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
