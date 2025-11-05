@@ -868,23 +868,13 @@ function applyDropDownFiltersToTable(tableObj, reset)
         	for (var j = 0; j < selectedOptions.length; j++)
 	            values.push(selectedOptions[j].value);
 	    }
-	    if (columnName.startsWith("ind.")) {
+	    if (columnName.startsWith("ind."))
             indFilters[columnName.replace("ind.", "")] = values;
-        } else {
+        else
             filters[columnName] = values;
-        }
     }
+    var colFilters = loadSamples ? { "individual": indFilters, "sample": filters } : colFilters = filters;
 
-    var colFilters;
-    if (loadSamples) {
-        colFilters = {
-            "individual": indFilters,
-            "sample": filters
-        }
-    } else {
-        colFilters = filters;
-    }
-    
 	let ifTable = $("table#individualFilteringTable");
 	ifTable.find("tr:gt(0)").remove();
 	ifTable.append("<tr><th style='padding:50px; background-color:#eeeeee;' colspan='" + (1 + ifTable.find("tr:eq(0)").children().length) + "'>Loading...<br/><br/><img src='images/progress.gif' /></th></tr>");

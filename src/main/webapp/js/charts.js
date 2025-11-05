@@ -42,16 +42,24 @@ function chartIndSelectionChanged() {
 
     if (selectedValues.length >= minRequiredGroups) {
 		$('#showChartButton').prop('disabled', false);
-		if (groupOption != "__") {			
+		if (groupOption != "__") {
+			let workWithSamples = $('#workWithSamples').is(':checked');
 	        let selectedIndividuals = getSelectedIndividuals();
 			for (var i in selectedValues) {
 				var filters = {};
 				if (i > 0)
 					additionalCallSetIds.push([]);
 				var targetGroup = i == 0 ? callSetIds : additionalCallSetIds[i - 1];
-				filters[groupOption] = [selectedValues[i]];
+				if (workWithSamples) {
+					let filterVals = {};
+					filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [selectedValues[i]];
+					filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
+				}
+				else
+					filters[groupOption] = [selectedValues[i]];
+
 			    $.ajax({
-			        url: ($('#workWithSamples').is(':checked') ? filterSampleMetadata : filterIndividualMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+			        url: (workWithSamples ? filterSampleMetadata : filterIndividualMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
 			        type: "POST",
 			        async: false,
 			        contentType: "application/json;charset=utf-8",

@@ -758,7 +758,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	$.ajaxSetup({cache: false});
 
 	var defaultGenomeBrowserURL, onlineOutputTools = new Array();
-    var stringVariantIdsFromUploadFile = null, callSetMetadataFields = null
+    var stringVariantIdsFromUploadFile = null, callSetMetadataFields = null;
     const groupColors = ["#bcd4f2", "#efecb1", "#f59c85", "#8dc891", "#d7aefc", "#f2d19c", "#a3c8c9", "#ffb347", "#d9c1cc", "#a3e7d8"];
 
     async function onProjectChange() {
@@ -1407,8 +1407,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
                         var ifTable = $("table#individualFilteringTable");
-                        if (headerRow != "")
-                            ifTable.prepend(headerRow + "</tr></thead>");
+                        ifTable.html(headerRow + "</tr></thead>");
 
                         addSelectionDropDownsToHeaders(document.getElementById("individualFilteringTable"));
                         
@@ -2876,7 +2875,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     }
        
     function getChartCallSetMetadataFields() {
-    	return callSetMetadataFields;
+    	return $("#displayedMetadataSelect option").get().map(t => t.innerText);
     }
     
     function getChartIndividualGroupsBasedOnMainUISelection() {
