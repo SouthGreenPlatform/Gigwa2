@@ -270,7 +270,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 											<div class="form-group text-nowrap row margin-top-md">
 												<div class="col-md-6" style="padding-right:10px;">
 													<div class="individualRelated">
-														<label for="exportedIndividuals">Exported individuals</label><br/>
+														<label for="exportedIndividuals">Exported bio-entities</label><br/>
 														<select class="selectpicker" id="exportedIndividuals" onchange="toggleIndividualSelector($(this).parent(), 'choose' == $(this).selectpicker('val'));">
 															<option id="exportedIndividualsAll" value="">All of them</option>
 														</select>
