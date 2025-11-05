@@ -955,7 +955,6 @@ function updateMdEntityTypeDiv() {
 
 function downloadExampleFile() {
 	let mandatoryMetadataFields = null;
-	if ($("#moduleExistingMD").val() != "")
     $.ajax({
         url: mandatoryMetadataFieldsURL + "/" + $("#moduleExistingMD").val(),
         async: false,

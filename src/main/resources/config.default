@@ -135,9 +135,10 @@ allowedOrigins_/**=*
 #maxQueryThreads_defaultMongoHost = 16
 
 
-# Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of mandatory field enforced when importing metadata for individuals into that database
-mandatoryIndividualMetadata-Rice-MSU7 = mandatory_ind_md_1,mandatory_ind_md_2
+# Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of mandatory field enforced when importing metadata for individuals into that database. The suffix-less mandatoryIndividualMetadata property sets the default for all databases
+#mandatoryIndividualMetadata-Rice-MSU7 = mandatory_ind_md_1,mandatory_ind_md_2
+#mandatoryIndividualMetadata = default_mandatory_ind_field
 
-
-# Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of mandatory field enforced when importing metadata for samples into that database
-mandatorySampleMetadata-Rice-MSU7 = mandatory_sp_md_1,mandatory_sp_md_2
+# Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of mandatory field enforced when importing metadata for samples into that database. The suffix-less mandatorySampleMetadata property sets the default for all databases
+#mandatorySampleMetadata-Rice-MSU7 = mandatory_sp_md_1,mandatory_sp_md_2
+#mandatorySampleMetadata = default_mandatory_sp_field

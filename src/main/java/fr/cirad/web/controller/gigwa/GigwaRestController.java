@@ -73,7 +73,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.commons.text.CaseUtils;
 import org.apache.log4j.Logger;
 import org.brapi.v2.api.ServerinfoApi;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -861,15 +860,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * Get the mandatory fields for importing Samples and Individuals
 	 */
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + MANDATORY_MD_FIELDS + "/{module}", method = RequestMethod.GET, produces = "application/json")
-	public HashMap<String, List<String>> getMandatoryMetadataFields(@PathVariable String module) {
+	@GetMapping(value = { BASE_URL + MANDATORY_MD_FIELDS, BASE_URL + MANDATORY_MD_FIELDS + "/{module}" }, produces = "application/json")
+	public HashMap<String, List<String>> getMandatoryMetadataFields(@PathVariable(required = false) String module) {
 		HashMap<String, List<String>> result = new HashMap<>();
-		for (String bioEntityType : new String[] {"Sample", "Individual"}) {
-			String configInfo = appConfig.get("mandatory" + bioEntityType + "Metadata-" + module);
-			if (configInfo != null) {
-				result.put(bioEntityType, Helper.split(configInfo, ",").stream().map(f -> f.trim()).toList());
-			}
-		}
+		for (String bioEntityType : new String[] {"Sample", "Individual"})
+			result.put(bioEntityType, appConfig.getMandatoryMetadataFields(module, "Sample".equals(bioEntityType)));
 		return result;
 	}
 	
@@ -1262,8 +1257,7 @@ public class GigwaRestController extends ControllerInterface {
                 boolean fFlapjackFormat = false;
                 HashMap<Integer, String> columnLabels = null;
                 Integer extRefSrcColumn = null, idColumn = null;
-                String mandatoryFields = appConfig.get("mandatory" + CaseUtils.toCamelCase(metadataType, true) + "Metadata-" + sModule);
-                Collection<String> mandatoryFieldColl = mandatoryFields == null ? null : Helper.split(mandatoryFields, ",").stream().map(f -> f.trim()).toList();
+                Collection<String> mandatoryFieldColl = appConfig.getMandatoryMetadataFields(metadataType, "Sample".equals(metadataType));
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
                     String sCleanLine = sLine.replaceAll("\\s+", "");
