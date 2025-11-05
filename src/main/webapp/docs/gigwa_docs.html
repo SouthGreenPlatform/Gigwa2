@@ -15,7 +15,7 @@
       <P ALIGN=CENTER
          STYLE="margin-bottom: 0in; line-height: 100%;">
          <FONT FACE="Arial, sans-serif"><FONT SIZE=6
-            class='maintitle'>Gigwa v2.9.x &ndash; Documentation</FONT></FONT>
+            class='maintitle'>Gigwa v2.10.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
@@ -44,7 +44,7 @@
             </P>
             <P STYLE="margin-bottom: 0.14in">Anonymous users and users with no particular permissions are limited to importing genotyping data into temporary databases that remain accessible for 24h. These databases are created as public but hidden (only visible to people knowing their precise URL and to administrators).
             </P>
-            <P STYLE="margin-bottom: 0.14in">From the second tab, users may thus import metadata (traits, phenotypes...) for a database's individuals. Metadata imported by users with write permissions (administrators, database supervisors, project managers)
+            <P STYLE="margin-bottom: 0.14in">From the second tab, users may thus import metadata (traits, phenotypes...) for a database's individuals or samples. Metadata imported by users with write permissions (administrators, database supervisors, project managers)
             is considered "official" and therefore made available to all users by default. If specified by any other user, it will by only available for himself (thus completing / overriding the default metadata).
             </P>
             <UL>
@@ -141,7 +141,7 @@
             <P STYLE="margin-top: 0.03in; margin-bottom: 0in; line-height: 100%; page-break-inside: avoid; page-break-after: avoid">
                <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>A2/ WORKING WITH GENOTYPING DATA</FONT></FONT></FONT>
             </P>
-            <P STYLE="margin-bottom: 0.14in">From the home page, select a database and a project. Note the presence of an "Enable browse
+            <P STYLE="margin-bottom: 0.14in">From the home page, select a database and one or more project(s). Note the presence of an "Enable browse
                and export" checkbox that toggles between a mode where only variant counts are displayed, and one where users may browse,
                visualize and export selected data.
             </P>
@@ -173,6 +173,9 @@
 	               <br/><br/>
 	               As a general rule, a filter widget where no selection has been made will behave as if all its items were selected (no filtering applied on that field).
 	               </P>
+				   <P STYLE="margin-bottom: 0.14in">
+					Right under the grey panel is a checkbox labelled "Work with samples". It allows to toggle between modes where biological material selection is made at the individual or at the sample level. Since genotyping data may be imported several times for a same sample, this also defines the level at which synthesis is made, and therefore the way the most frequent genotype is considered to be the right one in case of inconsistencies.
+				   </P>
 				</div>
          </UL>
          <UL>
@@ -184,41 +187,41 @@
 				<tr>					
 					<td>
 		               <P STYLE="margin-bottom: 0.14in">At the bottom of this panel, a dropdown may be used to display up to ten additional panels
-		                  that allow for more advanced filtering features based on subsets of individuals referred to as groups.
+		                  that allow for more advanced filtering features based on subsets of individuals or samples, referred to as groups.
 		               </P>
-		               <P STYLE="margin-bottom: 0.14in">All of these panels have the same initial contents and each one lets users select a list of individuals
+		               <P STYLE="margin-bottom: 0.14in">All of these panels have the same initial contents and each one lets users select a list of individuals or samples
 		                  (thus defining group contents). Group names may be set by users by just replacing the default values in the upper-right corner of each panel.
-		                  Additionally, some handy tools are available on the right side of the "Individuals" dropdown via tooltipped icons:
+		                  Additionally, some handy tools are available on the right side of the selection dropdown via tooltipped icons:
 		               </P>
 		               <UL>
 		                  <LI>
 		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
 		                        <IMG SRC="m3e56342f.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>
 		                        Activating the <B>disk</B> icon allows the current selection of
-		                        individuals to be memorized within the web browser;
+		                        individuals or samples to be memorized within the web browser;
 		                     </P>
 		                  <LI>
 		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
 		                        <IMG SRC="mb2639ac.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>The
 		                        <B>magnifier</B> icon (only present when individual-level metadata are available)
-		                        helps selecting individuals according to the metadata attached to
+		                        helps selecting individuals or samples according to the metadata attached to
 		                        them;
 		                     </P>
 		                  <LI>
 		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
 		                        <IMG SRC="m6356edb1.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=27 BORDER=0>The
-		                        copy <B>icon</B> adds currently selected individuals to clipboard;
+		                        copy <B>icon</B> adds currently selected individuals or samples to clipboard;
 		                     </P>
 		                  <LI>
 		                     <P STYLE="margin-bottom: 0in; line-height: 100%">
 		                        <IMG SRC="14193476.jpg" ALIGN=BOTTOM WIDTH=29 HEIGHT=28 BORDER=0>Clicking
 		                        the <B>paste</B> icon opens a textbox for pasting / editing a
-		                        list of individuals to select.
+		                        list of individuals or samples to select.
 		                     </P>
 		               </UL>
 					     <P STYLE="margin-bottom: 0.14in">All other widgets in the same
 					        panel will then let users apply genotype-level filters on the
-					        selected list of individuals:
+					        selected list of the biologicial entities:
 					     </P>
 					     <UL>
 					        <LI>
@@ -244,7 +247,7 @@
 		   <P LANG="fr-FR" STYLE="margin-bottom: 0.14in">
 		      <SPAN LANG="en-US"><U><B>Useful tip:</B></U></SPAN><SPAN LANG="en-US"> To identify variants for which genotypes are steady within groups but different between two of them, set both
 		      groups' genotype pattern to "All or mostly the same". In this case, in each group panel a similarity ratio
-		      lets you specify how many of the current group's selected individuals must have the same genotype. Additionally, setting the "Discriminate with" widget to point to another group
+		      lets you specify how many of the current group's selected biologicial entities must have the same genotype. Additionally, setting the "Discriminate with" widget to point to another group
 		      will ensure that the most frequent genotype in the first group is different from that in the second one. See online video number 4 for a demonstration.</SPAN>
 		   </P>
 		   <P STYLE="margin-bottom: 0.14in">Note that genotype-level filters are applied in the order they appear: the maximum missing data filter applies first, taking into account truly missing data
@@ -288,11 +291,11 @@
      		    export" box is ticked when clicking the Search button, then
            		one may browse online the selection (i.e. list of variants that
             	match the query). Clicking a variant line opens a dialog providing
-       			variant details along with individuals" genotypes and
+       			variant details along with biologicial entities' genotypes and
             	optional complementary information like quality data or
             	annotations.
     		   </P>
-      		   <P STYLE="margin-bottom: 0.14in">"Quick variant stats" provide summarized figures for the overall selection, and for each group of individuals.
+      		   <P STYLE="margin-bottom: 0.14in">"Quick variant stats" provide summarized figures for the overall selection, and for each group of biologicial entities.
     		   </P>
    			<IMG class="fullwidth" SRC="shot04_variant_details.png" ALIGN=BOTTOM BORDER=1>
      	    <P STYLE="margin-bottom: 0.14in">Above the variant list:</P>
@@ -337,7 +340,7 @@
 		      	         <P STYLE="margin-bottom: 0in; line-height: 100%">
 		      	            <IMG SRC="m5967ef01.jpg" ALIGN=BOTTOM WIDTH=32 HEIGHT=30 BORDER=0>
 		      	            Clicking the download button opens a panel where users may select an output
-		      	            format, refine the list of individuals to export, select individual metadata fields to include (if available), and choose
+		      	            format, refine the list of biologicial entities to export, select their metadata fields to include (if available), and choose
 		      	            between directly downloading the output, or creating a file on
 		      	            the server (in which case its URL may be used later, shared or
 		      	            passed to external tools). A prototype version of <a href="https://github.com/cropgeeks/flapjack-bytes" target="_blank">Flapjack-Bytes</a>
@@ -791,17 +794,17 @@
             <LI>
                <P STYLE="margin-bottom: 0in; line-height: 100%">
                   <B>maxSearchableBillionGenotypes</B> - Defines the maximum
-                  estimated size (in billions) of the genotype matrix (#individuals
+                  estimated size (in billions) of the genotype matrix (#bio-entities
                   * #markers) within which genotype-level filters may be applied.
                   This property may be tuned according to server performance.
                   #markers is estimated by calculating an average marker count per
                   sequence. Whatever value is set here, Gigwa will at least allow
-                  searching on one sequence for all individuals. Default: 1 billion
+                  searching on one sequence for all biologicial entities. Default: 1 billion
                </P>
             <LI>
                <P STYLE="margin-bottom: 0in">
                   <B>maxExportableBillionGenotypes</B> - Defines the maximum
-                  size (in billions) of the genotype matrix (#individuals *
+                  size (in billions) of the genotype matrix (#bio-entities *
                   #markers) that may be exported. This property may be tuned
                   according to server performance. It aims at limiting system
                   overhead in situations where numerous users may be working on
@@ -810,14 +813,14 @@
             <LI>
                <P STYLE="margin-bottom: 0in">
                   <B>maxExportableBillionGenotypes_anonymousUser</B> - Defines the maximum
-                  size (in billions) of the genotype matrix (#individuals *
+                  size (in billions) of the genotype matrix (#bio-entities *
                   #markers) that may be exported by anonymous users. Set to 0 to prevent
                   from exporting genotypes. Default: maxExportableBillionGenotypes
                </P>
             <LI>
                <P STYLE="margin-bottom: 0in">
                   <B>maxExportableBillionGenotypes_USERNAME</B> - Defines the maximum
-                  size (in billions) of the genotype matrix (#individuals *
+                  size (in billions) of the genotype matrix (#bio-entities *
                   #markers) that may be exported by the USERNAME user. Set to 0 to prevent
                   from exporting genotypes. Default: maxExportableBillionGenotypes
                </P>
