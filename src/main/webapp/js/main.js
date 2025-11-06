@@ -734,7 +734,9 @@ function toggleIndividualSelector(previousSibling, flag, size, onchangeFunc) {
 
 function updateFilteredIndividualCount()
 {
-    $("span#filteredIndCount").html($("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length);
+	let selectionSize = $("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length;
+    $("span#filteredIndCount").html(selectionSize);
+    $("button#applyBioEntitySelectionFromMetadata").attr("disabled", selectionSize === 0);
 }
 
 function displayedMetadataFieldListChanged() {
