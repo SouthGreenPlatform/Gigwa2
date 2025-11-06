@@ -971,18 +971,22 @@ function downloadExampleFile() {
         }
     });
 	
-	let mandatoryFieldArray = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())].map(f => f.trim())
-    let content = (mandatoryFieldArray.length === 0 ? "" : "# Mandatory fields: " + mandatoryFieldArray.join(", ") + "\n") + $("#metadataType").val() + "\t";
-	if (mandatoryMetadataFields !== null && Object.keys(mandatoryMetadataFields).length != 0)
-		content += mandatoryFieldArray.join("\t");
+	let mandatoryFieldObj = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())];
+	let mandatoryFieldNames = mandatoryFieldObj == null ? [] : Object.keys(mandatoryFieldObj).map(f => f.trim());
+    let content = "";
+    //(mandatoryFieldNames.length === 0 ? "" : "# Mandatory fields: " + mandatoryFieldNames.join(", ") + "\n") + $("#metadataType").val() + "\t";
+    for (let mandFieldName of mandatoryFieldNames) {
+		let desc = mandatoryFieldObj[mandFieldName];
+    	content += "# Mandatory field '" + mandFieldName + "'" + (desc !== "" ? ": " + desc : "") + "\n";
+    }
+	if (mandatoryFieldNames.length != 0)
+		content += "\n" + mandatoryFieldNames.join("\t");
 	content += "\tsome_field1\tsome_field2";
 	let colCount = content.split("\t").length;
 
-    for (let i=1; i<5; i++) {
-		content += "\n" + $("#metadataType").val() + i;
-		for (let j=1; j<colCount; j++)
-			content += "\tvalue" + i + "_" + j;
-	}
+    for (let i=1; i<5; i++)
+		for (let j=0; j<colCount; j++)
+			content += j === 0 ? ("\n" + $("#metadataType").val() + i) : ("\tvalue" + i + "_" + j);
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);

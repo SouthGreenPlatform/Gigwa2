@@ -861,8 +861,8 @@ public class GigwaRestController extends ControllerInterface {
 	 */
 	@ApiIgnore
 	@GetMapping(value = { BASE_URL + MANDATORY_MD_FIELDS, BASE_URL + MANDATORY_MD_FIELDS + "/{module}" }, produces = "application/json")
-	public HashMap<String, List<String>> getMandatoryMetadataFields(@PathVariable(required = false) String module) {
-		HashMap<String, List<String>> result = new HashMap<>();
+	public HashMap<String, LinkedHashMap<String, String>> getMandatoryMetadataFields(@PathVariable(required = false) String module) {
+		HashMap<String, LinkedHashMap<String, String>> result = new HashMap<>();
 		for (String bioEntityType : new String[] {"Sample", "Individual"})
 			result.put(bioEntityType, appConfig.getMandatoryMetadataFields(module, "Sample".equals(bioEntityType)));
 		return result;
@@ -1257,7 +1257,7 @@ public class GigwaRestController extends ControllerInterface {
                 boolean fFlapjackFormat = false;
                 HashMap<Integer, String> columnLabels = null;
                 Integer extRefSrcColumn = null, idColumn = null;
-                Collection<String> mandatoryFieldColl = appConfig.getMandatoryMetadataFields(metadataType, "Sample".equals(metadataType));
+                LinkedHashMap<String, String> mandatoryFieldColl = appConfig.getMandatoryMetadataFields(sModule, "Sample".equals(metadataType));
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
                     String sCleanLine = sLine.replaceAll("\\s+", "");
@@ -1268,7 +1268,7 @@ public class GigwaRestController extends ControllerInterface {
                     }
 
                     if (columnLabels == null) {
-		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null, mandatoryFieldColl);
+		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null, mandatoryFieldColl.keySet());
 		                
 		                idColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(metadataType)).map(Map.Entry::getKey).findFirst().orElse(null);
 		                if (idColumn == null) {
