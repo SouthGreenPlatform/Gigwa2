@@ -882,7 +882,7 @@ function applyDropDownFiltersToTable(tableObj, reset)
 	ifTable.append("<tr><th style='padding:50px; background-color:#eeeeee;' colspan='" + (1 + ifTable.find("tr:eq(0)").children().length) + "'>Loading...<br/><br/><img src='images/progress.gif' /></th></tr>");
 	
     $.ajax({
-        url: ($('#workWithSamples').is(':checked') ? filterSampleMetadata : filterIndividualMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+        url: ($('#workWithSamples').is(':checked') ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + referenceset + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
         type: "POST",
         contentType: "application/json;charset=utf-8",
         headers: buildHeader(token, $('#assembly').val()),
