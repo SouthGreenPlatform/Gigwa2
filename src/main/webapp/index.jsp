@@ -744,8 +744,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var galaxyPushURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GALAXY_HISTORY_PUSH%>" />';
 	var distinctIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_INDIVIDUAL_METADATA %>" />';
 	var distinctSampleMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SAMPLE_METADATA %>" />';
-	var filterIndividualMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUAL_METADATA %>" />';
-	var filterSampleMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_SAMPLE_METADATA %>" />';
+	var filterIndividualsUsingMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_INDIVIDUALS_USING_METADATA %>" />';
+	var filterSamplesUsingMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_SAMPLES_USING_METADATA %>" />';
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
 	var downloadURL;
@@ -1492,6 +1492,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     if (showDataSummary)
 	                    displayMessage(dbDesc + "<p class='margin-top'><img src='images/brapi16.png' /> BrAPI baseURL: <a href='" + brapiBaseUrl + "' target=_blank>" + brapiBaseUrl + "</a></p>");
                     $("#exportedIndividualMetadata").html("");
+                	$('#displayedMetadataSelect').html("");
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -2832,7 +2833,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
         });
     	
         var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");		
-    	if (result.length == 0 || selectedSequences.length < result.length)
+    	if (result.length == 0 || (selectedSequences.length > 0 && selectedSequences.length < result.length))
     		result = selectedSequences;
         return result;
     }

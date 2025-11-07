@@ -260,8 +260,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String GALAXY_HISTORY_PUSH = "/pushToGalaxyHistory";
 	static public final String DISTINCT_INDIVIDUAL_METADATA = "/distinctIndividualMetadata";
 	static public final String DISTINCT_SAMPLE_METADATA = "/distinctSampleMetadata";
-	static public final String FILTER_INDIVIDUAL_METADATA = "/filterIndividualsFromMetadata";
-	static public final String FILTER_SAMPLE_METADATA = "/filterSamplesFromMetadata";
+	static public final String FILTER_INDIVIDUALS_USING_METADATA = "/filterIndividualsFromMetadata";
+	static public final String FILTER_SAMPLES_USING_METADATA = "/filterSamplesFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
@@ -1206,12 +1206,12 @@ public class GigwaRestController extends ControllerInterface {
 		Map<Object, String> endpointByIndividualOrSample = null;
 		if (MongoTemplateManager.get(sModule) != null) { // Start with what we've currently got in the database
 			endpointByIndividualOrSample = "sample".equals(metadataType) ? 
-					MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null, false)
+					MgdbDao.getInstance().loadSamplesForUser(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null, false)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(e -> e.getValue().getId(), e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")))
 		    		: 
-		    		MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
+		    		MgdbDao.getInstance().loadIndividualsForUser(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null, null)
 			    		.entrySet().stream()
 			    		.filter(e -> e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
 			    		.collect(Collectors.toMap(Map.Entry::getKey, e -> ((String) e.getValue().getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource)).trim().replaceAll("/+$", "")));
@@ -1551,7 +1551,7 @@ public class GigwaRestController extends ControllerInterface {
 		                    if (useBrapiMdEndpoint)
 		                    	brapiUrlToIndsOrSamples.put(brapiURLs, null);	// simply need the unique endpoint to be added to the list, for the endpointLoop code to remain generic, null map means directly use Gigwa IDs to match BrAPI IDs
 		                    else if ("individual".equals(metadataType)) {
-	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, sFinalUsername, null, null, null).values();
+	                        	Collection<Individual> individuals = MgdbDao.getInstance().loadIndividualsForUser(sModule, sFinalUsername, null, null, null).values();
 	                            for (Individual individual : individuals)
 	                                if (individual.getAdditionalInfo() != null) {
 		                                String extRefIdValue = (String) individual.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -1577,7 +1577,7 @@ public class GigwaRestController extends ControllerInterface {
 		                            }
 	                        }
 	                        else if ("sample".equals(metadataType)) {
-	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, sFinalUsername, null, null, null, false).values();
+	                        	Collection<GenotypingSample> genotypingSamples = MgdbDao.getInstance().loadSamplesForUser(sModule, sFinalUsername, null, null, null, false).values();
 	                            for (GenotypingSample sample : genotypingSamples)
 	                                if (sample.getAdditionalInfo() != null) {
 	                                	String extRefIdValue = (String) sample.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId);
@@ -1721,7 +1721,6 @@ public class GigwaRestController extends ControllerInterface {
 
 		final String processId = "import::" + auth.getName() + "::" + UUID.randomUUID().toString().replaceAll("-", "");
 		final ProgressIndicator progress = new ProgressIndicator(processId, new String[] { "Checking submitted data" });
-		progress.setPercentageEnabled(false);
         ProgressIndicator.registerProgressIndicator(progress);
 
 		Object metadataFileOrEndpoint = null;
@@ -2068,8 +2067,8 @@ public class GigwaRestController extends ControllerInterface {
 						boolean retrieveIndNamesViaBrapi = providingSamples && useBrapiMdEndpoint && sampleMappingFile == null;
 						new SessionAttributeAwareThread(request.getSession()) {
 							public void run() {
-								Scanner scanner = null;
 								try {
+									progress.setPercentageEnabled(false);	// this is the default, shall be modified by import procedures that do start with a step the supports it
 							        ImportProcess process = new ImportProcess(progress, sModule);
 							        ((GigwaModuleManager) moduleManager).registerImportProcess(process);
 
@@ -2082,17 +2081,8 @@ public class GigwaRestController extends ControllerInterface {
 									}
 									else {
 										HashMap<String, String> sampleToIndividualMapping = AbstractGenotypeImport.readSampleMappingFile(fIsSampleMappingFileLocal ? ((File) sampleMappingFile).toURI().toURL() : (URL) sampleMappingFile);
-//										if (sampleToIndividualMapping != null && mongoTemplate != null) { // make sure provided sample names do not conflict with existing ones
-//											Criteria crit = Criteria.where("_id").in(sampleToIndividualMapping.keySet());
-//											if (project != null && Boolean.TRUE.equals(fClearProjectData))
-//												crit.andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).ne(project.getId()));
-//											if (mongoTemplate.count(new Query(crit), GenotypingSample.class) > 0) {
-//										        progress.setError("Some of the sample IDs provided in the mapping file already exist in this database!");
-//										        return;
-//											}
-//									    }
 										if (providingSamples && sampleToIndividualMapping == null)
-											sampleToIndividualMapping = new HashMap<>();	 // empty means no mapping file but sample names provided: individuals shall be named same just like samples
+											sampleToIndividualMapping = new HashMap<>();	 // empty means no mapping file but sample names provided: new individuals shall be named same just like samples
 
                                         if (!filesByExtension.containsKey("gz")) {
                                             if (filesByExtension.containsKey("ped") && filesByExtension.containsKey("map")) {
@@ -2144,7 +2134,6 @@ public class GigwaRestController extends ControllerInterface {
                                                 genotypeImporter.set(new IntertekImport(processId));
                                                 if (retrieveIndNamesViaBrapi)
                                                     genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
-
                                                 FileImportParameters params = new FileImportParameters(
                                                         sNormalizedModule,
                                                         sProject,
@@ -2185,6 +2174,8 @@ public class GigwaRestController extends ControllerInterface {
                                                 Serializable s = filesByExtension.values().iterator().next();
                                                 boolean fIsGenotypingFileLocal = s instanceof File;
                                                 genotypeImporter.set(new DartImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
                                                 FileImportParameters params = new FileImportParameters(
                                                         sNormalizedModule,
                                                         sProject,
@@ -2199,11 +2190,11 @@ public class GigwaRestController extends ControllerInterface {
                                                 );
                                                 newProjId = ((DartImport) genotypeImporter.get()).importToMongo(params);
                                             }
-                                            else {
+                                            else {	// should be hapmap
                                                 Serializable s = filesByExtension.values().iterator().next();
                                                 boolean fIsGenotypingFileLocal = s instanceof File;
-                                                scanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
-                                                if (scanner.hasNext() && scanner.next().toLowerCase().startsWith("rs#")) {
+                                                Scanner hapmapFormatCheckingScanner = fIsGenotypingFileLocal ? new Scanner((File) s) : new Scanner(((URL) s).openStream());
+                                                if (hapmapFormatCheckingScanner.hasNext() && hapmapFormatCheckingScanner.next().toLowerCase().startsWith("rs#")) {
                                                     genotypeImporter.set(new HapMapImport(processId));
                                                     if (retrieveIndNamesViaBrapi)
                                                         genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
@@ -2223,6 +2214,7 @@ public class GigwaRestController extends ControllerInterface {
                                                 }
                                                 else
                                                     throw new Exception("Unsupported format or extension for genotyping data file: " + s);
+                                                hapmapFormatCheckingScanner.close();
                                             }
                                         }
                                         else { // looks like a compressed file
@@ -2328,9 +2320,6 @@ public class GigwaRestController extends ControllerInterface {
 										catch (IOException e) {
 											LOG.error("Unable to give manager role to importer of project " + createdProjectId + " in database " + sModule, e);
 										}
-		
-									if (scanner != null)
-										scanner.close();
 		
 									for (File fileToDelete : uploadedFiles)
 										fileToDelete.delete();
@@ -2658,21 +2647,22 @@ public class GigwaRestController extends ControllerInterface {
 	}
     
 	@ApiIgnore
-    @RequestMapping(value = BASE_URL + FILTER_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-    public Collection<Individual> filterIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
+    @RequestMapping(value = BASE_URL + FILTER_INDIVIDUALS_USING_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+    public Collection<Individual> filterIndividualsUsingMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
         Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
         String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
         String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
-        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
+        return MgdbDao.getInstance().loadIndividualsForUser(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
     }
 
 	@ApiIgnore
-	@RequestMapping(value = BASE_URL + FILTER_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
-	public Collection<GenotypingSample> filterSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, LinkedHashMap<String, Set<String>>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
+	@RequestMapping(value = BASE_URL + FILTER_SAMPLES_USING_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
+	public Collection<GenotypingSample> filterSamplesUsingMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, LinkedHashMap<String, Set<String>>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		String sUserName = auth != null && auth.getAuthorities().contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN)) ? null : AbstractTokenManager.getUserNameFromAuthentication(auth);
         String[] splitProjIDs = projIDs == null ? new String[0] : projIDs.split(",");
-        return MgdbDao.getInstance().loadSamplesWithAllMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters, true).values();
+        boolean fIncludeMetadataInResponse = "true".equalsIgnoreCase(request.getHeader("excludeMetadata"));
+        return MgdbDao.getInstance().loadSamplesForUser(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters, !fIncludeMetadataInResponse, !fIncludeMetadataInResponse).values();
 	}
 
     @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
