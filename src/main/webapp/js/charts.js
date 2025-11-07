@@ -45,34 +45,44 @@ function chartIndSelectionChanged() {
 		if (groupOption != "__") {
 			let workWithSamples = $('#workWithSamples').is(':checked');
 	        let selectedIndividuals = getSelectedIndividuals();
-			for (var i in selectedValues) {
+			
+			// Create array of promises for all AJAX calls
+			const ajaxPromises = selectedValues.map((selectedValue, i) => {
 				var filters = {};
-				if (i > 0)
-					additionalCallSetIds.push([]);
-				var targetGroup = i == 0 ? callSetIds : additionalCallSetIds[i - 1];
 				if (workWithSamples) {
 					let filterVals = {};
-					filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [selectedValues[i]];
+					filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [selectedValue];
 					filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
 				}
 				else
-					filters[groupOption] = [selectedValues[i]];
+					filters[groupOption] = [selectedValue];
 
-			    $.ajax({
-			        url: (workWithSamples ? filterSampleMetadata : filterIndividualMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+			    return $.ajax({
+			        url: (workWithSamples ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
 			        type: "POST",
-			        async: false,
 			        contentType: "application/json;charset=utf-8",
-			        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
-			        data: JSON.stringify(filters),
-			        success: function (callSetResponse) {
-		                callSetResponse.forEach(function (callset) {
-		                    if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
-								targetGroup.push(referenceset + idSep + callset.id)
-		                });
-			        }
-			    });
-			 }
+			        headers: {...buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')), "excludeMetadata":true},
+			        data: JSON.stringify(filters)
+			    }).then(callSetResponse => ({ index: i, response: callSetResponse }));
+			});
+			
+			// Wait for all requests to complete
+			Promise.all(ajaxPromises).then(results => {
+				// Process results in order
+				results.forEach(({ index, response }) => {
+					if (index > 0 && additionalCallSetIds.length < index)
+						additionalCallSetIds.push([]);
+					var targetGroup = index == 0 ? callSetIds : additionalCallSetIds[index - 1];
+					
+					response.forEach(function (callset) {
+						if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
+							targetGroup.push(referenceset + idSep + callset.id)
+					});
+				});
+				
+				// Update UI after all requests complete
+				updateIndSelectionCount();
+			});
 		}
 		else  {
 			if (currentChartType == "fst" && typeof areGroupsOverlapping != "undefined" && areGroupsOverlapping(selectedValues)) {
@@ -86,15 +96,21 @@ function chartIndSelectionChanged() {
 					callSetIds = getSelectedIndividuals([selectedValues[i]], true);
 				else
 					additionalCallSetIds.push(getSelectedIndividuals([selectedValues[i]], true));
+					
+			updateIndSelectionCount();
 		}
 	}
-	else
+	else {
 		$('#showChartButton').prop('disabled', true);
+		updateIndSelectionCount();
+	}
 	
-	let allCallsetIDs = new Set(callSetIds);
-	for (let i = 0; additionalCallSetIds != null && i < additionalCallSetIds.length; i++)
-		additionalCallSetIds[i].forEach(cs => allCallsetIDs.add(cs));
-	$('#indSelectionCount').text("(" + allCallsetIDs.size + " biological entities selected)");
+	function updateIndSelectionCount() {
+		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : indOpt.map(csId => referenceset + idSep + csId));
+		for (let i = 0; additionalCallSetIds != null && i < additionalCallSetIds.length; i++)
+			additionalCallSetIds[i].forEach(cs => allCallsetIDs.add(cs));
+		$('#indSelectionCount').text("(" + allCallsetIDs.size + " biological entities selected)");
+	}
 }
 
 function initializeChartDisplay() {
@@ -154,6 +170,7 @@ function initializeChartDisplay() {
         return;
     }
     
+    chartIndSelectionChanged();
     localmin = null;
     localmax = null;
     dataBeingLoaded = false;
@@ -326,12 +343,6 @@ function initializeChartDisplay() {
 	
 	if ($("#plotGroupingMetadataValues").length > 0)
 		chartIndSelectionChanged();	// in case groups changed at the main UI level 
-}
-
-function onManualIndividualSelection() {
-	$("#indSelectionCount").text($("select.individualSelector").val() == null ? "" : ("(" + $("select.individualSelector").val().length + " biological entities selected)"));
-	$('.showHideSeriesBox').prop('checked', false);
-	$('.showHideSeriesBox').change();
 }
 
 function getGroupingOptions() {
