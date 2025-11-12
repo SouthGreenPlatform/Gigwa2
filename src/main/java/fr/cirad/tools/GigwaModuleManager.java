@@ -271,6 +271,11 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
+    public String getTermsToAcceptToMakeModulePublic() {
+    	return appConfig.get("termsToAcceptToMakeDatabasePublic");
+    }
+
+    @Override
     public String getActionRequiredToEnableDumps() {
         if (actionRequiredToEnableDumps == null) {
             String dumpFolder = appConfig.get("dumpFolder");
