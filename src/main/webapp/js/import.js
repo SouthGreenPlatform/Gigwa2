@@ -974,13 +974,15 @@ function downloadExampleFile() {
 	let mandatoryFieldObj = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())];
 	let mandatoryFieldNames = mandatoryFieldObj == null ? [] : Object.keys(mandatoryFieldObj).map(f => f.trim());
     let content = "";
-    //(mandatoryFieldNames.length === 0 ? "" : "# Mandatory fields: " + mandatoryFieldNames.join(", ") + "\n") + $("#metadataType").val() + "\t";
     for (let mandFieldName of mandatoryFieldNames) {
+		let valuesRequired = mandFieldName.startsWith("*");
 		let desc = mandatoryFieldObj[mandFieldName];
-    	content += "# Mandatory field '" + mandFieldName + "'" + (desc !== "" ? ": " + desc : "") + "\n";
+		if (valuesRequired)
+			mandFieldName = mandFieldName.substring(1);
+    	content += "# Mandatory column '" + mandFieldName + "'" + (valuesRequired ? " expecting non-blank values" : "") + (desc !== "" ? ": " + desc : "") + "\n";
     }
 	if (mandatoryFieldNames.length != 0)
-		content += "\n" + mandatoryFieldNames.join("\t");
+		content += "\n" + mandatoryFieldNames.map(colName => colName.replace("*", "")).join("\t");
 	content += "\tsome_field1\tsome_field2";
 	let colCount = content.split("\t").length;
 

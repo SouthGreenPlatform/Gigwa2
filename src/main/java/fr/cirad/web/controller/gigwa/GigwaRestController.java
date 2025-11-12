@@ -1257,7 +1257,9 @@ public class GigwaRestController extends ControllerInterface {
                 boolean fFlapjackFormat = false;
                 HashMap<Integer, String> columnLabels = null;
                 Integer extRefSrcColumn = null, idColumn = null;
-                LinkedHashMap<String, String> mandatoryFieldColl = appConfig.getMandatoryMetadataFields(sModule, "Sample".equals(metadataType));
+                Map<String, Boolean /* whether or not it requires non-blank values*/> mandatoryFields = appConfig.getMandatoryMetadataFields(sModule, "Sample".equals(metadataType)).keySet().stream() .collect(Collectors.toMap(s -> s.startsWith("*") ? s.substring(1) : s, s -> s.startsWith("*")));
+                HashSet<Integer> colIndicesRequiringData = new HashSet<>();
+
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
                     String sCleanLine = sLine.replaceAll("\\s+", "");
@@ -1268,8 +1270,8 @@ public class GigwaRestController extends ControllerInterface {
                     }
 
                     if (columnLabels == null) {
-		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null, mandatoryFieldColl.keySet());
-		                
+		                columnLabels = IndividualMetadataImport.readMetadataFileHeader(sLine, null, mandatoryFields.keySet());
+
 		                idColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(metadataType)).map(Map.Entry::getKey).findFirst().orElse(null);
 		                if (idColumn == null) {
 		                	if (!fFlapjackFormat || columnLabels.containsKey(0))
@@ -1278,23 +1280,33 @@ public class GigwaRestController extends ControllerInterface {
 		                	idColumn = 0;	// FJ phenotype file's field-name line starts with an empty string
 		                }
 
-		                extRefSrcColumn = columnLabels.entrySet().stream().filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_externalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
+		                extRefSrcColumn = columnLabels.entrySet().stream().peek(entry -> {
+		                	if (Boolean.TRUE.equals(mandatoryFields.get(entry.getValue())))
+		                		colIndicesRequiringData.add(entry.getKey());
+		                }).filter(e -> e.getValue().equals(BrapiService.BRAPI_FIELD_externalReferenceSource)).map(Map.Entry::getKey).findFirst().orElse(null);
 		                if (extRefSrcColumn == null)
-		                	break;	// There is no extRefSrc column in the metadata file
-
-		                continue;
+		                	continue;	// There is no extRefSrc column in the metadata file
+                    }                    
+                    else {
+	                    List<String> cells = Helper.split(sLine, "\t");
+	                    if (extRefSrcColumn != null) {
+		                    String entityId = cells.size() > idColumn ? cells.get(idColumn) : null;
+		                    if (entityId == null)
+		                    	continue;	// Should not happen...
+		
+		                    String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
+		                    if (extRefSrc != null)
+		                    	endpointByIndividualOrSample.put(entityId, extRefSrc.trim().replaceAll("/+$", ""));
+		                    else
+		                    	endpointByIndividualOrSample.remove(entityId);
+	                    }
+	                    
+	                    for (int requiredDataCol : colIndicesRequiringData) {
+	                    	String sVal = cells.size() <= requiredDataCol ? "" : cells.get(requiredDataCol);
+	                    	if (sVal.trim().isEmpty())
+	                    		throw new Exception("A value is required for each row in column '" + columnLabels.get(requiredDataCol) + "'");
+	                    }
                     }
-
-                    List<String> cells = Helper.split(sLine, "\t");
-                    String entityId = cells.size() > idColumn ? cells.get(idColumn) : null;
-                    if (entityId == null)
-                    	continue;	// Should not happen...
-
-                    String extRefSrc = cells.size() > extRefSrcColumn ? cells.get(extRefSrcColumn) : null;
-                    if (extRefSrc != null)
-                    	endpointByIndividualOrSample.put(entityId, extRefSrc.trim().replaceAll("/+$", ""));
-                    else
-                    	endpointByIndividualOrSample.remove(entityId);
                 }
 	        }
 		}
