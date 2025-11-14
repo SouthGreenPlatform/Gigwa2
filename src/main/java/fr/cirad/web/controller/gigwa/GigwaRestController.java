@@ -247,6 +247,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String ANNOTATION_HEADERS_PATH = "/annotationHeaders";
 	static public final String EXPORT_FORMAT_PATH = "/exportFormats";
 	static public final String DEFAULT_GENOME_BROWSER_URL = "/defaultGenomeBrowser";
+	static public final String TERMS_OF_USE_COOKIE_DURATION_IN_HOURS_URL = "/termsOfUseCookieDurationInHours";
 	static public final String IGV_GENOME_LIST_URL = "/igvGenomeList";
 	static public final String ONLINE_OUTPUT_TOOLS_URL = "/onlineOutputTools";
 	static public final String MAX_UPLOAD_SIZE_PATH = "/maxUploadSize";
@@ -2430,10 +2431,20 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	@ApiIgnore
+	@RequestMapping(value = BASE_URL + TERMS_OF_USE_COOKIE_DURATION_IN_HOURS_URL, method = RequestMethod.GET, produces = "application/text")
+	public String getTermsOfUseCookieDurationInHours() {
+		try {
+			return "" + Math.max(0, Integer.parseInt(appConfig.get("termsOfUseCookieDuration", "72")));
+		}
+		catch(NumberFormatException nfe) {
+			return "72"; 	// 3 days
+		}
+	}
+
+	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
-		String url = appConfig.get("genomeBrowser-" + sModule);
-		return url == null ? "" : url;
+		return appConfig.get("genomeBrowser-" + sModule, "");
 	}
 
 	@ApiIgnore

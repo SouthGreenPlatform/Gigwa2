@@ -89,7 +89,7 @@
 	<!-- modal which displays terms of use -->
 	<div class="modal fade" tabindex="-1" role="dialog" id="termsOfUse" aria-hidden="true">
 		<div class="modal-dialog">
-			<div class="modal-content" style="min-width:600px; padding:0 30px;">
+			<div class="modal-content" style="min-width:700px; padding:0 30px;">
 				<div class="modal-header" id="termsOfUseContainer">
 					<center><h3>Gigwa - Terms of use</h3></center>
 					<h4>1) Limitation of warranty</h4>
@@ -107,7 +107,10 @@
 
 					<h4>3) Applicable law</h4>
 					<p>This contract and all disputes arising out of the execution or interpretation of this license shall be governed by French law.</p>
-					<p style="text-align:center"><input type="button" value="I understand and consent to the above" style="margin:5px;" class="btn btn-primary btn-sm" data-dismiss="modal" onclick="$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });" /></p>
+					
+					<%= appConfig.get("customTermsOfUseHtmlParagraph", "") %>
+					
+					<p style="text-align:center"><input type="button" id="termsOfUseAgreeButton" value="I understand and consent to the above" style="margin:5px;" class="btn btn-primary btn-sm" data-dismiss="modal"/></p>
 				</div>
 			</div>
 		</div>
@@ -115,16 +118,24 @@
 
 	<script type="text/javascript" src="private/js/jquery.cookie.js"></script>
 	<script type="text/javascript">
-		var termsOfUseCookieDuration = 1000 * 60 * 60 * 24 * 3;		// 3 days
-
-		if ($.cookie('termsOfUseAgreed'))
-			$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });	// push expiry date back
-		else
-	        $('#termsOfUse').modal({
-		        backdrop: 'static',
-		        keyboard: false,
-		        show: true
-		    }); // prevent the user from hiding progress modal when clicking outside
+		$.ajax({
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TERMS_OF_USE_COOKIE_DURATION_IN_HOURS_URL %>" />',
+			type: "GET",
+			dataType: "json",
+			success: function(nHours) {
+				var termsOfUseCookieDuration = 1000 * 60 * 60 * nHours;	
+				$("#termsOfUseAgreeButton").on("click", function() {
+					$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });
+				});
+				if (!$.cookie('termsOfUseAgreed'))
+			        $('#termsOfUseLink').click();
+// 				else
+// 					$.cookie('termsOfUseAgreed', true, { expires: new Date(new Date().getTime() + termsOfUseCookieDuration) });	// push expiry date back
+			},
+			error: function(xhr, ajaxOptions, thrownError) {
+				handleError(xhr, thrownError);
+			}
+		})
 	</script>
 
 	<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>

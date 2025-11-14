@@ -99,15 +99,16 @@
 		<c:set var="howToCite" value="<%= appConfig.get(\"howToCite\") %>"></c:set>
 		<c:choose>
 			<c:when test='${!fn:startsWith(howToCite, "??") && !empty howToCite}'>
-				<pre class="margin-top" style="font-size:10px; position:absolute;">${howToCite}</pre>
+				<pre class="margin-top" style="font-size:10px;">${howToCite}</pre>
 			</c:when>
 			<c:otherwise>
-<pre class="margin-top" style="margin-left:15px; font-size:10px; position:absolute;">Please cite Gigwa as follows:
+<pre class="margin-top" style="margin-left:15px; font-size:10px;">Please cite Gigwa as follows:
 Guilhem Sempéré, Adrien Pétel, Mathieu Rouard, Julien Frouin, Yann Hueber, Fabien De Bellis, Pierre Larmande,
 Gigwa v2—Extended and improved genotype investigator, GigaScience, Volume 8, Issue 5, May 2019, giz051,
 https://doi.org/10.1093/gigascience/giz051</pre>
 			</c:otherwise>
 		</c:choose>
+		<center><a id="termsOfUseLink" href="#" onclick="$('#termsOfUse').modal({ backdrop: 'static', keyboard: false, show: true });">Terms of use</a></center>
 	</div>
 	<div class="container-fluid" style="padding:0 10px;">
 		<div class="row" id="searchPanel" hidden>
@@ -864,7 +865,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		        },
 		        success: function(url) {
 					if (url != "") {
-						htmlSnpClustProjLinks += "<a onclick=\"$('#project').parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + projId + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
+						htmlSnpClustProjLinks += "<a onclick=\"$(this).parent().hide();\" href=\"" + url + "?maintoken=" + token + "&mainapiURL=" + location.origin + "<c:url value='<%=GigwaRestController.REST_PATH%>' />&mainbrapistudy=" + projId + "&mainbrapiprogram=" + referenceset + "\" target='_blank'>Open project '" + projNames[shortProjId] + "' in SnpClust</a><br/>";
 						$('#snpclust').show();
 					}
 		        },
