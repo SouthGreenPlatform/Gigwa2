@@ -90,7 +90,8 @@ $(document).ready(function () {
 		        $(this).removeClass('dz-processing');
 		        $(this).removeClass('dz-success');
 		        $(this).removeClass('dz-complete');
-		        $(this).removeClass('dz-error');
+		        if (importDropzoneMD.files.length === 1 && importDropzoneMD.files[0].accepted)
+		        	$(this).removeClass('dz-error');
 		    });
 		
 		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue
@@ -443,7 +444,7 @@ function submitBrapiForm() {
 	     	mapListSelect += "</select>";
 	     	var studyListSelect = "Select a study <select id='brapiStudyList'>";
 	     	for (var i=0; i<studyList.length; i++)
-	     		studyListSelect += "<option value=\"" + studyList[i]['studyDbId'] + "\">" + studyList[i]['name'] + " [" + readMarkerProfiles(studyList[i]['studyDbId']).length + " samples]" + "</option>";
+	     		studyListSelect += "<option value=\"" + studyList[i]['studyDbId'] + "\">" + studyList[i]['name'] + " [" + readMarkerProfiles(studyList[i]['studyDbId']).length + " markerProfiles]" + "</option>";
 	     	studyListSelect += "</select>";
 	     	$("div#brapiDataSelectionDiv").html("<div style='float:right; color:#ffffff; font-weight:bold;'><a href='#' title='Close' style='font-weight:bold; float:right; color:#ff0000;' onclick=\"$('div#brapiDataSelectionDiv').remove(); BRAPI_V1_URL_ENDPOINT = null;\">X</a><div style='margin-top:20px;'>Select map and study<br/>then submit again</div></div>" + mapListSelect + "<br/>" + studyListSelect + ($("#skipMonomorphic").is(":checked") ? "<div class='margin-top-md bold' style='color:#ff6600;'>BrAPI import doesn't support skipping monomorphic variants!</div>" : ""));
 	 	}, 1);
@@ -890,9 +891,8 @@ function loadRuns() {
         },
         success: function (jsonResult) {
             var option = "<option>- new run -</option>";
-            for (var run in jsonResult.runs) {
-                option += '<option>' + jsonResult.runs[run] + '</option>';
-            }
+            for (var run of jsonResult[Object.keys(jsonResult)[0]])
+                option += '<option>' + run + '</option>';
             $('#runExisting').html(option).selectpicker('refresh');
             $('#runExisting').val(0).selectpicker('refresh');
         },
@@ -951,4 +951,53 @@ function updateMdEntityTypeDiv() {
 	else
 		$("#mdImportTargetedEntities #byFile select option").filter(function() { return $(this).text() === ''; }).remove();	// remove dummy empty entry
 	$("#metadataFile1").change();	// force server-side validation of the metadata form contents
+}
+
+function downloadExampleFile() {
+	let mandatoryMetadataFields = null;
+    $.ajax({
+        url: mandatoryMetadataFieldsURL + "/" + $("#moduleExistingMD").val(),
+        async: false,
+        type: "GET",
+        contentType: "application/json;charset=utf-8",
+  	  	headers: {
+  	  		"Authorization": "Bearer " + token
+  	  	},
+        success: function(jsonResult) {
+			mandatoryMetadataFields = jsonResult;
+        },
+        error: function(xhr, thrownError) {
+            handleError(xhr, thrownError);
+        }
+    });
+	
+	let mandatoryFieldObj = mandatoryMetadataFields === null ? [] : mandatoryMetadataFields[toPascalCase($("#metadataType").val())];
+	let mandatoryFieldNames = mandatoryFieldObj == null ? [] : Object.keys(mandatoryFieldObj).map(f => f.trim());
+    let content = "";
+    for (let mandFieldName of mandatoryFieldNames) {
+		let valuesRequired = mandFieldName.startsWith("*");
+		let desc = mandatoryFieldObj[mandFieldName];
+		if (valuesRequired)
+			mandFieldName = mandFieldName.substring(1);
+    	content += "# Mandatory column '" + mandFieldName + "'" + (valuesRequired ? " expecting non-blank values" : "") + (desc !== "" ? ": " + desc : "") + "\n";
+    }
+	if (mandatoryFieldNames.length != 0)
+		content += "\n" + mandatoryFieldNames.map(colName => colName.replace("*", "")).join("\t");
+	content += "\tsome_field1\tsome_field2";
+	let colCount = content.split("\t").length;
+
+    for (let i=1; i<5; i++)
+		for (let j=0; j<colCount; j++)
+			content += j === 0 ? ("\n" + $("#metadataType").val() + i) : ("\tvalue" + i + "_" + j);
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'example_' + $("#metadataType").val() + '_metadata.tsv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    URL.revokeObjectURL(url);
 }

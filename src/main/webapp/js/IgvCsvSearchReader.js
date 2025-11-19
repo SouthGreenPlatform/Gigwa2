@@ -207,8 +207,7 @@ function arrayToString(value, delim) {
 
 function parseFeatures(data, dataHeader){
 	let variants = [];
-	let projectId = getProjectId() + "§";
-	
+		
 	// Split the tabular data in rows and columns, filtering out the empty lines
 	let rows = data.split("\n").filter(row => row.trim().length > 0).map(row => row.split("\t"));
 	let header = rows.shift();
@@ -221,7 +220,7 @@ function parseFeatures(data, dataHeader){
 	
 	let individualCols = new Map();
 	dataHeader.callSetIds.forEach(function (callsetId){
-		individualCols.set(callsetId, cols.get(callsetId.split(idSep)[2]));
+		individualCols.set(callsetId, cols.get(callsetId.split(idSep)[1]));
 	})
 	
 	// Parse the actual data
@@ -241,7 +240,7 @@ function parseFeatures(data, dataHeader){
 		
 		let alleles = row[cols.get("alleles")].split("/");
 		let refAllele = alleles.shift();
-		let variant = new GigwaVariant(projectId + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
+		let variant = new GigwaVariant(referenceset + idSep + row[cols.get("variant")], row[cols.get("chrom")], parseInt(row[cols.get("pos")]), refAllele, alleles.join(","), calls);
 		if (!variant.isRefBlock()){
 			variants.push(variant);
 		}
@@ -274,8 +273,8 @@ class GigwaSearchReader {
 	// Retrieve the "header" data (the callsets)
 	async updateHeader() {
 		this.header = {};
-		this.header.callSetIds = this.selectedIndividuals.map(ind => getProjectId() + idSep + ind);
-		this.header.callSets = this.selectedIndividuals.map(ind => { return {"id" : getProjectId() + idSep + ind, "name" : ind}; });
+		this.header.callSetIds = this.selectedIndividuals.map(ind => referenceset + idSep + ind);
+		this.header.callSets = this.selectedIndividuals.map(ind => { return {"id" : referenceset + idSep + ind, "name" : ind}; });
 		this.header.callSets.sort(function (a, b){
 			if (a.id < b.id) return -1;
 			if (a.id > b.id) return 1;
@@ -354,7 +353,7 @@ class GigwaSearchReader {
 			
 			let query = {
 			    ...buildSearchQuery(2, 0),
-				variantSetId: getProjectId(),
+				variantSetId: getProjectId().join(","),
 				displayedSequence: chr,
 				callSetIds: self.header.callSetIds,
 				additionalCallSetIds: null	// not being used for this kind of query so let's remove it from the payload
@@ -380,7 +379,7 @@ class GigwaSearchReader {
 				type: "POST",
 				dataType: "text",
 				contentType: "application/json;charset=utf-8",
-				headers: buildHeader(token, $('#assembly').val()),
+				headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
 				data: JSON.stringify(query),
 				error: function (xhr, ajaxOptions, thrownError) {
 					handleError(xhr, thrownError);

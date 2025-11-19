@@ -144,7 +144,8 @@ public class SwaggerConfig implements WebMvcConfigurer, ServletContextAware {
 					+ "| sequence | reference | linkageGroup | reference |\n"
 					+ "| variant | variant | marker | variant |\n"
 					+ "| individual | callSet | germplasm | germplasm |\n"
-					+ "| sample | - | sample or markerprofile | sample or callSet |\n"
+					+ "| sample | - | sample | sample |\n"
+					+ "| callSet | - | markerprofile | callSet |\n"
 				, "", "", new Contact("Guilhem Sempéré", "", "gigwa@cirad.fr"), "License : GNU Affero GPL v3", "http://www.gnu.org/licenses/agpl.html",
 				new ArrayList<VendorExtension>());
 	}

@@ -29,8 +29,10 @@ function grabNcbiTaxon(inputObj, taxonId)
 	if (taxonId == "" || isNaN(taxonId)) {
 		$(inputObj).removeAttr('data-id');
 		$(inputObj).removeAttr('data-species');
-		if (typeof setDirty != 'undefined' && $(inputObj).val() != taxonId)
-			setDirty($(inputObj).closest("tr").attr("id").substring(4), true);
+		if (typeof reflectDirtiness != 'undefined' && $(inputObj).val() != taxonId) {
+			$(inputObj).addClass("dirty");
+			reflectDirtiness($(inputObj).closest("tr").attr("id").substring(4));
+		}
 		$(inputObj).val(taxonId).attr('title', taxonId + '\n(Click to change selection)');
 		return;
 	}
@@ -41,8 +43,10 @@ function grabNcbiTaxon(inputObj, taxonId)
 	        $(inputObj).attr('data-id', taxonId);
         $(inputObj).attr('data-species', species != null && species != '' ? (genus + " " + species) : null);
 	
-		if (typeof setDirty != 'undefined' && $(inputObj).val() != taxonId)
-			setDirty($(inputObj).closest("tr").attr("id").substring(4), true);
+		if (typeof reflectDirtiness != 'undefined' && $(inputObj).val() != taxonId) {
+			$(inputObj).addClass("dirty");
+			reflectDirtiness($(inputObj).closest("tr").attr("id").substring(4));
+		}
 	    $(inputObj).val(taxonName).attr('title', taxonName + '\n(Click to change selection)');
 	}
 	catch(error) {
@@ -52,20 +56,23 @@ function grabNcbiTaxon(inputObj, taxonId)
 
 function customizeModuleList() {
 	let cell = $("#moduleTable thead th").filter(function() {
-        return $(this).text().trim() === "Category";
+        return $(this).text().trim().toLowerCase() === moduleCategoryFieldName;
     });
     
-    if (cell.length == 0)
-    	return;
-    	
-	cell.text("Taxon");
-	taxonCellIndex = cell.index() + 1;
-
-    $("#moduleTable tbody tr td:nth-child(" + taxonCellIndex + ")").each(function() {
-		updateTaxonCell(this);
-	})
-	if ($("#moduleTable tbody tr td:nth-child(" + taxonCellIndex + ") input").length > 0)
-		cell.append('<span style="font-weight:normal; margin-left:50px; color:black;">Find NCBI IDs&nbsp;<a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="../images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."></a></span>');
+    if (cell.length > 0) {
+		cell.text("Taxon");
+		taxonCellIndex = cell.index() + 1;
+	
+	    $("#moduleTable tbody tr td:nth-child(" + taxonCellIndex + ")").each(function() {
+			updateTaxonCell(this);
+		})
+		if ($("#moduleTable tbody tr td:nth-child(" + taxonCellIndex + ") input").length > 0)
+			cell.append('<span style="font-weight:normal; margin-left:50px; color:black;">Find NCBI IDs&nbsp;<a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi" target="_blank"><img id="igvTooltip" style="cursor:pointer; cursor:hand;" src="../images/magnifier.gif" title="Click to find out taxon id. Specifying an id is preferred because it avoids typos."></a></span>');
+	}
+	
+	cell = $("#moduleTable thead th").filter(function() {
+        return $(this).text().trim().toLowerCase() === modulePublicFieldName;
+    });
 }
 
 function updateTaxonCell(taxonCell) {
@@ -81,8 +88,11 @@ function updateTaxonCell(taxonCell) {
 }
 
 saveChanges = function(moduleName) {	// override default function so we can account for the taxon field
-	let itemRow = $("#row_" + moduleName);
-	let setToPublic = itemRow.find(".flagCol1").prop("checked");
+	let itemRow = $("#row_" + moduleName), publicCheckBox = itemRow.find(".flagCol1");
+	let setToPublic = publicCheckBox.prop("checked");
+	if (publicCheckBox.hasClass("dirty") && setToPublic && termsToAcceptToMakeModulePublic !== "" && !confirm(termsToAcceptToMakeModulePublic))
+		return;
+
 	let setToHidden = itemRow.find(".flagCol2").prop("checked");
     var taxonDetailsFieldContents = new Array();
 	let taxonInput = itemRow.find("td:nth-child(" + taxonCellIndex + ") input");
@@ -99,7 +109,8 @@ saveChanges = function(moduleName) {	// override default function so we can acco
 		{
 			moduleData[moduleName][modulePublicFieldName] = setToPublic;
 			moduleData[moduleName][moduleHiddenFieldName] = setToHidden;
-			setDirty(moduleName, false);
+			itemRow.find("input.dirty").toggleClass("dirty");
+			reflectDirtiness(moduleName);
 		}
 	}).error(function(xhr) { handleError(xhr); });
 }
@@ -111,5 +122,6 @@ resetFlags = function(moduleName) {		// override default function so we can acco
 	let taxonCell = itemRow.find("td:nth-child(" + taxonCellIndex + ")");
 	taxonCell.text(moduleData[moduleName]["category"]);
 	updateTaxonCell(taxonCell.get());
-	setDirty(moduleName, false);
+	itemRow.find("input.dirty").toggleClass("dirty");
+	reflectDirtiness(moduleName);
 }

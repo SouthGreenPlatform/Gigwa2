@@ -7467,8 +7467,8 @@
       var range = document.createElement('input');
       range.id = 'zoom-control';
       range.setAttribute('type', 'range');
-      range.min = 2;
-      range.max = 64;
+      range.min = 1;
+      range.max = 32;
       range.value = boxSize;
       range.style.width = "250px";
       var zoomPreviewLabel = document.createElement('label');
@@ -7641,6 +7641,7 @@
       });
       var exportOverviewButton = document.createElement('button');
       var exportOverviewText = document.createTextNode('Export overview');
+      exportOverviewButton.style.marginRight = '10px';
       exportOverviewButton.appendChild(exportOverviewText);
       exportOverviewButton.addEventListener('click', function (e) {
         var dataURL = overviewCanvas.toDataURL('image/png');
@@ -7655,8 +7656,25 @@
           document.body.removeChild(element);
         }
       });
+      var exportSampleButton = document.createElement('button');
+      var exportSampleText = document.createTextNode('Export sample list');
+      exportSampleButton.appendChild(exportSampleText);
+      exportSampleButton.addEventListener('click', function (e) {
+        var _genotypeCanvas$dataS;
+        var names = (_genotypeCanvas$dataS = genotypeCanvas.dataSet) === null || _genotypeCanvas$dataS === void 0 || (_genotypeCanvas$dataS = _genotypeCanvas$dataS.germplasmListFiltered) === null || _genotypeCanvas$dataS === void 0 ? void 0 : _genotypeCanvas$dataS.map(function (g) {
+          return g.name;
+        });
+        if (!names || !names.length) return;
+        navigator.clipboard.writeText(names.join('\n')).then(function () {
+          alert(names.length + ' sample names copied to clipboard!');
+        })["catch"](function (err) {
+          console.error('Clipboard error:', err);
+          alert('Clipboard write failed');
+        });
+      });
       tab.appendChild(exportViewButton);
       tab.appendChild(exportOverviewButton);
+      tab.appendChild(exportSampleButton);
       return tab;
     }
     function createDisplayTab(config) {

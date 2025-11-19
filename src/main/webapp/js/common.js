@@ -73,8 +73,9 @@ function idLooksGenerated(id)
 }
 
 function getProjectId(){
-    return $('#project :selected').data("id");
+    return $('#project option:selected').get().map(t => $(t).attr("data-id"));
 }
+
 
 function getModuleName(){
     return $('#module').val();
@@ -179,7 +180,7 @@ function abort(token) {
 
 function displayMessage(message, duration) {
     duration = duration === undefined ? 5000 : duration;
-    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:2000; position:absolute; top:200px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
+    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:999; position:absolute; top:200px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
     if (duration !== null){
         window.setTimeout(function() {
             $(".alert").fadeTo(500, 0, function(){
@@ -280,12 +281,12 @@ function containsHtmlTags(xStr)
     return xStr != xStr.replace(/<\/?[^>]+>/gi,"");
 }
 
-function buildHeader(token, assemblyId, individuals) {
+function buildHeader(token, assemblyId, workWithSamples) {
     var headers = { "Authorization": "Bearer " + token };
     if (assemblyId != null)
     	headers["assembly"] = assemblyId;
-    if (individuals != null)
-    	headers["ind"] = individuals;
+    if (workWithSamples)
+    	headers["workWithSamples"] = true;
 	return headers;
 }
 
@@ -499,3 +500,5 @@ function sendToIGV(genomeID)
         }
     });
 }
+
+const toPascalCase = (str) => str.trim().toLowerCase().replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '').replace(/^(.)/, c => c.toUpperCase());
