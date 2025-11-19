@@ -736,7 +736,7 @@ function updateFilteredIndividualCount()
 {
 	let selectionSize = $("table#individualFilteringTable tr:gt(0):not([style*='display: none'])").length;
     $("span#filteredIndCount").html(selectionSize);
-    $("button#applyBioEntitySelectionFromMetadata").attr("disabled", selectionSize === 0);
+    $("button#applyBioEntitySelectionFromMetadata").attr("disabled", $("div.dropdown-menu:visible").length > 0 || selectionSize === 0);
 }
 
 function displayedMetadataFieldListChanged() {
@@ -823,15 +823,23 @@ function addSelectionDropDownsToHeaders(tableObj)
                 $(dropDown).attr('data-count-selected-text', "{0} out of {1}");
 
                 let pendingChange = false;
+                $(dropDown).on('show.bs.select', function() {
+					$("button#applyBioEntitySelectionFromMetadata").attr("disabled", true);
+                });
+
                 $(dropDown).on('hide.bs.select', function() {
                     if (pendingChange) {
                         applyDropDownFiltersToTable(document.getElementById(tableObj.id));
                         pendingChange = false;
                     }
+//                    if ($("div.dropdown-menu:visible").length > 0)
+//                   		$("button#applyBioEntitySelectionFromMetadata").attr("disabled", true);
                 });
-                
+
                 $(dropDown).on('change', function() {
                     pendingChange = true;
+//                    if ($("div.dropdown-menu:visible").length > 0)
+//                   		$("button#applyBioEntitySelectionFromMetadata").attr("disabled", true);
                 });
 
                 for (i = 0; i < distinctValuesForColumn.length; i++)
