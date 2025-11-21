@@ -106,7 +106,8 @@ function chartIndSelectionChanged() {
 	}
 	
 	function updateIndSelectionCount() {
-		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : indOpt.map(csId => referenceset + idSep + csId));
+//		console.log(callSetIds.length + " / " + groupOption)
+		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
 		for (let i = 0; additionalCallSetIds != null && i < additionalCallSetIds.length; i++)
 			additionalCallSetIds[i].forEach(cs => allCallsetIDs.add(cs));
 		$('#indSelectionCount').text("(" + allCallsetIDs.size + " biological entities selected)");
@@ -170,7 +171,8 @@ function initializeChartDisplay() {
         return;
     }
     
-    chartIndSelectionChanged();
+    if ($("#plotGroupingMetadataValues").length == 0)
+    	chartIndSelectionChanged();
     localmin = null;
     localmax = null;
     dataBeingLoaded = false;
@@ -203,11 +205,11 @@ function initializeChartDisplay() {
 	
 	                return (
 						'<div class="col-md-3">' +
-	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
 	                    '</div>' +
-	                    '<div id="plotMetadata" class="col-md-3">' +
-	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/>' +
-	                    '<select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+	                    '<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
+	                    (typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+	                    '<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
 	                    '</div>');
 	            }
 	        }
@@ -238,11 +240,11 @@ function initializeChartDisplay() {
 	
 	                return (
 						'<div class="col-md-3">' +
-	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
 	                    '</div>' +
-	                    '<div id="plotMetadata" class="col-md-3">' +
-	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/>' +
-	                    '<select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+	                    '<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
+	                    (typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+	                    '<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
 	                    '</div>');
 	            }
 	        }
@@ -275,11 +277,12 @@ function initializeChartDisplay() {
 	                if (groupingOptions == "")
 	                    return "";
 	
-	                return ('<div class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />' +
-	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                return ('<div class="col-md-3"><input type="checkbox" id="showFstThreshold" onchange="displayOrHideThreshold(this.checked)" /> <label for="showFstThreshold">Show FST significance threshold</label><br/>with value <input id="fstThreshold" style="width:60px; margin-bottom:20px;" type="number" min="0" max="1" step="0.01" value="0.10" onchange="setFstThreshold()" class="margin-bottom" />' +
+	                    '<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Group FST by </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
 	                    '</div>' +
-	                    '<div id="plotMetadata" class="col-md-3">' +
-	                    '<b>... values defining groups (2 or more) <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+	                    '<div id="plotMetadata" class="col-md-3"><b>... values defining groups (2 or more)</b>' +
+	                    (typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+	                    '<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
 	                    '</div>');
 	            },
 	            onDisplay: function () {
@@ -315,10 +318,11 @@ function initializeChartDisplay() {
 	                    return "";
 	
 	                return ('<div class="col-md-3">' +
-	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><span id="indSelectionCount"></span>' +
+	                    '<div class="margin-top"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
 	                    '</div>' +
-	                    '<div id="plotMetadata" class="col-md-3">' +
-	                    '<b>... refine if you wish <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained."/></b><br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+	                    '<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
+	                    (typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+	                    '<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
 	                    '</div>');
 	            }
 	        }
@@ -994,7 +998,8 @@ function updateAvailableGroups() {
 	        contentType: "application/json;charset=utf-8",
 	        headers: buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')),
 	        success: function (metaDataValues) {
-				$("#chartGroupSelectionDesc").css("visibility", selectedIndividuals.length == 0 || selectedIndividuals.length == indOpt.length ? "hidden" : "visible");
+				if (typeof shouldShowChartGroupSelectionDesc != "undefined")
+					$("#chartGroupSelectionDesc").css("visibility", shouldShowChartGroupSelectionDesc());
 
 				if (Object.keys(metaDataValues).length > 0)
 			        metaDataValues[option].forEach(function (mdVal) {
