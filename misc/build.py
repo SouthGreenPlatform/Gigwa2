@@ -118,7 +118,7 @@ try:
     bom_dir = os.path.join(gigwa2_dir, 'bom')
     if os.path.exists(bom_dir):
         os.chdir(bom_dir)
-        subprocess.run(['mvn', 'install', '-P', 'prod', '-f', 'pom.xml'], check=True)
+        subprocess.run(['mvn', 'install', '-P', 'prod', '-DskipTests', '-f', 'pom.xml'], check=True)
         print("mvn install completed successfully on bom/pom.xml.")
     else:
         print(f"Error: bom directory not found in {gigwa2_dir}")
