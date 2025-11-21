@@ -2292,7 +2292,10 @@ public class GigwaRestController extends ControllerInterface {
 													sCompletionMessage = "Error importing metadata: " + mdImportProgress.getError();
 											}
 										}
-										progress.markAsComplete(sCompletionMessage);
+                                        if (progress.getFinalMessage() != null) {
+                                            sCompletionMessage = sCompletionMessage == null ? progress.getFinalMessage() :  progress.getFinalMessage() + " " + sCompletionMessage;
+                                        }
+                                        progress.markAsComplete(sCompletionMessage);
 									}
 								}
 								catch (Exception e) {
