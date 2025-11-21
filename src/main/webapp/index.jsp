@@ -2891,6 +2891,19 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     	return null;	// means: use token
     }
     
+    function getChartGroupSelectionDescTitle() {
+    	return "For each chosen item, only individuals that are part of the original\nselection (union of the main Gigwa groups) are retained.";
+    }
+    
+    function shouldShowChartGroupSelectionDesc() {
+    	let selectedIndividuals = getSelectedIndividuals();
+    	return selectedIndividuals.length == 0 || selectedIndividuals.length == indOpt.length ? "hidden" : "visible";
+    }
+    
+    function getCallsetIDsWhenNoneExplicitlySelected() {
+    	return indOpt.map(csId => referenceset + idSep + csId);
+    }
+    
     function buildChartDataPayLoad(displayedSequence, displayedVariantType) {
         let activeGroups = $(".genotypeInvestigationDiv").length;
     	let query = {
