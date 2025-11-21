@@ -102,11 +102,10 @@ function chartIndSelectionChanged() {
 	}
 	else {
 		$('#showChartButton').prop('disabled', true);
-		updateIndSelectionCount();
+		$('#indSelectionCount').html("&nbsp;");
 	}
 	
 	function updateIndSelectionCount() {
-//		console.log(callSetIds.length + " / " + groupOption)
 		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
 		for (let i = 0; additionalCallSetIds != null && i < additionalCallSetIds.length; i++)
 			additionalCallSetIds[i].forEach(cs => allCallsetIDs.add(cs));
