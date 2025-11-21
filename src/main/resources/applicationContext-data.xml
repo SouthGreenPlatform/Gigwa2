@@ -15,17 +15,7 @@
         <mongo:client-settings connection-pool-max-size="500" />
     </mongo:mongo-client>
 
-    <!-- Definition of a host with authentication enabled -->
-    <mongo:mongo-client host="rogna.cirad.fr" port="37017" id="rognaDEV" credential="gigwa:${mongo_pwd}@admin">
-        <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client>
-
-    <!-- Definition of a host with authentication enabled -->
-    <mongo:mongo-client host="rogna.cirad.fr" port="27017" id="rognaLIVE" credential="gigwa:${mongo_pwd}@admin">
-        <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client>
-
-    <!-- Definition of a host with authentication enabled -->
+<!--     Definition of a host with authentication enabled -->
     <mongo:mongo-client host="cortenais.cirad.fr" port="27017" id="cortenais" credential="gigwa:${mongo_pwd}@admin">
         <mongo:client-settings connection-pool-max-size="500" />
     </mongo:mongo-client>

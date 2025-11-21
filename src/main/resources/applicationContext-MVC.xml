@@ -46,14 +46,14 @@
   
     <bean class="org.springframework.mail.javamail.JavaMailSenderImpl">
         <property name="defaultEncoding" value="UTF-8"/>
-        <property name="host" value="smtp.host.url"/>	<!-- shall be adapted to point to your mail server -->
-        <!-- <property name="username" value="UN"/> -->	<!-- only used if mail.smtp.auth set to true -->
-        <!-- <property name="password" value="PW"/> -->	<!-- only used if mail.smtp.auth set to true -->
-        <property name="port" value="25"/>    			<!-- should normally be set to 587 if mail.smtp.auth is true, otherwise 25 -->
+        <property name="host" value="smtp.cirad.fr"/>	<!-- shall be adapted to point to your mail server -->
+        <property name="username" value="sempere"/>	
+        <property name="password" value="!!7266Dert!!"/>	
+        <property name="port" value="587"/>    			<!-- should normally be set to 587 if mail.smtp.auth is true, otherwise 25 -->
         <property name="javaMailProperties">
             <value>
                 mail.debug=false
-                mail.smtp.auth=false
+                mail.smtp.auth=true
                 mail.smtp.starttls.enable=false
                 mail.smtp.ssl.enable=false
             </value>

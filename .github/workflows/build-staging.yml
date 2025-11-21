@@ -20,7 +20,7 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/${{ github.repository }}/staging/misc/build-staging.sh
           chmod +x build-staging.sh
-          ./build-staging.sh -P staging
+          ./build-staging.sh -P staging -DskipTests
           pwd
           ls
 

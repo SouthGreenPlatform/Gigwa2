@@ -5362,23 +5362,24 @@
           colorSchemeId: "nucleotide",
           traitColors: customColors == null ? {} : JSON.parse(customColors)
         };
-
-        // We use trait values as keys in inner arrays for persisting to Local-storage, so we need to convert those back to list indexes on reload
-        Object.entries(settings.traitColors).forEach(function (_ref) {
-          var _ref2 = _slicedToArray(_ref, 2),
-            traitName = _ref2[0],
-            colorByValue = _ref2[1];
-          return Object.entries(colorByValue).forEach(function (_ref3) {
-            var _ref4 = _slicedToArray(_ref3, 2),
-              traitValue = _ref4[0],
-              traitValueColor = _ref4[1];
-            var trait = _this3.dataSet.traits.get(traitName),
-              traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
-              traitColorMap = settings.traitColors[traitName];
-            if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
-            delete traitColorMap[traitValue];
+        if (displayTraitSelect != null) {
+          // We use trait values as keys in inner arrays for persisting to Local-storage, so we need to convert those back to list indexes on reload
+          Object.entries(settings.traitColors).forEach(function (_ref) {
+            var _ref2 = _slicedToArray(_ref, 2),
+              traitName = _ref2[0],
+              colorByValue = _ref2[1];
+            return Object.entries(colorByValue).forEach(function (_ref3) {
+              var _ref4 = _slicedToArray(_ref3, 2),
+                traitValue = _ref4[0],
+                traitValueColor = _ref4[1];
+              var trait = _this3.dataSet.traits.get(traitName),
+                traitValueIndex = trait == null ? -1 : trait.values.indexOf(traitValue),
+                traitColorMap = settings.traitColors[traitName];
+              if (traitValueIndex != -1) traitColorMap[traitValueIndex] = traitValueColor;
+              delete traitColorMap[traitValue];
+            });
           });
-        });
+        }
         switch (sortId) {
           case "importing":
             settings.lineSort = new ImportingOrderLineSort();
@@ -6708,7 +6709,7 @@
                 this.processedLines = 0;
                 lines = fileContents.split(/\r?\n/);
                 this.totalLineCount = lines.length;
-                batchSize = Math.floor(this.totalLineCount / 10);
+                batchSize = Math.max(1, Math.floor((this.totalLineCount - 2) / 10));
                 self = this; // Throttle the advancementCallback to reduce frequent UI updates
                 throttledCallback = function () {
                   var lastCallTime = 0;
@@ -7466,8 +7467,8 @@
       var range = document.createElement('input');
       range.id = 'zoom-control';
       range.setAttribute('type', 'range');
-      range.min = 2;
-      range.max = 64;
+      range.min = 1;
+      range.max = 32;
       range.value = boxSize;
       range.style.width = "250px";
       var zoomPreviewLabel = document.createElement('label');
@@ -7640,6 +7641,7 @@
       });
       var exportOverviewButton = document.createElement('button');
       var exportOverviewText = document.createTextNode('Export overview');
+      exportOverviewButton.style.marginRight = '10px';
       exportOverviewButton.appendChild(exportOverviewText);
       exportOverviewButton.addEventListener('click', function (e) {
         var dataURL = overviewCanvas.toDataURL('image/png');
@@ -7654,8 +7656,25 @@
           document.body.removeChild(element);
         }
       });
+      var exportSampleButton = document.createElement('button');
+      var exportSampleText = document.createTextNode('Export sample list');
+      exportSampleButton.appendChild(exportSampleText);
+      exportSampleButton.addEventListener('click', function (e) {
+        var _genotypeCanvas$dataS;
+        var names = (_genotypeCanvas$dataS = genotypeCanvas.dataSet) === null || _genotypeCanvas$dataS === void 0 || (_genotypeCanvas$dataS = _genotypeCanvas$dataS.germplasmListFiltered) === null || _genotypeCanvas$dataS === void 0 ? void 0 : _genotypeCanvas$dataS.map(function (g) {
+          return g.name;
+        });
+        if (!names || !names.length) return;
+        navigator.clipboard.writeText(names.join('\n')).then(function () {
+          alert(names.length + ' sample names copied to clipboard!');
+        })["catch"](function (err) {
+          console.error('Clipboard error:', err);
+          alert('Clipboard write failed');
+        });
+      });
       tab.appendChild(exportViewButton);
       tab.appendChild(exportOverviewButton);
+      tab.appendChild(exportSampleButton);
       return tab;
     }
     function createDisplayTab(config) {
