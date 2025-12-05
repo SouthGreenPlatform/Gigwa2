@@ -2938,6 +2938,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     $('#minposition, #maxposition').on('paste', handleRangePaste);
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
+<script type="text/javascript" src="js/smart-color-multiselect.js"></script>
 
 <c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
 <!-- Google tag (gtag.js) -->
