@@ -944,7 +944,8 @@ function displayOrHideThreshold(isChecked) {
 			data: chartJsonKeys.map(val => threshold),
 			yAxis: chartInfo.series[0].name,
 		}, true);
-	} else {
+	}
+	else {
 		const series = chart.get("threshold");
 		if (series !== undefined) series.remove();
 	}

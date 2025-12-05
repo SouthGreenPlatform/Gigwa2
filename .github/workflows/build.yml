@@ -45,14 +45,14 @@ jobs:
 
       # Upload the Webapp zip as artifact for upload-release-assets
       - name: Upload Webapp zip
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
           path: target/Gigwa_V${{ steps.grep_release_version.outputs.release_version }}_Webapp.zip
 
       # Upload the Gigwa directory as artifact for the Dockerfile
       - name: Upload Gigwa directory
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gigwa
           path: target/gigwa/
@@ -96,7 +96,7 @@ jobs:
       # Download the asset if the flag "download" is set to true
       - name: Download Webapp zip
         if: matrix.asset.downloaded == true
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Gigwa_V${{ needs.setup-and-build.outputs.release_version }}_Webapp.zip
           path: target/
@@ -131,7 +131,7 @@ jobs:
 
       # Download the Gigwa directory artifact for the Dockerfile
       - name: Download gigwa directory
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: gigwa
           path: target/gigwa/
