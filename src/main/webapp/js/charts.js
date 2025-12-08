@@ -29,7 +29,7 @@ var callSetIds = [], additionalCallSetIds = [];
 const chartTypes = new Map();
 let processID;
 
-function chartIndSelectionChanged() {
+async function chartIndSelectionChanged() {
 	callSetIds = [];
 	additionalCallSetIds = [];
 	const groupOption = $("#plotGroupingSelectionMode").val();
@@ -38,9 +38,12 @@ function chartIndSelectionChanged() {
 		selectedValues = [];
 		$("input.showHideSeriesBox:checked").prop("checked", false);
 	}
-	let minRequiredGroups = currentChartType == "fst" ? 2 : (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
+	let usingSmartSelect = typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined';
+	let groups = usingSmartSelect ? $("#plotGroupingMetadataValues").smartColorMultiSelect('getColorGroups') : selectedValues;	// might be different in case of Fst
+	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
 
-	if (selectedValues.length >= minRequiredGroups) {
+	$('#indSelectionCount').html("&nbsp;");
+	if (groups.length >= minRequiredGroups) {
 		$('#showChartButton').prop('disabled', false);
 		if (groupOption != "__") {
 			let workWithSamples = $('#workWithSamples').is(':checked');
@@ -85,25 +88,21 @@ function chartIndSelectionChanged() {
 			});
 		}
 		else {
-			if (currentChartType == "fst" && typeof areGroupsOverlapping != "undefined" && areGroupsOverlapping(selectedValues)) {
+			if (currentChartType == "fst" && typeof areGroupsOverlapping != "undefined" && areGroupsOverlapping(groups)) {
 				alert("Fst groups are overlapping, please change selection!");
 				$('#showChartButton').prop('disabled', true);
 				return;
 			}
 
-			for (var i in selectedValues)
-				if (i == 0)
-					callSetIds = getSelectedIndividuals([selectedValues[i]], true);
-				else
-					additionalCallSetIds.push(getSelectedIndividuals([selectedValues[i]], true));
+			const results = await Promise.all(selectedValues.map(value => getSelectedIndividuals([value], true)));
+			callSetIds = results[0];
+			additionalCallSetIds = results.slice(1);
 
 			updateIndSelectionCount();
 		}
 	}
-	else {
+	else
 		$('#showChartButton').prop('disabled', true);
-		$('#indSelectionCount').html("&nbsp;");
-	}
 
 	function updateIndSelectionCount() {
 		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
@@ -208,10 +207,45 @@ function initializeChartDisplay() {
 				displayName: "MAF distribution",
 				queryURLFunction: "getChartMafDataURL",
 				title: "MAF values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "MAF values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "MAF values averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "MAF * 100",
+					enableMarker: true
+				}],
+				enableCondition: function() {
+					if (typeof ploidy != "undefined" && ploidy != 2)
+						return "Ploidy levels other than 2 are not supported";
+				},
+				onLoad: function() {
+					updateAvailableGroups();
+				},
+				buildCustomisation: function() {
+					let groupingOptions = getGroupingOptions();
+					if (groupingOptions == "")
+						return "";
+
+					return (
+						'<div class="col-md-3">' +
+						'<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
+						'</div>' +
+						'<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
+						(typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:165px;" onchange="chartIndSelectionChanged();"></select>' +
+						'</div>');
+				}
+			}
+		},
+		{
+			key: "hetz",
+			value: {
+				displayName: "Heterozygosity distribution",
+				queryURLFunction: "getChartHeterozygosityDataURL",
+				title: "Heterozygosity percentage for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+				subtitle: "Heterozygosity percentage averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				xAxisTitle: "Positions on selected sequence",
+				series: [{
+					name: "Heterozygosity percentage",
 					enableMarker: true
 				}],
 				enableCondition: function() {
@@ -270,7 +304,7 @@ function initializeChartDisplay() {
 						'</div>' +
 						'<div id="plotMetadata" class="col-md-3"><b>... values defining groups (2 or more)</b>' +
 						(typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
-						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:165px;" onchange="chartIndSelectionChanged();"></select>' +
 						'</div>');
 				},
 				onDisplay: function() {
@@ -284,7 +318,7 @@ function initializeChartDisplay() {
 				displayName: "Tajima's D",
 				queryURLFunction: "getChartTajimaDDataURL",
 				title: "Tajima's D values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Tajima's D values calculated in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "Tajima's D values averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Tajima's D",
@@ -310,7 +344,7 @@ function initializeChartDisplay() {
 						'</div>' +
 						'<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
 						(typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
-						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:150px;" onchange="chartIndSelectionChanged();"></select>' +
+						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:165px;" onchange="chartIndSelectionChanged();"></select>' +
 						'</div>');
 				}
 			}
@@ -331,7 +365,6 @@ function initializeChartDisplay() {
 	feedSequenceSelectAndLoadVariantTypeList(
 		selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
 		selectedTypes == "" ? $('#variantTypes option').map(function() { return $(this).val(); }).get() : selectedTypes);
-	applyChartType();
 
 	if ($("#plotGroupingMetadataValues").length > 0)
 		chartIndSelectionChanged();	// in case groups changed at the main UI level 
@@ -882,7 +915,7 @@ function checkChartLoadingProgress(processID) {
 					parent.totalRecordCount = 0;
 					alert("Error occurred:\n\n" + jsonResult['error']);
 					finishProcess();
-					$('#density').modal('hide');
+					$('#chartDialog').modal('hide');
 					emptyResponseCountsByProcess[processID] = null;
 				} else {
 					if (jsonResult != null)
@@ -1017,9 +1050,13 @@ function updateAvailableGroups() {
 }
 
 $(document).on("ready", function() {
-	$("#density").on("hidden.bs.modal", function() {
+	$("#chartDialog").on("hidden.bs.modal", function() {
 		if (dataBeingLoaded)
 			abortOngoingOperation();
+	});
+	
+	$("#chartDialog").on("shown.bs.modal", function() {	// a bit of an ugly hack to make smart multiselect gear icon re-appear at the proper location
+		applyChartType();
 	});
 
 	$(window).on('beforeunload', function() {
