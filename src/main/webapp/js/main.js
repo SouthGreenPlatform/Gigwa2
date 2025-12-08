@@ -1121,24 +1121,54 @@ function displayProjectInfo(projName)
 }
 
 function areGroupsOverlapping(specificGroups) {
-    let groups = specificGroups != null ? [...specificGroups] : Array.from({ length: $(".genotypeInvestigationDiv").length }, (_, index) => index + 1);
-    if (groups.length < 2)
-    	return false;
+    // If specificGroups is not provided, use the default behavior
+    if (specificGroups == null) {
+        const defaultGroups = Array.from(
+            { length: $(".genotypeInvestigationDiv").length },
+            (_, index) => [String(index + 1)] // Wrap each group in an array for consistency
+        );
+        return areGroupsOverlapping(defaultGroups);
+    }
 
-	var groupIndividuals = getSelectedIndividuals([groups[0]]);
-	groups = groups.splice(1);
-	seen = new Set(groupIndividuals.length == 0 ? indOpt : groupIndividuals);
-    for (const group of groups) {
+    // If specificGroups is an array of strings, wrap each string in an array for consistency
+    if (specificGroups.length > 0 && typeof specificGroups[0] === "string") {
+        specificGroups = specificGroups.map(group => [group]);
+    }
+
+    if (specificGroups.length < 2) {
+        return false;
+    }
+
+    // Compute the union of individuals for the first group of groups
+    let firstGroupUnion = new Set();
+    for (const group of specificGroups[0]) {
         const individuals = getSelectedIndividuals([group]);
-        if (individuals.length == 0)
-       		return true;
+        individuals.forEach(ind => firstGroupUnion.add(ind));
+    }
 
-        for (const individual of individuals) {
-            if (seen.has(individual))
+    // If no individuals in the first group, use indOpt as fallback
+    const seen = new Set(firstGroupUnion.size === 0 ? indOpt : firstGroupUnion);
+
+    // Check overlaps with the remaining groups of groups
+    for (let i = 1; i < specificGroups.length; i++) {
+        const currentGroupUnion = new Set();
+        for (const group of specificGroups[i]) {
+            const individuals = getSelectedIndividuals([group]);
+            individuals.forEach(ind => currentGroupUnion.add(ind));
+        }
+
+        if (currentGroupUnion.size === 0) {
+            return true; // Assuming empty group means overlap
+        }
+
+        for (const individual of currentGroupUnion) {
+            if (seen.has(individual)) {
                 return true;
-			seen.add(individual);
+            }
+            seen.add(individual);
         }
     }
+
     return false;
 }
 

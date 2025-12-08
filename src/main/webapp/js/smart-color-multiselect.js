@@ -135,7 +135,7 @@
             $selectElem.find("option:selected").each(function () {
               selectedValues.push($(this).val())
             })
-            results.push([selectedValues])
+            results.push(selectedValues)
             return
           }
 
@@ -355,7 +355,7 @@
         $select.find("option").each(function () {
           var $opt = $(this)
           var optionText = $opt.text() || $opt.val()
-          if (optionText.length > 20) optionText = optionText.substring(0, 17) + "..."
+//          if (optionText.length > 20) optionText = optionText.substring(0, 17) + "..."
 
           var $li = $("<li></li>")
             .text(optionText)
