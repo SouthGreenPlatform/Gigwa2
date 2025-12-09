@@ -169,13 +169,13 @@ div#welcome {
     background-color: #ddd;
 }
 
-div#density, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel div#igvPanel {
+div#chartDialog, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel div#igvPanel {
     overflow: hidden;
 	width: 99%;
     margin: 0 auto;
 }
 
-div#density * {
+div#chartDialog * {
 	font-size:11px;
 }
 
@@ -183,7 +183,7 @@ div#termsOfUse .modal-lg {
     width: 950px;
 }
 
-div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg, div#igvPanel .modal-lg {
+div#chartDialog .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg, div#igvPanel .modal-lg {
     width: 99%;
 }
 
@@ -191,7 +191,7 @@ div.graphCustomization {
 	min-height:90px;
 }
 
-div#density div.graphCustomization p {
+div#chartDialog div.graphCustomization p {
 	font-size:12px;
 	font-weight:bold;
 	margin-bottom:5px;
