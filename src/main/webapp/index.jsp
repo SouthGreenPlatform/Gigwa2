@@ -1393,7 +1393,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 if (gotMetaData) {
                     $('#asyncProgressButton').hide();
                     $('button#abort').hide();
-                    $('#progressText').html("Loading individuals' metadata...");
+                    $('#progressText').html("Loading biological entities' metadata...");
                     $('#progress').modal({
                         backdrop: 'static',
                         keyboard: false,
