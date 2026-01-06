@@ -750,6 +750,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var filterSamplesUsingMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_SAMPLES_USING_METADATA %>" />';
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
+	var toolURLsForGivenExportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_TOOL_URLS_FOR_GIVEN_EXPORT%>" />';
 	var downloadURL;
 	var gotMetaData = false;
 	var referenceNames;
