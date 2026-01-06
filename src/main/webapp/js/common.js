@@ -73,8 +73,9 @@ function idLooksGenerated(id)
 }
 
 function getProjectId(){
-    return $('#project :selected').data("id");
+    return $('#project option:selected').get().map(t => $(t).attr("data-id"));
 }
+
 
 function getModuleName(){
     return $('#module').val();
@@ -179,7 +180,7 @@ function abort(token) {
 
 function displayMessage(message, duration) {
     duration = duration === undefined ? 5000 : duration;
-    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:2000; position:absolute; top:200px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
+    $(document.body).append('<div class="alert alert-info alert-dismissable fade in" style="z-index:999; position:absolute; top:200px; left:' + (15 + $("div#searchPanel").width() / 4) + 'px; min-width:450px;"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><div id="msg">' + message + '</div></div>');
     if (duration !== null){
         window.setTimeout(function() {
             $(".alert").fadeTo(500, 0, function(){
@@ -280,12 +281,12 @@ function containsHtmlTags(xStr)
     return xStr != xStr.replace(/<\/?[^>]+>/gi,"");
 }
 
-function buildHeader(token, assemblyId, individuals) {
+function buildHeader(token, assemblyId, workWithSamples) {
     var headers = { "Authorization": "Bearer " + token };
     if (assemblyId != null)
     	headers["assembly"] = assemblyId;
-    if (individuals != null)
-    	headers["ind"] = individuals;
+    if (workWithSamples)
+    	headers["workWithSamples"] = true;
 	return headers;
 }
 
@@ -327,39 +328,25 @@ function showServerExportBox(keepExportOnServer, exportFormatExtensions)
 	else
 		$("#galaxyPushButton").hide();
 
-	if (onlineOutputTools != null)
-		for (var toolName in onlineOutputTools) {
-			var toolConfig = getOutputToolConfig(toolName);
-			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {
-				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
-				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
-				if (matchResult != null) {
-					var placeHolders = matchResult.map(res => res.replace(/{|}/g , ''));
-					phLoop: for (var i in placeHolders) {
-						var phFormats = placeHolders[i].split("\|");
-						for (var j in phFormats) {
-							for (var key in archivedDataFiles) {
-								if (key == phFormats[j]) {
-									formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + key;
-									urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", archivedDataFiles[key]);
-									continue phLoop;
-								}
-							}
-						}
-						console.log("unused param: " + placeHolders[i]);
-						urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", "");
-					}
-				}
-				
-				if (urlForThisButton == toolConfig['url'] && urlForThisButton.indexOf("*") != -1) {
-					urlForThisButton = urlForThisButton.replace("\*", Object.values(archivedDataFiles).join(","));
-					formatsForThisButton = Object.keys(archivedDataFiles).join(", ");
-				}
-
-				if (formatsForThisButton != "")
-					$('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" /><br/>');
-			}
+	$.ajax({
+	    url: toolURLsForGivenExportURL,
+	    method: 'GET',
+	    data: {
+	        exportFormat: exportedFormat,
+	        exportUrl: location.origin + downloadURL,
+	        fileExtensions: exportFormatExtensions.join(",")
+	    },
+	    success: function(resolvedToolUrls) {
+	        // resolvedToolUrls is a map of tool labels to resolved URLs
+	        for (var toolLabel in resolvedToolUrls) {
+	            var resolvedUrl = resolvedToolUrls[toolLabel];	            
+	            $('#serverExportBox').append('<input style="margin-bottom:20px;" type="button" value="' + toolLabel + '" onclick="window.open(\'' + resolvedUrl + '\');" /><br/>');
+	        }
+	    },
+		error: function(xhr, ajaxOptions, thrownError) {
+			handleError(xhr, thrownError);
 		}
+	});
 }
 
 function getOutputToolConfig(toolName)
@@ -499,3 +486,5 @@ function sendToIGV(genomeID)
         }
     });
 }
+
+const toPascalCase = (str) => str.trim().toLowerCase().replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '').replace(/^(.)/, c => c.toUpperCase());

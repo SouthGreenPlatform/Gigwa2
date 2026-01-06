@@ -42,6 +42,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import fr.cirad.mgdb.model.mongo.maintypes.*;
+import fr.cirad.mgdb.model.mongo.subtypes.Callset;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -54,7 +57,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -73,10 +75,6 @@ import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
 import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -273,6 +271,11 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
+    public String getTermsToAcceptToMakeModulePublic() {
+    	return appConfig.get("termsToAcceptToMakeDatabasePublic");
+    }
+
+    @Override
     public String getActionRequiredToEnableDumps() {
         if (actionRequiredToEnableDumps == null) {
             String dumpFolder = appConfig.get("dumpFolder");
@@ -347,7 +350,29 @@ public class GigwaModuleManager implements IModuleManager {
         String dumpPath = this.getDumpPath(sModule);
 
         // List files in the database's dump directory, filter out subdirectories and logs
-        File[] fileList = new File(dumpPath).listFiles();
+        File[] fileList = null;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<File[]> future = executor.submit(new Callable<File[]>() {
+            @Override
+            public File[] call() throws Exception {
+            	return new File(dumpPath).listFiles();
+            }
+        });
+
+        try {
+        	fileList = future.get(5, TimeUnit.SECONDS); // Timeout after 5 seconds
+        } catch (TimeoutException e) {
+            future.cancel(true); // Cancel the task if it times out
+            LOG.error("Timeout while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted status
+            LOG.error("Interrupted while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (ExecutionException e) {
+            LOG.error("Error while listing dump files for database " + sModule + ": " + e.getCause().getMessage());
+        } finally {
+            executor.shutdownNow();
+        }
+
         ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
         if (fileList != null) {
             DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
@@ -600,13 +625,8 @@ public class GigwaModuleManager implements IModuleManager {
         	VariantSet variantSet = mongoTemplate.findById(Helper.createId(sModule, nProjId, sRun), VariantSet.class, VariantSet.BRAPI_CACHE_COLL_VARIANTSET);
         	if (variantSet != null)
         		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
-        	else {
-                Query q = new Query(Criteria.where("_id").is(nProjId));
-                q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
-                q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
-                return (int) mongoTemplate.count(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class) + " samples";
-
-            }
+        	else
+                return mongoTemplate.findDistinct(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_RUN).is(sRun))), GenotypingSample.FIELDNAME_CALLSETS + "." + "_id", GenotypingSample.class, Integer.class).size() + " callsets";
         }
         else
         	throw new Exception("Not managing entities of type " + entityType);
