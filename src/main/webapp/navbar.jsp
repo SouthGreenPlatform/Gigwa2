@@ -37,11 +37,6 @@
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
 							<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
-		                    <c:if test="${userDao.doesLoggedUserOwnEntities()}">
-		                    	<c:if test='${appConfig.get("snpEffConfigFile") != null && appConfig.get("snpEffDataRepository") != null}'>
-		                    		<li><a href="<c:url value='/annotate.jsp' />" data-toggle="tooltip" data-placement="bottom">Annotate data</a></li>
-								</c:if>
-							</c:if>
 		                    <c:if test="${!isAnonymous}">
 								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and/or user permissions</a></li>
 							</c:if>
@@ -141,6 +136,23 @@
 				handleError(xhr, thrownError);
 			}
 		})
+		
+		<c:if test="${userDao.doesLoggedUserOwnEntities()}">
+		$.get('<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ANNOTATION_TOOLS %>" />', function(data) {
+		    $.each(data, function(label, url) {
+		        var newMenuItem = $('<li>').append(
+		            $('<a>')
+		                .attr('href', url)
+		                .text("Annotate data using " +label)
+		                .on('click', function(e) {
+		                    e.preventDefault();
+		                    window.location.href = url;
+		                })
+		        );
+		        $('.dropdown-menu', '.navbar-right .dropdown').append(newMenuItem);
+		    });
+		});
+		</c:if>
 	</script>
 
 	<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>

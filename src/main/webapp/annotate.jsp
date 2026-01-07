@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.io.brapi.BrapiService" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.web.controller.annotation.SnpEffAnnotationController,fr.cirad.io.brapi.BrapiService" %>
 <%@ page import="org.brapi.v2.api.ServerinfoApi" %>
 <%@ page import="org.brapi.v2.api.ReferencesetsApi" %>
 <%@ page import="fr.cirad.tools.Helper" %>
@@ -184,7 +184,7 @@
 
 			            <!-- Upload files -->
 			            <div class="row margin-top-md" id="uploadContainer">
-			            	<form class="dropzone" style="background-color:#ffffff; overflow: hidden;" action="<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
+			            	<form class="dropzone" style="background-color:#ffffff; overflow: hidden;" action="<c:url value='<%= GigwaRestController.REST_PATH + SnpEffAnnotationController.BASE_URL + SnpEffAnnotationController.SNPEFF_INSTALL_GENOME%>' />" id="importDropzone">
 			            		<div class="row">
 			            			<div class="col-md-3" style="text-align:right;">
 			            				<label for="newGenomeID">New genome identifier</label>
@@ -224,6 +224,7 @@
                                     </div>
                                     <div class="col-md-1"></div>
                                 </div>
+                        	</form>
 			            </div>
 			        </div>
 			        <div class="modal-footer">
@@ -362,7 +363,7 @@
     	            }
     	        }).then(function() {
 					importDropzone = new Dropzone("#importDropzone", {
-    	                url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
+    	                url: "<c:url value='<%= GigwaRestController.REST_PATH + SnpEffAnnotationController.BASE_URL + SnpEffAnnotationController.SNPEFF_INSTALL_GENOME%>' />",
     	                maxFiles: 4,
     	                previewsContainer: "#dropZonePreviews",
    		           	    dictResponseError: 'Error importing data',
@@ -555,7 +556,7 @@
 
             function loadGenomes() {
                 $.ajax({
-                    url: "<c:url value='<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_GENOME_LIST%>' />",
+                    url: "<c:url value='<%=GigwaRestController.REST_PATH + SnpEffAnnotationController.BASE_URL + SnpEffAnnotationController.SNPEFF_GENOME_LIST%>' />",
 					method: "GET",
 					headers: {
 					    "Authorization": "Bearer " + token,
@@ -620,11 +621,9 @@
                     return;
 			    }
 			    data.set("genome", value);
-			    
-			    
 
 				$.ajax({
-				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_ANNOTATION_PATH%>' />",
+				    url: "<c:url value='<%= GigwaRestController.REST_PATH + SnpEffAnnotationController.BASE_URL + SnpEffAnnotationController.SNPEFF_ANNOTATION_PATH%>' />",
 				    method: "POST",
 				    headers: buildHeader(token, $('#assemblyAnnotate').val()),
 				    processData: false,
@@ -695,7 +694,7 @@
 				}
 
                 $.ajax({
-				    url: "<c:url value='<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.SNPEFF_INSTALL_GENOME%>' />",
+				    url: "<c:url value='<%= GigwaRestController.REST_PATH + SnpEffAnnotationController.BASE_URL + SnpEffAnnotationController.SNPEFF_INSTALL_GENOME%>' />",
 				    method: "POST",
 				    headers: {
 				        "Authorization": "Bearer " + token,
