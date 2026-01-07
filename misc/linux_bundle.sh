@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Variables
-project_version="2.10-RELEASE"
-tomcat_version="9.0.64"
+project_version="2.11-snapshot"
+tomcat_version="9.0.113"
 mongodb_linux_file="linux-x86_64-ubuntu1804-4.2.25"
 path_to_ubuntu_jre="zulu17.40.19-ca-jre17.0.6-linux_x64.tar.gz"
 

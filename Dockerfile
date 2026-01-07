@@ -1,4 +1,4 @@
-FROM tomcat:9.0.58-jdk17-openjdk-slim
+FROM tomcat:9.0.113-jdk17-temurin-jammy
 
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
