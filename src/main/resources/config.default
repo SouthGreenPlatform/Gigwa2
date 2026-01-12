@@ -49,7 +49,8 @@ maxImportSize_anonymousUser=200
 # The second one is the tool URL supported placeholders within curly brackets expecting file extensions, separated with pipes if needed. Example: {don|tsv|phenotype}
 # The third value is optional and may contain a comma-separated list of file-formats (must match some of those that the Gigwa instance is able to export: PLINK, VCF, etc...), thus defining those accepted by the tool (if unspecified, files in any format will be made available for this tool).
 onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url={vcf};VCF
-onlineOutputTool_2 = Online visualization;https://webtools.southgreen.fr/MetadataColorConfig/?metadataUrl={don|tsv|phenotype}&dataUrl={nwk};NJ-NEWICK
+onlineOutputTool_2 = Online visualization;http://localhost:8080/VizTools/MetadataColorConfig/?metadataUrl={don|tsv|phenotype}&dataUrl={nwk|pca};PCA,JUKES-CANTOR,ASD
+onlineOutputTool_3 = Distance matrix visualizer;http://localhost:8080/VizTools/DistanceMatrix?matrix_url={mtx}&meta_url={tsv};JUKES-CANTOR,ASD
 
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
@@ -157,3 +158,9 @@ allowedOrigins_/**=*
 
 # Optional HTML block that may be appended to the default Terms Of Use dialog
 #customTermsOfUseHtmlParagraph = <h4>4) Considerations related to Digital sequence Information (DSI)</h4><p>The data accessed through this database may be subject to rights claimed by third parties.</p>
+
+# Max dimension of the genotyping matrix (#samples x #SNPs) to calculate PCA on. Default is 1 billion (1E9)
+maxPcaMatrixSize = 1E8
+
+# Max dimension of the genotyping matrix (#samples x #SNPs) to calculate distance matrix on. Default is 1 billion (1E9)
+maxDistanceMatrixSize = 1E8
