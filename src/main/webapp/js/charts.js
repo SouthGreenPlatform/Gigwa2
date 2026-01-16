@@ -237,6 +237,41 @@ function initializeChartDisplay() {
 			}
 		},
 		{
+			key: "missingData",
+			value: {
+				displayName: "Missing data distribution",
+				queryURLFunction: "getChartMissingDataURL",
+				title: "Missing data percentage for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
+				subtitle: "Missing data percentage averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				xAxisTitle: "Positions on selected sequence",
+				series: [{
+					name: "Missing data percentage",
+					enableMarker: true
+				}],
+				enableCondition: function() {
+					if (typeof ploidy != "undefined" && ploidy != 2)
+						return "Ploidy levels other than 2 are not supported";
+				},
+				onLoad: function() {
+					updateAvailableGroups();
+				},
+				buildCustomisation: function() {
+					let groupingOptions = getGroupingOptions();
+					if (groupingOptions == "")
+						return "";
+
+					return (
+						'<div class="col-md-3">' +
+						'<div class="margin-top" style="display:' + (typeof getGenotypeInvestigationMode !== "undefined" ? "block" : "none") + ';"><span class="bold">Biological entities accounted for </span><select id="plotGroupingSelectionMode" onchange="updateAvailableGroups();">' + groupingOptions + '</select></div><div id="indSelectionCount"></div>' +
+						'</div>' +
+						'<div id="plotMetadata" class="col-md-3"><b>... refine if you wish</b>' +
+						(typeof getChartGroupSelectionDescTitle != "undefined" ? ' <img id="chartGroupSelectionDesc" style="cursor:pointer; cursor:hand;" src="images/magnifier.gif" title="' + getChartGroupSelectionDescTitle() + '"/>' : '') +
+						'<br/><select id="plotGroupingMetadataValues" multiple size="7" style="min-width:165px;" onchange="chartIndSelectionChanged();"></select>' +
+						'</div>');
+				}
+			}
+		},
+		{
 			key: "hetz",
 			value: {
 				displayName: "Heterozygosity distribution",
@@ -915,7 +950,7 @@ function checkChartLoadingProgress(processID) {
 					parent.totalRecordCount = 0;
 					alert("Error occurred:\n\n" + jsonResult['error']);
 					finishProcess();
-					$('#chartDialog').modal('hide');
+					//$('#chartDialog').modal('hide');
 					emptyResponseCountsByProcess[processID] = null;
 				} else {
 					if (jsonResult != null)

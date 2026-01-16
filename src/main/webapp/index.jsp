@@ -735,6 +735,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
 	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var selectionMafDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAF_DATA_PATH %>" />';
+	var selectionMissingDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MISSING_DATA_PATH %>" />';
 	var selectionHeterozygosityDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.HETZ_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
@@ -2861,7 +2862,11 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     function getChartMafDataURL() {
  		return selectionMafDataURL;
  	}
- 	
+
+    function getChartMissingDataURL() {
+ 		return selectionMissingDataURL;
+ 	}
+    
     function getChartHeterozygosityDataURL() {
  		return selectionHeterozygosityDataURL;
  	}

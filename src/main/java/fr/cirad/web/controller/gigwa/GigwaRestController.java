@@ -237,6 +237,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String FST_DATA_PATH = "/fstData";
 	static public final String TAJIMAD_DATA_PATH = "/tajimaDData";
 	static public final String MAF_DATA_PATH = "/mafData";
+	static public final String MISSING_DATA_PATH = "/missingData";
 	static public final String HETZ_DATA_PATH = "/heterozygosityData";
 	static public final String IGV_DATA_PATH = "/igvData";
 	static public final String IGV_GENOME_CONFIG_PATH = "/igvGenomeConfig";
@@ -821,6 +822,38 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionMaf(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
+			} else {
+				build403Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get Missing data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @return Map<Long, Float> containing density data in JSON format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = MISSING_DATA_PATH, notes = "get missing data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + MISSING_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return vizService.selectionMissingData(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
