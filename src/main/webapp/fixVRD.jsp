@@ -154,7 +154,7 @@
                 count++;
 %>
     <li>
-        ID: <%= doc.get("_id").toString() %>
+        ID: <%= doc.get("_id").toString().replaceFirst("Document", "") %>
         | VRD alleles: <%= doc.get("ka") %>
         | Variant alleles: <%= doc.get("varKa") %>
     </li>
