@@ -544,6 +544,10 @@ div.allele {
     display:inline-block;
     font-size:10px;
 }
+div.refAllele {
+	background-color:#bbffbb;
+}
+
 body{
     height:100%;  
 }

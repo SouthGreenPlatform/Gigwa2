@@ -1767,7 +1767,7 @@ function buildGenotypeTableContents(jsonResult) {
 			alleles.push(knownAlleles[jsonResult.calls[call].genotype[allele]]);
 
 		alleles.forEach(function(allele) {
-			gt += '<div class="allele">' + allele + '</div>';
+			gt += '<div class="allele' + (allele === jsonResult.referenceBases ? ' refAllele' : '') + '">' + allele + '</div>';
 		});
 
 		const gtRow = [splitId(jsonResult.calls[call].callSetId, 1), gt];
