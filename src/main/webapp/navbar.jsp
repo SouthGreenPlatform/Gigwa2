@@ -136,6 +136,8 @@
 				handleError(xhr, thrownError);
 			}
 		})
+		
+		$("#project").attr('data-selected-text-format', "count>1");
 	</script>
 
 	<%= new java.io.File(application.getRealPath("/custom/custom.css")).exists() ? "<link type='text/css' rel='stylesheet' href='custom/custom.css'>" : "" %>

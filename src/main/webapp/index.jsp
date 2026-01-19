@@ -248,7 +248,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 						</div>
 						<div style="float:right; margin-top:-5px;" class="row text-nowrap">
 							<div class="col-md-5" style='text-align:right;'>
-								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#density').modal('show'); initializeChartDisplay(); }">
+								<button style="padding:2px;" title="Visualization charts" id="showCharts" class="btn btn-default" type="button" onclick="if (seqCount === 0) alert('No sequence to display'); else {  $('#chartDialog').modal('show'); initializeChartDisplay(); }">
 									<img title="Visualization charts" src="images/density.webp" height="25" width="25" />
 								</button>
 								
@@ -437,7 +437,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		</div>
 	</div>
 	<!-- modal which displays chart data -->
-	<div class="modal fade" role="dialog" id="density" aria-hidden="true">
+	<div class="modal fade" role="dialog" id="chartDialog" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header" id="chartContainer"></div>
@@ -735,6 +735,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var selectionFstDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FST_DATA_PATH %>" />';
 	var selectionTajimaDDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.TAJIMAD_DATA_PATH %>" />';
 	var selectionMafDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MAF_DATA_PATH %>" />';
+	var selectionMissingDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.MISSING_DATA_PATH %>" />';
+	var selectionHeterozygosityDataURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.HETZ_DATA_PATH %>" />';
 	var distinctSequencesInSelectionURL = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.DISTINCT_SEQUENCE_SELECTED_PATH %>" />';
 	var tokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.GET_SESSION_TOKEN%>"/>';
 	var clearTokenURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.CLEAR_TOKEN_PATH%>" />';
@@ -749,6 +751,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	var filterSamplesUsingMetadata = '<c:url value="<%= GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.FILTER_SAMPLES_USING_METADATA %>" />';
 	var searchCallSetsUrl = '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.CALLSETS_SEARCH%>" />';
 	var snpclustEditionURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.snpclustEditionURL%>" />';
+	var toolURLsForGivenExportURL = '<c:url value="<%=GigwaRestController.REST_PATH + GigwaRestController.BASE_URL + GigwaRestController.ONLINE_TOOL_URLS_FOR_GIVEN_EXPORT%>" />';
 	var downloadURL;
 	var gotMetaData = false;
 	var referenceNames;
@@ -1392,7 +1395,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                 if (gotMetaData) {
                     $('#asyncProgressButton').hide();
                     $('button#abort').hide();
-                    $('#progressText').html("Loading individuals' metadata...");
+                    $('#progressText').html("Loading biological entities' metadata...");
                     $('#progress').modal({
                         backdrop: 'static',
                         keyboard: false,
@@ -2859,7 +2862,15 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     function getChartMafDataURL() {
  		return selectionMafDataURL;
  	}
- 	
+
+    function getChartMissingDataURL() {
+ 		return selectionMissingDataURL;
+ 	}
+    
+    function getChartHeterozygosityDataURL() {
+ 		return selectionHeterozygosityDataURL;
+ 	}
+    
     function getChartFstDataURL() {
  		return selectionFstDataURL;
  	}
@@ -2938,6 +2949,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
     $('#minposition, #maxposition').on('paste', handleRangePaste);
 </script>
 <script type="text/javascript" src="js/charts.js"></script>
+<script type="text/javascript" src="js/smart-color-multiselect.js"></script>
 
 <c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
 <!-- Google tag (gtag.js) -->

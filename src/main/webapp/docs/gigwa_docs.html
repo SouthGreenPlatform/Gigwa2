@@ -562,10 +562,10 @@
 			      <P><B>alleleSearchMaxTotalPageSize</B> - The default implementation of Brapi V2's /search/allelematrix call limits the number of genotypes per invocation to 10,000. Set this parameter to a different value if you need to modify that limit</P>
                </LI>
 			   <LI>
-			      <P STYLE="margin-bottom: 0in; line-height: 100%"><B>mandatoryIndividualMetadata-DATABASE_NAME</B> - Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for individuals into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less <b>mandatoryIndividualMetadata</b> property sets the default for all databases.</P>
+			      <P STYLE="margin-bottom: 0in; line-height: 100%"><B>mandatoryIndividualMetadata-DATABASE_NAME</B> - Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for individuals into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less <b>mandatoryIndividualMetadata</b> property sets the default for all databases. If field name is prefixed with '*' then blank values will be rejected at import time.</P>
 			   </LI>
 			   <LI>
-			      <P STYLE="margin-bottom: 0in; line-height: 100%"><B>mandatorySampleMetadata-DATABASE_NAME</B> - Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for samples into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less <b>mandatorySampleMetadata</b> property sets the default for all databases.</P>
+			      <P STYLE="margin-bottom: 0in; line-height: 100%"><B>mandatorySampleMetadata-DATABASE_NAME</B> - Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for samples into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less <b>mandatorySampleMetadata</b> property sets the default for all databases. If field name is prefixed with '*' then blank values will be rejected at import time.</P>
 			   </LI>
 			   <LI>
 			      <P><B>termsToAcceptToMakeDatabasePublic</B> - If set, its text value will be displayed for the admin / data owner for confirmation before he can switch a DB's status from private to public</P>
@@ -575,6 +575,12 @@
 			   </LI>
 			   <LI>
 			      <P><B>customTermsOfUseHtmlParagraph</B> - Optional HTML block that may be appended to the default Terms Of Use dialog</P>
+			   </LI>
+			   <LI>
+			      <P><B>maxPcaMatrixSize</B> - Max dimension of the genotyping matrix (#samples x #SNPs) to calculate PCA on. Default is 1 billion (1E9)</P>
+			   </LI>
+			   <LI>
+			      <P><B>maxDistanceMatrixSize</B> - Max dimension of the genotyping matrix (#samples x #SNPs) to calculate distance matrix on. Default is 1 billion (1E9)</P>
 			   </LI>
             </UL>
          </LI>

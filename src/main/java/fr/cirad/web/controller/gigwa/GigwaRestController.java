@@ -149,6 +149,7 @@ import fr.cirad.security.UserWithMethod;
 import fr.cirad.security.base.IRoleDefinition;
 import fr.cirad.service.PasswordResetService;
 import fr.cirad.tools.AppConfig;
+import fr.cirad.tools.ExportHelper;
 import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.ProgressIndicator;
@@ -186,6 +187,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private TokenManager tokenManager;
 
 	@Autowired private AppConfig appConfig;
+	
+	@Autowired private ExportHelper exportHelper;
 	
 	@Autowired private GigwaGa4ghServiceImpl ga4ghService;
 	
@@ -234,6 +237,8 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String FST_DATA_PATH = "/fstData";
 	static public final String TAJIMAD_DATA_PATH = "/tajimaDData";
 	static public final String MAF_DATA_PATH = "/mafData";
+	static public final String MISSING_DATA_PATH = "/missingData";
+	static public final String HETZ_DATA_PATH = "/heterozygosityData";
 	static public final String IGV_DATA_PATH = "/igvData";
 	static public final String IGV_GENOME_CONFIG_PATH = "/igvGenomeConfig";
 	static public final String VCF_FIELD_PLOT_DATA_PATH = "/vcfFieldPlotData";
@@ -250,6 +255,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String TERMS_OF_USE_COOKIE_DURATION_IN_HOURS_URL = "/termsOfUseCookieDurationInHours";
 	static public final String IGV_GENOME_LIST_URL = "/igvGenomeList";
 	static public final String ONLINE_OUTPUT_TOOLS_URL = "/onlineOutputTools";
+	static public final String ONLINE_TOOL_URLS_FOR_GIVEN_EXPORT = "/toolURLsForGivenExport";
 	static public final String MAX_UPLOAD_SIZE_PATH = "/maxUploadSize";
 	static public final String SAVE_QUERY_URL = "/saveQuery";
 	static public final String LIST_SAVED_QUERIES_URL = "/listSavedQueries";
@@ -816,6 +822,70 @@ public class GigwaRestController extends ControllerInterface {
 			if (tokenManager.canUserReadDB(token, info[0])) {
 				gdr.setRequest(request);
 				return vizService.selectionMaf(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
+			} else {
+				build403Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get Missing data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @return Map<Long, Float> containing density data in JSON format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = MISSING_DATA_PATH, notes = "get missing data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + MISSING_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return vizService.selectionMissingData(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
+			} else {
+				build403Response(resp);
+				return null;
+			}
+		} catch (ObjectNotFoundException e) {
+			build404Response(resp);
+			return null;
+		}
+	}
+	
+	/**
+	 * get Heterozygosity data
+	 *
+	 * @param request
+	 * @param resp
+	 * @param gdr
+	 * @return Map<Long, Float> containing density data in JSON format
+	 * @throws Exception
+	 */
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = HETZ_DATA_PATH, notes = "get heterozygosity data from selected variants")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
+			@ApiResponse(code = 400, message = "wrong parameters"),
+			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + HETZ_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
+		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
+		try {
+			if (tokenManager.canUserReadDB(token, info[0])) {
+				gdr.setRequest(request);
+				return vizService.selectionHeterozygosity(gdr, token, "true".equalsIgnoreCase(request.getHeader("workWithSamples")));
 			} else {
 				build403Response(resp);
 				return null;
@@ -2453,24 +2523,19 @@ public class GigwaRestController extends ControllerInterface {
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + ONLINE_OUTPUT_TOOLS_URL, method = RequestMethod.GET, produces = "application/json")
 	public HashMap<String, HashMap<String, String>> getOnlineOutputToolURLs() {
-		HashMap<String, HashMap<String, String>> results = new LinkedHashMap<>();
-		for (int i=1; ; i++)
-		{
-			String toolInfo = appConfig.get("onlineOutputTool_" + i);
-			if (toolInfo == null)
-				break;
+		return exportHelper.getOnlineOutputToolURLs();
+	}
 
-			String[] splitToolInfo = toolInfo.split(";");
-			if (splitToolInfo.length >= 2 && splitToolInfo[1].trim().length() > 0 && splitToolInfo[0].trim().length() > 0)
-			{
-				HashMap<String, String> aResult = new HashMap<>();
-				aResult.put("url", splitToolInfo[1].trim());
-				if (splitToolInfo.length >= 3 && splitToolInfo[2].trim().length() > 0)
-					aResult.put("formats", splitToolInfo[2].trim());
-				results.put(splitToolInfo[0].trim(), aResult);
-			}
-		}
-		return results;
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + ONLINE_TOOL_URLS_FOR_GIVEN_EXPORT, method = RequestMethod.GET, produces = "application/json")
+	public HashMap<String, String> getToolURLsForExport(@RequestParam String exportFormat, @RequestParam String exportUrl, @RequestParam String fileExtensions) {
+	    HashMap<String, String> fileUrls = new HashMap<>();	    
+	    for (String ext : fileExtensions.split(",")) {
+	        ext = ext.trim();
+	        if (!ext.isEmpty())
+	            fileUrls.put(ext, exportUrl.replace(".zip", "." + ext));
+	    }
+	    return exportHelper.getToolURLsForExport(exportFormat, fileUrls);
 	}
 
 	@ApiIgnore
