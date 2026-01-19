@@ -1,3 +1,4 @@
 /target/
 /.externalToolBuilders/
 /.settings/
+/src/main/webapp/META-INF/MANIFEST.MF
