@@ -140,14 +140,14 @@ allowedOrigins_/**=*
 #alleleSearchMaxTotalPageSize = 20000
 
 
-# Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for individuals into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less mandatoryIndividualMetadata property sets the default for all databases
+# Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for individuals into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less mandatoryIndividualMetadata property sets the default for all databases. If field name is prefixed with '*' then blank values will be rejected at import time.
 #mandatoryIndividualMetadata-Rice-MSU7 =	mandatory_ind_md_1[this is a description for field mandatory_ind_md_1]; \
 											mandatory_ind_md_2; \
 											mandatory_ind_md_3[this is a description for field mandatory_ind_md_3]
 #mandatoryIndividualMetadata = default_mandatory_ind_field[this is a description for field default_mandatory_ind_field]
 
 
-# Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for samples into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less mandatorySampleMetadata property sets the default for all databases
+# Any property named mandatorySampleMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for samples into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less mandatorySampleMetadata property sets the default for all databases. If field name is prefixed with '*' then blank values will be rejected at import time.
 #mandatorySampleMetadata-Rice-MSU7 = mandatory_sp_md_1;mandatory_sp_md_2[this is a description for field mandatory_sp_md_2]
 #mandatorySampleMetadata = default_mandatory_sp_field
 
