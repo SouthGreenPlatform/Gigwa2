@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-project_version="2.11-RELASE"
+project_version="2.11-RELEASE"
 tomcat_version="9.0.113"
 mongodb_osx_file="macos-x86_64-4.2.25"
 path_to_osx_jre="zulu17.40.19-ca-jre17.0.6-macosx_x64.tar.gz"
