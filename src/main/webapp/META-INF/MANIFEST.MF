@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
-Build-Jdk-Spec: 17
+Build-Jdk-Spec: 21
 Created-By: Maven Integration for Eclipse
-Implementation-version: 2.10-RELEASE
+Implementation-version: 2.11-RELEASE
 Class-Path: 
 
