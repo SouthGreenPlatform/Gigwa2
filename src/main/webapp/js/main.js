@@ -467,7 +467,7 @@ function markInconsistentGenotypesAsMissing() {
 		return; // no multi-sample individuals displayed
 
 	multiSampleIndividuals.forEach(function(ind) {
-		let rowsToConsider = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
+		let rowsToConsider = $("table#genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).filter(function() { return $(this).find('td.missingData').length == 0; });
 		var indGTs = rowsToConsider.map(function() {
 			return $(this).find("td:eq(0)").text();
 		}).get();

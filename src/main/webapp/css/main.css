@@ -544,7 +544,7 @@ div.allele {
     display:inline-block;
     font-size:10px;
 }
-div.refAllele {
+div.refAllele, span.refAllele {
 	background-color:#bbffbb;
 }
 
