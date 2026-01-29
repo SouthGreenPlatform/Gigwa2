@@ -423,6 +423,8 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 							<label class="label-checkbox" id="displayAllGtOption">display all genotypes <input type="checkbox" id="displayAllGt" class="input-checkbox" /></label>
 						</div>
 						<div class="col-md-4">
+							<label><span class="refAllele">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> reference allele</label>
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 							<label><span class="missingData">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> treated as missing data</label>
 						</div>
 					</div>
