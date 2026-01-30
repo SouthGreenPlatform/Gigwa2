@@ -617,7 +617,8 @@ function displayChart(minPos, maxPos) {
 						displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence);
 					},
 					error: function(xhr, ajaxOptions, thrownError) {
-						handleError(xhr, thrownError);
+						if (!processAborted)
+							handleError(xhr, thrownError);
 					}
 				});
 				startProcess(processID);
