@@ -1328,7 +1328,7 @@ public class GigwaRestController extends ControllerInterface {
                 boolean fFlapjackFormat = false;
                 HashMap<Integer, String> columnLabels = null;
                 Integer extRefSrcColumn = null, idColumn = null;
-                Map<String, Boolean /* whether or not it requires non-blank values*/> mandatoryFields = appConfig.getMandatoryMetadataFields(sModule, "Sample".equals(metadataType)).keySet().stream() .collect(Collectors.toMap(s -> s.startsWith("*") ? s.substring(1) : s, s -> s.startsWith("*")));
+                Map<String, Boolean /* whether or not it requires non-blank values*/> mandatoryFields = appConfig.getMandatoryMetadataFields(sModule, "sample".equals(metadataType)).keySet().stream() .collect(Collectors.toMap(s -> s.startsWith("*") ? s.substring(1) : s, s -> s.startsWith("*")));
                 HashSet<Integer> colIndicesRequiringData = new HashSet<>();
 
                 while (scanner.hasNextLine()) {
