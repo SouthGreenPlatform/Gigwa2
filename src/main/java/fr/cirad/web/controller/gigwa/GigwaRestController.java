@@ -1334,7 +1334,7 @@ public class GigwaRestController extends ControllerInterface {
                 while (scanner.hasNextLine()) {
                     String sLine = scanner.nextLine();
                     String sCleanLine = sLine.replaceAll("\\s+", "");
-                    if (sLine.isEmpty() || sCleanLine.startsWith("#")) {
+                    if (sCleanLine.isEmpty() || sCleanLine.startsWith("#")) {	// make sure we skip comments, and at the same time detect FlapJack format
                     	if (sCleanLine.equals("#fjFile=PHENOTYPE"))
                     		fFlapjackFormat = true;
                     	continue;
