@@ -1,10 +1,5 @@
 Manifest-Version: 1.0
 Build-Jdk-Spec: 21
 Created-By: Maven Integration for Eclipse
-<<<<<<< HEAD
 Implementation-version: 2.12-alpha
-=======
-Implementation-version: 2.12-alpha
->>>>>>> branch 'master' of https://github.com/SouthGreenPlatform/Gigwa2.git
 Class-Path: 
-
