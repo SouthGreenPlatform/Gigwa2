@@ -207,7 +207,7 @@ function initializeChartDisplay() {
 				displayName: "MAF distribution",
 				queryURLFunction: "getChartMafDataURL",
 				title: "MAF values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "MAF values averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "MAF values averaged in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "MAF * 100",
@@ -242,7 +242,7 @@ function initializeChartDisplay() {
 				displayName: "Missing data distribution",
 				queryURLFunction: "getChartMissingDataURL",
 				title: "Missing data percentage for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Missing data percentage averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "Missing data percentage averaged in an interval of size {{intervalSize}} around each point",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Missing data percentage",
@@ -277,7 +277,7 @@ function initializeChartDisplay() {
 				displayName: "Heterozygosity distribution",
 				queryURLFunction: "getChartHeterozygosityDataURL",
 				title: "Heterozygosity percentage for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Heterozygosity percentage averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "Heterozygosity percentage averaged in an interval of size {{intervalSize}} around each point",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Heterozygosity percentage",
@@ -312,7 +312,7 @@ function initializeChartDisplay() {
 				displayName: "Fst",
 				queryURLFunction: "getChartFstDataURL",
 				title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point",
+				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Fst estimate",
@@ -353,7 +353,7 @@ function initializeChartDisplay() {
 				displayName: "Tajima's D",
 				queryURLFunction: "getChartTajimaDDataURL",
 				title: "Tajima's D values for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Tajima's D values averaged in an interval of size {{intervalSize}} around each point (excluding missing and multi-allelic variants)",
+				subtitle: "Tajima's D values averaged in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Tajima's D",
