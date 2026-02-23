@@ -48,9 +48,9 @@ maxImportSize_anonymousUser=200
 # The property value must consist in semi-colon-separated values. The first one is the label to display for this tool
 # The second one is the tool URL supported placeholders within curly brackets expecting file extensions, separated with pipes if needed. Example: {don|tsv|phenotype}
 # The third value is optional and may contain a comma-separated list of file-formats (must match some of those that the Gigwa instance is able to export: PLINK, VCF, etc...), thus defining those accepted by the tool (if unspecified, files in any format will be made available for this tool).
-onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url={vcf};VCF
-onlineOutputTool_2 = Online visualization;http://localhost:8080/VizTools/MetadataColorConfig/?metadataUrl={don|tsv|phenotype}&dataUrl={nwk|pca};PCA,JUKES-CANTOR,ASD
-onlineOutputTool_3 = Distance matrix visualizer;http://localhost:8080/VizTools/DistanceMatrix?matrix_url={mtx}&meta_url={tsv};JUKES-CANTOR,ASD
+onlineOutputTool_1 = Diversity analysis with SNiPlay;http://sniplay.southgreen.fr/cgi-bin/analysis_v3.cgi?import_url={vcf}&metadata={tsv};VCF
+onlineOutputTool_2 = Online visualization;https://webtools.southgreen.fr/MetadataColorConfig/?metadataUrl={don|tsv|phenotype}&dataUrl={nwk|pca};JUKES-CANTOR,ASD,PCA
+onlineOutputTool_3 = Distance matrix visualizer;https://webtools.southgreen.fr/DistanceMatrix/?matrix_url={mtx}&meta_url={tsv};JUKES-CANTOR,ASD
 
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
@@ -78,13 +78,6 @@ maxExportableBillionGenotypes = 2
 # This also provides the base service URL and needs to be set for CAS authentication
 # Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
-
-
-# Path to the SnpEff config file. Online annotation will be available only if this is defined.
-snpEffConfigFile = /opt/SnpEff/snpEff.config
-
-# Path to the SnpEff data repository. Online annotation will be available only if this is defined
-snpEffDataRepository = /opt/SnpEff/data
 
 
 # If defined, enables CAS authentication by defining the CAS server URL
@@ -142,8 +135,8 @@ allowedOrigins_/**=*
 
 # Any property named mandatoryIndividualMetadata-DB_NAME is a way for defining a list of semi-colon-separated mandatory fields to enforce when importing metadata for individuals into that database. Each field name may be followed by a description between brackets. Similarly, the suffix-less mandatoryIndividualMetadata property sets the default for all databases. If field name is prefixed with '*' then blank values will be rejected at import time.
 #mandatoryIndividualMetadata-Rice-MSU7 =	mandatory_ind_md_1[this is a description for field mandatory_ind_md_1]; \
-											mandatory_ind_md_2; \
-											mandatory_ind_md_3[this is a description for field mandatory_ind_md_3]
+#											mandatory_ind_md_2; \
+#											mandatory_ind_md_3[this is a description for field mandatory_ind_md_3]
 #mandatoryIndividualMetadata = default_mandatory_ind_field[this is a description for field default_mandatory_ind_field]
 
 
@@ -160,7 +153,7 @@ allowedOrigins_/**=*
 #customTermsOfUseHtmlParagraph = <h4>4) Considerations related to Digital sequence Information (DSI)</h4><p>The data accessed through this database may be subject to rights claimed by third parties.</p>
 
 # Max dimension of the genotyping matrix (#samples x #SNPs) to calculate PCA on. Default is 1 billion (1E9)
-maxPcaMatrixSize = 1E8
+maxPcaMatrixSize = 1E9
 
 # Max dimension of the genotyping matrix (#samples x #SNPs) to calculate distance matrix on. Default is 1 billion (1E9)
-maxDistanceMatrixSize = 1E8
+maxDistanceMatrixSize = 1E9

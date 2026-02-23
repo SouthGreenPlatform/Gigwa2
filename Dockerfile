@@ -6,7 +6,7 @@ ENV LC_ALL C.UTF-8
 COPY target/gigwa webapps/gigwa
 COPY docker/setenv.sh /usr/local/tomcat/bin/setenv.sh
 
-RUN sed -i 's|Connector port="8080"|Connector port="8080" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"|g' conf/server.xml \
+RUN sed -i 's|maxParameterCount="1000"|maxParameterCount="-1" maxPostSize="-1"|g' conf/server.xml \
 #env vars to avoid ip/port inside image
 && echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<beans xmlns=\"http://www.springframework.org/schema/beans\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:mongo=\"http://www.springframework.org/schema/data/mongo\" xsi:schemaLocation=\"http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd\">\n<mongo:mongo-client host=\"#{systemEnvironment['MONGO_IP']}\" port=\"#{systemEnvironment['MONGO_PORT']}\" id=\"defaultMongoHost\" credential=\"#{systemEnvironment['MONGO_INITDB_ROOT_USERNAME']}:#{systemEnvironment['MONGO_INITDB_ROOT_PASSWORD']}@admin\" />\n</beans>" > webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
 && apt-get update && apt-get install -y wget \
