@@ -183,6 +183,22 @@ div#termsOfUse .modal-lg {
     width: 950px;
 }
 
+div#termsOfUse ol {
+  list-style-type: none;
+  padding-left: 0;
+  counter-reset: li-counter;
+}
+
+div#termsOfUse ol > li {
+  counter-increment: li-counter;
+  margin-bottom: 0.5em;
+}
+
+div#termsOfUse ol > li h4::before {
+  content: counter(li-counter) ") ";
+  margin-right: 0.2em;
+}
+
 div#chartDialog .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg, div#igvPanel .modal-lg {
     width: 99%;
 }
@@ -544,7 +560,6 @@ div.allele {
     display:inline-block;
     font-size:10px;
 }
-
 div.refAllele, span.refAllele {
 	background-color:#bbffbb;
 }
