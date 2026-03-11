@@ -39,7 +39,18 @@ async function chartIndSelectionChanged() {
 		$("input.showHideSeriesBox:checked").prop("checked", false);
 	}
 	let usingSmartSelect = typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined';
-	let groups = usingSmartSelect ? $("#plotGroupingMetadataValues").smartColorMultiSelect('getColorGroups') : selectedValues;	// might be different in case of Fst
+	let groups;
+	if (usingSmartSelect) {
+	    let rawGroups = $("#plotGroupingMetadataValues").smartColorMultiSelect('getColorGroups');
+	    if (Array.isArray(rawGroups))
+	        groups = rawGroups.map(g => Array.isArray(g) ? g : [g]);
+	    else if (rawGroups && typeof rawGroups === "object")
+	        groups = Object.values(rawGroups);
+	    else
+	        groups = selectedValues.map(v => [v]);
+	}
+	else
+	    groups = selectedValues.map(v => [v]);
 	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
 
 	$('#indSelectionCount').html("&nbsp;");
@@ -50,41 +61,47 @@ async function chartIndSelectionChanged() {
 			let selectedIndividuals = getSelectedIndividuals();
 
 			// Create array of promises for all AJAX calls
-			const ajaxPromises = selectedValues.map((selectedValue, i) => {
-				var filters = {};
-				if (workWithSamples) {
-					let filterVals = {};
-					filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [selectedValue];
-					filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
-				}
-				else
-					filters[groupOption] = [selectedValue];
+			const ajaxPromises = [];
+			groups.forEach((groupValues, groupIndex) => {
+			    groupValues.forEach(value => {
+			        var filters = {};
+			        if (workWithSamples) {
+			            let filterVals = {};
+			            filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [value];
+			            filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
+			        }
+					else
+			            filters[groupOption] = [value];
 
-				return $.ajax({
-					url: (workWithSamples ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
-					type: "POST",
-					contentType: "application/json;charset=utf-8",
-					headers: { ...buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')), "excludeMetadata": true },
-					data: JSON.stringify(filters)
-				}).then(callSetResponse => ({ index: i, response: callSetResponse }));
+			        ajaxPromises.push(
+			            $.ajax({
+			                url: (workWithSamples ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+			                type: "POST",
+			                contentType: "application/json;charset=utf-8",
+			                headers: { ...buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')), "excludeMetadata": true },
+			                data: JSON.stringify(filters)
+			            }).then(resp => ({
+			                groupIndex: groupIndex,
+			                response: resp
+			            }))
+			        );
+			    });
 			});
 
 			// Wait for all requests to complete
 			Promise.all(ajaxPromises).then(results => {
-				// Process results in order
-				results.forEach(({ index, response }) => {
-					if (index > 0 && additionalCallSetIds.length < index)
-						additionalCallSetIds.push([]);
-					var targetGroup = index == 0 ? callSetIds : additionalCallSetIds[index - 1];
-
-					response.forEach(function(callset) {
-						if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
-							targetGroup.push(referenceset + idSep + callset.id)
-					});
-				});
-
-				// Update UI after all requests complete
-				updateIndSelectionCount();
+			    callSetIds = [];
+			    additionalCallSetIds = [];
+			    results.forEach(({groupIndex, response}) => {
+			        if (groupIndex > 0 && additionalCallSetIds.length < groupIndex)
+			            additionalCallSetIds.push([]);
+			        let targetGroup = groupIndex === 0 ? callSetIds : additionalCallSetIds[groupIndex - 1];
+			        response.forEach(callset => {
+			            if (selectedIndividuals.length === 0 || selectedIndividuals.includes(callset.id))
+			                targetGroup.push(referenceset + idSep + callset.id);
+			        });
+			    });
+			    updateIndSelectionCount();
 			});
 		}
 		else {
@@ -536,8 +553,10 @@ function applyChartType() {
 	buildCustomisationDiv(chartInfo);
 	if (chartInfo.onLoad !== undefined)
 		chartInfo.onLoad();
-	if (currentChartType == "fst" && typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined')
+	if (currentChartType == "fst" && typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined') {
 		$('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect();
+		$("#plotGroupingMetadataValues").parent().find("button.scms-toggle-icon").on("click", chartIndSelectionChanged);
+	}
 	loadChart();
 }
 

@@ -1408,7 +1408,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         headerRow.append("<thead><tr valign='top'><th></th><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
                         for (var i in callSetMetadataFields) {
                             headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
-                            exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
+                            exportedMetadataSelectOptions += "<option selected value=\"" + callSetMetadataFields[i] + "\">" + callSetMetadataFields[i] + "</option>";
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
@@ -1431,7 +1431,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     		let mdSelected = displayedMD.size == 0 || displayedMD.has(field);
                     		if (mdSelected)
                     			selectedMdCount++;
-                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + ">" + field + "</option>";
+                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + " value=\"" + field + "\">" + field + "</option>";
                     	}).join("")).selectpicker('refresh');
                     	
                         $("#displayedMetadataSelectionDiv").css("display", options.length <= $("#maxShownFields").text() ? "none" : "block");
@@ -2955,12 +2955,61 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 
 <c:if test='${!fn:startsWith(googleAnalyticsId, "??") && !empty googleAnalyticsId}'>
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
+<%-- <script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script> --%>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${googleAnalyticsId}');
+	// Tells if GA4 has been loaded already.
+	var ga4Loaded = false;
+	// Only load Analytics if and when we got user consent.
+	function loadGA4IfConsented() {
+	  if (ga4Loaded)
+	    return;
+
+    if (typeof $.cookie === 'function') {
+      if ($.cookie('cookieConsent') === 'true') {
+        // Add GA4 script and load it.
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}';
+        document.head.appendChild(script);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${googleAnalyticsId}', { 'anonymize_ip': true });
+        ga4Loaded = true;
+      }
+      else if ($.cookie('cookieConsent') === 'false') {
+        // Uncheck the consent checkbox as the user explicitely denied GA4
+        // cookies.
+        const consentCheckbox = document.getElementById('cookieConsentCheckbox');
+        if (consentCheckbox && consentCheckbox.checked) {
+          consentCheckbox.checked = false;
+        }
+      }
+    }
+	}
+
+  // Listen to Terms of use page validation (the button should be already
+  // loaded in the DOM when this part is executed).
+	document.getElementById('termsOfUseAgreeButton').addEventListener('click', function() {
+	 // If the cookie consent checkbox is there and checked, load GA4.
+   const consentCheckbox = document.getElementById('cookieConsentCheckbox');
+   if (consentCheckbox && consentCheckbox.checked) {
+    // Checked, set the consent cookie and load GA4.
+	  $.cookie('cookieConsent', 'true', { expires: 365, path: '/' });
+	  loadGA4IfConsented();
+   }
+   else {
+     // Not consented or GA4 is not enabled.
+	   $.cookie('cookieConsent', 'false', { expires: 365, path: '/' });
+     if (ga4Loaded) {
+       // If GA4 was loaded but the user revoked the consent, unload GA4.
+	     window.location.reload();
+     }
+   }
+	});
+
+	// Try to load when page is ready.
+	document.addEventListener('DOMContentLoaded', loadGA4IfConsented);
 </script>
 </c:if>
 
