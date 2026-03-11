@@ -1429,27 +1429,7 @@ public class GigwaRestController extends ControllerInterface {
 		
 		return "";
 	}
-
-//	@ApiIgnore
-//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = germplasmWithBrapiMappingURL, notes = "Lists IDs of germplasm with external reference source & ID")
-//	@GetMapping(value = BASE_URL + germplasmWithBrapiMappingURL)
-//	public @ResponseBody Collection<String> germplasmWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
-//        return MgdbDao.getInstance().loadIndividualsWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
-//    		.values().stream()
-//    		.filter(ind -> ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && ind.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-//    		.map(ind -> sModule + Helper.ID_SEPARATOR + ind.getId()).toList();
-//	}
-//	
-//	@ApiIgnore
-//	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = samplesWithBrapiMappingURL, notes = "Lists IDs of samples with external reference source & ID")
-//	@GetMapping(value = BASE_URL + samplesWithBrapiMappingURL)
-//	public @ResponseBody Collection<String> samplesWithBrapiMappingURL(HttpServletRequest request, @RequestParam("module") final String sModule) {
-//        return MgdbDao.getInstance().loadSamplesWithAllMetadata(sModule, AbstractTokenManager.getUserNameFromAuthentication(tokenManager.getAuthenticationFromToken(tokenManager.readToken(request))), null, null)
-//    		.values().stream()
-//    		.filter(sp -> sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceSource) != null && sp.getAdditionalInfo().get(BrapiService.BRAPI_FIELD_externalReferenceId) != null)
-//    		.map(sp -> sModule + Helper.ID_SEPARATOR + sp.getId()).toList();
-//	}
-//	
+	
 	private HashMap<String, String> getImportFilesByExtension(Collection<MultipartFile> importFiles, Collection<String> filesSpecifiedByURI) throws Exception{
         HashMap<String, String> filesByExtension = new HashMap<>();
         HashMap<String, String> synonymExtensions = new HashMap() {{ put("csv", "tsv"); put("phenotype", "tsv"); }};	// .phenotype is only synonym with tsv
