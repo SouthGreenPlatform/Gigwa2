@@ -1408,7 +1408,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         headerRow.append("<thead><tr valign='top'><th></th><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
                         for (var i in callSetMetadataFields) {
                             headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
-                            exportedMetadataSelectOptions += "<option selected value=\"" + callSetMetadataFields[i] + "\">" + callSetMetadataFields[i] + "</option>";
+                            exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
@@ -1431,7 +1431,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     		let mdSelected = displayedMD.size == 0 || displayedMD.has(field);
                     		if (mdSelected)
                     			selectedMdCount++;
-                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + " value=\"" + field + "\">" + field + "</option>";
+                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + ">" + field + "</option>";
                     	}).join("")).selectpicker('refresh');
                     	
                         $("#displayedMetadataSelectionDiv").css("display", options.length <= $("#maxShownFields").text() ? "none" : "block");
@@ -2959,13 +2959,16 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 <script>
 	// Tells if GA4 has been loaded already.
 	var ga4Loaded = false;
+	var forceGa4Load = false;
 	// Only load Analytics if and when we got user consent.
 	function loadGA4IfConsented() {
 	  if (ga4Loaded)
 	    return;
 
     if (typeof $.cookie === 'function') {
-      if ($.cookie('cookieConsent') === 'true') {
+      if (($.cookie('cookieConsent') === 'true')
+        && ($.cookie('termsOfUseAgreed') || forceGa4Load)
+      ) {
         // Add GA4 script and load it.
         const script = document.createElement('script');
         script.async = true;
@@ -2996,6 +2999,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
    if (consentCheckbox && consentCheckbox.checked) {
     // Checked, set the consent cookie and load GA4.
 	  $.cookie('cookieConsent', 'true', { expires: 365, path: '/' });
+    forceGa4Load = true;
 	  loadGA4IfConsented();
    }
    else {
