@@ -329,7 +329,7 @@ function initializeChartDisplay() {
 				displayName: "Fst",
 				queryURLFunction: "getChartFstDataURL",
 				title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
+				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups and averaged in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Fst estimate",
@@ -713,7 +713,11 @@ function adler32(str) {
 
 function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
 	//console.log(Object.keys(cachedResults));
-	chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+	for (const key in jsonResult)	// for some reason HighCharts seems to fail (showing no graph at all) when fed with too many NaN values: replace them with null
+		if (jsonResult[key] === "NaN" || (typeof value === 'number' && isNaN(value)))
+			jsonResult[key]  = null;
+	
+	chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);	
 	var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
 
 	let totalVariantCount = 0;
@@ -818,7 +822,7 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 								textArea.select();
 								try {
 									document.execCommand('copy');
-									console.log('Copied to clipboard: ' + text);
+//									console.log('Copied to clipboard: ' + text);
 								} catch (err) {
 									console.log('Failed to copy text to clipboard: ' + text);
 								}
