@@ -1408,7 +1408,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                         headerRow.append("<thead><tr valign='top'><th></th><th>" + (workWithSamples ? "Samples" : "Individual") + "</th>");
                         for (var i in callSetMetadataFields) {
                             headerRow.append("<th class='draggable'><div>" + callSetMetadataFields[i] + "</div></th>");
-                            exportedMetadataSelectOptions += "<option selected>" + callSetMetadataFields[i] + "</option>";
+                            exportedMetadataSelectOptions += "<option selected value=\"" + callSetMetadataFields[i] + "\">" + callSetMetadataFields[i] + "</option>";
                         }
                         $("#exportedIndividualMetadata").html(exportedMetadataSelectOptions);
 
@@ -1431,7 +1431,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
                     		let mdSelected = displayedMD.size == 0 || displayedMD.has(field);
                     		if (mdSelected)
                     			selectedMdCount++;
-                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + ">" + field + "</option>";
+                    		return "<option" + (options.length <= $("#maxShownFields").text() || (mdSelected && selectedMdCount <= $("#maxShownFields").text()) ? " selected" : "") + " value=\"" + field + "\">" + field + "</option>";
                     	}).join("")).selectpicker('refresh');
                     	
                         $("#displayedMetadataSelectionDiv").css("display", options.length <= $("#maxShownFields").text() ? "none" : "block");
