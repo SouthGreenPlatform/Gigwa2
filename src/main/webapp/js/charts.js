@@ -412,7 +412,10 @@ function initializeChartDisplay() {
 		}
 	});
 
-	$('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
+	$('div#chartContainer').html(
+	    '<div id="densityChartArea" style="min-width: 350px; height: 415px; margin: 10px auto; overflow-x: auto; white-space: nowrap;"></div>' +
+	    '<div id="additionalCharts" style="display: none;"></div>'
+	);
 	let selectedSequences = getChartDistinctSequenceList(), selectedTypes = getChartDistinctTypes();
 	feedSequenceSelectAndLoadVariantTypeList(
 		selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
@@ -439,8 +442,8 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 		'<div id="densityLoadProgress" style="position:absolute; margin:10px; right:250px; font-weight:bold;">&nbsp;</div>' +
 		'<form><div style="padding:3px; width:100%; background-color:#f0f0f0; padding-left:5px;" class="chartDataSelection">' +
 		'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
-		'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="cachedResults = {}; loadChart();"></select>' +
-		'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
+		'Sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="cachedResults = {}; loadChart();"></select>' +
+		'Variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
 		'</div></form>');
 	$(headerHtml).insertBefore('div#densityChartArea');
 
@@ -493,9 +496,14 @@ function buildCustomisationDiv(chartInfo) {
 				handleError(xhr, thrownError);
 			}
 		});
-	let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 95%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization' style='min-height:120px;'>";
+	let customisationDivHTML = '<div style="position:absolute; margin-top:-45px; padding-left:10px; background-color:#fff;"><label for="widthMultiplier">Display width:</label>&nbsp;<select id="widthMultiplier" onchange="updateChartWidth()">';
+	for (let i = 1; i <= 10; i++)
+	    customisationDivHTML += '<option value="' + i + '">' + i + 'x screen</option>';
+	customisationDivHTML += '</select></div>';
+
+	customisationDivHTML += "<div class='panel panel-default container-fluid' style=\"width: 95%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization' style='min-height:120px;'>";
 	customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:70px; margin-left:-55px;">Show</button></div>';
-	customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="4" size="4" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 1000)';
+	customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="4" size="4" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 5000)';
 	customisationDivHTML += '</div>';
 
 	customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -507,6 +515,37 @@ function buildCustomisationDiv(chartInfo) {
 
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 }
+
+function updateChartWidth() {
+	const chartContainer = document.getElementById('densityChartArea');
+	if (!chartContainer)
+		return;
+
+	const containerWidth = chartContainer.clientWidth;
+	const requiredWidth = $('#widthMultiplier').val() * containerWidth;
+
+    chartContainer.style.minWidth = '100%';
+    chartContainer.style.overflowX = 'auto';
+    chartContainer.style.whiteSpace = 'nowrap';
+
+    if (chart) {
+        chart.setSize(requiredWidth, null, false);
+        chart.reflow();
+        // Ensure the x-axis covers the full range of data
+        const xAxis = chart.xAxis[0];
+        xAxis.setExtremes(null, null, true, false);
+        // Set marginRight to 0 to ensure the plot area extends to the edge
+        chart.update({
+            chart: {
+                marginRight: 0
+            }
+        });
+    }
+}
+
+window.addEventListener('resize', function() {
+	updateChartWidth();
+});
 
 function displayOrAbort() {
 	if (dataBeingLoaded) {
@@ -525,7 +564,7 @@ function getIntervalCountFromLocalStorage() {
 	if (localStorage.getItem("intervalCount") != null)
 		return localStorage.getItem("intervalCount");
 	else
-		return 1000;
+		return 1000;	// default
 }
 
 function applyChartType() {
@@ -602,9 +641,9 @@ function displayChart(minPos, maxPos) {
 	// Set the interval count until the next chart reload
 	let tempValue = parseInt($('#intervalCount').val());
 	if (isNaN(tempValue))
-		displayedRangeIntervalCount = 1000;
-	else if (tempValue > 1000)
-		displayedRangeIntervalCount = 1000;
+		displayedRangeIntervalCount = 5000;
+	else if (tempValue > 5000)
+		displayedRangeIntervalCount = 5000;
 	else if (tempValue < 50)
 		displayedRangeIntervalCount = 50;
 	else
@@ -674,8 +713,6 @@ function adler32(str) {
 
 function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
 	//console.log(Object.keys(cachedResults));
-
-	// TODO : Key to the middle of the interval ?
 	chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
 	var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
 
@@ -687,18 +724,32 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 	chart = Highcharts.chart('densityChartArea', {
 		chart: {
 			type: 'spline',
+			reflow: false,
 			zoomType: 'x'
 		},
 		title: {
 			text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
+			align: 'left',
+			x: 50,
 		},
 		subtitle: {
 			text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+			align: 'left',
+			x: 60,
+		},
+		legend: {
+		    floating: true,
+		    align: 'left',
+			x: 280,
 		},
 		xAxis: {
 			categories: chartJsonKeys,
 			title: {
 				text: chartInfo.xAxisTitle,
+				align: 'low',
+				offset: 70,
+				x: 500,
+				y: -5,
 			},
 			events: {
 				afterSetExtremes: function(e) {
@@ -734,8 +785,8 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 			}
 		},
 		exporting: {
-			enabled: true,
-			buttons: {
+		    enabled: true,
+		    buttons: {
 				contextButton: {
 					menuItems: ["viewFullscreen", "printChart",
 						"separator",
@@ -773,9 +824,24 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 								}
 								document.body.removeChild(textArea);
 							}
-						}]
+						}],
+						 align: 'left',
+						 verticalAlign: 'top',
+						 x: 0,
+						 y: 0,
+						 floating: true,
+						 symbol: 'menu',
+						 symbolFill: '#666666',
+						 symbolStroke: '#666666',
+						 symbolStrokeWidth: 3,
+						 theme: {
+						     fill: 'white',
+						     stroke: 'none',
+						     padding: 1,
+						     zIndex: 100
+						 }
 				}
-			}
+		    }
 		}
 	});
 
@@ -813,6 +879,8 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 
 	if (chartInfo.onDisplay !== undefined)
 		chartInfo.onDisplay();
+
+	updateChartWidth();
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
@@ -1042,9 +1110,9 @@ function displayOrHideThreshold(isChecked) {
 function changeIntervalCount() {
 	let tempValue = parseInt($('#intervalCount').val());
 	if (isNaN(tempValue))
-		$("#intervalCount").val(1000);
-	else if (tempValue > 1000)
-		$("#intervalCount").val(1000);
+		$("#intervalCount").val(5000);
+	else if (tempValue > 5000)
+		$("#intervalCount").val(5000);
 	else if (tempValue < 50)
 		$("#intervalCount").val(50);
 }
