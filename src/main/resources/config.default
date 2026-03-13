@@ -157,3 +157,6 @@ maxPcaMatrixSize = 1E9
 
 # Max dimension of the genotyping matrix (#samples x #SNPs) to calculate distance matrix on. Default is 1 billion (1E9)
 maxDistanceMatrixSize = 1E9
+
+# CSV list of domains (supporting wildcards) for which IGV.js will use a proxy to access genome / track files (workaround for CORS issues)
+igvProxiedDomains = jbrowse.southgreen.fr

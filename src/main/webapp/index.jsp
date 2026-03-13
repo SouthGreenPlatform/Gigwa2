@@ -15,7 +15,7 @@
  * Public License V3.
 --%>
 <!DOCTYPE html>
-<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
+<%@ page language="java" session="false" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" import="fr.cirad.utils.Constants,fr.cirad.mgdb.model.mongo.subtypes.AbstractVariantData,org.brapi.v2.api.ServerinfoApi,org.brapi.v2.api.ReferencesetsApi,org.brapi.v2.api.ReferencesApi,fr.cirad.web.controller.rest.BrapiRestController,fr.cirad.tools.Helper,fr.cirad.web.controller.ga4gh.Ga4ghRestController,fr.cirad.web.controller.IGVProxyController,fr.cirad.web.controller.gigwa.GigwaRestController,fr.cirad.mgdb.model.mongo.subtypes.ReferencePosition,fr.cirad.mgdb.model.mongo.maintypes.VariantData"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
@@ -2397,170 +2397,251 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		}
 	}
 	
+	<c:set var="igvProxiedDomains" value="<%= appConfig.get(\"igvProxiedDomains\") %>"></c:set>
+
+	// Proxy endpoint
+	const IGV_PROXY_ENDPOINT = "<c:url value='<%= GigwaRestController.REST_PATH + IGVProxyController.IGV_PROXY_URL %>' />";
+
+	// List of domains that should go through proxy
+	const IGV_PROXY_DOMAINS = [
+	    <c:if test="${not empty igvProxiedDomains}">
+	        <c:forTokens items="${igvProxiedDomains}" delims="," var="domain" varStatus="status">
+	            '${fn:trim(domain)}'<c:if test="${not status.last}">,</c:if>
+	        </c:forTokens>
+	    </c:if>
+	];
+
+	// Function to check if URL should use proxy
+	function shouldUseProxy(url) {
+	    try {
+	        const urlObj = new URL(url);
+	        const hostname = urlObj.hostname;
+	        
+	        return IGV_PROXY_DOMAINS.some(domain => {
+	            if (domain.startsWith('*.')) {
+	                // Wildcard domain matching
+	                const baseDomain = domain.substring(2);
+	                return hostname.endsWith('.' + baseDomain) || hostname === baseDomain;
+	            }
+	            return hostname === domain;
+	        });
+	    } catch (e) {
+	        return false;
+	    }
+	}
+
+	// Function to transform URL to proxy URL if needed
+	function getProxyUrl(url) {
+	    if (url && shouldUseProxy(url)) {
+	        return IGV_PROXY_ENDPOINT + '?url=' + encodeURIComponent(url);
+	    }
+	    return url;
+	}
+
+	// Function to recursively process track URLs in any object
+	function processUrlsInObject(obj) {
+	    if (typeof obj !== 'object' || obj === null) {
+	        return obj;
+	    }
+	    
+	    if (Array.isArray(obj)) {
+	        return obj.map(item => processUrlsInObject(item));
+	    }
+	    
+	    const processed = {};
+	    for (const [key, value] of Object.entries(obj)) {
+	        if (key === 'url' || key === 'indexURL' || key === 'fastaURL') {
+	            processed[key] = getProxyUrl(value);
+	        } else if (key === 'source' && typeof value === 'object') {
+	            processed[key] = processUrlsInObject(value);
+	        } else if (typeof value === 'object') {
+	            processed[key] = processUrlsInObject(value);
+	        } else {
+	            processed[key] = value;
+	        }
+	    }
+	    return processed;
+	}
+	
 	// Load a genome file by URL with the modal
-	function igvLoadGenomeFromURL(){
-		let genomeURL = $("#igvGenomeURLInput").val().trim();
-		let indexURL = $("#igvGenomeIndexURLInput").val().trim();
-		
-		let genomeURLObject, indexURLObject;
-		
-		try {  // Check whether the genome URL is valid
-			genomeURLObject = new URL(genomeURL);
-		} catch (error){
-			displayMessage("Invalid genome file URL : " + genomeURL);
-			return;
-		}
-		
-		if (indexURL.length > 0){
-			try {  // Check whether the index URL is valid
-				indexURLObject = new URL(indexURL);
-			} catch (error){
-				displayMessage("Invalid index file URL : " + indexURL);
-				return;
-			}
-		}
-		
-		let filename = filenameFromURL(genomeURLObject);
-		
-		// Load a JSON genome config
-		if (filename.endsWith(".json")){
-			$.ajax({
-				url: genomeURL,
-				type: "GET",
-				dataType: "json",
-				success: function(data) {
-					igvLoadJSONGenome(genomeURL, data);
-				},
-				error: function(xhr, ajaxOptions, thrownError) {
-					handleError(xhr, thrownError);
-				}
-			})
-		} else {  // FASTA config
-			let genome;
-			if (indexURL){
-				genome = {
-					fastaURL: genomeURL,
-					indexURL,
-				};
-			} else {
-				genome = {
-					fastaURL: genomeURL,
-					indexed: false,
-				};
-			}
-			
-			// Check the genome file existence beforehand by sending a HEAD request
-			// Configurable with igvCheckGenomeExistence
-			// Default behaviour of IGV is to only download the index, and throwing errors only when zoomed enough to show the genome
-			if (igvCheckGenomeExistence){
-				$.ajax({
-					url: genomeURL,
-					type: "HEAD",
-					success: function(){
-						igvSwitchGenome(genome).then(igvCheckReferenceCounts);
-					},
-					error: function(xhr, ajaxOptions, thrownError) {
-						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
-							alert("Error accessing resource: " + genomeURL);
-						else
-							handleError(xhr, thrownError);
-					}
-				});
-			} else {
-				igvSwitchGenome(genome).then(igvCheckReferenceCounts);
-			}
-			
-		}
+	function igvLoadGenomeFromURL() {
+	    let genomeURL = $("#igvGenomeURLInput").val().trim();
+	    let indexURL = $("#igvGenomeIndexURLInput").val().trim();
+	    
+	    let genomeURLObject, indexURLObject;
+	    
+	    try { // Check whether the genome URL is valid
+	        genomeURLObject = new URL(genomeURL);
+	    } catch (error) {
+	        displayMessage("Invalid genome file URL : " + genomeURL);
+	        return;
+	    }
+	    
+	    if (indexURL.length > 0) {
+	        try { // Check whether the index URL is valid
+	            indexURLObject = new URL(indexURL);
+	        } catch (error) {
+	            displayMessage("Invalid index file URL : " + indexURL);
+	            return;
+	        }
+	    }
+	    
+	    let filename = filenameFromURL(genomeURLObject);
+	    
+	    // Load a JSON genome config
+	    if (filename.endsWith(".json")) {
+	        // For JSON configs, we need to proxy the JSON file request if needed
+	        const jsonProxyUrl = getProxyUrl(genomeURL);
+	        
+	        $.ajax({
+	            url: jsonProxyUrl,  // Use proxied URL if needed
+	            type: "GET",
+	            dataType: "json",
+	            success: function(data) {
+	                // Process the JSON data to proxy any internal URLs using the shared function
+	                const proxiedData = processUrlsInObject(data);
+	                igvLoadJSONGenome(genomeURL, proxiedData);
+	            },
+	            error: function(xhr, ajaxOptions, thrownError) {
+	                handleError(xhr, thrownError);
+	            }
+	        });
+	    } else { // FASTA config
+	        // Create the genome object with ORIGINAL URLs (not proxied yet)
+	        let genome;
+	        if (indexURL) {
+	            genome = {
+	                fastaURL: genomeURL,  // Keep original URL
+	                indexURL: indexURL,   // Keep original URL
+	            };
+	        } else {
+	            genome = {
+	                fastaURL: genomeURL,  // Keep original URL
+	                indexed: false,
+	            };
+	        }
+	        
+	        // Check the genome file existence beforehand by sending a HEAD request
+	        // Configurable with igvCheckGenomeExistence
+	        if (igvCheckGenomeExistence) {
+	            // For HEAD request, use the proxy if needed
+	            const headRequestUrl = getProxyUrl(genomeURL);
+	            
+	            $.ajax({
+	                url: headRequestUrl,
+	                type: "HEAD",
+	                success: function() {
+	                    // Let igvSwitchGenome handle the proxying of URLs
+	                    igvSwitchGenome(genome).then(igvCheckReferenceCounts);
+	                },
+	                error: function(xhr, ajaxOptions, thrownError) {
+	                    if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+	                        alert("Error accessing resource: " + genomeURL);
+	                    else
+	                        handleError(xhr, thrownError);
+	                }
+	            });
+	        } else {
+	            // Let igvSwitchGenome handle the proxying of URLs
+	            igvSwitchGenome(genome).then(igvCheckReferenceCounts);
+	        }
+	    }
 	}
 
 	// Change the current genome, create the browser if it doesn't exist
-	function igvSwitchGenome(genome){
-		let moduleName = getModuleName();
-		if (typeof genome == "string"){  // Genome ID in the default list
-			localStorage.removeItem("igvDefaultGenomeConfig::" + moduleName);
-			localStorage.setItem("igvDefaultGenome::" + moduleName, genome);
-			let matchingConfig = igvFlatGenomeList.find(config => config.id == genome);
-			if (matchingConfig){
-				genome = {...matchingConfig};  // Shallow copy as we modify it later
-			} else {
-				displayMessage("Default genome " + genome + " not found");
-				return;
-			}
-		} else if (typeof genome.fastaURL == "string"){  // By URL
-			localStorage.removeItem("igvDefaultGenome::" + moduleName);
-			localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));
-		}  // Impossible to save and reload with local files
-		
-		// Take the default tracks separately to ensure the alias table is build before them loading
-		let tracks = genome.tracks || [];
-		genome.tracks = [];
-		
-		let promise;
-		if (!igvBrowser){
-			promise = igvCreateBrowser(genome);
-		} else {
-			igvVariantTracks = undefined;
-			igvBrowser.removeAllTracks();
-			promise = igvBrowser.loadGenome(genome);
-		}
-		
-		return promise.then(async function (){
-			// Build the alias table
-			let targetNames = igvBrowser.genome.chromosomeNames;
-			let variantPrefix = getPrefix(referenceNames);
-			let refNamesForNumberedContigsCount = referenceNames.filter(nm => !isNaN(nm.substring(nm.length - 1))).length;
-			let targetPrefixCounts = getContigPrefixes(targetNames);
-			let targetPrefix = "";
-			for (var pfx in targetPrefixCounts)
-				if (pfx.toLowerCase() == "chr" || targetPrefixCounts[pfx] == refNamesForNumberedContigsCount) {
-					targetPrefix = pfx;
-// 					console.log("Using " + pfx + " as contig name prefix");
-					break;
-				}
-
-			let variantSuffix = getSuffix(referenceNames);
-			let variantSuffixRegex = new RegExp(variantSuffix + "$");
-			let targetSuffix = getSuffix(targetNames);
-			let targetSuffixRegex = new RegExp(targetSuffix + "$");
-			igvGenomeRefTable = {};
-			let aliasLessContigs = new Set();
-			for (let target of targetNames){  // target = chromosome name in the genome file, as used by IGV
-				let zeroname = target.replace(targetPrefix, "").replace(targetSuffixRegex, "");
-				let basename = zeroname.replace(/^0+/, "");  // Base chromosome name
-				zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname  // Zero-padded 2-digits chromosome number
-				igvBrowser.genome.chrAliasTable[zeroname.toLowerCase()] = target;  // 02 -> target
-				igvBrowser.genome.chrAliasTable[basename.toLowerCase()] = target;  // 2 -> target
-				if (zeroname.toLowerCase().startsWith("chr"))
-					igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target;  // chr02 -> target
-				if (basename.toLowerCase().startsWith("chr"))
-					igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target;  // chr2 -> target
-				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname).toLowerCase()] = target;  // With prefix used by variants
-				igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
-				igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target;  // With prefix and suffix used by variants
-				igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
-				
-				// Associate the target name to the variants reference name
-				let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
-				if (gigwaContigName != null)
-					igvGenomeRefTable[target] = gigwaContigName;
-				else {
-					aliasLessContigs.add(target);
-					igvGenomeRefTable[target] = target;	// couldn't find it, use the provided name (better than nothing)
-				}
-			}
-			if (aliasLessContigs.size > 0)
-				console.log("Unable to find an alias for the following contigs in Gigwa sequences: " + Array.from(aliasLessContigs).join(", "));
-			
-			// Load the default tracks
-			for (let trackConfig of tracks){
-				await igvBrowser.loadTrack(trackConfig);
-			}
-
-			// Add the variant tracks
-			await igvUpdateVariants();
-			
-			setIgvLocusIfApplicable();
-		});
+	function igvSwitchGenome(genome) {
+	    let moduleName = getModuleName();
+	    
+	    if (typeof genome == "string") { // Genome ID in the default list
+	        localStorage.removeItem("igvDefaultGenomeConfig::" + moduleName);
+	        localStorage.setItem("igvDefaultGenome::" + moduleName, genome);
+	        let matchingConfig = igvFlatGenomeList.find(config => config.id == genome);
+	        if (matchingConfig) {
+	            // Process URLs in the matching config
+	            genome = processUrlsInObject({...matchingConfig}); // Deep copy and process URLs
+	        } else {
+	            displayMessage("Default genome " + genome + " not found");
+	            return;
+	        }
+	    } else if (typeof genome.fastaURL == "string") { // By URL
+	        // Process URLs in the genome config
+	        genome = processUrlsInObject(genome);
+	        localStorage.removeItem("igvDefaultGenome::" + moduleName);
+	        localStorage.setItem("igvDefaultGenomeConfig::" + moduleName, JSON.stringify(genome));
+	    } // Impossible to save and reload with local files
+	    
+	    // Take the default tracks separately to ensure the alias table is built before them loading
+	    let tracks = genome.tracks || [];
+	    genome.tracks = [];
+	    
+	    let promise;
+	    if (!igvBrowser) {
+	        promise = igvCreateBrowser(genome);
+	    } else {
+	        igvVariantTracks = undefined;
+	        igvBrowser.removeAllTracks();
+	        promise = igvBrowser.loadGenome(genome);
+	    }
+	    
+	    return promise.then(async function() {
+	        // Build the alias table
+	        let targetNames = igvBrowser.genome.chromosomeNames;
+	        let variantPrefix = getPrefix(referenceNames);
+	        let refNamesForNumberedContigsCount = referenceNames.filter(nm => !isNaN(nm.substring(nm.length - 1))).length;
+	        let targetPrefixCounts = getContigPrefixes(targetNames);
+	        let targetPrefix = "";
+	        for (var pfx in targetPrefixCounts)
+	            if (pfx.toLowerCase() == "chr" || targetPrefixCounts[pfx] == refNamesForNumberedContigsCount) {
+	                targetPrefix = pfx;
+	                // 					console.log("Using " + pfx + " as contig name prefix");
+	                break;
+	            }
+	        
+	        let variantSuffix = getSuffix(referenceNames);
+	        let variantSuffixRegex = new RegExp(variantSuffix + "$");
+	        let targetSuffix = getSuffix(targetNames);
+	        let targetSuffixRegex = new RegExp(targetSuffix + "$");
+	        igvGenomeRefTable = {};
+	        let aliasLessContigs = new Set();
+	        for (let target of targetNames) { // target = chromosome name in the genome file, as used by IGV
+	            let zeroname = target.replace(targetPrefix, "").replace(targetSuffixRegex, "");
+	            let basename = zeroname.replace(/^0+/, ""); // Base chromosome name
+	            zeroname = isNumeric(basename) ? basename.padStart(2, "0") : zeroname // Zero-padded 2-digits chromosome number
+	            igvBrowser.genome.chrAliasTable[zeroname.toLowerCase()] = target; // 02 -> target
+	            igvBrowser.genome.chrAliasTable[basename.toLowerCase()] = target; // 2 -> target
+	            if (zeroname.toLowerCase().startsWith("chr"))
+	                igvBrowser.genome.chrAliasTable["chr" + zeroname.toLowerCase()] = target; // chr02 -> target
+	            if (basename.toLowerCase().startsWith("chr"))
+	                igvBrowser.genome.chrAliasTable["chr" + basename.toLowerCase()] = target; // chr2 -> target
+	            igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname).toLowerCase()] = target; // With prefix used by variants
+	            igvBrowser.genome.chrAliasTable[(variantPrefix + basename).toLowerCase()] = target;
+	            igvBrowser.genome.chrAliasTable[(variantPrefix + zeroname + variantSuffix).toLowerCase()] = target; // With prefix and suffix used by variants
+	            igvBrowser.genome.chrAliasTable[(variantPrefix + basename + variantSuffix).toLowerCase()] = target;
+	            
+	            // Associate the target name to the variants reference name
+	            let gigwaContigName = referenceNames.find(ref => ref.replace(variantPrefix, "").replace(variantSuffixRegex, "").replace(/^0+/, "") == basename);
+	            if (gigwaContigName != null)
+	                igvGenomeRefTable[target] = gigwaContigName;
+	            else {
+	                aliasLessContigs.add(target);
+	                igvGenomeRefTable[target] = target; // couldn't find it, use the provided name (better than nothing)
+	            }
+	        }
+	        if (aliasLessContigs.size > 0)
+	            console.log("Unable to find an alias for the following contigs in Gigwa sequences: " + Array.from(aliasLessContigs).join(", "));
+	        
+	        // Load the default tracks (their URLs were already processed earlier)
+	        for (let trackConfig of tracks) {
+	            // Process any nested URLs in track config (in case tracks weren't processed yet)
+	            const processedTrackConfig = processUrlsInObject(trackConfig);
+	            await igvBrowser.loadTrack(processedTrackConfig);
+	        }
+	        
+	        // Add the variant tracks
+	        await igvUpdateVariants();
+	        
+	        setIgvLocusIfApplicable();
+	    });
 	}
 	
 	// Alert the user if the number of sequences do not match by a given ratio
@@ -2571,6 +2652,62 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 					igvBrowser.genome.chromosomeNames.length > referenceNames.length * (1 + igvReferenceCountDifferenceThreshold))){
 			displayMessage("The amount of sequences (" + igvBrowser.genome.chromosomeNames.length + ") in the selected genome is substantially different from the amount in the Gigwa-provided data (" + referenceNames.length + " sequences). It is likely that you selected a wrong genome", 10000);
 		}
+	}
+	
+	// Load a track with a track config
+	function igvLoadTrack(trackConfig) {
+	    if (!igvBrowser) {
+	        displayMessage("Please load a genome first");
+	        return Promise.reject("No genome loaded");
+	    }
+	    
+	    console.log('=== igvLoadTrack called ===');
+	    console.log('Original track config:', JSON.stringify(trackConfig, null, 2));
+	    
+	    // Check if URLs should be proxied
+	    if (trackConfig.url) {
+	        console.log('Track URL - should proxy?', shouldUseProxy(trackConfig.url));
+	        console.log('Track URL - proxied:', getProxyUrl(trackConfig.url));
+	    }
+	    if (trackConfig.indexURL) {
+	        console.log('Index URL - should proxy?', shouldUseProxy(trackConfig.indexURL));
+	        console.log('Index URL - proxied:', getProxyUrl(trackConfig.indexURL));
+	    }
+	    
+	    // Process URLs in the track config using the shared utility
+	    const processedTrackConfig = processUrlsInObject(trackConfig);
+	    console.log('Processed track config (with proxy):', JSON.stringify(processedTrackConfig, null, 2));
+	    
+	    // Double-check indexURL specifically
+	    if (processedTrackConfig.indexURL) {
+	        console.log('Final indexURL being sent to IGV:', processedTrackConfig.indexURL);
+	        
+	        // Verify it's using the proxy if needed
+	        if (shouldUseProxy(trackConfig.indexURL) && 
+	            !processedTrackConfig.indexURL.includes(IGV_PROXY_ENDPOINT)) {
+	            console.warn('Index URL should be proxied but is not!');
+	            // Force proxy the index URL
+	            processedTrackConfig.indexURL = getProxyUrl(trackConfig.indexURL);
+	            console.log('Forced proxied indexURL:', processedTrackConfig.indexURL);
+	        }
+	    }
+	    
+	    // Load the track with proper error handling
+	    return igvBrowser.loadTrack(processedTrackConfig)
+	        .then(function(track) {
+	            console.log('Track loaded successfully:', track);
+	            displayMessage("Track loaded successfully: " + (track.name || trackConfig.name));
+	            
+	            if (processedTrackConfig.format === 'vcf' || processedTrackConfig.type === 'variant') {
+	                return igvUpdateVariants();
+	            }
+	            return track;
+	        })
+	        .catch(function(error) {
+	            console.error('IGV track loading error:', error);
+	            displayMessage("Error loading track: " + (error.message || error));
+	            throw error;
+	        });
 	}
 	
 	// Load a track from a file with the modal
@@ -2593,47 +2730,325 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 	}
 	
 	// Load a track by URL with the modal
-	function igvLoadTrackFromURL(){
-		let trackURL = $("#igvTrackURLInput").val().trim();
-		let indexURL = $("#igvTrackIndexURLInput").val().trim();
-		
-		let filename;
-		try {  // Check whether the file URL is valid
-			filename = filenameFromURL(new URL(trackURL));  // Get the file name from the given URL
-		} catch (error){
-			displayMessage("Invalid track file URL : " + trackURL);
-			return;
-		}
-		
-		if (indexURL.length > 0){
-			try {  // Check whether the index URL is valid
-				indexURLObject = new URL(indexURL);
-			} catch (error){
-				displayMessage("Invalid index file URL : " + indexURL);
-				return;
-			}
-		}
-		
-		let trackConfig = {
-			name: filename,
-			removable: true,
-		};
-		if (indexURL){
-			trackConfig.url = trackURL;
-			trackConfig.indexURL = indexURL;
-		} else {
-			trackConfig.url = trackURL;
-			trackConfig.indexed = false;
-		}
-			
-		igvLoadTrack(trackConfig);
+	function igvLoadTrackFromURL() {
+	    let trackURL = $("#igvTrackURLInput").val().trim();
+	    let indexURL = $("#igvTrackIndexURLInput").val().trim();
+	    
+	    console.log('=== Loading track from URL ===');
+	    console.log('Original track URL:', trackURL);
+	    console.log('Original index URL:', indexURL || 'none');
+	    
+	    // Check proxy status
+	    console.log('Should proxy track?', shouldUseProxy(trackURL));
+	    console.log('Proxied track URL:', getProxyUrl(trackURL));
+	    if (indexURL) {
+	        console.log('Should proxy index?', shouldUseProxy(indexURL));
+	        console.log('Proxied index URL:', getProxyUrl(indexURL));
+	    }
+	    
+	    let filename;
+	    let trackURLObject;
+	    
+	    try {
+	        trackURLObject = new URL(trackURL);
+	        filename = filenameFromURL(trackURLObject);
+	        console.log('Filename:', filename);
+	    } catch (error) {
+	        displayMessage("Invalid track file URL : " + trackURL);
+	        return;
+	    }
+	    
+	    if (indexURL.length > 0) {
+	        try {
+	            new URL(indexURL); // Just validate, don't need to store
+	        } catch (error) {
+	            displayMessage("Invalid index file URL : " + indexURL);
+	            return;
+	        }
+	    }
+	    
+	    // Detect format from filename
+	    let format = detectTrackFormat(filename);
+	    console.log('Detected format:', format);
+	    
+	    let trackConfig = {
+	        name: filename,
+	        removable: true,
+	        format: format,
+	        type: getTrackTypeFromFormat(format)
+	    };
+	    
+	    if (indexURL) {
+	        trackConfig.url = trackURL;
+	        trackConfig.indexURL = indexURL;
+	        console.log('Using indexed track with URL and indexURL');
+	    } else {
+	        trackConfig.url = trackURL;
+	        trackConfig.indexed = false;
+	        console.log('Using unindexed track');
+	    }
+	    
+	    console.log('Track config:', JSON.stringify(trackConfig, null, 2));
+	    
+	    // Verify files are accessible before loading - USING JQUERY PROMISE SYNTAX
+	    verifyTrackFiles(trackConfig)
+	        .done(function() {
+	            console.log('All files accessible, loading track...');
+	            igvLoadTrack(trackConfig);
+	        })
+	        .fail(function(error) {
+	            console.error('File verification failed:', error);
+	            displayMessage("Cannot access track files: " + (error.message || error || "Unknown error"));
+	        });
+	}
+	
+	function detectTrackFormat(filename) {
+	    filename = filename.toLowerCase();
+	    if (filename.endsWith('.gff') || filename.endsWith('.gff3') || filename.includes('.gff.')) {
+	        return 'gff3';
+	    } else if (filename.endsWith('.gtf')) {
+	        return 'gtf';
+	    } else if (filename.endsWith('.bed')) {
+	        return 'bed';
+	    } else if (filename.endsWith('.bam')) {
+	        return 'bam';
+	    } else if (filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')) {
+	        return 'vcf';
+	    } else if (filename.endsWith('.bigwig') || filename.endsWith('.bw')) {
+	        return 'bigwig';
+	    } else if (filename.endsWith('.wig')) {
+	        return 'wig';
+	    }
+	    return 'gff3'; // default
+	}
+	
+	function getTrackTypeFromFormat(format) {
+	    const typeMap = {
+	        'gff3': 'annotation',
+	        'gtf': 'annotation',
+	        'bed': 'annotation',
+	        'bam': 'alignment',
+	        'vcf': 'variant',
+	        'bigwig': 'wig',
+	        'wig': 'wig'
+	    };
+	    return typeMap[format] || 'annotation';
 	}
 	
 	// Load a track with a track config
-	function igvLoadTrack(config){
-		if (igvBrowser) {
-			igvBrowser.loadTrack(config);
-		}
+	function igvLoadTrackFromURL() {
+	    let trackURL = $("#igvTrackURLInput").val().trim();
+	    let indexURL = $("#igvTrackIndexURLInput").val().trim();
+	    
+	    console.log('=== Loading track from URL ===');
+	    console.log('Original track URL:', trackURL);
+	    console.log('Original index URL:', indexURL || 'none');
+	    
+	    let filename;
+	    let trackURLObject, indexURLObject;
+	    
+	    try {
+	        trackURLObject = new URL(trackURL);
+	        filename = filenameFromURL(trackURLObject);
+	        console.log('Filename:', filename);
+	    } catch (error) {
+	        displayMessage("Invalid track file URL : " + trackURL);
+	        return;
+	    }
+	    
+	    if (indexURL.length > 0) {
+	        try {
+	            indexURLObject = new URL(indexURL);
+	            console.log('Index URL object:', indexURLObject.href);
+	        } catch (error) {
+	            displayMessage("Invalid index file URL : " + indexURL);
+	            return;
+	        }
+	    }
+	    
+	    // Detect format from filename
+	    let format = detectTrackFormat(filename);
+	    console.log('Detected format:', format);
+	    
+	    let trackConfig = {
+	        name: filename,
+	        removable: true,
+	        format: format,
+	        type: getTrackTypeFromFormat(format)
+	    };
+	    
+	    if (indexURL) {
+	        // IMPORTANT: For indexed GFF3 files, IGV needs both URL and indexURL
+	        trackConfig.url = trackURL;
+	        trackConfig.indexURL = indexURL;
+	        console.log('Using indexed track with URL and indexURL');
+	    } else {
+	        trackConfig.url = trackURL;
+	        trackConfig.indexed = false;
+	        console.log('Using unindexed track');
+	    }
+	    
+	    console.log('Track config:', JSON.stringify(trackConfig, null, 2));
+	    
+	    // Verify both URLs are accessible before loading
+	    verifyTrackFiles(trackConfig).then(() => {
+	        igvLoadTrack(trackConfig);
+	    }).catch(error => {
+	        displayMessage("Error accessing track files: " + error);
+	    });
+	}
+	
+	function igvLoadTrackFromURL() {
+	    let trackURL = $("#igvTrackURLInput").val().trim();
+	    let indexURL = $("#igvTrackIndexURLInput").val().trim();
+	    
+	    console.log('=== Loading track from URL ===');
+	    console.log('Original track URL:', trackURL);
+	    console.log('Original index URL:', indexURL || 'none');
+	    
+	    // Check proxy status
+	    console.log('Should proxy track?', shouldUseProxy(trackURL));
+	    console.log('Proxied track URL:', getProxyUrl(trackURL));
+	    if (indexURL) {
+	        console.log('Should proxy index?', shouldUseProxy(indexURL));
+	        console.log('Proxied index URL:', getProxyUrl(indexURL));
+	    }
+	    
+	    let filename;
+	    let trackURLObject;
+	    
+	    try {
+	        trackURLObject = new URL(trackURL);
+	        filename = filenameFromURL(trackURLObject);
+	        console.log('Filename:', filename);
+	    } catch (error) {
+	        displayMessage("Invalid track file URL : " + trackURL);
+	        return;
+	    }
+	    
+	    if (indexURL.length > 0) {
+	        try {
+	            new URL(indexURL); // Just validate, don't need to store
+	        } catch (error) {
+	            displayMessage("Invalid index file URL : " + indexURL);
+	            return;
+	        }
+	    }
+	    
+	    // Detect format from filename
+	    let format = detectTrackFormat(filename);
+	    console.log('Detected format:', format);
+	    
+	    let trackConfig = {
+	        name: filename,
+	        removable: true,
+	        format: format,
+	        type: getTrackTypeFromFormat(format)
+	    };
+	    
+	    if (indexURL) {
+	        trackConfig.url = trackURL;
+	        trackConfig.indexURL = indexURL;
+	        console.log('Using indexed track with URL and indexURL');
+	    } else {
+	        trackConfig.url = trackURL;
+	        trackConfig.indexed = false;
+	        console.log('Using unindexed track');
+	    }
+	    
+	    console.log('Track config:', JSON.stringify(trackConfig, null, 2));
+	    
+	    // Verify files are accessible before loading
+	    verifyTrackFiles(trackConfig)
+	        .done(function() {
+	            console.log('All files accessible, loading track...');
+	            igvLoadTrack(trackConfig);
+	        })
+	        .fail(function(error) {
+	            console.error('File verification failed:', error);
+	            displayMessage("Cannot access track files: " + (error.message || error));
+	        });
+	}
+	
+	/**
+	 * Verify both track and index files are accessible
+	 * @param {object} trackConfig - Track configuration object
+	 * @returns {jQuery.Promise} - Resolves if all files accessible
+	 */
+	function verifyTrackFiles(trackConfig) {
+	    const deferred = $.Deferred();
+	    const checks = [];
+	    
+	    console.log('Verifying track files...');
+	    
+	    // Check main track file
+	    if (trackConfig.url) {
+	        console.log('Checking track URL:', trackConfig.url);
+	        checks.push(
+	            verifyUrlAccess(trackConfig.url)
+	        );
+	    }
+	    
+	    // Check index file if present
+	    if (trackConfig.indexURL) {
+	        console.log('Checking index URL:', trackConfig.indexURL);
+	        checks.push(
+	            verifyUrlAccess(trackConfig.indexURL)
+	        );
+	    }
+	    
+	    // If no checks needed, resolve immediately
+	    if (checks.length === 0) {
+	        console.log('No files to verify');
+	        deferred.resolve();
+	        return deferred.promise();
+	    }
+	    
+	    // Use $.when to wait for all checks
+	    $.when.apply($, checks)
+	        .done(function() {
+	            console.log('All track files verified successfully');
+	            deferred.resolve();
+	        })
+	        .fail(function(error) {
+	            console.error('Track file verification failed:', error);
+	            deferred.reject(error);
+	        });
+	    
+	    return deferred.promise();
+	}
+
+	/**
+	 * Verify that a URL is accessible via HEAD request
+	 * @param {string} url - The URL to check
+	 * @returns {jQuery.Promise} - Resolves if accessible, rejects with error
+	 */
+	function verifyUrlAccess(url) {
+	    const checkUrl = getProxyUrl(url);
+	    const deferred = $.Deferred();
+	    
+	    console.log('Verifying URL access:', url, 'via', checkUrl);
+	    
+	    $.ajax({
+	        url: checkUrl,
+	        type: "HEAD",
+	        timeout: 10000,
+	        success: function(data, textStatus, xhr) {
+	            console.log('URL accessible:', url, 'Status:', xhr.status);
+	            deferred.resolve();
+	        },
+	        error: function(xhr, ajaxOptions, thrownError) {
+	            console.error('URL not accessible:', url, 'Status:', xhr.status, thrownError);
+	            deferred.reject({
+	                url: url,
+	                status: xhr.status,
+	                error: thrownError,
+	                message: `Cannot access ${url} (Status: ${xhr.status})`
+	            });
+	        }
+	    });
+	    
+	    return deferred.promise();
 	}
 
 	// Create the IGV browser, provided a genome config
