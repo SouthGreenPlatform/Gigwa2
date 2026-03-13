@@ -39,7 +39,18 @@ async function chartIndSelectionChanged() {
 		$("input.showHideSeriesBox:checked").prop("checked", false);
 	}
 	let usingSmartSelect = typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined';
-	let groups = usingSmartSelect ? $("#plotGroupingMetadataValues").smartColorMultiSelect('getColorGroups') : selectedValues;	// might be different in case of Fst
+	let groups;
+	if (usingSmartSelect) {
+	    let rawGroups = $("#plotGroupingMetadataValues").smartColorMultiSelect('getColorGroups');
+	    if (Array.isArray(rawGroups))
+	        groups = rawGroups.map(g => Array.isArray(g) ? g : [g]);
+	    else if (rawGroups && typeof rawGroups === "object")
+	        groups = Object.values(rawGroups);
+	    else
+	        groups = selectedValues.map(v => [v]);
+	}
+	else
+	    groups = selectedValues.map(v => [v]);
 	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
 
 	$('#indSelectionCount').html("&nbsp;");
@@ -50,41 +61,47 @@ async function chartIndSelectionChanged() {
 			let selectedIndividuals = getSelectedIndividuals();
 
 			// Create array of promises for all AJAX calls
-			const ajaxPromises = selectedValues.map((selectedValue, i) => {
-				var filters = {};
-				if (workWithSamples) {
-					let filterVals = {};
-					filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [selectedValue];
-					filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
-				}
-				else
-					filters[groupOption] = [selectedValue];
+			const ajaxPromises = [];
+			groups.forEach((groupValues, groupIndex) => {
+			    groupValues.forEach(value => {
+			        var filters = {};
+			        if (workWithSamples) {
+			            let filterVals = {};
+			            filterVals[groupOption.startsWith("ind.") ? groupOption.substring(4) : groupOption] = [value];
+			            filters[groupOption.startsWith("ind.") ? "individual" : "sample"] = filterVals;
+			        }
+					else
+			            filters[groupOption] = [value];
 
-				return $.ajax({
-					url: (workWithSamples ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
-					type: "POST",
-					contentType: "application/json;charset=utf-8",
-					headers: { ...buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')), "excludeMetadata": true },
-					data: JSON.stringify(filters)
-				}).then(callSetResponse => ({ index: i, response: callSetResponse }));
+			        ajaxPromises.push(
+			            $.ajax({
+			                url: (workWithSamples ? filterSamplesUsingMetadata : filterIndividualsUsingMetadata) + '/' + getChartModule() + "?projIDs=" + getProjectId().map(id => id.substring(1 + id.lastIndexOf(idSep))).join(","),
+			                type: "POST",
+			                contentType: "application/json;charset=utf-8",
+			                headers: { ...buildHeader(token, $('#assembly').val(), $('#workWithSamples').is(':checked')), "excludeMetadata": true },
+			                data: JSON.stringify(filters)
+			            }).then(resp => ({
+			                groupIndex: groupIndex,
+			                response: resp
+			            }))
+			        );
+			    });
 			});
 
 			// Wait for all requests to complete
 			Promise.all(ajaxPromises).then(results => {
-				// Process results in order
-				results.forEach(({ index, response }) => {
-					if (index > 0 && additionalCallSetIds.length < index)
-						additionalCallSetIds.push([]);
-					var targetGroup = index == 0 ? callSetIds : additionalCallSetIds[index - 1];
-
-					response.forEach(function(callset) {
-						if (selectedIndividuals.length == 0 || selectedIndividuals.includes(callset.id))
-							targetGroup.push(referenceset + idSep + callset.id)
-					});
-				});
-
-				// Update UI after all requests complete
-				updateIndSelectionCount();
+			    callSetIds = [];
+			    additionalCallSetIds = [];
+			    results.forEach(({groupIndex, response}) => {
+			        if (groupIndex > 0 && additionalCallSetIds.length < groupIndex)
+			            additionalCallSetIds.push([]);
+			        let targetGroup = groupIndex === 0 ? callSetIds : additionalCallSetIds[groupIndex - 1];
+			        response.forEach(callset => {
+			            if (selectedIndividuals.length === 0 || selectedIndividuals.includes(callset.id))
+			                targetGroup.push(referenceset + idSep + callset.id);
+			        });
+			    });
+			    updateIndSelectionCount();
 			});
 		}
 		else {
@@ -312,7 +329,7 @@ function initializeChartDisplay() {
 				displayName: "Fst",
 				queryURLFunction: "getChartFstDataURL",
 				title: "Fst value for {{displayedVariantType}} variants on sequence {{displayedSequence}}",
-				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
+				subtitle: "Weir and Cockerham Fst estimate calculated between selected groups and averaged in an interval of size {{intervalSize}} around each point (only accounting for bi-allelic variants)",
 				xAxisTitle: "Positions on selected sequence",
 				series: [{
 					name: "Fst estimate",
@@ -395,7 +412,10 @@ function initializeChartDisplay() {
 		}
 	});
 
-	$('div#chartContainer').html('<div id="densityChartArea" style="min-width:350px; height:415px; margin:0 auto; overflow:hidden;"></div><div id="additionalCharts" style="display:none;"></div>');
+	$('div#chartContainer').html(
+	    '<div id="densityChartArea" style="min-width: 350px; height: 415px; margin: 10px auto; overflow-x: auto; white-space: nowrap;"></div>' +
+	    '<div id="additionalCharts" style="display: none;"></div>'
+	);
 	let selectedSequences = getChartDistinctSequenceList(), selectedTypes = getChartDistinctTypes();
 	feedSequenceSelectAndLoadVariantTypeList(
 		selectedSequences == "" ? $('#Sequences').selectmultiple('option') : selectedSequences,
@@ -422,8 +442,8 @@ function feedSequenceSelectAndLoadVariantTypeList(sequences, types) {
 		'<div id="densityLoadProgress" style="position:absolute; margin:10px; right:250px; font-weight:bold;">&nbsp;</div>' +
 		'<form><div style="padding:3px; width:100%; background-color:#f0f0f0; padding-left:5px;" class="chartDataSelection">' +
 		'Data to display: <select id="chartTypeList" style="margin-right:20px; height:25px;" onchange="applyChartType();"></select>' +
-		'Choose a sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="cachedResults = {}; loadChart();"></select>' +
-		'Choose a variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
+		'Sequence: <select id="chartSequenceList" style="margin-right:20px; height:25px;" onchange="cachedResults = {}; loadChart();"></select>' +
+		'Variant type: <select id="chartVariantTypeList" style="height: 25px;" onchange="if (options.length > 2) loadChart();"><option value="">ANY</option></select>' +
 		'</div></form>');
 	$(headerHtml).insertBefore('div#densityChartArea');
 
@@ -476,9 +496,14 @@ function buildCustomisationDiv(chartInfo) {
 				handleError(xhr, thrownError);
 			}
 		});
-	let customisationDivHTML = "<div class='panel panel-default container-fluid' style=\"width: 95%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization' style='min-height:120px;'>";
+	let customisationDivHTML = '<div style="position:absolute; margin-top:-45px; padding-left:10px; background-color:#fff;"><label for="widthMultiplier">Display width:</label>&nbsp;<select id="widthMultiplier" onchange="updateChartWidth()">';
+	for (let i = 1; i <= 10; i++)
+	    customisationDivHTML += '<option value="' + i + '">' + i + 'x screen</option>';
+	customisationDivHTML += '</select></div>';
+
+	customisationDivHTML += "<div class='panel panel-default container-fluid' style=\"width: 95%;\"><div class='row panel-body panel-grey shadowed-panel graphCustomization' style='min-height:120px;'>";
 	customisationDivHTML += '<div class="pull-right"><button id="showChartButton" class="btn btn-success" onclick="displayOrAbort();" style="z-index:999; position:absolute; margin-top:70px; margin-left:-55px;">Show</button></div>';
-	customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="4" size="4" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 1000)';
+	customisationDivHTML += '<div class="col-md-3"><p>Customisation options</p><b>Number of intervals</b> <input maxlength="4" size="4" type="text" id="intervalCount" value="' + displayedRangeIntervalCount + '" onchange="changeIntervalCount()"><br/>(between 50 and 5000)';
 	customisationDivHTML += '</div>';
 
 	customisationDivHTML += '<div id="chartTypeCustomisationOptions">';
@@ -490,6 +515,37 @@ function buildCustomisationDiv(chartInfo) {
 
 	$("div#chartContainer div#additionalCharts").html(customisationDivHTML + "</div></div>");
 }
+
+function updateChartWidth() {
+	const chartContainer = document.getElementById('densityChartArea');
+	if (!chartContainer)
+		return;
+
+	const containerWidth = chartContainer.clientWidth;
+	const requiredWidth = $('#widthMultiplier').val() * containerWidth;
+
+    chartContainer.style.minWidth = '100%';
+    chartContainer.style.overflowX = 'auto';
+    chartContainer.style.whiteSpace = 'nowrap';
+
+    if (chart) {
+        chart.setSize(requiredWidth, null, false);
+        chart.reflow();
+        // Ensure the x-axis covers the full range of data
+        const xAxis = chart.xAxis[0];
+        xAxis.setExtremes(null, null, true, false);
+        // Set marginRight to 0 to ensure the plot area extends to the edge
+        chart.update({
+            chart: {
+                marginRight: 0
+            }
+        });
+    }
+}
+
+window.addEventListener('resize', function() {
+	updateChartWidth();
+});
 
 function displayOrAbort() {
 	if (dataBeingLoaded) {
@@ -508,7 +564,7 @@ function getIntervalCountFromLocalStorage() {
 	if (localStorage.getItem("intervalCount") != null)
 		return localStorage.getItem("intervalCount");
 	else
-		return 1000;
+		return 1000;	// default
 }
 
 function applyChartType() {
@@ -536,8 +592,10 @@ function applyChartType() {
 	buildCustomisationDiv(chartInfo);
 	if (chartInfo.onLoad !== undefined)
 		chartInfo.onLoad();
-	if (currentChartType == "fst" && typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined')
+	if (currentChartType == "fst" && typeof $('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect !== 'undefined') {
 		$('select[multiple]#plotGroupingMetadataValues').smartColorMultiSelect();
+		$("#plotGroupingMetadataValues").parent().find("button.scms-toggle-icon").on("click", chartIndSelectionChanged);
+	}
 	loadChart();
 }
 
@@ -583,9 +641,9 @@ function displayChart(minPos, maxPos) {
 	// Set the interval count until the next chart reload
 	let tempValue = parseInt($('#intervalCount').val());
 	if (isNaN(tempValue))
-		displayedRangeIntervalCount = 1000;
-	else if (tempValue > 1000)
-		displayedRangeIntervalCount = 1000;
+		displayedRangeIntervalCount = 5000;
+	else if (tempValue > 5000)
+		displayedRangeIntervalCount = 5000;
 	else if (tempValue < 50)
 		displayedRangeIntervalCount = 50;
 	else
@@ -655,9 +713,11 @@ function adler32(str) {
 
 function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSequence) {
 	//console.log(Object.keys(cachedResults));
-
-	// TODO : Key to the middle of the interval ?
-	chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);
+	for (const key in jsonResult)	// for some reason HighCharts seems to fail (showing no graph at all) when fed with too many NaN values: replace them with null
+		if (jsonResult[key] === "NaN" || (typeof value === 'number' && isNaN(value)))
+			jsonResult[key]  = null;
+	
+	chartJsonKeys = chartInfo.series.length == 1 ? Object.keys(jsonResult) : Object.keys(jsonResult[0]);	
 	var intervalSize = parseInt(chartJsonKeys[1]) - parseInt(chartJsonKeys[0]);
 
 	let totalVariantCount = 0;
@@ -668,18 +728,32 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 	chart = Highcharts.chart('densityChartArea', {
 		chart: {
 			type: 'spline',
+			reflow: false,
 			zoomType: 'x'
 		},
 		title: {
 			text: chartInfo.title.replace("{{totalVariantCount}}", totalVariantCount).replace("{{displayedVariantType}}", displayedVariantType).replace("{{displayedSequence}}", displayedSequence),
+			align: 'left',
+			x: 50,
 		},
 		subtitle: {
 			text: isNaN(intervalSize) ? '' : chartInfo.subtitle.replace("{{intervalSize}}", intervalSize),
+			align: 'left',
+			x: 60,
+		},
+		legend: {
+		    floating: true,
+		    align: 'left',
+			x: 280,
 		},
 		xAxis: {
 			categories: chartJsonKeys,
 			title: {
 				text: chartInfo.xAxisTitle,
+				align: 'low',
+				offset: 70,
+				x: 500,
+				y: -5,
 			},
 			events: {
 				afterSetExtremes: function(e) {
@@ -715,8 +789,8 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 			}
 		},
 		exporting: {
-			enabled: true,
-			buttons: {
+		    enabled: true,
+		    buttons: {
 				contextButton: {
 					menuItems: ["viewFullscreen", "printChart",
 						"separator",
@@ -748,15 +822,30 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 								textArea.select();
 								try {
 									document.execCommand('copy');
-									console.log('Copied to clipboard: ' + text);
+//									console.log('Copied to clipboard: ' + text);
 								} catch (err) {
 									console.log('Failed to copy text to clipboard: ' + text);
 								}
 								document.body.removeChild(textArea);
 							}
-						}]
+						}],
+						 align: 'left',
+						 verticalAlign: 'top',
+						 x: 0,
+						 y: 0,
+						 floating: true,
+						 symbol: 'menu',
+						 symbolFill: '#666666',
+						 symbolStroke: '#666666',
+						 symbolStrokeWidth: 3,
+						 theme: {
+						     fill: 'white',
+						     stroke: 'none',
+						     padding: 1,
+						     zIndex: 100
+						 }
 				}
-			}
+		    }
 		}
 	});
 
@@ -794,6 +883,8 @@ function displayResult(chartInfo, jsonResult, displayedVariantType, displayedSeq
 
 	if (chartInfo.onDisplay !== undefined)
 		chartInfo.onDisplay();
+
+	updateChartWidth();
 }
 
 function addMetadataSeries(minPos, maxPos, fieldName, colorIndex) {
@@ -1023,9 +1114,9 @@ function displayOrHideThreshold(isChecked) {
 function changeIntervalCount() {
 	let tempValue = parseInt($('#intervalCount').val());
 	if (isNaN(tempValue))
-		$("#intervalCount").val(1000);
-	else if (tempValue > 1000)
-		$("#intervalCount").val(1000);
+		$("#intervalCount").val(5000);
+	else if (tempValue > 5000)
+		$("#intervalCount").val(5000);
 	else if (tempValue < 50)
 		$("#intervalCount").val(50);
 }
