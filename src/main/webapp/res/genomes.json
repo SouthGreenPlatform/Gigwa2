@@ -54,16 +54,16 @@
  {
    "id": "musa_acuminata_subsp_malaccensis_v2",
    "name": "Musa acuminata DH Pahang (v2.0)",
-   "fastaURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/seq/musa_acuminata_v2_pseudochromosome.fna",
-   "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/seq/musa_acuminata_v2_pseudochromosome.fna.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/seq/Musa_acuminata_subsp_malaccensis.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/seq/Musa_acuminata_subsp_malaccensis.fna.fai",
    "tracks": [
      {
        "name": "Locus",
        "type": "annotation",
        "format": "gff3",
        "sourceType": "file",
-       "url": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/musa_acuminata_v2.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/musa_acuminata_v2.gff3.gz.tbi",
+       "url": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz.tbi",
        "order": 0
      }
     ]
@@ -88,8 +88,8 @@
   {
    "id": "musa_balbisiana_v1",
    "name": "Musa balbisiana DH PKW (v1.3)",
-   "fastaURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/seq/Musa_balbisiana_assembly.fna",
-   "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/seq/Musa_balbisiana_assembly.fna.fai",
+   "fastaURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/seq/Musa_balbisiana.assembly.fna",
+   "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/seq/Musa_balbisiana.assembly.fna.fai",
    "tracks": [
      {
        "name": "Locus",
@@ -250,7 +250,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz.csi",
        "order": 0
      }
     ]
