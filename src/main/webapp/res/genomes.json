@@ -250,7 +250,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/olea_europaea_cv_leccino_v1/gff3/Olea_europaea_cv_Leccino.gff3.gz.csi",
        "order": 0
      }
     ]
