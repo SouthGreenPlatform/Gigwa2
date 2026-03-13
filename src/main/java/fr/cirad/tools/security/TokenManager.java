@@ -479,4 +479,37 @@ public class TokenManager extends AbstractTokenManager {
         
         return false;
     }
+
+    public UserInfo getUserInfo(String token) {
+        Authentication authentication = getAuthenticationFromToken(token);
+        if (authentication == null) {
+            return null;
+        } else {
+            String username = getUserNameFromAuthentication(authentication);
+            UserInfo userInfo = new UserInfo();
+            userInfo.setUsername(username);
+            Collection<? extends GrantedAuthority> authorities = userDao.getUserAuthorities(authentication);
+            if (authorities != null) {
+                if (authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))) {
+                    userInfo.setAdmin(true);
+                    userInfo.setCanCreateDB(true);
+                } else if (authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_DB_CREATOR))) {
+                    userInfo.setCanCreateDB(true);
+                }
+//                Map<String /*module*/, Map<String /*entity-type*/, Map<String /*role*/, Collection<Comparable> /*entity-IDs*/>>> customRoles = userDao.getCustomRolesByModuleAndEntityType(authorities);
+//                Map<String, Object> roles = new HashMap<>();
+//                HashSet<String> supervisedDb = userDao.getSupervisedModules(authorities);
+//                if (supervisedDb != null && !supervisedDb.isEmpty()) {
+//                    for (String db:supervisedDb) {
+//                        roles.put(db, IRoleDefinition.ROLE_DB_SUPERVISOR);
+//                    }
+//                }
+//                if (customRoles != null && !customRoles.isEmpty()) {
+//                    roles.putAll(customRoles);
+//                }
+//                userInfo.setRoles(roles);
+            }
+            return userInfo;
+        }
+    }
 }
