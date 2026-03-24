@@ -1,8 +1,5 @@
 version: '3.5'
 
-# You may use the following (Linux) command to start Gigwa by dynamically setting the docker0 IP address:
-# export docker0=$(ip a list docker0 | grep "inet " | sed 's/^ *//g' | awk -F'[ |/]' '{print $2}') && docker-compose up -d && sleep 2 && xdg-open http://$docker0:8080/gigwa &> /dev/null
-
 services:
   tomcat:
     depends_on:
@@ -12,15 +9,14 @@ services:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
     environment:
-      MONGO_IP: ${docker0} # Set your host machine IP here
-      MONGO_PORT: 59393 # Must match mongo container external port
+      MONGO_IP: mongo
+      MONGO_PORT: 27017
       MONGO_INITDB_ROOT_USERNAME: yourMongoRootUser
       MONGO_INITDB_ROOT_PASSWORD: yourMongoRootPassword
       HOST_LOCALE: "${LANG}"
 #     casServerURL: https://sso.cirad.fr:443                # URL of the CAS server to use for Single-Sign-On
 #     enforcedWebapRootUrl: http://${docker0}:8080/gigwa    # Gigwa base-URL for CAS to direct to after login. System will attempt guessing it if not provided, but it's always better to specify it
 #     casOrganization: MyOrganization                       # Not required, will only be displayed on login page if provided
-      
     volumes:
       - type: volume
         source: gigwa
@@ -28,8 +24,12 @@ services:
 #      - type: bind                      # Uncomment this line to make dumps accessible from the host machine         
 #        source: /tmp/gigwaDockerDumps   # Uncomment this line to make dumps accessible from the host machine (you may also want to set the path you wish to use as source)
 #        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine (must match the dumpFolder attribute's value in config.properties)
+
   mongo:
-    image: mongo:4.2.24
+	image: mongo:4.2.24
+#    For Apple M1/arm64, you may need to use the following image instead (uncomment the 2 lines below and comment the above line):
+#    image: arm64v8/mongo:4.2.24
+#    platform: linux/arm64/v8
     restart: always
     command: --profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet
     ports:
