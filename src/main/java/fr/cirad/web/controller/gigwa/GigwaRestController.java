@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -61,11 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import fr.cirad.mgdb.importing.parameters.FileImportParameters;
-import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
-import fr.cirad.mgdb.importing.parameters.PlinkImportParameters;
-import fr.cirad.mgdb.importing.parameters.VCFParameters;
-import fr.cirad.mgdb.model.mongo.maintypes.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -133,6 +129,16 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.importing.parameters.FileImportParameters;
+import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
+import fr.cirad.mgdb.importing.parameters.PlinkImportParameters;
+import fr.cirad.mgdb.importing.parameters.VCFParameters;
+import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongo.maintypes.Individual;
+import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
+import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongo.subtypes.VariantRunDataId;
@@ -140,7 +146,7 @@ import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
-import fr.cirad.model.MgdbDensityRequest;
+import fr.cirad.model.MgdbChartRequest;
 import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.MgdbVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
@@ -719,7 +725,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -751,7 +757,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -783,7 +789,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -815,7 +821,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MAF_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -847,7 +853,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MISSING_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -879,7 +885,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + HETZ_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -910,7 +916,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
-    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gr) throws Exception {
+    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gr.getVariantSetId());
         if (!tokenManager.canUserReadDB(token, info[0])) {
@@ -2006,27 +2012,71 @@ public class GigwaRestController extends ControllerInterface {
 
 				if (progress.getError() == null) {	// check if client is allowed to import
 					if (request.getSession().isNew()) {	// not being called from default UI: see if we should allow import
-						String remoteAddr = request.getHeader("X-Forwarded-For");
-						if (remoteAddr == null)
-							remoteAddr = request.getRemoteAddr();
-						String serversAllowedToImport = appConfig.get("serversAllowedToImport");
-						if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
-							progress.setError("Remote client not allowed to import: " + remoteAddr);
-					}
+						String remoteAddr = request.getRemoteAddr();
+						String forwarded = request.getHeader("X-Forwarded-For");
 
-					Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
-					boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
-					if (progress.getError() == null && fDatasourceExists) {
-						if (fMayOnlyWriteTmpData)
-							progress.setError("You may only write to temporary databases");
-						else if (!writableDBs.contains(sNormalizedModule))
-							progress.setError("You may not write to database " + sNormalizedModule);
-					}
+						Set<String> trustedProxies = new HashSet<>(Arrays.asList("127.0.0.1", "::1", "0:0:0:0:0:0:0:1"));
+						String configuredTrusted = appConfig.get("trustedProxies");
+						if (configuredTrusted != null) {
+						    for (String proxy : configuredTrusted.split(",")) {
+						        proxy = proxy.trim();
+						        
+						        // Resolve hostnames to IP addresses (for dynamic IP support)
+						        try {
+						            for (InetAddress addr : InetAddress.getAllByName(proxy)) {
+						                trustedProxies.add(addr.getHostAddress());
+						            }
+						        } catch (Exception e) {
+						            // If resolution fails, add as-is (might be an IP address or unresolvable hostname)
+						            trustedProxies.add(proxy);
+						        }
+						    }
+						}
 
+						// Use X-Forwarded-For ONLY if request comes from trusted proxy
+						if (trustedProxies.contains(remoteAddr) && forwarded != null && !forwarded.isEmpty())
+						    remoteAddr = forwarded.split(",")[0].trim();
+
+						if (!remoteAddr.equals(request.getLocalAddr())) {
+						    Set<String> resolvedRemoteIps = new HashSet<>();	// Resolve remote address (handle hostnames, multiple IPs)
+						    try {
+						        for (InetAddress addr : InetAddress.getAllByName(remoteAddr))
+						            resolvedRemoteIps.add(addr.getHostAddress());
+						    } catch (Exception e) {
+						        resolvedRemoteIps.add(remoteAddr);
+						    }
+
+						    Set<String> allowed = new HashSet<>();	// Build allowed list (should ideally be cached)
+						    String serversAllowedToImport = appConfig.get("serversAllowedToImport");
+						    if (serversAllowedToImport != null) {
+						        for (String server : serversAllowedToImport.split(",")) {
+						            server = server.trim();
+						            try {
+						                for (InetAddress addr : InetAddress.getAllByName(server))
+						                    allowed.add(addr.getHostAddress());
+						            } catch (Exception e) {
+						                allowed.add(server);
+						            }
+						        }
+						    }
+
+						    if (!resolvedRemoteIps.stream().anyMatch(allowed::contains))
+						        progress.setError("Remote client not allowed to import: " + remoteAddr);
+						}
+
+						Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
+						boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
+						if (progress.getError() == null && fDatasourceExists) {
+						    if (fMayOnlyWriteTmpData)
+						        progress.setError("You may only write to temporary databases");
+						    else if (!writableDBs.contains(sNormalizedModule))
+						        progress.setError("You may not write to database " + sNormalizedModule);
+						}
+					}
 					if (progress.getError() != null)
-						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
-							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() /*+ ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") */+ ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew());
+						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused " + (fDatasourceExists ? "(database already existed) " : "")  + "- request.getRemoteAddr: "
+							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
+							+ request.getHeader("referer") + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew() + ", reason:\"" + progress.getError() + "\"");
 				}
 
 				if (progress.getError() != null) {

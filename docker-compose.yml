@@ -26,7 +26,7 @@ services:
 #        target: /root/gigwaDumps        # Uncomment this line to make dumps accessible from the host machine (must match the dumpFolder attribute's value in config.properties)
 
   mongo:
-	image: mongo:4.2.24
+    image: mongo:4.2.24
 #    For Apple M1/arm64, you may need to use the following image instead (uncomment the 2 lines below and comment the above line):
 #    image: arm64v8/mongo:4.2.24
 #    platform: linux/arm64/v8
