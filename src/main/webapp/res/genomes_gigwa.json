@@ -1,0 +1,18 @@
+[
+ {
+   "id": "plasmodium_falciparum_3D7",
+   "name": "Plasmodium falciparum 3D7",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_000002765.6_GCA_000002765_genomic.fna",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_000002765.6_GCA_000002765_genomic.fna.fai",
+   "tracks": [
+     {
+       "name": "Genes",
+       "type": "annotation",
+       "format": "gtf",
+       "sourceType": "file",
+       "url": "https://gigwa.southgreen.fr/genomes/annot/GCF_000002765.6_GCA_000002765_genomic.gtf.gz",
+       "indexURL": "https://gigwa.southgreen.fr/genomes/annot/GCF_000002765.6_GCA_000002765_genomic.gtf.gz.tbi",
+       "order": 0
+     }
+   ]
+ }]

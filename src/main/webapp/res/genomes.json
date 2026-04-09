@@ -11,7 +11,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/Oryza_sativa_japonica_Nipponbare.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/Oryza_sativa_japonica_Nipponbare.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/Oryza_sativa_japonica_Nipponbare.gff3.gz.csi",
        "order": 0
      },
      {
@@ -20,7 +20,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/MSU.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/MSU.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_sativa_japonica_nipponbare_v7/gff3/MSU.gff3.gz.csi",
        "order": 0
      },
      {
@@ -46,7 +46,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/oryza_glaberrima_v2/gff3/Oryza_glaberrima.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/oryza_glaberrima_v2/gff3/Oryza_glaberrima.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/oryza_glaberrima_v2/gff3/Oryza_glaberrima.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -63,7 +63,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v2/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -80,7 +80,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v4/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v4/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_acuminata_subsp_malaccensis_v4/gff3/Musa_acuminata_subsp_malaccensis.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -97,7 +97,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/gff3/Musa_balbisiana.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/gff3/Musa_balbisiana.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_balbisiana_v1/gff3/Musa_balbisiana.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -131,7 +131,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/Ensete_glaucum.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/Ensete_glaucum.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/ensete_glaucum_v1/gff3/Ensete_glaucum.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -148,7 +148,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/musa_schizocarpa_v2/gff3/Musa_schizocarpa.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/musa_schizocarpa_v2/gff3/Musa_schizocarpa.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/musa_schizocarpa_v2/gff3/Musa_schizocarpa.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -182,7 +182,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/citrus_clementina_v1/gff3/Citrus_clementina.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/citrus_clementina_v1/gff3/Citrus_clementina.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/citrus_clementina_v1/gff3/Citrus_clementina.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -199,7 +199,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/citrus_medica_v1/gff3/Citrus_medica.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/citrus_medica_v1/gff3/Citrus_medica.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/citrus_medica_v1/gff3/Citrus_medica.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -216,7 +216,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/citrus_reticulata_v1/gff3/Citrus_reticulata.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/citrus_reticulata_v1/gff3/Citrus_reticulata.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/citrus_reticulata_v1/gff3/Citrus_reticulata.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -233,7 +233,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/citrus_micrantha_v1/gff3/Citrus_micrantha.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/citrus_micrantha_v1/gff3/Citrus_micrantha.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/citrus_micrantha_v1/gff3/Citrus_micrantha.gff3.gz.csi",
        "order": 0
      }
     ]
@@ -267,7 +267,7 @@
        "format": "gff3",
        "sourceType": "file",
        "url": "https://jbrowse.southgreen.fr/citrus_maxima_cv_wanbaiyou_v1/gff3/Citrus_maxima_cv_Wanbaiyou.gff3.gz",
-       "indexURL": "https://jbrowse.southgreen.fr/citrus_maxima_cv_wanbaiyou_v1/gff3/Citrus_maxima_cv_Wanbaiyou.gff3.gz.tbi",
+       "indexURL": "https://jbrowse.southgreen.fr/citrus_maxima_cv_wanbaiyou_v1/gff3/Citrus_maxima_cv_Wanbaiyou.gff3.gz.csi",
        "order": 0
      }
     ]

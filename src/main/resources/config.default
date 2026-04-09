@@ -57,7 +57,8 @@ onlineOutputTool_3 = Distance matrix visualization;https://gigwa.southgreen.fr/V
 
 # Properties named igvGenomeConfig_N with N being an integer >= 1 provide sets of online genomes to be displayed as default genome lists for the embedded IGV.js browser. Each property must be in the form igvGenomeConfig_N = Name;URL
 igvGenomeConfig_1 = Public genomes provided by South Green;res/genomes.json
-igvGenomeConfig_2 = IGV default genomes;https://igv.org/genomes/genomes.json
+igvGenomeConfig_2 = Public genomes made available by Gigwa team;res/genomes_gigwa.json
+igvGenomeConfig_3 = IGV default genomes;https://igv.org/genomes/genomes.json
 
 
 # Defines the maximum estimated size (in billions) of the genotype matrix (#individuals * #markers) within which genotype-level filters may be applied. This property may be tuned according to server performance. #markers is estimated by calculating an average marker count per sequence. Whatever value is set here, Gigwa will at least allow searching on one sequence for all individuals. Default: 1 billion
