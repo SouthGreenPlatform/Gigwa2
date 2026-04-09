@@ -278,6 +278,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
+	static public final String CONFIG_PARAM_URL = "/configParams";
 	
 	/**
 	 * get a unique processID
@@ -2544,6 +2545,15 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + CONFIG_PARAM_URL, method = RequestMethod.GET, produces = "application/json")
+	public Map<String, String> getConfigParams(String pattern) {
+		if (!pattern.endsWith("*"))
+			return new HashMap<>() {{ put(pattern, appConfig.get(pattern)); }};
+		else
+			return appConfig.getPrefixed(pattern.substring(0, pattern.length() - 1));
+	}
+	
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
