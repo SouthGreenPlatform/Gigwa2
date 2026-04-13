@@ -13,14 +13,14 @@
       <BR>
       <a href="javascript:window.print();" title="Print documentation"><IMG SRC="print.png" BORDER=0 style='float:right; margin-right:10px;'></a>
       <P ALIGN=CENTER STYLE="margin-bottom: 0in; line-height: 100%;">
-         <FONT FACE="Arial, sans-serif"><FONT SIZE=6 class='maintitle'>Gigwa v2.11.x &ndash; Documentation</FONT></FONT>
+         <FONT FACE="Arial, sans-serif"><FONT SIZE=6 class='maintitle'>Gigwa v2.12.x &ndash; Documentation</FONT></FONT>
       </P>
       <p style='float:right; text-align:center; margin-top:20px; margin-right:20px; background-color:#f2f288; padding:15px; border:2px dashed #d5d800; border-radius:15px;'>
          <b>Learn how to use Gigwa like a pro in a few minutes!</b>
          <BR><BR>
          Watch demonstration videos on the project homepage:
          <BR>
-         <a href="http://www.southgreen.fr/content/gigwa" target='_blank'>http://www.southgreen.fr/content/gigwa</a>
+         <a href="https://www.southgreen.fr/gigwa/" target='_blank'>https://www.southgreen.fr/gigwa/</a>
       </p>
       <BR>
       <BR>
@@ -492,6 +492,9 @@
                   <P STYLE="margin-bottom: 0in; line-height: 100%"><B>maxImportSize_USERNAME</B> - Defines the maximum allowed size (in megabytes) granted to the USERNAME user for data file imports. Default: maxImportSize</P>
                </LI>
                <LI>
+                  <P STYLE="margin-bottom: 0in; line-height: 100%"><B>trustedProxies</B> - CSV list of trusted remote proxy servers (for which the X-Forwarded-For header will be accounted for to determine the client's real IP address). This is useful for instance if you use a proxy to add a https layer in front of the web application..</P>
+               </LI>
+               <LI>
                   <P STYLE="margin-bottom: 0in; line-height: 100%"><B>serversAllowedToImport</B> - CSV list of external servers that are allowed to import genotyping data.</P>
                </LI>
                <LI>
@@ -581,6 +584,9 @@
 			   </LI>
 			   <LI>
 			      <P><B>maxDistanceMatrixSize</B> - Max dimension of the genotyping matrix (#samples x #SNPs) to calculate distance matrix on. Default is 1 billion (1E9)</P>
+			   </LI>
+			   <LI>
+			      <P><B>igvProxiedDomains</B> - CSV list of domains (supporting wildcards) for which IGV.js will use a proxy to access genome / track files (workaround for CORS issues)</P>
 			   </LI>
             </UL>
          </LI>

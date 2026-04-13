@@ -1,6 +1,3 @@
 Manifest-Version: 1.0
-Build-Jdk-Spec: 21
-Created-By: Maven Integration for Eclipse
-Implementation-version: 2.11-RELEASE
 Class-Path: 
-
+Implementation-version: ${project.version}
