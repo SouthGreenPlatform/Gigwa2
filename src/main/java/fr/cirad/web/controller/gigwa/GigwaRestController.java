@@ -71,6 +71,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.brapi.v2.api.ServerinfoApi;
+import org.brapi.v2.model.ProgramListResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
@@ -85,6 +86,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -2862,5 +2865,16 @@ public class GigwaRestController extends ControllerInterface {
 			i++;
 		}
 		return resultObjects;
+	}
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getUserInfo", notes = "get given user info")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@RequestMapping(value = BASE_URL + "/userInfo", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<fr.cirad.tools.security.UserInfo> getUserInfo(HttpServletRequest request, HttpServletResponse resp) throws IOException {
+		fr.cirad.tools.security.UserInfo userInfo = tokenManager.getUserInfo(tokenManager.readToken(request));
+		if (userInfo == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return new ResponseEntity<fr.cirad.tools.security.UserInfo>(userInfo, HttpStatus.OK);
 	}
 }
