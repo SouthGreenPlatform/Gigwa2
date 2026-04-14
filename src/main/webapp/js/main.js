@@ -1109,10 +1109,16 @@ function clearGeneIdSelection() {
     $('#geneIdsSelect').selectpicker('refresh');
 }
 
-function displayProjectInfo(projName)
+function displayProjectInfo()
 {
-    $("#projectInfoContainer").html("<h4>Information on project " + projName + "</h4><div style='font-weight:bold; float:right;'>" + dbDesc + "</div><p>This project contains " + runList.length + " run(s) of data.</p><pre>" + projectDescriptions[projName] + "</pre>");
-    $("#projectInfo").modal({
+	let projInfo = "<h4>Information on selected projects</h4><div style='font-weight:bold;'>" + dbDesc + "</div><br/>";
+	getProjectId().forEach(id => {
+		let shortId = id.substring(1 + id.lastIndexOf(idSep)), projName = $("#project option[data-id=" + $("#module").val() + "§" + shortId + "]").text();
+		projInfo += "<p>Project <b>" + projName + "</b> contains " + runList[shortId].length + " run(s) of data</p>";
+		projInfo += "<pre>" + projectDescriptions[projName] + "</pre>";
+	});
+	$("#projectInfoContainer").html(projInfo);
+	$("#projectInfo").modal({
         opacity: 80,
         overlayCss: {
             backgroundColor: "#111111"
