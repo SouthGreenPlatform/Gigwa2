@@ -1798,7 +1798,9 @@ public class GigwaRestController extends ControllerInterface {
 
 		Object metadataFileOrEndpoint = null;
 		try {
-			metadataFileOrEndpoint = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
+            boolean fIsFtp = metadataUri1.startsWith("ftp://");
+            boolean fIsRemote = fIsFtp || metadataUri1.startsWith("http://") || metadataUri1.startsWith("https://");
+			metadataFileOrEndpoint = fIsRemote ? new URL(metadataUri1) : new File(metadataUri1).toURI().toURL();
 		}
 		catch (MalformedURLException mue) {
 			progress.setError("Malformed URL: " + mue.getMessage());
