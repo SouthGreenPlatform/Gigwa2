@@ -1797,15 +1797,16 @@ public class GigwaRestController extends ControllerInterface {
         ProgressIndicator.registerProgressIndicator(progress);
 
 		Object metadataFileOrEndpoint = null;
-		try {
-            boolean fIsFtp = metadataUri1.startsWith("ftp://");
-            boolean fIsRemote = fIsFtp || metadataUri1.startsWith("http://") || metadataUri1.startsWith("https://");
-			metadataFileOrEndpoint = fIsRemote ? new URL(metadataUri1) : new File(metadataUri1).toURI().toURL();
-		}
-		catch (MalformedURLException mue) {
-			progress.setError("Malformed URL: " + mue.getMessage());
-			return processId;
-		}
+		if (metadataUri1 != null && !metadataUri1.trim().isEmpty())
+			try {
+	            boolean fIsFtp = metadataUri1.startsWith("ftp://");
+	            boolean fIsRemote = fIsFtp || metadataUri1.startsWith("http://") || metadataUri1.startsWith("https://");
+				metadataFileOrEndpoint = fIsRemote ? new URL(metadataUri1) : new File(metadataUri1).toURI().toURL();
+			}
+			catch (MalformedURLException mue) {
+				progress.setError("Malformed URL: " + mue.getMessage());
+				return processId;
+			}
 		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
