@@ -51,11 +51,11 @@ async function chartIndSelectionChanged() {
 	}
 	else
 	    groups = selectedValues.map(v => [v]);
-	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
 
+	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
+	$('#showChartButton').prop('disabled', groups.length < minRequiredGroups);
 	$('#indSelectionCount').html("&nbsp;");
-	if (groups.length >= minRequiredGroups) {
-		$('#showChartButton').prop('disabled', false);
+	if (groups.length > 0) {
 		$('#indSelectionCount').html("<span class='timer'></span>");
 		if (groupOption != "__") {
 			let workWithSamples = $('#workWithSamples').is(':checked');
@@ -119,8 +119,6 @@ async function chartIndSelectionChanged() {
 			updateIndSelectionCount();
 		}
 	}
-	else
-		$('#showChartButton').prop('disabled', true);
 
 	function updateIndSelectionCount() {
 		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
