@@ -1,6 +1,8 @@
 package fr.cirad.web.controller;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +22,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import fr.cirad.security.GigwaAuthenticationSuccessHandler;
 import fr.cirad.service.PasswordResetService;
+import fr.cirad.tools.AppConfig;
 
 @Controller
 public class GigwaAuthenticationController {
@@ -30,13 +33,28 @@ public class GigwaAuthenticationController {
 	public static final String LOGIN_RESET_PASSWORD_URL = "/resetPassword.do";
 	private static final String LOGIN_CAS_URL = "/login/cas.do";
 	private static final String LOGIN_FORM_URL = "/login.do";
+	private static final String INITIATE_CAS_URL = "/initiateCasLogin.do";
 
-	@Autowired
-	private PasswordResetService passwordResetService;
+	@Autowired private PasswordResetService passwordResetService;
+	@Autowired private GigwaAuthenticationSuccessHandler authenticationSuccessHandler;
+	@Autowired private AppConfig appConfig;
 
-	@Autowired
-	private GigwaAuthenticationSuccessHandler authenticationSuccessHandler;
-
+	@GetMapping(INITIATE_CAS_URL)
+	public String initiateCasLogin(HttpServletRequest request) {
+	    String referer = request.getHeader("Referer");
+	    if (referer != null && !referer.isBlank()) {
+	        // Store the React app's origin (strip path, keep base URL)
+	        try {
+	            URL refererUrl = new URL(referer);
+	            String base = refererUrl.getProtocol() + "://" + refererUrl.getHost()
+	                + (refererUrl.getPort() != -1 ? ":" + refererUrl.getPort() : "")
+	                + new URL(referer).getPath().replaceAll("/[^/]*$", "/");
+	            request.getSession().setAttribute("casReturnTo", base);
+	        } catch (MalformedURLException ignored) {}
+	    }
+	    return "redirect:" + appConfig.get("casServerURL") + "?service=" + URLEncoder.encode(appConfig.get("enforcedWebapRootUrl") + LOGIN_CAS_URL, StandardCharsets.UTF_8);
+	}
+	
 	@GetMapping(LOGIN_FORM_URL)
 	public ModelAndView loginFormPath(HttpServletRequest request, HttpServletResponse response) {
 		SavedRequest savedRequest = authenticationSuccessHandler.getRequestCache().getRequest(request, response);
@@ -53,16 +71,17 @@ public class GigwaAuthenticationController {
 	}
 
 	@GetMapping(LOGIN_CAS_URL)
-	public String casLoginPath(@RequestParam(name="url", required=false) String redirectUrl) {
-		if (redirectUrl != null && !"".equals(redirectUrl.trim())) {
-			try {
-				return "redirect:" + URLDecoder.decode(redirectUrl, StandardCharsets.UTF_8.name());
-			} catch (UnsupportedEncodingException exc) {
-				return "redirect:/index.jsp";
-			}
-		} else {
-			return "redirect:/index.jsp";
-		}
+	public String casLoginPath(@RequestParam(name="url", required=false) String redirectUrl, HttpServletRequest request) {
+	    if (redirectUrl != null && !redirectUrl.isBlank())
+	        return "redirect:" + URLDecoder.decode(redirectUrl, StandardCharsets.UTF_8);
+
+	    String sessionReturn = (String) request.getSession().getAttribute("casReturnTo");
+	    if (sessionReturn != null) {
+	        request.getSession().removeAttribute("casReturnTo");
+	        String sep = sessionReturn.contains("?") ? "&" : "?";
+	        return "redirect:" + sessionReturn + sep + "casAuth=1";
+	    }
+	    return "redirect:/index.jsp";
 	}
 
 	@GetMapping(LOGIN_LOST_PASSWORD_URL)
