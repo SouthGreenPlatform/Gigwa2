@@ -488,7 +488,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 			<hr />
 			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:6px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
-			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
+			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="example: https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
 			(You will be requested to provide an API key to be able to push exported files there)
 			<hr />
