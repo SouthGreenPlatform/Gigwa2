@@ -140,7 +140,7 @@ import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.mgdb.service.GigwaGa4ghServiceImpl;
 import fr.cirad.mgdb.service.VisualizationService;
 import fr.cirad.model.GigwaSearchVariantsExportRequest;
-import fr.cirad.model.MgdbDensityRequest;
+import fr.cirad.model.MgdbChartRequest;
 import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.MgdbVcfFieldPlotRequest;
 import fr.cirad.model.UserInfo;
@@ -719,7 +719,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -751,7 +751,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -783,7 +783,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -815,7 +815,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MAF_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -847,7 +847,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + MISSING_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -879,7 +879,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + HETZ_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
+	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
 		String token = progressToken != null ? progressToken : tokenManager.readToken(request);
 		try {
@@ -910,7 +910,7 @@ public class GigwaRestController extends ControllerInterface {
 			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
-    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbDensityRequest gr) throws Exception {
+    public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(gr.getVariantSetId());
         if (!tokenManager.canUserReadDB(token, info[0])) {
