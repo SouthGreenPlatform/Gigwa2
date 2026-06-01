@@ -45,6 +45,6 @@
     </head>
     <body style="background-color:#f0f0f0;">
         <%@include file="navbar.jsp" %>
-        <iframe src="private/AdminFrameSet.html" style="width:100vw; height:90vh; position:relative; border:0;"></iframe>
+        <iframe src="roleManager/index.html" style="width:100vw; height:90vh; position:relative; border:0;"></iframe>
     </body>
 </html>
