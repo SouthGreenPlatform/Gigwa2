@@ -1958,7 +1958,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		// get annotations 
 	   	$('#scrollingAnnotationDiv').html("");
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId),
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId) + '?projects=' + getProjectId().join(","),
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
@@ -1987,13 +1987,51 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				if (varGotMetaData)
 				{
 					var additionalInfo = new StringBuffer();
-					additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
+					additionalInfo.append("<div id='variantMetadata'" +
+							($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") +
+							"><h5>Variant metadata</h5><table class='table'><tr>");
+					additionalInfo.append("<th>project</th><th>run</th>");
+
 					for (var i=0; i<jsonResult.info.meta_header.length; i++)
-						additionalInfo.append('<th style="padding:3px;" ' + (i%2 == 0 ? 'class="panel-grey"' : '') + 'title="' + (typeof vcfFieldHeaders[jsonResult.info.meta_header[i]] !== 'undefined' ? vcfFieldHeaders[jsonResult.info.meta_header[i]]: '') + '">' + jsonResult.info.meta_header[i] + "</th>");
-					additionalInfo.append("</tr><tr>");
-					for (var i=0; i<jsonResult.info.meta_values.length; i++)
-						additionalInfo.append("<td" + (i%2 == 0 ? ' class="panel-grey"' : '') + ">" + jsonResult.info.meta_values[i] + "</td>");
-					additionalInfo.append("</tr></table></div>");
+						additionalInfo.append(
+								'<th style="padding:3px;" ' +
+								(i%2 == 0 ? 'class="panel-grey"' : '') +
+								'title="' +
+								(typeof vcfFieldHeaders[jsonResult.info.meta_header[i]] !== 'undefined'
+										? vcfFieldHeaders[jsonResult.info.meta_header[i]]
+										: '') +
+								'">' +
+								jsonResult.info.meta_header[i] +
+								"</th>"
+						);
+
+					additionalInfo.append("</tr>");
+					for (var key of Object.keys(jsonResult.info).sort())
+					{
+						if (!key.startsWith("meta_values_")) continue;
+
+						var parts = key.replace("meta_values_", "").split("_");
+						var projectName = $("#project option[data-id=" + $("#module").val() + "§" + parts[0] + "]").text();
+						var runName = parts.slice(1).join("_");
+
+						var values = jsonResult.info[key];
+
+						additionalInfo.append("<tr>");
+						additionalInfo.append("<td>" + projectName + "</td>");
+						additionalInfo.append("<td>" + runName + "</td>");
+
+						for (var j=0; j<values.length; j++)
+							additionalInfo.append(
+									"<td" + (j%2 == 0 ? ' class="panel-grey"' : '') + ">" +
+									values[j] +
+									"</td>"
+							);
+
+						additionalInfo.append("</tr>");
+					}
+
+					additionalInfo.append("</table></div>");
+
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
 				
