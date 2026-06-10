@@ -31,7 +31,7 @@ function getSelectedTypes() {
 function getSelectedSequences() {
     var selectedSequences = $('#Sequences').selectmultiple('value');
     if (selectedSequences === null || selectedSequences.length === seqCount)
-        return "";
+        return null;
     return selectedSequences.join(";");
 }
 
