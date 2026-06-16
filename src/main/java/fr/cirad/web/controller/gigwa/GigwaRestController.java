@@ -71,7 +71,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.brapi.v2.api.ServerinfoApi;
-import org.brapi.v2.model.ProgramListResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
@@ -122,7 +121,9 @@ import com.sun.jersey.api.client.ClientResponse;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
+import fr.cirad.mgdb.importing.AgriplexImport;
 import fr.cirad.mgdb.importing.BrapiImport;
+import fr.cirad.mgdb.importing.DArTagImport;
 import fr.cirad.mgdb.importing.DartImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
 import fr.cirad.mgdb.importing.HapMapImport;
@@ -2309,6 +2310,46 @@ public class GigwaRestController extends ControllerInterface {
                                                         fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
                                                 );
                                                 newProjId = ((DartImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("xlsx")) {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new AgriplexImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((AgriplexImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("ebsdtg")) {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new DArTagImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((DArTagImport) genotypeImporter.get()).importToMongo(params);
                                             }
                                             else {	// should be hapmap
                                                 Serializable s = filesByExtension.values().iterator().next();
