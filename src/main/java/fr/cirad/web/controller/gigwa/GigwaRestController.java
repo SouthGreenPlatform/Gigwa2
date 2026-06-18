@@ -2962,6 +2962,11 @@ public class GigwaRestController extends ControllerInterface {
 				}
 				String studyDbId = database + Helper.ID_SEPARATOR + projectId;
 				amsr.addStudyDbIdsItem(studyDbId);
+			} else { // get all database projects
+				List<String> studyDbIds = projectsMap.entrySet().stream()
+						.map(entry -> database + Helper.ID_SEPARATOR + entry.getKey())
+						.collect(Collectors.toList());
+				amsr.setStudyDbIds(studyDbIds);
 			}
 
 			if (body.getIndividuals() != null) {
@@ -3032,7 +3037,7 @@ public class GigwaRestController extends ControllerInterface {
 						matrix.setVariants(variants);
 					}
 
-					List<String> projects = new ArrayList<>();
+					Set<String> projects = new HashSet<>();
                     if (alleleMatrix.getVariantSetDbIds() != null) {
                         for (String variantSetDbId : alleleMatrix.getVariantSetDbIds()) {
                             String[] info = Helper.getInfoFromId(variantSetDbId, 3);
@@ -3041,7 +3046,7 @@ public class GigwaRestController extends ControllerInterface {
 								projects.add(projectName);
                             }
                         }
-						matrix.setProjects(projects);
+						matrix.setProjects(new ArrayList<>(projects));
                     }
 					if (!alleleMatrix.getDataMatrices().isEmpty()) {
 						matrix.setDataMatrix(alleleMatrix.getDataMatrices().get(0).getDataMatrix()); //get GT dataMatrice
