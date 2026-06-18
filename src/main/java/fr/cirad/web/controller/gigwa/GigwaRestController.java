@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.MalformedParametersException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -61,7 +62,11 @@ import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -70,8 +75,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.brapi.v2.api.AllelematrixApiController;
 import org.brapi.v2.api.ServerinfoApi;
-import org.brapi.v2.model.ProgramListResponse;
+import org.brapi.v2.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
@@ -97,17 +103,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.github.jmchilton.blend4j.galaxy.GalaxyInstance;
@@ -211,6 +211,8 @@ public class GigwaRestController extends ControllerInterface {
 	
 	@Autowired private PasswordResetService passwordResetService;
 
+	@Autowired private AllelematrixApiController allelematrixApiController;
+
 	/**
 	 * The Constant LOG.
 	 */
@@ -282,6 +284,8 @@ public class GigwaRestController extends ControllerInterface {
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
 	static public final String CONFIG_PARAM_URL = "/configParams";
+
+	static public final String EBS_MATRIX = "/search/genotypes";
 	
 	/**
 	 * get a unique processID
@@ -2879,5 +2883,145 @@ public class GigwaRestController extends ControllerInterface {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		}
 		return new ResponseEntity<fr.cirad.tools.security.UserInfo>(userInfo, HttpStatus.OK);
+	}
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EBS_MATRIX, notes = "Get genotype matrix.")
+	@RequestMapping(value = BASE_URL + EBS_MATRIX, method = RequestMethod.POST)
+	public ResponseEntity<GenotypeMatrixResponse> ebsMatrix(
+			@Parameter(in = ParameterIn.HEADER, description = "HTTP HEADER - Token used for Authorization   <strong> Bearer {token_string} </strong>" ,schema=@Schema())
+			@RequestHeader(value="Authorization", required=false) String authorization,
+			@Parameter(in = ParameterIn.DEFAULT, description = "Genotype data search request", schema=@Schema()) @Valid @RequestBody GenotypeMatrixRequest body
+	) {
+		GenotypeMatrixResponse ebsResp = new GenotypeMatrixResponse();
+		try {
+			String database = body.getDatabase();
+			Map<Integer, String> projectsMap = ga4ghService.getProjectIdToNameMap(database);
+
+			AlleleMatrixSearchRequest amsr = new AlleleMatrixSearchRequest();
+			if (body.getAggregateByIndividual() == true) {
+				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.GERMPLASM);
+			} else {
+				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.SAMPLE);
+			}
+			if (body.getProject() != null) {
+				Integer projectId = projectsMap.entrySet().stream()
+						.filter(e -> e.getValue().equals(body.getProject()))
+						.map(Map.Entry::getKey)
+						.findFirst()
+						.orElse(null);
+				if (projectId == null) {
+					throw new ResponseStatusException(
+							HttpStatus.BAD_REQUEST,
+							"The given project doesn't exist"
+					);
+				}
+				String studyDbId = database + Helper.ID_SEPARATOR + projectId;
+				amsr.addStudyDbIdsItem(studyDbId);
+			}
+
+			if (body.getIndividuals() != null) {
+				List<String> germplasmDbIds = body.getIndividuals()
+						.stream()
+						.map(individual -> database + Helper.ID_SEPARATOR + individual)
+						.collect(Collectors.toList());
+				amsr.setGermplasmDbIds(germplasmDbIds);
+
+			}
+			if (body.getSamples() != null) {
+				List<String> sampleDbIds = body.getSamples()
+						.stream()
+						.map(sample -> database + Helper.ID_SEPARATOR + sample)
+						.collect(Collectors.toList());
+				amsr.setSampleDbIds(sampleDbIds);
+			}
+
+			if (body.getVariants() != null) {
+				List<String> variantDbIds = body.getVariants()
+						.stream()
+						.map(variant -> database + Helper.ID_SEPARATOR + variant)
+						.collect(Collectors.toList());
+				amsr.setVariantDbIds(variantDbIds);
+			}
+			amsr.setPagination(body.getPagination());
+
+			Set<String> abbreviations = new HashSet<>();
+			abbreviations.add("GT"); // in order to get GT
+			amsr.setDataMatrixAbbreviations(new ArrayList<>(abbreviations));
+			amsr.setPreview(Boolean.FALSE);
+			amsr.setExpandHomozygotes(body.getExpandHomozygotes());
+
+			boolean vcfStyleGenotypes = body.getVcfStyleGenotypes() != null && body.getVcfStyleGenotypes();
+			ResponseEntity<AlleleMatrixResponse> resp0 = allelematrixApiController.searchAllelematrixPost(authorization, amsr, vcfStyleGenotypes);
+			if (resp0.getStatusCode().equals(HttpStatus.OK)) {
+				if (resp0.getBody() != null) {
+					ebsResp.setMetadata(resp0.getBody().getMetadata());
+					AlleleMatrix alleleMatrix = resp0.getBody().getResult();
+					GenotypeMatrix matrix = new GenotypeMatrix();
+					ebsResp.setResult(matrix);
+					matrix.setAggregateByGermplasm(body.getAggregateByIndividual());
+					matrix.setExpandHomozygotes(body.getExpandHomozygotes());
+
+					if (alleleMatrix.getGermplasmDbIds() != null) {
+						List<String> individuals = alleleMatrix.getGermplasmDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setIndividuals(individuals);
+					}
+					if (alleleMatrix.getSampleDbIds() != null) {
+						List<String> samples = alleleMatrix.getSampleDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setSamples(samples);
+
+						//get individuals names
+						LinkedHashMap<String, GenotypingSample> genSamples = MgdbDao.getInstance().loadSamplesForUser(database, null, null, samples, null, false, false);
+						List<String> individuals = samples.stream()
+								.map(sampleId -> genSamples.get(sampleId).getIndividual())
+								.toList();
+						matrix.setIndividuals(individuals);
+					}
+					if (alleleMatrix.getVariantDbIds() != null) {
+						List<String> variants = alleleMatrix.getVariantDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setVariants(variants);
+					}
+
+					List<String> projects = new ArrayList<>();
+                    if (alleleMatrix.getVariantSetDbIds() != null) {
+                        for (String variantSetDbId : alleleMatrix.getVariantSetDbIds()) {
+                            String[] info = Helper.getInfoFromId(variantSetDbId, 3);
+                            if (info != null) {
+                                String projectName = projectsMap.get(Integer.valueOf(info[1]));
+								projects.add(projectName);
+                            }
+                        }
+						matrix.setProjects(projects);
+                    }
+					if (!alleleMatrix.getDataMatrices().isEmpty()) {
+						matrix.setDataMatrix(alleleMatrix.getDataMatrices().getFirst().getDataMatrix()); //get GT dataMatrice
+					} else {
+						matrix.setDataMatrix(new ArrayList<>());
+					}
+
+					matrix.setPagination(alleleMatrix.getPagination());
+				}
+			} else {
+				if (resp0.getBody() != null) {
+					ebsResp.setMetadata(resp0.getBody().getMetadata());
+				}
+				return new ResponseEntity<>(ebsResp, resp0.getStatusCode());
+			}
+		} catch (MalformedParametersException | ResponseStatusException e) {
+			Metadata metadata = new Metadata();
+			Status status = new Status();
+			status.setMessage(e.getMessage());
+			metadata.addStatusItem(status);
+			ebsResp.setMetadata(metadata);
+			return new ResponseEntity<>(ebsResp, HttpStatus.BAD_REQUEST);
+		} catch (Exception ex) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return new ResponseEntity<>(ebsResp, HttpStatus.OK);
 	}
 }
