@@ -23,8 +23,10 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.MalformedParametersException;
 import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -60,12 +62,11 @@ import javax.ejb.ObjectNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
-import fr.cirad.mgdb.importing.parameters.FileImportParameters;
-import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
-import fr.cirad.mgdb.importing.parameters.PlinkImportParameters;
-import fr.cirad.mgdb.importing.parameters.VCFParameters;
-import fr.cirad.mgdb.model.mongo.maintypes.*;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.io.FileUtils;
@@ -74,7 +75,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.brapi.v2.api.AllelematrixApiController;
 import org.brapi.v2.api.ServerinfoApi;
+import org.brapi.v2.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
@@ -89,6 +92,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -98,17 +103,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.github.jmchilton.blend4j.galaxy.GalaxyInstance;
@@ -123,7 +122,9 @@ import com.sun.jersey.api.client.ClientResponse;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
+import fr.cirad.mgdb.importing.AgriplexImport;
 import fr.cirad.mgdb.importing.BrapiImport;
+import fr.cirad.mgdb.importing.DArTagImport;
 import fr.cirad.mgdb.importing.DartImport;
 import fr.cirad.mgdb.importing.FlapjackImport;
 import fr.cirad.mgdb.importing.HapMapImport;
@@ -133,6 +134,16 @@ import fr.cirad.mgdb.importing.PlinkImport;
 import fr.cirad.mgdb.importing.SequenceImport;
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
+import fr.cirad.mgdb.importing.parameters.FileImportParameters;
+import fr.cirad.mgdb.importing.parameters.FlapjackImportParameters;
+import fr.cirad.mgdb.importing.parameters.PlinkImportParameters;
+import fr.cirad.mgdb.importing.parameters.VCFParameters;
+import fr.cirad.mgdb.model.mongo.maintypes.BookmarkedQuery;
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
+import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
+import fr.cirad.mgdb.model.mongo.maintypes.Individual;
+import fr.cirad.mgdb.model.mongo.maintypes.VariantData;
+import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
 import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 import fr.cirad.mgdb.model.mongo.subtypes.SampleGenotype;
 import fr.cirad.mgdb.model.mongo.subtypes.VariantRunDataId;
@@ -201,6 +212,8 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired private IModuleManager moduleManager;
 	
 	@Autowired private PasswordResetService passwordResetService;
+
+	@Autowired private AllelematrixApiController allelematrixApiController;
 
 	/**
 	 * The Constant LOG.
@@ -272,6 +285,9 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
+	static public final String CONFIG_PARAM_URL = "/configParams";
+
+	static public final String GENOTYPE_MATRIX = "/search/genotypes";
 	
 	/**
 	 * get a unique processID
@@ -1787,13 +1803,16 @@ public class GigwaRestController extends ControllerInterface {
         ProgressIndicator.registerProgressIndicator(progress);
 
 		Object metadataFileOrEndpoint = null;
-		try {
-			metadataFileOrEndpoint = metadataUri1 != null && !metadataUri1.isEmpty() ? new URL(metadataUri1) : null;
-		}
-		catch (MalformedURLException mue) {
-			progress.setError("Malformed URL: " + mue.getMessage());
-			return processId;
-		}
+		if (metadataUri1 != null && !metadataUri1.trim().isEmpty())
+			try {
+	            boolean fIsFtp = metadataUri1.startsWith("ftp://");
+	            boolean fIsRemote = fIsFtp || metadataUri1.startsWith("http://") || metadataUri1.startsWith("https://");
+				metadataFileOrEndpoint = fIsRemote ? new URL(metadataUri1) : new File(metadataUri1).toURI().toURL();
+			}
+			catch (MalformedURLException mue) {
+				progress.setError("Malformed URL: " + mue.getMessage());
+				return processId;
+			}
 		AtomicReference<String> metadataImportProcessId = new AtomicReference<>();
 
 		final String sNormalizedModule = Normalizer.normalize(sModule, Normalizer.Form.NFD) .replaceAll("[^\\p{ASCII}]", "").replaceAll(" ", "_");
@@ -2006,27 +2025,71 @@ public class GigwaRestController extends ControllerInterface {
 
 				if (progress.getError() == null) {	// check if client is allowed to import
 					if (request.getSession().isNew()) {	// not being called from default UI: see if we should allow import
-						String remoteAddr = request.getHeader("X-Forwarded-For");
-						if (remoteAddr == null)
-							remoteAddr = request.getRemoteAddr();
-						String serversAllowedToImport = appConfig.get("serversAllowedToImport");
-						if (!remoteAddr.equals(request.getLocalAddr()) && (serversAllowedToImport == null || !Helper.split(serversAllowedToImport, ",").contains(remoteAddr)))
-							progress.setError("Remote client not allowed to import: " + remoteAddr);
-					}
+						String remoteAddr = request.getRemoteAddr();
+						String forwarded = request.getHeader("X-Forwarded-For");
 
-					Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
-					boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
-					if (progress.getError() == null && fDatasourceExists) {
-						if (fMayOnlyWriteTmpData)
-							progress.setError("You may only write to temporary databases");
-						else if (!writableDBs.contains(sNormalizedModule))
-							progress.setError("You may not write to database " + sNormalizedModule);
-					}
+						Set<String> trustedProxies = new HashSet<>(Arrays.asList("127.0.0.1", "::1", "0:0:0:0:0:0:0:1"));
+						String configuredTrusted = appConfig.get("trustedProxies");
+						if (configuredTrusted != null) {
+						    for (String proxy : configuredTrusted.split(",")) {
+						        proxy = proxy.trim();
+						        
+						        // Resolve hostnames to IP addresses (for dynamic IP support)
+						        try {
+						            for (InetAddress addr : InetAddress.getAllByName(proxy)) {
+						                trustedProxies.add(addr.getHostAddress());
+						            }
+						        } catch (Exception e) {
+						            // If resolution fails, add as-is (might be an IP address or unresolvable hostname)
+						            trustedProxies.add(proxy);
+						        }
+						    }
+						}
 
+						// Use X-Forwarded-For ONLY if request comes from trusted proxy
+						if (trustedProxies.contains(remoteAddr) && forwarded != null && !forwarded.isEmpty())
+						    remoteAddr = forwarded.split(",")[0].trim();
+
+						if (!remoteAddr.equals(request.getLocalAddr())) {
+						    Set<String> resolvedRemoteIps = new HashSet<>();	// Resolve remote address (handle hostnames, multiple IPs)
+						    try {
+						        for (InetAddress addr : InetAddress.getAllByName(remoteAddr))
+						            resolvedRemoteIps.add(addr.getHostAddress());
+						    } catch (Exception e) {
+						        resolvedRemoteIps.add(remoteAddr);
+						    }
+
+						    Set<String> allowed = new HashSet<>();	// Build allowed list (should ideally be cached)
+						    String serversAllowedToImport = appConfig.get("serversAllowedToImport");
+						    if (serversAllowedToImport != null) {
+						        for (String server : serversAllowedToImport.split(",")) {
+						            server = server.trim();
+						            try {
+						                for (InetAddress addr : InetAddress.getAllByName(server))
+						                    allowed.add(addr.getHostAddress());
+						            } catch (Exception e) {
+						                allowed.add(server);
+						            }
+						        }
+						    }
+
+						    if (!resolvedRemoteIps.stream().anyMatch(allowed::contains))
+						        progress.setError("Remote client not allowed to import: " + remoteAddr);
+						}
+
+						Collection<String> writableDBs = tokenManager.listWritableDBs(authToken);
+						boolean fMayOnlyWriteTmpData = !fAdminImporter && (fAnonymousImporter || writableDBs.size() == 0);
+						if (progress.getError() == null && fDatasourceExists) {
+						    if (fMayOnlyWriteTmpData)
+						        progress.setError("You may only write to temporary databases");
+						    else if (!writableDBs.contains(sNormalizedModule))
+						        progress.setError("You may not write to database " + sNormalizedModule);
+						}
+					}
 					if (progress.getError() != null)
-						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused (" + (fDatasourceExists ? "already existed" : "no permission")  + ") - request.getRemoteAddr: "
-							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() /*+ ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
-							+ request.getHeader("referer") */+ ", fMayOnlyWriteTmpData:" + fMayOnlyWriteTmpData + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew());
+						LOG.warn("Attempt to create database " + sNormalizedModule + " was refused " + (fDatasourceExists ? "(database already existed) " : "")  + "- request.getRemoteAddr: "
+							+ request.getRemoteAddr() + ", request.getLocalAddr: " + request.getLocalAddr() + ", X-Forwarded-Server: " + request.getHeader("X-Forwarded-Server") + ", referer: "
+							+ request.getHeader("referer") + ", user: " + auth.getName() + ", request.getSession().isNew():" + request.getSession().isNew() + ", reason:\"" + progress.getError() + "\"");
 				}
 
 				if (progress.getError() != null) {
@@ -2253,6 +2316,46 @@ public class GigwaRestController extends ControllerInterface {
                                                 );
                                                 newProjId = ((DartImport) genotypeImporter.get()).importToMongo(params);
                                             }
+                                            else if (filesByExtension.containsKey("xlsx")) {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new AgriplexImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((AgriplexImport) genotypeImporter.get()).importToMongo(params);
+                                            }
+                                            else if (filesByExtension.containsKey("ebsdtg")) {
+                                                Serializable s = filesByExtension.values().iterator().next();
+                                                boolean fIsGenotypingFileLocal = s instanceof File;
+                                                genotypeImporter.set(new DArTagImport(processId));
+                                                if (retrieveIndNamesViaBrapi)
+                                                    genotypeImporter.get().setBrapiEndPointForNamingIndividuals(brapiURLs, brapiTokens.isEmpty() ? null : brapiTokens);
+                                                FileImportParameters params = new FileImportParameters(
+                                                        sNormalizedModule,
+                                                        sProject,
+                                                        sRun,
+                                                        sTechnology == null ? "" : sTechnology,
+                                                        nPloidy,
+                                                        assemblyName,
+                                                        sampleToIndividualMapping,
+                                                        fSkipMonomorphic,
+                                                        Boolean.TRUE.equals(fClearProjectData) ? 1 : 0,
+                                                        fIsGenotypingFileLocal ? ((File) s).toURI().toURL() : (URL) s
+                                                );
+                                                newProjId = ((DArTagImport) genotypeImporter.get()).importToMongo(params);
+                                            }
                                             else {	// should be hapmap
                                                 Serializable s = filesByExtension.values().iterator().next();
                                                 boolean fIsGenotypingFileLocal = s instanceof File;
@@ -2342,9 +2445,12 @@ public class GigwaRestController extends ControllerInterface {
 													sCompletionMessage = "Error importing metadata: " + mdImportProgress.getError();
 											}
 										}
-                                        if (progress.getFinalMessage() != null) {
+                                        if (progress.getFinalMessage() != null)
                                             sCompletionMessage = sCompletionMessage == null ? progress.getFinalMessage() :  progress.getFinalMessage() + " " + sCompletionMessage;
-                                        }
+
+                                        String brapiStudyId = sModule + "§" + (project != null ? project.getId() : newProjId);
+                                        progress.setInfoValue("studyDbId", brapiStudyId);
+                                        progress.setInfoValue("variantSetDbId", brapiStudyId + "§" + sRun);
                                         progress.markAsComplete(sCompletionMessage);
 									}
 								}
@@ -2494,6 +2600,15 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + CONFIG_PARAM_URL, method = RequestMethod.GET, produces = "application/json")
+	public Map<String, String> getConfigParams(String pattern) {
+		if (!pattern.endsWith("*"))
+			return new HashMap<>() {{ put(pattern, appConfig.get(pattern)); }};
+		else
+			return appConfig.getPrefixed(pattern.substring(0, pattern.length() - 1));
+	}
+	
 	@ApiIgnore
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
@@ -2802,5 +2917,163 @@ public class GigwaRestController extends ControllerInterface {
 			i++;
 		}
 		return resultObjects;
+	}
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getUserInfo", notes = "get given user info")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@RequestMapping(value = BASE_URL + "/userInfo", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<fr.cirad.tools.security.UserInfo> getUserInfo(HttpServletRequest request, HttpServletResponse resp) throws IOException {
+		fr.cirad.tools.security.UserInfo userInfo = tokenManager.getUserInfo(tokenManager.readToken(request));
+		if (userInfo == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return new ResponseEntity<fr.cirad.tools.security.UserInfo>(userInfo, HttpStatus.OK);
+	}
+
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENOTYPE_MATRIX, notes = "Get genotype matrix.")
+	@RequestMapping(value = BASE_URL + GENOTYPE_MATRIX, method = RequestMethod.POST)
+	public ResponseEntity<GenotypeMatrixResponse> ebsMatrix(
+			@Parameter(in = ParameterIn.HEADER, description = "HTTP HEADER - Token used for Authorization   <strong> Bearer {token_string} </strong>" ,schema=@Schema())
+			@RequestHeader(value="Authorization", required=false) String authorization,
+			@Parameter(in = ParameterIn.DEFAULT, description = "Genotype data search request", schema=@Schema()) @Valid @RequestBody GenotypeMatrixRequest body
+	) {
+		GenotypeMatrixResponse response = new GenotypeMatrixResponse();
+		try {
+			String database = body.getDatabase();
+			if (database == null || database.trim().length() == 0)
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Database name is required");
+			
+			Map<Integer, String> projectsMap = ga4ghService.getProjectIdToNameMap(database);
+			AlleleMatrixSearchRequest amsr = new AlleleMatrixSearchRequest();
+			if (body.getAggregateByIndividual() == true) {
+				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.GERMPLASM);
+			} else {
+				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.SAMPLE);
+			}
+			if (body.getProject() != null) {
+				Integer projectId = projectsMap.entrySet().stream()
+						.filter(e -> e.getValue().equals(body.getProject()))
+						.map(Map.Entry::getKey)
+						.findFirst()
+						.orElse(null);
+				if (projectId == null) {
+					throw new ResponseStatusException(
+							HttpStatus.BAD_REQUEST,
+							"The given project doesn't exist"
+					);
+				}
+				String studyDbId = database + Helper.ID_SEPARATOR + projectId;
+				amsr.addStudyDbIdsItem(studyDbId);
+			} else { // get all database projects
+				List<String> studyDbIds = projectsMap.entrySet().stream()
+						.map(entry -> database + Helper.ID_SEPARATOR + entry.getKey())
+						.collect(Collectors.toList());
+				amsr.setStudyDbIds(studyDbIds);
+			}
+
+			if (body.getIndividuals() != null) {
+				List<String> germplasmDbIds = body.getIndividuals()
+						.stream()
+						.map(individual -> database + Helper.ID_SEPARATOR + individual)
+						.collect(Collectors.toList());
+				amsr.setGermplasmDbIds(germplasmDbIds);
+
+			}
+			if (body.getSamples() != null) {
+				List<String> sampleDbIds = body.getSamples()
+						.stream()
+						.map(sample -> database + Helper.ID_SEPARATOR + sample)
+						.collect(Collectors.toList());
+				amsr.setSampleDbIds(sampleDbIds);
+			}
+
+			if (body.getVariants() != null) {
+				List<String> variantDbIds = body.getVariants()
+						.stream()
+						.map(variant -> database + Helper.ID_SEPARATOR + variant)
+						.collect(Collectors.toList());
+				amsr.setVariantDbIds(variantDbIds);
+			}
+			amsr.setPagination(body.getPagination());
+
+			Set<String> abbreviations = new HashSet<>();
+			abbreviations.add("GT"); // in order to get GT
+			amsr.setDataMatrixAbbreviations(new ArrayList<>(abbreviations));
+			amsr.setPreview(Boolean.FALSE);
+			amsr.setExpandHomozygotes(body.getExpandHomozygotes());
+
+			boolean vcfStyleGenotypes = body.getVcfStyleGenotypes() != null && body.getVcfStyleGenotypes();
+			ResponseEntity<AlleleMatrixResponse> resp0 = allelematrixApiController.searchAllelematrixPost(authorization, amsr, vcfStyleGenotypes);
+			if (resp0.getStatusCode().equals(HttpStatus.OK)) {
+				if (resp0.getBody() != null) {
+					response.setMetadata(resp0.getBody().getMetadata());
+					AlleleMatrix alleleMatrix = resp0.getBody().getResult();
+					GenotypeMatrix matrix = new GenotypeMatrix();
+					response.setResult(matrix);
+					matrix.setAggregateByGermplasm(body.getAggregateByIndividual());
+					matrix.setExpandHomozygotes(body.getExpandHomozygotes());
+
+					if (alleleMatrix.getGermplasmDbIds() != null) {
+						List<String> individuals = alleleMatrix.getGermplasmDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setIndividuals(individuals);
+					}
+					if (alleleMatrix.getSampleDbIds() != null) {
+						List<String> samples = alleleMatrix.getSampleDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setSamples(samples);
+
+						//get individuals names
+						LinkedHashMap<String, GenotypingSample> genSamples = MgdbDao.getInstance().loadSamplesForUser(database, null, null, samples, null, false, false);
+						List<String> individuals = samples.stream()
+								.map(sampleId -> genSamples.get(sampleId).getIndividual())
+								.toList();
+						matrix.setIndividuals(individuals);
+					}
+					if (alleleMatrix.getVariantDbIds() != null) {
+						List<String> variants = alleleMatrix.getVariantDbIds().stream()
+								.map(id -> id.split(Helper.ID_SEPARATOR)[1])
+								.toList();
+						matrix.setVariants(variants);
+					}
+
+					Set<String> projects = new HashSet<>();
+                    if (alleleMatrix.getVariantSetDbIds() != null) {
+                        for (String variantSetDbId : alleleMatrix.getVariantSetDbIds()) {
+                            String[] info = Helper.getInfoFromId(variantSetDbId, 3);
+                            if (info != null) {
+                                String projectName = projectsMap.get(Integer.valueOf(info[1]));
+								projects.add(projectName);
+                            }
+                        }
+						matrix.setProjects(new ArrayList<>(projects));
+                    }
+					if (!alleleMatrix.getDataMatrices().isEmpty()) {
+						matrix.setDataMatrix(alleleMatrix.getDataMatrices().get(0).getDataMatrix()); //get GT dataMatrice
+					} else {
+						matrix.setDataMatrix(new ArrayList<>());
+					}
+
+					matrix.setPagination(alleleMatrix.getPagination());
+				}
+			} else {
+				if (resp0.getBody() != null) {
+					response.setMetadata(resp0.getBody().getMetadata());
+				}
+				return new ResponseEntity<>(response, resp0.getStatusCode());
+			}
+		} catch (MalformedParametersException | ResponseStatusException e) {
+			Metadata metadata = new Metadata();
+			Status status = new Status();
+			status.setMessage(e.getMessage());
+			metadata.addStatusItem(status);
+			response.setMetadata(metadata);
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		} catch (Exception ex) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }

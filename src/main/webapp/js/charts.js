@@ -51,11 +51,12 @@ async function chartIndSelectionChanged() {
 	}
 	else
 	    groups = selectedValues.map(v => [v]);
-	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
 
+	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
+	$('#showChartButton').prop('disabled', groups.length < minRequiredGroups);
 	$('#indSelectionCount').html("&nbsp;");
-	if (groups.length >= minRequiredGroups) {
-		$('#showChartButton').prop('disabled', false);
+	if (groups.length > 0) {
+		$('#indSelectionCount').html("<span class='timer'></span>");
 		if (groupOption != "__") {
 			let workWithSamples = $('#workWithSamples').is(':checked');
 			let selectedIndividuals = getSelectedIndividuals();
@@ -111,15 +112,13 @@ async function chartIndSelectionChanged() {
 				return;
 			}
 
-			const results = await Promise.all(selectedValues.map(value => getSelectedIndividuals([value], true)));
+			const results = await Promise.all(currentChartType == "fst" ? groups.map(g => getSelectedIndividuals(g, true)) : [getSelectedIndividuals(selectedValues, true)]);
 			callSetIds = results[0];
-			additionalCallSetIds = results.slice(1);
+			additionalCallSetIds = results.length > 1 ? results.slice(1) : [];
 
 			updateIndSelectionCount();
 		}
 	}
-	else
-		$('#showChartButton').prop('disabled', true);
 
 	function updateIndSelectionCount() {
 		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
@@ -175,6 +174,10 @@ function initializeChartDisplay() {
 		return;
 	}
 
+	const timerIconStyle = document.createElement('style');
+	timerIconStyle.textContent = '.timer{width:16px;height:16px;border:2px solid;border-radius:50%;display:inline-block;position:relative}.timer::after{content:"";position:absolute;width:1px;height:5px;background:currentColor;top:1px;left:50%;animation:r 1s linear infinite;transform-origin:bottom}@keyframes r{to{transform:rotate(360deg)}}';
+	document.head.appendChild(timerIconStyle);
+	
 	if ($("#plotGroupingMetadataValues").length == 0)
 		chartIndSelectionChanged();
 	localmin = null;
@@ -657,6 +660,7 @@ function displayChart(minPos, maxPos) {
 
 	calculateObjectHash(dataPayLoad)
 		.then(hash => {
+			processAborted = false;
 			let cachedResult = cachedResults[hash];
 			if (cachedResult != null)
 				displayResult(chartInfo, cachedResult, displayedVariantType, displayedSequence);

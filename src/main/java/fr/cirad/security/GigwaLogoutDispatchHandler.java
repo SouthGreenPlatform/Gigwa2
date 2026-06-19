@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 
 import fr.cirad.tools.security.TokenManager;
 
-
 /**
  * Redirect the user to different pages based on the authentication method
  * @author mignerot, sempere
@@ -32,17 +31,21 @@ public class GigwaLogoutDispatchHandler implements LogoutSuccessHandler {
 		this.methodRedirects = methodRedirects;
 	}
 
-	@Override
 	public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-		tokenManager.clearTokensTiedToAuthentication(authentication);	// if user opened several web-browser tabs there may be tokens to clear
+	    tokenManager.clearTokensTiedToAuthentication(authentication);
 
-		if (authentication == null || authentication.getPrincipal() == null)
-			response.sendRedirect(defaultRedirect);
-		else {
-			UserWithMethod user = (UserWithMethod)authentication.getPrincipal();
-			String redirect = methodRedirects.get(user.getMethod());
-			response.sendRedirect(redirect == null ? defaultRedirect : redirect);
-		}
+	    String returnTo = request.getParameter("returnTo");
+	    if (returnTo != null && !returnTo.isBlank()) {
+	        response.sendRedirect(returnTo);
+	        return;
+	    }
+
+	    if (authentication == null || authentication.getPrincipal() == null)
+	        response.sendRedirect(defaultRedirect);
+	    else {
+	        UserWithMethod user = (UserWithMethod) authentication.getPrincipal();
+	        String redirect = methodRedirects.get(user.getMethod());
+	        response.sendRedirect(redirect == null ? defaultRedirect : redirect);
+	    }
 	}
-
 }

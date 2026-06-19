@@ -72,7 +72,7 @@
 		The system embeds various online visualization features that are easy to operate. Gigwa also provides the means to export filtered data into several popular formats and features connectivity not only with online genomic tools, but also with standalone software such as FlapJack or IGV. Additionnally, Gigwa-hosted datasets are interoperable via two standard REST APIs: GA4GH and BrAPI.
 		</p>
 		<p class="margin-top bold" style="float: left">
-			Project homepage: <a href="https://southgreen.fr/content/gigwa" target='_blank'>http://southgreen.fr/content/gigwa</a>
+			Project homepage: <a href="https://www.southgreen.fr/gigwa/" target='_blank'>https://www.southgreen.fr/gigwa/</a>
 			<br/>
 			GitHub: <a href="https://github.com/SouthGreenPlatform/Gigwa2" target='_blank'>https://github.com/SouthGreenPlatform/Gigwa2</a>
 		</p>
@@ -488,7 +488,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 			</div>
 			<hr />
 			<span class='bold'>Favourite <a href="https://galaxyproject.org/" target="_blank" border="0" style="background-color:#333333; color:white; border-radius:3px; padding:6px;"><img alt="Galaxy" height="15" src="images/logo-galaxy.png" /> Galaxy</a> instance URL</span>
-			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
+			<input type="text" style="font-size:11px; width:230px; margin-bottom:5px;" placeholder="example: https://usegalaxy.org/" id="galaxyInstanceURL" onfocus="$(this).prop('previousVal', $(this).val());" onkeyup="checkIfOuputToolConfigChanged();" />
 			<br/>
 			(You will be requested to provide an API key to be able to push exported files there)
 			<hr />
@@ -1958,7 +1958,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		// get annotations 
 	   	$('#scrollingAnnotationDiv').html("");
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId),
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId) + '?projects=' + getProjectId().join(","),
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
@@ -1987,13 +1987,51 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 				if (varGotMetaData)
 				{
 					var additionalInfo = new StringBuffer();
-					additionalInfo.append("<div id='variantMetadata'" + ($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") + "><h5>Variant metadata</h5><table class='table'><tr>");
+					additionalInfo.append("<div id='variantMetadata'" +
+							($('#toggleVariantMetadata').hasClass('active') ? "" : " style='display:none;'") +
+							"><h5>Variant metadata</h5><table class='table'><tr>");
+					additionalInfo.append("<th>project</th><th>run</th>");
+
 					for (var i=0; i<jsonResult.info.meta_header.length; i++)
-						additionalInfo.append('<th style="padding:3px;" ' + (i%2 == 0 ? 'class="panel-grey"' : '') + 'title="' + (typeof vcfFieldHeaders[jsonResult.info.meta_header[i]] !== 'undefined' ? vcfFieldHeaders[jsonResult.info.meta_header[i]]: '') + '">' + jsonResult.info.meta_header[i] + "</th>");
-					additionalInfo.append("</tr><tr>");
-					for (var i=0; i<jsonResult.info.meta_values.length; i++)
-						additionalInfo.append("<td" + (i%2 == 0 ? ' class="panel-grey"' : '') + ">" + jsonResult.info.meta_values[i] + "</td>");
-					additionalInfo.append("</tr></table></div>");
+						additionalInfo.append(
+								'<th style="padding:3px;" ' +
+								(i%2 == 0 ? 'class="panel-grey"' : '') +
+								'title="' +
+								(typeof vcfFieldHeaders[jsonResult.info.meta_header[i]] !== 'undefined'
+										? vcfFieldHeaders[jsonResult.info.meta_header[i]]
+										: '') +
+								'">' +
+								jsonResult.info.meta_header[i] +
+								"</th>"
+						);
+
+					additionalInfo.append("</tr>");
+					for (var key of Object.keys(jsonResult.info).sort())
+					{
+						if (!key.startsWith("meta_values_")) continue;
+
+						var parts = key.replace("meta_values_", "").split("_");
+						var projectName = $("#project option[data-id=" + $("#module").val() + "§" + parts[0] + "]").text();
+						var runName = parts.slice(1).join("_");
+
+						var values = jsonResult.info[key];
+
+						additionalInfo.append("<tr>");
+						additionalInfo.append("<td>" + projectName + "</td>");
+						additionalInfo.append("<td>" + runName + "</td>");
+
+						for (var j=0; j<values.length; j++)
+							additionalInfo.append(
+									"<td" + (j%2 == 0 ? ' class="panel-grey"' : '') + ">" +
+									values[j] +
+									"</td>"
+							);
+
+						additionalInfo.append("</tr>");
+					}
+
+					additionalInfo.append("</table></div>");
+
 					$('#scrollingAnnotationDiv').append(additionalInfo.toString());
 				}
 				

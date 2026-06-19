@@ -57,6 +57,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
@@ -650,28 +651,23 @@ public class Ga4ghRestController extends ControllerInterface {
         }
     }
 
-    /**
-     * Get functional annotation of a variant from its ID, supports only VCF 4.2 annotation system (ANN)
-     *
-     * @param request
-     * @param id of the variant
-     * @return Variant Annotation
-     * @throws Exception 
-     */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantAnnotationById", notes = "get a VariantAnnotation from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = VariantAnnotation.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no VariantAnnotation with this ID")
-    })
+    @ApiOperation(
+	    authorizations = { @Authorization(value = "AuthorizationToken") },
+	    value = "getVariantAnnotationById",
+	    notes = "Get a VariantAnnotation from its ID."
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(code = 200, message = "Success", response = VariantAnnotation.class),
+	    @ApiResponse(code = 401, message = "Access forbidden"),
+	    @ApiResponse(code = 404, message = "No VariantAnnotation with this ID")
+	})
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws Exception {
-
+	public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestParam(required = false, name = "projects") String projects) throws Exception {
         String token = tokenManager.readToken(request);
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
-	            VariantAnnotation varAnn = service.getVariantAnnotation(id);
+	            VariantAnnotation varAnn = service.getVariantAnnotation(id, projects);
 	            if (varAnn == null)
 	                build404Response(response);
 	            return varAnn;
