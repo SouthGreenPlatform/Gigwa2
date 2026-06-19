@@ -287,7 +287,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
 	static public final String CONFIG_PARAM_URL = "/configParams";
 
-	static public final String EBS_MATRIX = "/search/genotypes";
+	static public final String GENOTYPE_MATRIX = "/search/genotypes";
 	
 	/**
 	 * get a unique processID
@@ -2930,18 +2930,20 @@ public class GigwaRestController extends ControllerInterface {
 		return new ResponseEntity<fr.cirad.tools.security.UserInfo>(userInfo, HttpStatus.OK);
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EBS_MATRIX, notes = "Get genotype matrix.")
-	@RequestMapping(value = BASE_URL + EBS_MATRIX, method = RequestMethod.POST)
+	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENOTYPE_MATRIX, notes = "Get genotype matrix.")
+	@RequestMapping(value = BASE_URL + GENOTYPE_MATRIX, method = RequestMethod.POST)
 	public ResponseEntity<GenotypeMatrixResponse> ebsMatrix(
 			@Parameter(in = ParameterIn.HEADER, description = "HTTP HEADER - Token used for Authorization   <strong> Bearer {token_string} </strong>" ,schema=@Schema())
 			@RequestHeader(value="Authorization", required=false) String authorization,
 			@Parameter(in = ParameterIn.DEFAULT, description = "Genotype data search request", schema=@Schema()) @Valid @RequestBody GenotypeMatrixRequest body
 	) {
-		GenotypeMatrixResponse ebsResp = new GenotypeMatrixResponse();
+		GenotypeMatrixResponse response = new GenotypeMatrixResponse();
 		try {
 			String database = body.getDatabase();
+			if (database == null || database.trim().length() == 0)
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Database name is required");
+			
 			Map<Integer, String> projectsMap = ga4ghService.getProjectIdToNameMap(database);
-
 			AlleleMatrixSearchRequest amsr = new AlleleMatrixSearchRequest();
 			if (body.getAggregateByIndividual() == true) {
 				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.GERMPLASM);
@@ -3004,10 +3006,10 @@ public class GigwaRestController extends ControllerInterface {
 			ResponseEntity<AlleleMatrixResponse> resp0 = allelematrixApiController.searchAllelematrixPost(authorization, amsr, vcfStyleGenotypes);
 			if (resp0.getStatusCode().equals(HttpStatus.OK)) {
 				if (resp0.getBody() != null) {
-					ebsResp.setMetadata(resp0.getBody().getMetadata());
+					response.setMetadata(resp0.getBody().getMetadata());
 					AlleleMatrix alleleMatrix = resp0.getBody().getResult();
 					GenotypeMatrix matrix = new GenotypeMatrix();
-					ebsResp.setResult(matrix);
+					response.setResult(matrix);
 					matrix.setAggregateByGermplasm(body.getAggregateByIndividual());
 					matrix.setExpandHomozygotes(body.getExpandHomozygotes());
 
@@ -3058,20 +3060,20 @@ public class GigwaRestController extends ControllerInterface {
 				}
 			} else {
 				if (resp0.getBody() != null) {
-					ebsResp.setMetadata(resp0.getBody().getMetadata());
+					response.setMetadata(resp0.getBody().getMetadata());
 				}
-				return new ResponseEntity<>(ebsResp, resp0.getStatusCode());
+				return new ResponseEntity<>(response, resp0.getStatusCode());
 			}
 		} catch (MalformedParametersException | ResponseStatusException e) {
 			Metadata metadata = new Metadata();
 			Status status = new Status();
 			status.setMessage(e.getMessage());
 			metadata.addStatusItem(status);
-			ebsResp.setMetadata(metadata);
-			return new ResponseEntity<>(ebsResp, HttpStatus.BAD_REQUEST);
+			response.setMetadata(metadata);
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 		} catch (Exception ex) {
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<>(ebsResp, HttpStatus.OK);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
