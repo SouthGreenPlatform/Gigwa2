@@ -4,7 +4,7 @@ services:
   tomcat:
     depends_on:
       - mongo
-    image: guilhemsempere/gigwa:2.12-RELEASE
+    image: guilhemsempere/gigwa:2.13-alpha
     ports:
       - 8080:8080 # You may amend the external port only (left hand side). By default, webapp URL will be http://host.ip:8080/gigwa
     restart: always
