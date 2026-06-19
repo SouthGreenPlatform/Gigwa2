@@ -269,6 +269,8 @@
 			                                            <div><u>Intertek format:</u> .intertek</div>
 														<div><u>Flapjack format:</u> .genotype + .map</div>
 														<div><u>DArTseq format:</u> .dart</div>
+														<div><u>EBS-DArTag format:</u> .ebsdtg</div>
+														<div><u>Agriplex format:</u> .xlsx</div>
 														<div class='mappingFileDesc text-red' style="display:none;"><u>Sample-individual tabulated mapping file:</u> .tsv or .csv</div>
 													</div>
 		       									</div>

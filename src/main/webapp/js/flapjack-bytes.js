@@ -4270,7 +4270,19 @@
           this.scoreMap.set(dataSet.germplasmListFiltered[comparedIndex].name, germplasmSimilarityScore(dataSet, referenceIndex, comparedIndex, this.chromosomeIndices));
         }
         dataSet.germplasmListFiltered.sort(function (a, b) {
-          return _this.scoreMap.get(b.name) - _this.scoreMap.get(a.name);
+          var aIsReference = a.name === _this.referenceName;
+          var bIsReference = b.name === _this.referenceName;
+
+          // Force reference line to absolute top
+          if (aIsReference && !bIsReference) {
+            return -1;
+          }
+          if (!aIsReference && bIsReference) {
+            return 1;
+          }
+          var aScore = _this.scoreMap.get(a.name);
+          var bScore = _this.scoreMap.get(b.name);
+          return bScore - aScore;
         });
       }
     }, {

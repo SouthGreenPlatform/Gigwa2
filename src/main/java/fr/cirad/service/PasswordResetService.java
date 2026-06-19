@@ -76,6 +76,8 @@ public class PasswordResetService {
         }
         if (sWebAppRoot == null)
             LOG.warn("Unable to determine password reset link. None will be mentioned in the e-mail!");
+        else if (sWebAppRoot.endsWith("/"))
+			sWebAppRoot = sWebAppRoot.substring(0, sWebAppRoot.length() - 1);
 
         String subject = "Gigwa - Password Reset Request";
         String emailContentText = "Hello,\n\nYou have requested to reset your password"
