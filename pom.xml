@@ -520,7 +520,6 @@
 								<argument>${project.basedir}/bundle_files/ubuntu/updateGigwa.sh</argument>
 								<argument>${project.basedir}/bundle_files/windows/updateGigwa.bat</argument>
 								<argument>${project.basedir}/bundle_files/osx/updateGigwa.command</argument>
-								<argument>target</argument>
 							</arguments>
 						</configuration>
 					</execution>
