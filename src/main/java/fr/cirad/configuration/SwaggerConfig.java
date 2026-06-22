@@ -17,6 +17,7 @@
 package fr.cirad.configuration;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,7 +62,7 @@ public class SwaggerConfig implements WebMvcConfigurer, ServletContextAware {
 
 	private static final Logger LOG = Logger.getLogger(SwaggerConfig.class);
 	static private ServletContext servletContext;
-	private String gigwaVersion = "";
+	static private String gigwaVersion = "";
 	private ApiKey apiKey = new ApiKey("AuthorizationToken", "Authorization", "header");
 	private DefaultPathProvider pathProvider = new DefaultPathProvider() {
 		@Override
@@ -158,10 +159,17 @@ public class SwaggerConfig implements WebMvcConfigurer, ServletContextAware {
 		servletContext = sc;
 		java.util.Properties prop = new java.util.Properties();
 		try {
-			prop.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
+			InputStream is = servletContext.getResourceAsStream("/META-INF/MANIFEST.MF");
+			if (is == null)
+			    is = getClass().getClassLoader().getResourceAsStream("MANIFEST.MF");
+			prop.load(is);
 			gigwaVersion = "v" + prop.getProperty("Implementation-version");
 		} catch (IOException e) {
 			Log.warn("Unable to determine Gigwa version for Swagger");
 		}
+	}
+	
+	static public String getGigwaVersion() {
+		return gigwaVersion;
 	}
 }

@@ -28,7 +28,7 @@
             <div class="navbar-header">
                 <a class="navbar-brand" href="<c:url value='/' />"><img src="<c:url value='/images/logo.png' />" height="25"></a>
             </div>
-           	<div id="appVersionNumber">${appVersionNumber == "" ? "" : ("v".concat(appVersionNumber))}</div>
+           	<div id="appVersionNumber">${appVersionNumber == "" ? "" : appVersionNumber}</div>
            	<div id="appVersionType">${appVersionType}</div>
             <div class="collapse navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">

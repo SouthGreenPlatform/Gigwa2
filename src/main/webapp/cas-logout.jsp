@@ -20,10 +20,8 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <%
-	java.util.Properties prop = new java.util.Properties();
-	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
-	String appVersion = prop.getProperty("Implementation-version");
-	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+	String appVersion = fr.cirad.configuration.SwaggerConfig.getGigwaVersion();
+	String[] splitAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
 
 
@@ -31,7 +29,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-        <title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>  
+        <title>Gigwa <%= appVersion == null ? "" : appVersion %></title>  
         <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" /> 
 		<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">
 		<link type="text/css" rel="stylesheet" href="css/main.css">

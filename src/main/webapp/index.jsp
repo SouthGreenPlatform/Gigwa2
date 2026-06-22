@@ -20,13 +20,11 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <%
-	java.util.Properties prop = new java.util.Properties();
-	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
-	String appVersion = prop.getProperty("Implementation-version");
-	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+	String appVersion = fr.cirad.configuration.SwaggerConfig.getGigwaVersion();
+	String[] splitAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="appVersionNumber" value='<%= splitAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splitAppVersion.length > 1 ? splitAppVersion[1] : "" %>' />
 <c:set var="idSep" value='<%= Helper.ID_SEPARATOR %>' />
 
 <html>
@@ -35,7 +33,7 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <meta name="google" content="notranslate">
 
-<title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
+<title>Gigwa <%= appVersion == null ? "" : appVersion %></title>
 <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
 <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css ">
 <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">

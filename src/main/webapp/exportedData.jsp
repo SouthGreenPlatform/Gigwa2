@@ -19,13 +19,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
-	java.util.Properties prop = new java.util.Properties();
-	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
-	String appVersion = prop.getProperty("Implementation-version");
-	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+	String appVersion = fr.cirad.configuration.SwaggerConfig.getGigwaVersion();
+	String[] splitAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="appVersionNumber" value='<%= splitAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splitAppVersion.length > 1 ? splitAppVersion[1] : "" %>' />
 <sec:authentication property="principal" var="principal"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 <%-- <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"></sec:authorize> --%>

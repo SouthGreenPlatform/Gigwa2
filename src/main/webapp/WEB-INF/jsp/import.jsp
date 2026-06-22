@@ -20,13 +20,11 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
-	java.util.Properties prop = new java.util.Properties();
-	prop.load(getServletContext().getResourceAsStream("/META-INF/MANIFEST.MF"));
-	String appVersion = prop.getProperty("Implementation-version");
-	String[] splittedAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
+	String appVersion = fr.cirad.configuration.SwaggerConfig.getGigwaVersion();
+	String[] splitAppVersion = appVersion == null ? new String[] {""} : appVersion.split("-");
 %>
-<c:set var="appVersionNumber" value='<%= splittedAppVersion[0] %>' />
-<c:set var="appVersionType" value='<%= splittedAppVersion.length > 1 ? splittedAppVersion[1] : "" %>' />
+<c:set var="appVersionNumber" value='<%= splitAppVersion[0] %>' />
+<c:set var="appVersionType" value='<%= splitAppVersion.length > 1 ? splitAppVersion[1] : "" %>' />
 <c:set var="supervisorRoleSuffix" value='<%= "$" + IRoleDefinition.ROLE_DB_SUPERVISOR %>' />
 <c:set var="loggedUser" value="<%=SecurityContextHolder.getContext().getAuthentication().getPrincipal()%>" />
 <c:set var='dbCreatorRole' value='<%= IRoleDefinition.ROLE_DB_CREATOR %>' />
