@@ -2932,7 +2932,7 @@ public class GigwaRestController extends ControllerInterface {
 
 	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENOTYPE_MATRIX, notes = "Get genotype matrix.")
 	@RequestMapping(value = BASE_URL + GENOTYPE_MATRIX, method = RequestMethod.POST)
-	public ResponseEntity<GenotypeMatrixResponse> ebsMatrix(
+	public ResponseEntity<GenotypeMatrixResponse> searchGenotypes(
 			@Parameter(in = ParameterIn.HEADER, description = "HTTP HEADER - Token used for Authorization   <strong> Bearer {token_string} </strong>" ,schema=@Schema())
 			@RequestHeader(value="Authorization", required=false) String authorization,
 			@Parameter(in = ParameterIn.DEFAULT, description = "Genotype data search request", schema=@Schema()) @Valid @RequestBody GenotypeMatrixRequest body
@@ -2950,6 +2950,25 @@ public class GigwaRestController extends ControllerInterface {
 			} else {
 				amsr.setDimensionColumnAggregation(AlleleMatrixSearchRequest.DimensionColumnAggregationEnum.SAMPLE);
 			}
+
+			List<String> germplasmDbIds = null;
+			if (body.getIndividuals() != null) {
+				germplasmDbIds = body.getIndividuals()
+						.stream()
+						.map(individual -> database + Helper.ID_SEPARATOR + individual)
+						.collect(Collectors.toList());
+				amsr.setGermplasmDbIds(germplasmDbIds);
+			}
+
+			List<String> sampleDbIds = null;
+			if (body.getSamples() != null) {
+				sampleDbIds = body.getSamples()
+						.stream()
+						.map(sample -> database + Helper.ID_SEPARATOR + sample)
+						.collect(Collectors.toList());
+				amsr.setSampleDbIds(sampleDbIds);
+			}
+
 			if (body.getProject() != null) {
 				Integer projectId = projectsMap.entrySet().stream()
 						.filter(e -> e.getValue().equals(body.getProject()))
@@ -2964,27 +2983,11 @@ public class GigwaRestController extends ControllerInterface {
 				}
 				String studyDbId = database + Helper.ID_SEPARATOR + projectId;
 				amsr.addStudyDbIdsItem(studyDbId);
-			} else { // get all database projects
+			} else if (sampleDbIds == null && germplasmDbIds == null) { // get all database projects
 				List<String> studyDbIds = projectsMap.entrySet().stream()
 						.map(entry -> database + Helper.ID_SEPARATOR + entry.getKey())
 						.collect(Collectors.toList());
 				amsr.setStudyDbIds(studyDbIds);
-			}
-
-			if (body.getIndividuals() != null) {
-				List<String> germplasmDbIds = body.getIndividuals()
-						.stream()
-						.map(individual -> database + Helper.ID_SEPARATOR + individual)
-						.collect(Collectors.toList());
-				amsr.setGermplasmDbIds(germplasmDbIds);
-
-			}
-			if (body.getSamples() != null) {
-				List<String> sampleDbIds = body.getSamples()
-						.stream()
-						.map(sample -> database + Helper.ID_SEPARATOR + sample)
-						.collect(Collectors.toList());
-				amsr.setSampleDbIds(sampleDbIds);
 			}
 
 			if (body.getVariants() != null) {
