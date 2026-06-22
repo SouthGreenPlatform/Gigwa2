@@ -35,7 +35,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-		<title>Gigwa <%= appVersion == null ? "" : ("v" + appVersion)%></title>
+		<title>Gigwa <%= appVersion == null ? "" : appVersion %></title>
         <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" /> 
         <link type="text/css" rel="stylesheet" href="css/bootstrap-select.min.css "> 
 		<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css">

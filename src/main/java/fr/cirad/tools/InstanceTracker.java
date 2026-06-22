@@ -25,7 +25,7 @@ public class InstanceTracker {
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
 	@Autowired private AppConfig appConfig;
 	
-	private static final String defaultTrackerUrl = "https://webtools.southgreen.fr/GigwaInstanceTracker";
+	private static final String defaultTrackerUrl = "https://gigwa.southgreen.fr/GigwaInstanceTracker";
 
 	@PostConstruct
 	public void onInstanceTrackerCreation() throws IOException { // tracker-config fix (should be removed at some point)
