@@ -3289,7 +3289,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
             }
         });
     	
-        var selectedSequences = getSelectedSequences() == "" ? [] : getSelectedSequences().split(";");		
+        var selectedSequences = getSelectedSequences() == null ? [] : getSelectedSequences().split(";");		
     	if (result.length == 0 || (selectedSequences.length > 0 && selectedSequences.length < result.length))
     		result = selectedSequences;
         return result;
