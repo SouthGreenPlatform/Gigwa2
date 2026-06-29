@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ModelAndView handleAllExceptions(HttpServletRequest request, HttpServletResponse response, Exception ex)
   {
-	  if (isBrapiRequest(request))
+	  if (isBrapiRequest(request) || isGigwaSearchGenotypesRequest(request))
 	  {
 	      HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -129,5 +129,17 @@ public class GlobalExceptionHandler {
 	        return false;
 
 	    return ((HandlerMethod) handler).getBeanType().getPackageName().startsWith("org.brapi.v2.api");
+	}
+  
+  private boolean isGigwaSearchGenotypesRequest(HttpServletRequest request) {
+	    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+	    if (!(handler instanceof HandlerMethod))
+	        return false;
+
+	    HandlerMethod handlerMethod = (HandlerMethod) handler;
+	    
+	    // Check if it's the GigwaRestController class and the searchGenotypes method
+	    return "fr.cirad.web.controller.gigwa.GigwaRestController".equals(handlerMethod.getBeanType().getName())
+	            && "searchGenotypes".equals(handlerMethod.getMethod().getName());
 	}
 }
