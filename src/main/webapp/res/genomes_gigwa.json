@@ -15,4 +15,104 @@
        "order": 0
      }
    ]
- }]
+ },
+ {
+   "id": "Equus_caballus_EquCab2",
+   "name": "Equus caballus EquCab2",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/equCab2.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/equCab2.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "Equus_caballus_EquCab3",
+   "name": "Equus caballus EquCab3",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/equCab3.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/equCab3.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "Ovis_aries_Oar_v3.1",
+   "name": "Ovis aries Oar_v3.1",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/oviAri3.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/oviAri3.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "Ovis_aries_Oar_v4.0",
+   "name": "Ovis aries Oar_v4.0",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/oviAri4.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/oviAri4.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "Sus_scrofa_Sscrofa10.2",
+   "name": "Sus scrofa Sscrofa10.2",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/susScr3.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/susScr3.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "capra_hircus_ARS1",
+   "name": "Capra hircus ARS1",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/Capra_hircus.ARS1.dna.toplevel_no_scaffolds.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/Capra_hircus.ARS1.dna.toplevel_no_scaffolds.fa.fai",
+   "tracks": [
+   ]
+ },
+ {
+   "id": "capra_hircus_CHIR_1.0",
+   "name": "Capra hircus CHIR_1.0",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/CHIR_1.0_genomic_no_scaffolds.fna",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/CHIR_1.0_genomic_no_scaffolds.fna.fai",
+   "tracks": [
+     {
+       "name": "Genes",
+       "type": "annotation",
+       "format": "gtf",
+       "sourceType": "file",
+       "url": "https://gigwa.southgreen.fr/genomes/annot/capra_hircus_CHIR_1.0.chr.sorted.gff3.gz",
+       "indexURL": "https://gigwa.southgreen.fr/genomes/annot/capra_hircus_CHIR_1.0.chr.sorted.gff3.gz.tbi",
+       "order": 0
+     }
+   ]
+ },
+ {
+  "id": "equus_asinus_EquAsi1",
+  "name": "Equus asinus EquAsi1.0",
+  "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_016077325.2_ASM1607732v2_genomic.renamed.fna",
+  "indexURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_016077325.2_ASM1607732v2_genomic.renamed.fna.fai",
+  "tracks": [
+    {
+      "name": "Genes",
+      "type": "annotation",
+      "format": "gff3",
+      "sourceType": "file",
+      "url": "https://gigwa.southgreen.fr/genomes/annot/GCF_016077325.2_ASM1607732v2_genomic.renamed.sorted.gff3.step3.gff3.gz",
+      "indexURL": "https://gigwa.southgreen.fr/genomes/annot/GCF_016077325.2_ASM1607732v2_genomic.renamed.sorted.gff3.step3.gff3.gz.tbi",
+      "order": 0
+    }
+  ]
+},
+{
+   "id": "vigna_unguiculata_IT97K-499-35_v1.2",
+   "name": "Vigna unguiculata L. Walp IT97K-499-35 genome v1.2",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_004118075.2_ASM411807v2_genomic.no_contigs.fna",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/GCF_004118075.2_ASM411807v2_genomic.no_contigs.fna.fai",
+   "tracks": [
+     {
+       "name": "Genes",
+       "type": "annotation",
+       "format": "gff3",
+       "sourceType": "file",
+       "url": "https://gigwa.southgreen.fr/genomes/annot/Vunguiculata_540_v1.2.gene_exons.no_contigs.sorted.gff3.gz",
+       "indexURL": "https://gigwa.southgreen.fr/genomes/annot/Vunguiculata_540_v1.2.gene_exons.no_contigs.sorted.gff3.gz.tbi",
+       "order": 0
+     }
+   ]
+ }
+]
