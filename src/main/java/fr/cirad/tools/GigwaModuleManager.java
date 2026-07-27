@@ -536,7 +536,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     static public String accountForEnvVariables(String stringContainingEnvVariables) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("#\\{systemEnvironment\\[(.*?)\\]\\}").matcher(stringContainingEnvVariables);
+    	java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?:\\$\\{(.*?)\\}|#\\{systemEnvironment\\[(.*?)\\]\\})").matcher(stringContainingEnvVariables);
         StringBuffer output = new StringBuffer();
         while (matcher.find()) {
             String matchingString = matcher.group(1), replacementString = System.getenv(matchingString.replaceAll("'|\"", ""));
