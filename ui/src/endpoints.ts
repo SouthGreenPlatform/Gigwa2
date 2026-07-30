@@ -68,6 +68,7 @@ const endpoints = {
   MANDATORY_METADATA_URL:           GIGWA_REST_ENDPOINT + "/mandatoryMetadata",
   GALAXY_HISTORY_PUSH_URL:          GIGWA_REST_ENDPOINT + "/pushToGalaxyHistory",
   TERMS_OF_USE_COOKIE_DURATION_URL: GIGWA_REST_ENDPOINT + "/termsOfUseCookieDurationInHours",
+  SNPCLUST_EDITION_URL:             GIGWA_REST_ENDPOINT + "/snpclustEditionURL",
 
   GA4GH_SEARCH_REFERENCESETS_URL:		GA4GH_REST_ENDPOINT + '/referencesets/search', // Databases available for given user
   INDIVIDUALS_URL:	              	GA4GH_REST_ENDPOINT + '/callsets/search', // Individuals or samples for a project's database
