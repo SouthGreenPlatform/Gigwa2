@@ -13,8 +13,12 @@ import ImportMetadata from "./Import/ImportMetadata.tsx";
 import Investigate from "./pages/Investigate";
 import { FiltersProvider } from "./contexts/Filters";
 import { TermsOfUseProvider } from "./contexts/TermsOfUse";
+import { useVersionCheck, BUILD_VERSION } from "./hooks/useVersionCheck";
+import VersionMismatchAlert from "./components/VersionMismatchAlert";
 
 function App() {
+  const { backendVersion, mismatch } = useVersionCheck();
+
   return (
     <AuthProvider>
       <AuthGate>
@@ -22,6 +26,7 @@ function App() {
         <TermsOfUseProvider>
         <div className="app-shell">
         <NavigationBar />
+        <VersionMismatchAlert show={mismatch} buildVersion={BUILD_VERSION} backendVersion={backendVersion} />
         <div className="app-content-scroll">
         <Routes>
           <Route path="/" element={<Home/>} />

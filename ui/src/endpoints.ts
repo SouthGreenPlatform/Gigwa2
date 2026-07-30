@@ -28,6 +28,7 @@ const endpoints = {
   IGV_DATA:		                      GIGWA_REST_ENDPOINT + "/igvData", // IGV data dynamically passed as TSV
   LOGIN_URL:		                    GIGWA_REST_ENDPOINT + '/generateToken',
   INSTANCE_CONTENTS_URL:	        	GIGWA_REST_ENDPOINT + '/instanceContentSummary', // Summary for an instance
+  VERSION_URL:                      GIGWA_REST_ENDPOINT + '/version', // Version of the running Gigwa backend
   VARIANT_TYPES_URL:	            	GIGWA_REST_ENDPOINT + '/variantTypes', // Types of variants for a project's database
   PLOIDY_LEVEL_URL:		              GIGWA_REST_ENDPOINT + '/ploidyLevel', // Ploidy level for a project's database
   NUMBER_ALLELES_URL:		            GIGWA_REST_ENDPOINT + '/numberOfAllele', // Number of alleles for a project's database
