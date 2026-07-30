@@ -1,0 +1,200 @@
+// ============================================
+// Dataset Selection - SaaS Style (Compact)
+// Mirrors filter-card.scss form control styling
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Row Container
+// ============================================
+.dataset-selection-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 1000;
+  flex-wrap: nowrap;
+
+  // Override multiselect-full-width which forces width: 100%
+  .btn-group.bootstrap-select,
+  .multiselect-full-width {
+    width: auto !important;
+  }
+}
+
+// ============================================
+// Select Dropdowns — identical to filter-card form controls
+// ============================================
+.dataset-selection-select {
+  width: auto !important;
+  max-width: 320px;
+  min-width: 0;
+  height: 26px;
+  padding: 3px 30px 3px 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  color: $text-primary !important;
+  background-color: $bg-white !important;
+  border: 1px solid $border-medium !important;
+  border-radius: $radius-sm !important;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transition: all $transition-speed ease;
+
+  // Reserve room for the dropdown chevron so text never runs under it
+  background-position: right 8px center !important;
+  background-size: 12px 9px !important;
+
+  // Make the select shrink to fit its CURRENT value, not the longest option
+  // (browsers size <select> to the widest option by default)
+  text-overflow: ellipsis;
+
+  option {
+    background-color: $bg-white;
+    color: $text-primary;
+  }
+
+  &:hover {
+    border-color: $primary-color !important;
+  }
+
+  &:focus {
+    border-color: $primary-color !important;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
+    outline: none !important;
+  }
+
+  &:disabled {
+    background-color: $bg-card !important;
+    color: $text-light !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// ============================================
+// Project Info Trigger
+// ============================================
+.dataset-selection-info-trigger {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.85;
+  transition: opacity $transition-speed ease, transform $transition-speed ease;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+// ============================================
+// MultiSelect toggle — same as filter-card
+// ============================================
+.dataset-selection-row {
+  [data-multiselect-toggle="true"],
+  button[data-multiselect-toggle="true"],
+  .btn[data-multiselect-toggle="true"],
+  .btn.dropdown-toggle[data-multiselect-toggle="true"] {
+    height: 26px !important;
+    padding: 3px 7px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    background-color: $bg-white !important;
+    color: $text-primary !important;
+    border: 1px solid $border-medium !important;
+    border-radius: $radius-sm !important;
+    box-shadow: $shadow-sm !important;
+    transition: all $transition-speed ease !important;
+    width: auto !important;
+    min-width: 80px;
+
+    &:hover {
+      border-color: $primary-color !important;
+      background-color: $bg-white !important;
+    }
+
+    &:focus,
+    &[aria-expanded="true"] {
+      border-color: $primary-color !important;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
+      background-color: $bg-white !important;
+    }
+
+    .multiselect-title {
+      color: $text-secondary !important;
+      font-size: 0.7rem !important;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .filter-option {
+      color: $text-secondary !important;
+      font-size: 0.7rem !important;
+    }
+  }
+
+  // Dropdown menu
+  .multiselect-menu {
+    background-color: $bg-white !important;
+    border: 1px solid $border-color !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+
+    [data-multiselect-row="true"] {
+      color: $text-primary !important;
+      font-size: 0.75rem !important;
+
+      &:hover {
+        background-color: $primary-light !important;
+        color: $primary-color !important;
+      }
+
+      &.selected {
+        background-color: $primary-light !important;
+        color: $primary-color !important;
+      }
+    }
+
+    .multiselect-checkmark {
+      color: $primary-color !important;
+    }
+
+    .multiselect-actionsbox {
+      background-color: $bg-white !important;
+      border-bottom-color: $border-color !important;
+    }
+
+    .actions-btn {
+      background-color: $bg-white !important;
+      border-color: $border-medium !important;
+      color: $text-primary !important;
+
+      &:hover {
+        border-color: $primary-color !important;
+        color: $primary-color !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 768px) {
+  .dataset-selection-row {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .dataset-selection-select {
+    max-width: 140px;
+    font-size: 0.7rem !important;
+  }
+
+  .dataset-selection-row [data-multiselect-toggle="true"] {
+    font-size: 0.7rem !important;
+  }
+}

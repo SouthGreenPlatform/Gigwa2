@@ -1,0 +1,81 @@
+@media (max-width: 768px) {
+  body {
+    background-color: #ffffff;
+    color: #333333;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+  button {
+    background-color: #8e24aa;
+    color: #8e24aa;
+    border: none;
+    padding: 1em 2em;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #bdbdbd;
+  }
+}
+@media (max-width: 576px) {
+  h1,
+  h2,
+  h3 {
+    color: #13a538;
+  }
+}
+
+
+a {
+  color: #e6007e;
+  text-decoration: none;
+}
+a:hover {
+  color: #bdbdbd;
+  text-decoration: underline;
+}
+
+.bg-yellow {
+  background-color: #dedc00;
+  color: #000000;
+  padding: 20px;
+  text-align: left;
+}
+
+.footer {
+  padding: 24px;
+  text-align: center;
+}
+
+
+
+.custom-modal-size {
+  max-width: 500px;
+  width: 300%;
+  max-height: 500vh;
+  display: flex;
+  align-items: center;
+}
+
+/* Show dropdown menu on hover */
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-toggle::after {
+  margin-left: 0.255em;
+}
+
+
+.icon-small {
+  width: 20px;
+  height: 20px;
+}
+
+
+.browse-checkbox .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 128, 0, 0.25);
+}
+
+/*# sourceMappingURL=custom.css.map */

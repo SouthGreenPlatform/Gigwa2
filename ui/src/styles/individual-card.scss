@@ -1,0 +1,462 @@
+// ============================================
+// Individual Card - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Card Container
+// ============================================
+.individual-card {
+  margin: 0 0 6px 5px;
+  animation: individualCardFadeIn 200ms ease;
+}
+
+@keyframes individualCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// Card Shell — group tint background restored
+// ============================================
+.individual-card-shell {
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8rem;
+  background-color: var(--group-tint);
+  border: 1px solid var(--group-bg) !important;
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+// ============================================
+// Card Header (Group Color)
+// ============================================
+.individual-card-header {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--group-text);
+  background-color: var(--group-bg);
+  padding: 5px 8px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+// ============================================
+// Group Name Input
+// ============================================
+.individual-card-name-input {
+  width: 115px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: $radius-sm;
+  color: var(--group-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  outline: none;
+  transition: all $transition-speed ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &:focus {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: $text-primary;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  }
+}
+
+// ============================================
+// Header Action Buttons
+// ============================================
+.individual-card-btn-transparent {
+  background-color: transparent !important;
+  color: var(--group-text) !important;
+  border: 1px solid transparent !important;
+  border-radius: $radius-sm !important;
+  padding: 2px 6px !important;
+  font-size: 0.75rem !important;
+  transition: all $transition-speed ease !important;
+  box-shadow: none !important;
+  line-height: 1;
+
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.85) !important;
+    color: white !important;
+  }
+
+  &:active {
+    background-color: rgba(220, 38, 38, 0.95) !important;
+    transform: scale(0.95);
+  }
+}
+
+.individual-card-toggle-btn {
+  border: none !important;
+  background-color: transparent !important;
+  color: var(--group-text) !important;
+  box-shadow: none !important;
+  padding: 2px 6px !important;
+  margin-right: 2px;
+  line-height: 1;
+  opacity: 0.85;
+  border-radius: $radius-sm !important;
+  transition: all $transition-speed ease !important;
+
+  svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  &:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    transform: scale(0.95);
+  }
+}
+
+// ============================================
+// Card Body (transparent so tint shows through)
+// ============================================
+.individual-card-shell .card-body {
+  background-color: transparent;
+  padding: 6px 8px !important;
+}
+
+// ============================================
+// Action Icon Buttons (Save, Search, Copy, Paste)
+// ============================================
+.individual-card-icon-btn {
+  padding: 3px 7px !important;
+  font-size: 0.75rem !important;
+  background-color: $bg-white !important;
+  color: var(--group-bg) !important;
+  border: 1px solid var(--group-bg) !important;
+  border-radius: $radius-sm !important;
+  margin-left: 3px;
+  transition: all $transition-speed ease !important;
+  box-shadow: $shadow-sm !important;
+  line-height: 1;
+
+  &:hover {
+    background-color: var(--group-bg) !important;
+    color: var(--group-text) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  svg {
+    font-size: 0.75rem;
+  }
+}
+
+.individual-card-icon-btn-saved {
+  background-color: $text-primary !important;
+  color: white !important;
+  border-color: $text-primary !important;
+
+  &:hover {
+    background-color: black !important;
+    border-color: black !important;
+    color: white !important;
+  }
+}
+
+// ============================================
+// Separator
+// ============================================
+.individual-card-separator {
+  border: none;
+  border-top: 1px solid var(--group-bg);
+  opacity: 0.4;
+  margin: 6px 0 !important;
+}
+
+// ============================================
+// Group Badge (Annotation labels)
+// ============================================
+.individual-card-group-badge {
+  background-color: $bg-white !important;
+  color: var(--group-bg) !important;
+  border: 1px solid var(--group-bg) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600;
+  padding: 2px 6px !important;
+  letter-spacing: 0.2px;
+}
+
+// ============================================
+// Small Form Controls
+// ============================================
+.individual-card-control-sm {
+  padding: 3px 7px !important;
+  font-size: 0.75rem !important;
+  border-radius: $radius-sm !important;
+  height: 26px;
+  transition: all $transition-speed ease !important;
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06) !important;
+  }
+}
+
+.individual-card-inputgroup {
+  margin-bottom: 4px;
+}
+
+// ============================================
+// Pattern Labels
+// ============================================
+.individual-card-pattern-label {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: $text-secondary;
+  letter-spacing: 0.2px;
+  margin-bottom: 2px !important;
+}
+
+// ============================================
+// Small Selects
+// ============================================
+.individual-card-select-sm {
+  font-size: 0.75rem !important;
+  padding: 3px 7px !important;
+  height: 26px;
+  border-radius: $radius-sm !important;
+  cursor: pointer;
+  transition: all $transition-speed ease !important;
+
+  &:hover {
+    border-color: var(--group-bg) !important;
+  }
+
+  &:focus {
+    border-color: var(--group-bg) !important;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06) !important;
+  }
+}
+
+.individual-card-select-grouped {
+  background-color: $bg-white;
+  color: $text-primary;
+  border-color: var(--group-bg) !important;
+}
+
+// ============================================
+// Generic Form Controls
+// ============================================
+.individual-card {
+  .form-control,
+  .form-select,
+  .input-group-text,
+  [data-multiselect-toggle="true"],
+  .dropdown-menu {
+    background-color: $bg-white !important;
+    color: $text-primary !important;
+    transition: all $transition-speed ease;
+  }
+
+  .form-control,
+  .form-select,
+  [data-multiselect-toggle="true"] {
+    border: 1px solid var(--group-bg) !important;
+    border-radius: $radius-sm !important;
+    font-size: 0.75rem;
+    box-shadow: $shadow-sm;
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06) !important;
+      outline: none !important;
+    }
+
+    &:disabled {
+      background-color: rgba(255, 255, 255, 0.5) !important;
+      color: $text-light !important;
+      cursor: not-allowed;
+    }
+  }
+
+  .input-group-text {
+    background-color: $bg-white !important;
+    color: var(--group-bg) !important;
+    border: 1px solid var(--group-bg) !important;
+    font-weight: 500;
+    font-size: 0.75rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .form-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-secondary;
+    margin-bottom: 2px !important;
+    letter-spacing: 0.2px;
+  }
+
+  .multiselect-title {
+    color: $text-secondary !important;
+    font-size: 0.7rem !important;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+
+  .filter-option,
+  .text,
+  .dropdown-item {
+    color: $text-primary;
+  }
+
+  // Dropdown menu styling
+  .dropdown-menu {
+    border: 1px solid var(--group-bg) !important;
+    box-shadow: $shadow-lg !important;
+    border-radius: $radius-md !important;
+  }
+
+  // Selected dropdown items get group tint
+  [data-multiselect-row="true"].selected {
+    background-color: var(--group-tint) !important;
+    color: var(--group-bg) !important;
+
+    .multiselect-checkmark {
+      color: var(--group-bg) !important;
+    }
+  }
+
+  // Row hover state uses group tint
+  [data-multiselect-row="true"]:hover {
+    background-color: var(--group-tint) !important;
+  }
+}
+
+// ============================================
+// Tooltips
+// ============================================
+.tooltip-inner {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: $radius-sm;
+  box-shadow: $shadow-md;
+}
+
+// ============================================
+// Responsive Design
+// ============================================
+@media (max-width: 768px) {
+  .individual-card {
+    margin: 0 0 6px 0;
+  }
+
+  .individual-card-name-input {
+    width: 95px;
+    font-size: 0.8rem;
+  }
+
+  .individual-card-icon-btn {
+    padding: 3px 6px !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+// ============================================
+// Dark Mode Support
+// ============================================
+@media (prefers-color-scheme: dark) {
+  .individual-card-shell {
+    // Mix group tint with dark background for subtle effect
+    background-color: color-mix(in srgb, var(--group-tint) 20%, #1f2937);
+    border-color: var(--group-bg) !important;
+
+    .card-body {
+      background-color: transparent;
+    }
+  }
+
+  .individual-card-name-input {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.15);
+
+    &:focus {
+      background-color: rgba(255, 255, 255, 0.95);
+      color: $text-primary;
+    }
+  }
+
+  .individual-card-icon-btn {
+    background-color: #1f2937 !important;
+    color: var(--group-bg) !important;
+
+    &:hover {
+      background-color: var(--group-bg) !important;
+      color: var(--group-text) !important;
+    }
+  }
+
+  .individual-card-icon-btn-saved {
+    background-color: #e5e7eb !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+
+    &:hover {
+      background-color: white !important;
+      color: black !important;
+    }
+  }
+
+  .individual-card-group-badge {
+    background-color: #1f2937 !important;
+  }
+
+  .individual-card {
+    .form-control,
+    .form-select,
+    .input-group-text,
+    [data-multiselect-toggle="true"],
+    .dropdown-menu {
+      background-color: #1f2937 !important;
+      color: #e5e7eb !important;
+    }
+
+    .input-group-text {
+      background-color: #1f2937 !important;
+    }
+
+    .form-label,
+    .multiselect-title {
+      color: #d1d5db !important;
+    }
+
+    .filter-option,
+    .text,
+    .dropdown-item {
+      color: #e5e7eb;
+    }
+  }
+}

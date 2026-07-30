@@ -1,0 +1,857 @@
+// ============================================
+// Investigate Page - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Root Container
+// ============================================
+.investigate-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background-color: $bg-page;
+}
+
+// ============================================
+// Panel Group & Panels
+// ============================================
+
+.investigate-panel-group {
+  flex: 1;
+  gap: 0;
+}
+
+.investigate-left-panel {
+  height: 100%;
+  overflow: auto;
+  padding: 8px 8px 8px 4px;
+  background-color: $bg-page;
+
+  // Custom scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+}
+
+.investigate-right-panel {
+  height: 100%;
+  overflow: hidden;
+  padding: 8px 12px;
+  background-color: $bg-white;
+  position: relative;
+  flex-direction: column;
+  display: flex;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+}
+
+// ============================================
+// Resize Handle
+// ============================================
+.investigate-resize-handle {
+  width: 4px;
+  background-color: $border-color;
+  cursor: col-resize;
+  transition: background-color $transition-speed ease;
+  position: relative;
+
+  &:hover {
+    background-color: $primary-color;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 30px;
+    background-color: $border-medium;
+    border-radius: 1px;
+    opacity: 0.6;
+  }
+
+  &:hover::after {
+    background-color: $primary-color;
+    opacity: 1;
+  }
+}
+
+// ============================================
+// Top Toolbar
+// ============================================
+.investigate-top-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  .browse-checkbox {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $text-secondary;
+    font-weight: 500;
+    user-select: none;
+
+    .form-check-input {
+      cursor: pointer;
+      border-color: $border-medium;
+      transition: all $transition-speed ease;
+
+      &:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+      }
+    }
+
+    .form-check-label {
+      cursor: pointer;
+      margin-left: 4px;
+    }
+  }
+
+  #variantSearchResultsNavigation {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: auto;
+    min-width: 160px;
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: $radius-pill;
+    padding: 2px 4px;
+    flex: 0 0 auto;
+    margin: 0;
+    box-shadow: $shadow-sm;
+    transition: box-shadow $transition-speed ease;
+
+    &:hover {
+      box-shadow: $shadow-md;
+    }
+  }
+
+  #currentDataOutputs {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+}
+
+// ============================================
+// Search Button (Primary action)
+// ============================================
+.investigate-top-toolbar .btn.btn-primary.investigate-search-btn {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 18px;
+  background-color: $primary-color;
+  border-color: $primary-color;
+  border-radius: $radius-md !important;
+  box-shadow: $shadow-sm;
+  transition: all $transition-speed ease;
+  letter-spacing: 0.2px;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-hover;
+    border-color: $primary-hover;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: $primary-active;
+    transform: translateY(0);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled {
+    background-color: $text-light;
+    border-color: $text-light;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  }
+}
+
+// ============================================
+// Navigation Buttons (Chevron)
+// ============================================
+.investigate-nav-btn {
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.7rem !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: $text-secondary !important;
+  transition: all $transition-speed ease !important;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-light !important;
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $primary-color !important;
+    color: white !important;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 0.7rem;
+  }
+}
+
+.investigate-nav-range {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: $text-primary;
+  padding: 0 6px;
+}
+
+.investigate-nav-total {
+  color: $text-muted;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+// ============================================
+// Current Data Outputs (Toolbar right side)
+// ============================================
+.investigate-current-data-outputs {
+  border: 1px dashed $border-medium;
+  padding: 4px 6px;
+  border-radius: $radius-md;
+  min-width: auto;
+  background-color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .btn {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: $radius-sm;
+    font-weight: 500;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+
+    &.btn-primary {
+      background-color: $primary-color;
+      border-color: $primary-color;
+
+      &:hover {
+        background-color: $primary-hover;
+        border-color: $primary-hover;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+      }
+    }
+
+    svg {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// ============================================
+// Export Toggle Button (rounded icon)
+// ============================================
+.investigate-export-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-speed ease;
+  border-radius: 50% !important;
+}
+
+.investigate-export-toggle-active {
+  background-color: $primary-light !important;
+  color: $primary-color !important;
+  border-color: $primary-color !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+.investigate-export-icon {
+  font-size: 0.85rem;
+  position: relative;
+  top: 0;
+}
+
+.investigate-export-icon-active {
+  color: $primary-color;
+}
+
+// ============================================
+// Loading Overlay
+// ============================================
+.investigate-loading-overlay {
+  z-index: 10;
+  min-height: 200px;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(2px);
+
+  .spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-width: 0.18em;
+    color: $primary-color !important;
+  }
+
+  span:not(.spinner-border) {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+}
+
+.investigate-loading-icon {
+  font-size: 1.1rem;
+  color: $primary-color;
+}
+
+// ============================================
+// Results Table
+// ============================================
+
+.investigate-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+} 
+.investigate-results-table {
+  background-color: $bg-white;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-md;
+  overflow: visible;
+  margin-bottom: 0;
+  --bs-table-cell-padding-y: 0.4rem;
+  --bs-table-cell-padding-x: 0.6rem;
+  box-shadow: $shadow-sm;
+  font-size: 0.8rem;
+
+  // Header
+  thead th {
+    background-color: $bg-card-alt !important;
+    color: $text-primary !important;
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 8px 10px;
+    border-bottom: 2px solid $border-medium !important;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+
+  }
+
+  // Body
+  tbody td {
+    font-size: 0.8rem !important;
+    color: $text-primary;
+    padding: 6px 10px;
+    vertical-align: top;
+    border-color: $border-light !important;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  }
+
+  tbody tr {
+    transition: background-color $transition-speed ease;
+
+    &:hover > td {
+      background-color: $primary-light !important;
+    }
+  }
+
+  
+
+  // View Details button inside table
+  .btn.btn-primary.investigate-view-details-btn {
+    margin: 0 !important;
+    padding: 3px 10px !important;
+    font-size: 0.7rem !important;
+    font-weight: 500;
+    line-height: 1.3;
+    min-height: 0;
+    white-space: nowrap;
+    background-color: $primary-color;
+    border-color: $primary-color;
+    border-radius: $radius-sm !important;
+    box-shadow: none;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    }
+
+    &:active {
+      background-color: $primary-active;
+    }
+  }
+}
+
+// ============================================
+// Allele Badges
+// ============================================
+.investigate-allele-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  color: white;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  min-width: 20px;
+  text-align: center;
+  & + & {
+    margin-left: 4px;
+  }
+}
+
+.investigate-allele-ref {
+  background-color: $success-color;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+}
+
+.investigate-allele-alt {
+  background-color: $danger-color;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+}
+
+// ============================================
+// Count Pill
+// ============================================
+.investigate-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  background-color: $success-light;
+  color: $success-dark;
+  padding: 8px 16px;
+  border: 1px solid color-mix(in srgb, $success-color 75%, white);
+  border-radius: $radius-md;
+  margin-top: 12px;
+  box-shadow: $shadow-sm;
+  transition: all $transition-speed ease;
+
+  &::before {
+    content: "✓";
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+// ============================================
+// Filter Accordion
+// ============================================
+.investigate-filter-accordion {
+  .accordion-item {
+    border: 0;
+    background-color: transparent;
+    margin-bottom: 4px;
+  }
+
+  .accordion-header {
+    margin-left: 0;
+  }
+
+  .accordion-button,
+  .accordion-button.collapsed,
+  .accordion-button:not(.collapsed) {
+    background-color: $bg-card-alt;
+    color: $text-primary;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 8px 12px;
+    border-radius: $radius-md !important;
+    box-shadow: none;
+    border: 1px solid $border-color;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $border-color;
+    }
+
+    &:not(.collapsed) {
+      background-color: $primary-light;
+      color: $primary-color;
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    &::after {
+      width: 0.9rem;
+      height: 0.9rem;
+      background-size: 0.9rem;
+    }
+  }
+
+  .accordion-body {
+    border: 0;
+    padding: 6px 0 0 0;
+  }
+
+  .accordion-button {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.investigate-filter-title {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+// ============================================
+// Filter Reset Button (inside accordion header)
+// ============================================
+.investigate-filter-reset-btn {
+  margin-left: auto;
+  margin-right: 1.5rem;
+  font-size: 0.7rem !important;
+  font-weight: 500;
+  padding: 3px 10px !important;
+  background-color: $bg-white !important;
+  border: 1px solid $border-medium !important;
+  color: $text-secondary !important;
+  border-radius: $radius-sm !important;
+  box-shadow: $shadow-sm;
+  transition: all $transition-speed ease !important;
+  height: auto;
+  line-height: 1.4;
+
+  &:hover {
+    background-color: $danger-light !important;
+    border-color: $danger-color !important;
+    color: $danger-color !important;
+  }
+
+  &:active {
+    background-color: $danger-color !important;
+    color: white !important;
+  }
+}
+
+// ============================================
+// Generic Search Button class (for elsewhere)
+// ============================================
+.investigate-search-btn {
+  border-radius: $radius-md !important;
+}
+
+// ============================================
+// Modal Styling Overrides (for Investigate modals)
+// ============================================
+.modal-content {
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+}
+
+// ============================================
+// Tooltips
+// ============================================
+.tooltip {
+  .tooltip-inner {
+    background-color: $text-primary;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-md;
+  }
+}
+
+// ============================================
+// Animations
+// ============================================
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.investigate-results-table,
+.investigate-count-pill {
+  animation: fadeInUp 200ms ease;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 992px) {
+  .investigate-top-toolbar {
+    gap: 8px;
+    padding: 6px 8px;
+
+    .browse-checkbox {
+      font-size: 0.75rem;
+    }
+
+    #currentDataOutputs {
+      margin-left: 0;
+      flex-wrap: wrap;
+    }
+  }
+
+  .investigate-current-data-outputs {
+    .btn {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .investigate-top-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    #variantSearchResultsNavigation,
+    #currentDataOutputs {
+      width: 100%;
+    }
+  }
+
+  .investigate-results-table {
+    font-size: 0.75rem;
+
+    thead th {
+      font-size: 0.7rem;
+      padding: 6px 8px;
+    }
+
+    tbody td {
+      padding: 5px 8px;
+    }
+  }
+}
+
+// ============================================
+// Dark Mode
+// ============================================
+@media (prefers-color-scheme: dark) {
+  .investigate-root {
+    background-color: #0f172a;
+  }
+
+  .investigate-left-panel {
+    background-color: #0f172a;
+  }
+
+  .investigate-right-panel {
+    background-color: #1f2937;
+  }
+
+  .investigate-resize-handle {
+    background-color: #374151;
+
+    &:hover {
+      background-color: #60a5fa;
+    }
+  }
+
+  .investigate-top-toolbar {
+    background-color: #1f2937;
+    border-color: #374151;
+
+    .browse-checkbox {
+      color: #d1d5db;
+    }
+
+    #variantSearchResultsNavigation {
+      background-color: #111827;
+      border-color: #374151;
+    }
+  }
+
+  .investigate-nav-btn {
+    color: #9ca3af !important;
+
+    &:hover:not(:disabled) {
+      background-color: #1e3a5f !important;
+      border-color: #60a5fa !important;
+      color: #60a5fa !important;
+    }
+  }
+
+  .investigate-nav-range {
+    color: #e5e7eb;
+  }
+
+  .investigate-nav-total {
+    color: #9ca3af;
+  }
+
+  .investigate-current-data-outputs {
+    border-color: #4b5563;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .investigate-loading-overlay {
+    background-color: rgba(31, 41, 55, 0.85) !important;
+
+    span:not(.spinner-border) {
+      color: #d1d5db;
+    }
+  }
+
+  .investigate-count-pill {
+    background-color: rgba(22, 163, 74, 0.15);
+    color: #86efac;
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+
+  .investigate-filter-accordion {
+    .accordion-button,
+    .accordion-button.collapsed,
+    .accordion-button:not(.collapsed) {
+      background-color: #1f2937;
+      color: #e5e7eb;
+      border-color: #374151;
+
+      &:hover {
+        background-color: #374151;
+      }
+
+      &:not(.collapsed) {
+        background-color: #1e3a5f;
+        color: #60a5fa;
+        border-color: #60a5fa;
+      }
+    }
+  }
+
+  .investigate-filter-reset-btn {
+    background-color: #111827 !important;
+    border-color: #374151 !important;
+    color: #d1d5db !important;
+
+    &:hover {
+      background-color: rgba(239, 68, 68, 0.15) !important;
+      border-color: $danger-color !important;
+      color: #fca5a5 !important;
+    }
+  }
+}

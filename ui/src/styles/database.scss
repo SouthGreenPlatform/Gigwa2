@@ -1,0 +1,36 @@
+.database-page-root {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.database-loading-wrapper {
+  position: relative;
+  width: 90%;
+  margin-left: 5%;
+  margin-top: 20px;
+}
+
+.database-loading-overlay {
+  z-index: 10;
+  min-height: 200px;
+}
+
+.database-loading-table {
+  width: 100%;
+  background: #f8f9fa;
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.database-loading-icon {
+  font-size: 2rem;
+}
+
+.database-results-table {
+  width: 90%;
+  margin-left: 5%;
+  margin-top: 20px;
+  background: #f8f9fa;
+}

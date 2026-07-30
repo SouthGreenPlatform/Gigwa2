@@ -1,0 +1,193 @@
+@use '_shared' as *;
+
+.project-info-modal {
+  --bs-modal-width: 560px;
+
+  .modal-content {
+    border: none;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+    border-bottom: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .modal-body {
+    padding: 18px 20px;
+    font-size: 0.85rem;
+    color: $text-secondary;
+    background-color: $bg-white;
+  }
+}
+
+// ============================================
+// Loading state
+// ============================================
+.project-info-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  color: $text-muted;
+  font-size: 0.85rem;
+  padding: 24px 0;
+
+  .spinner-border {
+    color: $primary-color;
+  }
+}
+
+// ============================================
+// Database summary callout
+// ============================================
+.project-info-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: $primary-active;
+  background-color: $primary-light;
+  border: 1px solid color-mix(in srgb, $primary-color 65%, white);
+  border-left: 3px solid $primary-color;
+  border-radius: $radius-md;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.project-info-summary-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.project-info-summary-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.project-info-run-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $text-secondary;
+  margin-bottom: 16px;
+}
+
+.project-info-run-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 0 6px;
+  height: 20px;
+  background-color: $primary-color;
+  color: $bg-white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: $radius-pill;
+  margin: 0 2px;
+}
+
+// ============================================
+// Per-project sections
+// ============================================
+.project-info-section {
+  background-color: $bg-card-alt;
+  border: 1px solid $border-medium;
+  border-radius: $radius-md;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: $shadow-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.project-info-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $text-muted;
+  margin-bottom: 2px;
+}
+
+.project-info-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid $border-light;
+}
+
+.project-info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.project-info-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: $bg-white;
+  border: 1px solid $border-medium;
+  border-radius: $radius-pill;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+}
+
+.project-info-tag-key {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: $text-muted;
+}
+
+.project-info-tag-value {
+  color: $text-primary;
+  font-weight: 600;
+}
+
+.project-info-description {
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: $text-secondary;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: $bg-white;
+  border: 1px solid $border-light;
+  border-radius: $radius-sm;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.project-info-empty {
+  color: $text-muted;
+  font-style: italic;
+  margin: 0;
+}

@@ -1,0 +1,566 @@
+// ============================================
+// Chart Modal - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Overlay
+// ============================================
+.chart-modal-overlay {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+// ============================================
+// Shell & Content
+// ============================================
+.chart-modal-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chart-modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  background-color: $bg-white;
+}
+
+// ============================================
+// Header / Controls Bar
+// ============================================
+.chart-modal-header {
+  padding: 8px 12px !important;
+  background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+  border-bottom: 1px solid $border-color !important;
+  gap: 8px;
+
+  // ── All toolbar buttons ──
+  .btn {
+    font-size: 0.75rem !important;
+    font-weight: 500;
+    padding: 4px 10px !important;
+    height: 28px;
+    line-height: 1;
+    border-radius: $radius-sm !important;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+    white-space: nowrap;
+  }
+
+  // Default / secondary / light / outline-secondary toggle buttons
+  .btn.btn-secondary,
+  .btn.btn-light,
+  .btn.btn-outline-secondary,
+  .btn.dropdown-toggle:not(.btn-success):not(.btn-outline-danger) {
+    background-color: $bg-white !important;
+    color: $text-secondary !important;
+    border: 1px solid $border-medium !important;
+
+    &:hover {
+      background-color: $primary-light !important;
+      border-color: $primary-color !important;
+      color: $primary-color !important;
+    }
+
+    &:active,
+    &.show,
+    &[aria-expanded="true"] {
+      background-color: $primary-color !important;
+      border-color: $primary-color !important;
+      color: white !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.15) !important;
+      outline: none;
+    }
+
+    &::after {
+      margin-left: 6px;
+      opacity: 0.6;
+    }
+  }
+
+  // "Show" button — primary action
+  .btn.btn-success {
+    background-color: $primary-color !important;
+    border-color: $primary-color !important;
+    color: white !important;
+    font-weight: 600;
+    padding: 4px 16px !important;
+    letter-spacing: 0.2px;
+
+    &:hover:not(:disabled) {
+      background-color: $primary-hover !important;
+      border-color: $primary-hover !important;
+      box-shadow: 0 2px 6px rgba($primary-color, 0.25);
+    }
+
+    &:active:not(:disabled) {
+      background-color: $primary-active !important;
+      border-color: $primary-active !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.25) !important;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  // "Zoom out" button
+  .btn.btn-outline-secondary:not(.dropdown-toggle) {
+    background-color: $bg-white !important;
+    color: $text-secondary !important;
+    border: 1px solid $border-medium !important;
+
+    &:hover {
+      background-color: $primary-light !important;
+      border-color: $primary-color !important;
+      color: $primary-color !important;
+    }
+  }
+
+  // "Reset zoom" button — destructive
+  .btn.btn-outline-danger {
+    background-color: $bg-white !important;
+    color: $text-secondary !important;
+    border: 1px solid $border-medium !important;
+
+    &:hover {
+      background-color: $danger-light !important;
+      border-color: $danger-color !important;
+      color: $danger-color !important;
+    }
+
+    &:active {
+      background-color: $danger-color !important;
+      border-color: $danger-color !important;
+      color: white !important;
+    }
+  }
+
+  // Close button
+  .btn-close {
+    opacity: 0.5;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+      outline: none;
+    }
+  }
+
+  // ── Dropdown menus ──
+  .dropdown-menu {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    box-shadow: $shadow-lg;
+    padding: 4px;
+    margin-top: 4px;
+    font-size: 0.8rem;
+
+    .dropdown-item {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: $radius-sm;
+      color: $text-primary;
+      background-color: transparent;
+      transition: all $transition-speed ease;
+
+      &:hover {
+        background-color: $primary-light;
+        color: $primary-color;
+      }
+
+      &.active {
+        background-color: $primary-light;
+        color: $primary-color;
+        font-weight: 500;
+      }
+
+      &:active {
+        background-color: $primary-color;
+        color: white;
+      }
+    }
+
+    .dropdown-divider {
+      border-color: $border-light;
+      margin: 3px 0;
+    }
+  }
+}
+
+// ============================================
+// Scrollable Dropdown Menu
+// ============================================
+.chart-modal-menu-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+}
+
+// ============================================
+// Inline Controls (Intervals, Width, FST threshold)
+// Matches filter-card form-control sizing exactly
+// ============================================
+.chart-modal-font-14 {
+  font-size: 0.8rem;
+  color: $text-secondary;
+  font-weight: 500;
+}
+
+.chart-modal-font-13 {
+  font-size: 0.75rem;
+  color: $text-secondary;
+  font-weight: 500;
+}
+
+.chart-modal-select-small,
+.chart-modal-input-interval,
+.chart-modal-input-fst {
+  padding: 3px 7px;
+  font-size: 0.75rem;
+  border-radius: $radius-sm;
+  border: 1px solid $border-medium;
+  color: $text-primary;
+  background-color: $bg-white;
+  height: 26px;
+  box-shadow: $shadow-sm;
+  transition: all $transition-speed ease;
+
+  &:hover {
+    border-color: $primary-color;
+  }
+
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+    outline: none;
+  }
+
+  &:disabled {
+    background-color: $bg-card;
+    color: $text-light;
+    cursor: not-allowed;
+  }
+}
+
+.chart-modal-select-small {
+  cursor: pointer;
+}
+
+.chart-modal-input-interval {
+  width: 60px;
+}
+
+.chart-modal-input-fst {
+  width: 56px;
+}
+
+.chart-modal-input-interval-error {
+  border-color: $danger-color !important;
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+  }
+}
+
+.chart-modal-label-reset {
+  margin: 0;
+  font-size: 0.75rem;
+  color: $text-secondary;
+  cursor: pointer;
+}
+
+// ============================================
+// Divider
+// ============================================
+.chart-modal-divider {
+  width: 1px;
+  height: 24px;
+  background-color: $border-color;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.chart-modal-grow {
+  flex: 1;
+}
+
+// ============================================
+// Body / Chart Area
+// ============================================
+.chart-modal-body {
+  flex: 0 0 66.67vh;
+  min-height: 0;
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: $bg-white;
+}
+
+// ============================================
+// Chart Title & Subtitle
+// ============================================
+.chart-modal-title-wrap {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 8px 12px 2px;
+}
+
+.chart-modal-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: 0.2px;
+}
+
+.chart-modal-subtitle {
+  font-size: 0.7rem;
+  color: $text-muted;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+// ============================================
+// Empty State
+// ============================================
+.chart-modal-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-light;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding: 20px;
+
+  strong {
+    color: $primary-color;
+  }
+}
+
+.chart-modal-warning-text {
+  color: $danger-color;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+// ============================================
+// Plot Scroll & Viewport
+// ============================================
+.chart-modal-plot-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-right: 12px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+}
+
+.chart-modal-plot-fill {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-modal-viewport {
+  height: 100%;
+}
+
+@for $i from 1 through 10 {
+  .chart-modal-viewport-#{$i}x {
+    width: #{$i * 100%};
+    min-width: #{$i * 100%};
+  }
+}
+
+// ============================================
+// X-Axis Label
+// ============================================
+.chart-modal-x-label {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 2px 12px 6px;
+  font-size: 0.75rem;
+  color: $text-muted;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+// ============================================
+// Customisation Options Panel
+// ============================================
+.chart-modal-options-panel {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  background-color: $bg-card;
+  border-top: 1px solid $border-color;
+  overflow-y: auto;
+  max-height: 34vh;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+  }
+}
+
+.chart-modal-options-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: $text-secondary;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.chart-modal-options-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.chart-modal-subsection-title {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: $text-secondary;
+  margin-bottom: 4px;
+  letter-spacing: 0.2px;
+}
+
+// ============================================
+// Checkboxes & Radio Buttons (VCF fields, FST, genotypes)
+// Consistent accent color across the entire app
+// ============================================
+.chart-modal-inline-check-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.chart-modal-inline-check-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: $text-primary;
+  cursor: pointer;
+}
+
+// Global rule for all checkboxes and radios inside the chart modal
+.chart-modal-content {
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: $primary-color;
+    cursor: pointer;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+}
+
+// ============================================
+// Helper / Muted Text
+// ============================================
+.chart-modal-help-text {
+  font-size: 0.65rem;
+  color: $text-muted;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.chart-modal-muted-text {
+  font-size: 0.7rem;
+  color: $text-muted;
+  font-style: italic;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 768px) {
+  .chart-modal-header {
+    padding: 6px 8px !important;
+
+    .btn {
+      font-size: 0.7rem !important;
+      padding: 3px 8px !important;
+      height: 26px;
+    }
+  }
+
+  .chart-modal-title {
+    font-size: 0.8rem;
+  }
+
+  .chart-modal-subtitle {
+    font-size: 0.65rem;
+  }
+
+  .chart-modal-options-panel {
+    padding: 6px 8px;
+  }
+}

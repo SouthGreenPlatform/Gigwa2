@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.*
+public/custom/*
+!public/custom/README.md

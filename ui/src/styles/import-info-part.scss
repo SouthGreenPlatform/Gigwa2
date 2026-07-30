@@ -1,0 +1,50 @@
+@use '_shared' as *;
+
+.import-info-label-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.import-info-required {
+  color: $danger-color;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.import-info-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: $danger-color;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  background-color: $danger-light;
+  border: 1px solid rgba($danger-color, 0.25);
+  border-radius: $radius-sm;
+}
+
+.import-info-db-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.import-info-new-db-input {
+  flex: 1;
+  margin-left: 0;
+}
+
+.form-check-input {
+  cursor: pointer;
+
+  &:checked {
+    background-color: $primary-color;
+    border-color: $primary-color;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+    border-color: $primary-color;
+  }
+}

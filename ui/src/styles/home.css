@@ -1,0 +1,27 @@
+div#welcome {
+  width: 940px;
+  margin: 0 auto;
+}
+
+div#welcome h3 {
+  margin: 20px 0;
+}
+
+div#welcome img {
+  margin: 16px;
+}
+
+div#welcome div#ref {
+  width: 740px;
+  padding: 5px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  margin-left: 100px;
+  font-size: 12px;
+  text-align: left;
+}
+
+/*# sourceMappingURL=home.css.map */

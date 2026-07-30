@@ -1,0 +1,20 @@
+@use '_shared' as *;
+
+$info-color: #1d4ed8;
+$info-light: #eff6ff;
+
+.import-datasource-label-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.import-datasource-warning {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: $info-color;
+  padding: 4px 10px;
+  background-color: $info-light;
+  border: 1px solid rgba($info-color, 0.2);
+  border-radius: $radius-sm;
+}

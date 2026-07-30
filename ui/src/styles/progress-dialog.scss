@@ -1,0 +1,125 @@
+@use '_shared' as *;
+
+.progress-dialog-modal {
+  font-family: $font-family;
+
+  .modal-content {
+    border: none;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  // ── Header ───────────────────────────────
+  .modal-header {
+    background: linear-gradient(to bottom, $header-bg, $header-bg-alt);
+    border-bottom: none;
+    padding: 14px 20px;
+  }
+
+  .modal-title {
+    color: #f0fdf4 !important;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+
+  // ── Body ─────────────────────────────────
+  .modal-body {
+    background-color: $bg-white;
+    padding: 22px 24px;
+    color: $text-secondary;
+  }
+
+  .spinner-border {
+    color: $primary-color;
+  }
+
+  // ── Footer ───────────────────────────────
+  .modal-footer {
+    background-color: $bg-card;
+    border-top: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .btn {
+    border-radius: $radius-md;
+    font-weight: 600;
+    transition: all $transition-speed ease;
+  }
+
+  .btn-secondary {
+    background-color: $bg-white !important;
+    color: $text-secondary !important;
+    border: 1px solid $border-medium !important;
+
+    &:hover {
+      background-color: $bg-card !important;
+    }
+  }
+
+  // ── Alerts (import complete / failed) ────
+  .alert {
+    border-radius: $radius-md;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    padding: 14px 18px;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    a {
+      color: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+  }
+
+  .alert-success {
+    background-color: $success-light;
+    border: 1px solid color-mix(in srgb, $success-color 35%, white);
+    color: $success-hover;
+  }
+
+  .alert-danger {
+    background-color: $danger-light;
+    border: 1px solid color-mix(in srgb, $danger-color 35%, white);
+    color: $danger-hover;
+  }
+}
+
+.progress-dialog-text {
+  white-space: pre-line;
+  font-size: 0.9rem;
+}
+
+.progress-dialog-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+
+.progress-dialog-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.progress-dialog-check {
+  color: $success-color;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.progress-dialog-item-label {
+  font-size: 14px;
+  margin: 0;
+  color: $text-secondary;
+}
+
+.progress-dialog-error {
+  color: $danger-hover;
+  white-space: pre-line;
+}

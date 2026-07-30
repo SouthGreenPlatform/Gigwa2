@@ -1,0 +1,285 @@
+// ============================================
+// Navigation Bar - SaaS Style (Light, Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// Navbar specific — derived from the shared chrome tokens rather than $primary-color,
+// since $primary-color is the accent/button token and would be invisible against
+// itself here. Keep a dedicated brighter accent for the interactive states that sit
+// on that dark chrome (active dropdown item, login button hover).
+$navbar-bg: $header-bg;
+$navbar-bg-hover: rgba(255, 255, 255, 0.08);
+$navbar-border: rgba(255, 255, 255, 0.1);
+$navbar-text: #f0fdf4;
+$navbar-text-muted: #99f6e4;
+$navbar-dropdown-bg: $header-bg-alt;
+$navbar-accent: #059669;
+
+// ============================================
+// Navbar Shell
+// ============================================
+.navbar {
+  background-color: $navbar-bg !important;
+  border-bottom: 1px solid $navbar-border;
+  padding: 0 !important;
+  min-height: 46px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-horizontal-padding {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+// ============================================
+// Brand / Logo
+// ============================================
+.navbar-brand-margin {
+  margin-right: 20px !important;
+}
+
+.navbar .navbar-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $navbar-text !important;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  border-radius: $radius-md;
+  transition: all $transition-speed ease;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 10px;
+    right: 10px;
+    height: 2px;
+    background-color: $navbar-text-muted;
+    border-radius: 1px;
+    transform: scaleX(0);
+    transition: transform $transition-speed ease;
+  }
+
+  &:hover {
+    color: $navbar-text !important;
+    background-color: $navbar-bg-hover;
+
+    &::after {
+      transform: scaleX(1);
+    }
+  }
+}
+
+// ============================================
+// Custom Instance Logo (per-deployment, see src/custom/README.md)
+// ============================================
+.navbar-custom-logo {
+  height: 24px;
+  width: auto;
+  vertical-align: middle;
+}
+
+.navbar-custom-logo-link {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  border-radius: $radius-md;
+  padding: 2px;
+  transition: background-color $transition-speed ease;
+
+  &:hover {
+    background-color: $navbar-bg-hover;
+  }
+}
+
+// ============================================
+// Nav Links
+// ============================================
+.navbar .nav-link {
+  color: $navbar-text-muted !important;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 8px 12px !important;
+  border-radius: $radius-sm;
+  transition: all $transition-speed ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: $navbar-text !important;
+    background-color: $navbar-bg-hover;
+  }
+
+  &:active {
+    color: $navbar-text !important;
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+// ============================================
+// NavDropdown
+// ============================================
+.navbar .nav-item.dropdown {
+  .nav-link.dropdown-toggle {
+    color: $navbar-text-muted !important;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 8px 12px !important;
+    border-radius: $radius-sm;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      color: $navbar-text !important;
+      background-color: $navbar-bg-hover;
+    }
+
+    &.show {
+      color: $navbar-text !important;
+      background-color: $navbar-bg-hover;
+    }
+  }
+
+  .dropdown-menu {
+    background-color: $navbar-dropdown-bg;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: $radius-md;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    padding: 4px;
+    margin-top: 4px;
+    min-width: 200px;
+
+    .dropdown-item {
+      color: $navbar-text-muted;
+      font-size: 0.8rem;
+      font-weight: 400;
+      padding: 7px 12px;
+      border-radius: $radius-sm;
+      transition: all $transition-speed ease;
+
+      &:hover {
+        background-color: $navbar-bg-hover;
+        color: $navbar-text;
+      }
+
+      &:active {
+        background-color: $navbar-accent;
+        color: white;
+      }
+    }
+
+    .dropdown-divider {
+      border-color: rgba(255, 255, 255, 0.1);
+      margin: 4px 0;
+    }
+  }
+}
+
+// ============================================
+// Logout Button
+// ============================================
+.navbar .btn.btn-outline-danger {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  height: 28px;
+  border-radius: $radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: $navbar-text-muted;
+  background-color: transparent;
+  line-height: 1;
+  transition: all $transition-speed ease;
+
+  &:hover {
+    background-color: $danger-color;
+    border-color: $danger-color;
+    color: white;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  }
+
+  &:active {
+    background-color: $danger-hover;
+    border-color: $danger-hover;
+    color: white;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  }
+}
+
+// ============================================
+// Login Link
+// ============================================
+.navbar .nav-link[href="/login"] {
+  color: $navbar-text-muted !important;
+  font-weight: 600;
+  padding: 4px 14px !important;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  transition: all $transition-speed ease;
+
+  &:hover {
+    background-color: $navbar-accent;
+    border-color: $navbar-accent;
+    color: white !important;
+    box-shadow: 0 2px 6px rgba($navbar-accent, 0.3);
+  }
+}
+
+// ============================================
+// Navbar Toggler (mobile)
+// ============================================
+.navbar .navbar-toggler {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: $radius-sm;
+  padding: 4px 8px;
+  transition: all $transition-speed ease;
+
+  &:hover {
+    background-color: $navbar-bg-hover;
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+  }
+
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28240, 253, 244, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    width: 1.1em;
+    height: 1.1em;
+  }
+}
+
+// ============================================
+// Mobile Collapse
+// ============================================
+@media (max-width: 576px) {
+  .navbar-collapse {
+    background-color: $navbar-bg;
+    border-top: 1px solid $navbar-border;
+    padding: 8px 0;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+
+    .btn.btn-outline-danger {
+      margin: 8px 0;
+      width: 100%;
+    }
+  }
+}
+
+// ============================================
+// Full Modal iFrame
+// ============================================
+.full-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}

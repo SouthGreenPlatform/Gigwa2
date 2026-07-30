@@ -1,0 +1,104 @@
+@use '_shared' as *;
+
+// ── List ──────────────────────────────────
+.stepper-list {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  justify-content: space-between;
+}
+
+.stepper-item {
+  flex: 1;
+}
+
+.stepper-item-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+
+  &--clickable {
+    cursor: pointer;
+
+    &:hover .stepper-circle:not(.stepper-circle--active):not(.stepper-circle--completed) {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+
+    &:hover .stepper-title:not(.stepper-title--active) {
+      color: $text-secondary;
+    }
+  }
+}
+
+// ── Step circle ───────────────────────────
+.stepper-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 2px solid $border-medium;
+  color: $text-light;
+  background-color: $bg-white;
+  transition: all $transition-speed ease;
+  line-height: 1;
+
+  &--active {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    color: white;
+    box-shadow: 0 0 0 4px rgba($primary-color, 0.15);
+  }
+
+  &--completed {
+    background-color: $success-color;
+    border-color: $success-color;
+    color: white;
+  }
+}
+
+// ── Step title ────────────────────────────
+.stepper-title {
+  margin-top: 8px;
+  text-align: center;
+  color: $text-light;
+  font-weight: 400;
+  font-size: 0.8rem;
+  max-width: 140px;
+  line-height: 1.3;
+  transition: color $transition-speed ease, font-weight $transition-speed ease;
+
+  &--active {
+    color: $primary-color;
+    font-weight: 600;
+  }
+
+  &--completed {
+    color: $text-secondary;
+    font-weight: 500;
+  }
+}
+
+// ── Step underline ────────────────────────
+.stepper-underline {
+  margin-top: 6px;
+  height: 3px;
+  width: 100%;
+  background-color: $border-light;
+  border-radius: 2px;
+  transition: background-color $transition-speed ease;
+
+  &--active {
+    background-color: $primary-color;
+  }
+
+  &--completed {
+    background-color: $success-color;
+  }
+}

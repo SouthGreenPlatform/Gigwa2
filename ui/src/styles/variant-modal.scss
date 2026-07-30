@@ -1,0 +1,686 @@
+// ============================================
+// Variant Modal - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Modal Header (with "Variant Details" badge & nav)
+// ============================================
+.modal-fullscreen .modal-header {
+  background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+  border-bottom: 1px solid $border-color;
+  padding: 10px 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+
+    .badge.bg-success {
+      background-color: $primary-color !important;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: $radius-md;
+      letter-spacing: 0.3px;
+      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    }
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// ============================================
+// Variant Navigation Pill
+// ============================================
+#variantDetailsNavigation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+  min-width: 130px;
+  background-color: $bg-white;
+  border: 1px solid $border-color;
+  border-radius: $radius-pill;
+  padding: 2px 4px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.variantModal-nav-btn {
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.7rem !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: $text-secondary !important;
+  transition: all $transition-speed ease !important;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-light !important;
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $primary-color !important;
+    color: white !important;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 0.7rem;
+  }
+}
+
+.variantModal-nav-range {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: $text-primary;
+  padding: 0 6px;
+}
+
+.variantModal-nav-total {
+  color: $text-muted;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+// ============================================
+// Modal Body
+// ============================================
+.modal-fullscreen .modal-body {
+  background-color: $bg-card;
+  padding: 12px 16px;
+}
+
+// ============================================
+// Variant Info Card (top summary)
+// ============================================
+.modal-fullscreen .modal-body {
+  // Target the card directly with Bootstrap classes
+  .card.border-0.shadow-sm {
+    background-color: $bg-white;
+    border: 1px solid $border-color !important;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm !important;
+    padding: 10px 14px !important;
+    transition: box-shadow $transition-speed ease;
+
+    &:hover {
+      box-shadow: $shadow-md !important;
+    }
+
+    // Labels (e.g., "Variant:", "Sequence:")
+    .col-md-auto.fw-semibold {
+      color: $text-secondary;
+      font-size: 0.75rem;
+      font-weight: 600 !important;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding-right: 4px;
+    }
+
+    // Values
+    .col:not(.col-md-auto) {
+      color: $text-primary;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding-right: 16px;
+    }
+  }
+}
+
+// ============================================
+// Accordions
+// ============================================
+.modal-fullscreen .modal-body {
+  .accordion {
+    .accordion-item {
+      background-color: transparent;
+      border: 1px solid $border-color;
+      border-radius: $radius-md !important;
+      margin-bottom: 8px;
+      overflow: hidden;
+
+      &:not(:last-child) {
+        margin-bottom: 8px;
+      }
+    }
+
+    .accordion-header {
+      margin: 0;
+    }
+
+    .accordion-button {
+      background-color: $bg-card-alt;
+      color: $text-primary;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border: none;
+      box-shadow: none;
+      transition: all $transition-speed ease;
+      letter-spacing: 0.2px;
+
+      &:hover {
+        background-color: $border-color;
+      }
+
+      &:not(.collapsed) {
+        background-color: $primary-light;
+        color: $primary-color;
+
+        &::after {
+          filter: hue-rotate(180deg);
+        }
+      }
+
+      &:focus {
+        box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.15);
+      }
+
+      &::after {
+        width: 0.9rem;
+        height: 0.9rem;
+        background-size: 0.9rem;
+      }
+
+      // Dark header variant (used on Variant Metadata)
+      &.bg-dark {
+        background-color: $text-primary !important;
+        color: white !important;
+
+        &:hover {
+          background-color: $text-secondary !important;
+        }
+
+        &:not(.collapsed) {
+          background-color: $text-primary !important;
+        }
+      }
+    }
+
+    .accordion-body {
+      padding: 10px 12px;
+      background-color: $bg-white;
+    }
+  }
+}
+
+// ============================================
+// Quick Stats Accordion — no-spacing variant
+// ============================================
+.no-spacing {
+  margin: 0 !important;
+  padding: 0 !important;
+
+  .accordion-item {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .accordion-body {
+    padding: 12px !important;
+    background-color: $bg-white;
+  }
+
+  .accordion-header {
+    margin: 0 !important;
+  }
+}
+
+// ============================================
+// Tables (inside accordions — metadata, annotations)
+// ============================================
+.modal-fullscreen .modal-body {
+  .accordion-body .table {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    border-radius: $radius-sm;
+    overflow: hidden;
+    border-color: $border-color;
+
+    thead th {
+      background-color: $bg-card-alt;
+      color: $text-primary;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 6px 10px;
+      border-bottom: 2px solid $border-medium;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      color: $text-primary;
+      border-color: $border-light;
+      vertical-align: middle;
+    }
+
+    &.table-striped > tbody > tr:nth-of-type(odd) > * {
+      --bs-table-accent-bg: #{$bg-card};
+    }
+
+    &.table-hover > tbody > tr:hover > * {
+      --bs-table-accent-bg: #{$primary-light};
+    }
+  }
+}
+
+// ============================================
+// Horizontal Scroll Container for Tables
+// ============================================
+.variant-modal-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+  border-radius: $radius-sm;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: #94a3b8;
+    }
+  }
+}
+
+// ============================================
+// Quick Stats Cards — Overall (primary color theme)
+// ============================================
+.variant-modal-overall-card {
+  border: 1px solid $primary-color !important;
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+  }
+
+  .card-body {
+    padding: 0;
+  }
+}
+
+.variant-modal-overall-header {
+  background-color: $primary-color !important;
+  color: white !important;
+  padding: 6px 12px !important;
+  border-bottom: none !important;
+
+  h5 {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+}
+
+// ============================================
+// Quick Stats Cards — Group (uses CSS variables)
+// ============================================
+.variant-modal-group-card {
+  border: 1px solid var(--group-color) !important;
+  background-color: var(--group-tint) !important;
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  .card-body {
+    padding: 0;
+    background-color: transparent;
+  }
+
+  // Tables inside group cards — themed with group color
+  .table {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    --bs-table-striped-bg: color-mix(in srgb, var(--group-color) 8%, white);
+    --bs-table-hover-bg: color-mix(in srgb, var(--group-color) 18%, white);
+    border-color: color-mix(in srgb, var(--group-color) 30%, white);
+
+    thead tr th {
+      background-color: color-mix(in srgb, var(--group-color) 25%, white);
+      color: $text-primary;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 5px 10px;
+    }
+
+    tbody td {
+      padding: 5px 10px;
+      color: $text-primary;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+.variant-modal-group-header {
+  background-color: var(--group-color) !important;
+  color: var(--group-text) !important;
+  padding: 6px 12px !important;
+  border-bottom: none !important;
+
+  h5 {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+}
+
+// ============================================
+// QuickStats Card — Generic Body Table
+// ============================================
+.modal-fullscreen .modal-body {
+  .col-md-3 .card {
+    border-radius: $radius-md;
+
+    .card-body {
+      padding: 0;
+
+      .table {
+        margin-bottom: 0;
+        border: none;
+
+        tbody td {
+          padding: 5px 10px;
+          font-size: 0.78rem;
+          border-color: $border-light;
+
+          &:first-child {
+            color: $text-secondary;
+            font-weight: 500;
+          }
+
+          &:last-child {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: $text-primary;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.78rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// Show All Calls Checkbox
+// ============================================
+.modal-fullscreen .modal-body {
+  .form-check {
+    font-size: 0.8rem;
+    color: $text-secondary;
+    user-select: none;
+    margin-bottom: 8px;
+
+    .form-check-input {
+      cursor: pointer;
+      border-color: $border-medium;
+      transition: all $transition-speed ease;
+
+      &:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+      }
+    }
+
+    .form-check-label {
+      cursor: pointer;
+      margin-left: 4px;
+      font-weight: 500;
+    }
+  }
+}
+
+// ============================================
+// Sticky Table Header (for Individual Details Table)
+// ============================================
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  th {
+    background-color: $bg-card-alt !important;
+    color: $text-primary !important;
+    font-size: 0.7rem !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 10px;
+    border-bottom: 2px solid $border-medium !important;
+    white-space: nowrap;
+    box-shadow: 0 1px 0 $border-medium;
+  }
+}
+
+// ============================================
+// Variant Details Individual Table
+// ============================================
+.modal-fullscreen .modal-body {
+  // The big bottom table showing all individuals
+  > .container-fluid > .row:last-child .table {
+    font-size: 0.8rem;
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    overflow: hidden;
+
+    tbody td {
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      border-color: $border-light;
+      vertical-align: middle;
+      transition: background-color $transition-speed ease;
+    }
+
+    tbody tr:hover > td:not([style*="background"]) {
+      background-color: $bg-card !important;
+    }
+  }
+}
+
+// ============================================
+// Animations
+// ============================================
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-fullscreen .modal-body > .container-fluid {
+  animation: fadeIn 250ms ease;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 992px) {
+  .modal-fullscreen .modal-body {
+    padding: 8px 10px;
+
+    .card.border-0.shadow-sm {
+      padding: 8px 10px !important;
+
+      .col-md-auto.fw-semibold {
+        font-size: 0.7rem;
+      }
+
+      .col:not(.col-md-auto) {
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  #variantDetailsNavigation {
+    min-width: 110px;
+  }
+
+  .variantModal-nav-btn {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+// ============================================
+// Dark Mode
+// ============================================
+@media (prefers-color-scheme: dark) {
+  .modal-fullscreen .modal-header {
+    background: linear-gradient(to bottom, #111827, #1f2937);
+    border-bottom-color: #374151;
+
+    .btn-close {
+      filter: invert(1);
+    }
+  }
+
+  .modal-fullscreen .modal-body {
+    background-color: #1f2937;
+    color: #e5e7eb;
+
+    .card.border-0.shadow-sm {
+      background-color: #111827;
+      border-color: #374151 !important;
+
+      .col-md-auto.fw-semibold {
+        color: #9ca3af;
+      }
+
+      .col:not(.col-md-auto) {
+        color: #e5e7eb;
+      }
+    }
+
+    .accordion {
+      .accordion-item {
+        border-color: #374151;
+      }
+
+      .accordion-button {
+        background-color: #111827;
+        color: #e5e7eb;
+
+        &:hover {
+          background-color: #1f2937;
+        }
+
+        &:not(.collapsed) {
+          background-color: #1e3a5f;
+          color: #60a5fa;
+        }
+      }
+
+      .accordion-body {
+        background-color: #1f2937;
+      }
+    }
+
+    .table {
+      color: #e5e7eb;
+
+      thead th {
+        background-color: #111827 !important;
+        color: #e5e7eb !important;
+        border-bottom-color: #374151 !important;
+      }
+
+      tbody td {
+        color: #e5e7eb;
+        border-color: #374151 !important;
+      }
+
+      &.table-striped > tbody > tr:nth-of-type(odd) > * {
+        --bs-table-accent-bg: #111827;
+      }
+    }
+  }
+
+  #variantDetailsNavigation {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  .variantModal-nav-btn {
+    color: #9ca3af !important;
+
+    &:hover:not(:disabled) {
+      background-color: #1e3a5f !important;
+      border-color: #60a5fa !important;
+      color: #60a5fa !important;
+    }
+  }
+
+  .variantModal-nav-range {
+    color: #e5e7eb;
+  }
+
+  .variantModal-nav-total {
+    color: #9ca3af;
+  }
+
+  .sticky-header th {
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+    border-bottom-color: #374151 !important;
+  }
+}

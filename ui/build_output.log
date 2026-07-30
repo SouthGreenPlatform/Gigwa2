@@ -1,0 +1,315 @@
+
+> gigwareact@0.0.0 build
+> vite build
+
+vite v6.3.2 building for production...
+transforming...
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+3 │ @import "bootstrap";
+  │         ^^^^^^^^^^^
+  ╵
+    ../../../../src/styles/index.scss 3:9  root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+1 │ @import "mixins/banner";
+  │         ^^^^^^^^^^^^^^^
+  ╵
+    ../../../bootstrap/scss/bootstrap.scss 1:9  @use
+    ../../../../src/styles/bootstrap.scss 3:1   @import
+    ../../../../src/styles/index.scss 3:9       root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+7 │ @import "functions";
+  │         ^^^^^^^^^^^
+  ╵
+    ../../../bootstrap/scss/bootstrap.scss 7:9  @use
+    ../../../../src/styles/bootstrap.scss 3:1   @import
+    ../../../../src/styles/index.scss 3:9       root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+8 │ @import "variables";
+  │         ^^^^^^^^^^^
+  ╵
+    ../../../bootstrap/scss/bootstrap.scss 8:9  @use
+    ../../../../src/styles/bootstrap.scss 3:1   @import
+    ../../../../src/styles/index.scss 3:9       root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+  ╷
+9 │ @import "variables-dark";
+  │         ^^^^^^^^^^^^^^^^
+  ╵
+    ../../../bootstrap/scss/bootstrap.scss 9:9  @use
+    ../../../../src/styles/bootstrap.scss 3:1   @import
+    ../../../../src/styles/index.scss 3:9       root stylesheet
+
+DEPRECATION WARNING [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+
+Suggestion: if(sass($arg == "$value"): $value; else: $arg)
+
+More info: https://sass-lang.com/d/if-function
+
+   ╷
+58 │       $_args: append($_args, if($arg == "$key", $key, if($arg == "$value", $value, $arg)));
+   │                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 58:55  @import
+    ../../../bootstrap/scss/bootstrap.scss 7:9     @use
+    ../../../../src/styles/bootstrap.scss 3:1      @import
+    ../../../../src/styles/index.scss 3:9          root stylesheet
+
+DEPRECATION WARNING [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+
+Suggestion: if(sass($arg == "$key"): $key; else: if($arg == "$value", $value, $arg))
+
+More info: https://sass-lang.com/d/if-function
+
+   ╷
+58 │       $_args: append($_args, if($arg == "$key", $key, if($arg == "$value", $value, $arg)));
+   │                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 58:30  @import
+    ../../../bootstrap/scss/bootstrap.scss 7:9     @use
+    ../../../../src/styles/bootstrap.scss 3:1      @import
+    ../../../../src/styles/index.scss 3:9          root stylesheet
+
+DEPRECATION WARNING [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+
+Suggestion: if(sass($l1 > $l2): divide($l1 + 0.05, $l2 + 0.05); else: divide($l2 + 0.05, $l1 + 0.05))
+
+More info: https://sass-lang.com/d/if-function
+
+    ╷
+177 │   @return if($l1 > $l2, divide($l1 + .05, $l2 + .05), divide($l2 + .05, $l1 + .05));
+    │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 177:11  @import
+    ../../../bootstrap/scss/bootstrap.scss 7:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+
+Suggestion: if(sass(divide($value, 255) < 0.04045): divide(divide($value, 255), 12.92); else: nth($_luminance-list, $value + 1))
+
+More info: https://sass-lang.com/d/if-function
+
+    ╷
+191 │     $value: if(divide($value, 255) < .04045, divide(divide($value, 255), 12.92), nth($_luminance-list, $value + 1));
+    │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 191:13  @import
+    ../../../bootstrap/scss/bootstrap.scss 7:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+
+Suggestion: if(sass($weight > 0): shade-color($color, $weight); else: tint-color($color, -$weight))
+
+More info: https://sass-lang.com/d/if-function
+
+    ╷
+217 │   @return if($weight > 0, shade-color($color, $weight), tint-color($color, -$weight));
+    │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 217:11  @import
+    ../../../bootstrap/scss/bootstrap.scss 7:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use color.mix instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+    ╷
+207 │   @return mix(white, $color, $weight);
+    │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 207:11  tint-color()
+    ../../../bootstrap/scss/_variables.scss 79:12   @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use color.mix instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+    ╷
+212 │   @return mix(black, $color, $weight);
+    │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 212:11  shade-color()
+    ../../../bootstrap/scss/_variables.scss 84:12   @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use color.mix instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+    ╷
+342 │ $light-bg-subtle:         mix($gray-100, $white) !default;
+    │                           ^^^^^^^^^^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_variables.scss 342:27  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use math.unit instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+11 │     @if $prev-num == null or unit($num) == "%" or unit($prev-num) == "%" {
+   │                              ^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 11:30  -assert-ascending()
+    ../../../bootstrap/scss/_variables.scss 494:1  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9     @use
+    ../../../../src/styles/bootstrap.scss 3:1      @import
+    ../../../../src/styles/index.scss 3:9          root stylesheet
+
+DEPRECATION WARNING [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use math.unit instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+11 │     @if $prev-num == null or unit($num) == "%" or unit($prev-num) == "%" {
+   │                                                   ^^^^^^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 11:51  -assert-ascending()
+    ../../../bootstrap/scss/_variables.scss 494:1  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9     @use
+    ../../../../src/styles/bootstrap.scss 3:1      @import
+    ../../../../src/styles/index.scss 3:9          root stylesheet
+
+DEPRECATION WARNING [color-functions]: red() is deprecated. Suggestion:
+
+color.channel($color, "red", $space: rgb)
+
+More info: https://sass-lang.com/d/color-functions
+
+    ╷
+185 │     "r": red($color),
+    │          ^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 185:10  luminance()
+    ../../../bootstrap/scss/_functions.scss 174:8   contrast-ratio()
+    ../../../bootstrap/scss/_functions.scss 159:22  color-contrast()
+    ../../../bootstrap/scss/_variables.scss 846:42  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [color-functions]: green() is deprecated. Suggestion:
+
+color.channel($color, "green", $space: rgb)
+
+More info: https://sass-lang.com/d/color-functions
+
+    ╷
+186 │     "g": green($color),
+    │          ^^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 186:10  luminance()
+    ../../../bootstrap/scss/_functions.scss 174:8   contrast-ratio()
+    ../../../bootstrap/scss/_functions.scss 159:22  color-contrast()
+    ../../../bootstrap/scss/_variables.scss 846:42  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [color-functions]: blue() is deprecated. Suggestion:
+
+color.channel($color, "blue", $space: rgb)
+
+More info: https://sass-lang.com/d/color-functions
+
+    ╷
+187 │     "b": blue($color)
+    │          ^^^^^^^^^^^^
+    ╵
+    ../../../bootstrap/scss/_functions.scss 187:10  luminance()
+    ../../../bootstrap/scss/_functions.scss 174:8   contrast-ratio()
+    ../../../bootstrap/scss/_functions.scss 159:22  color-contrast()
+    ../../../bootstrap/scss/_variables.scss 846:42  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [color-functions]: red() is deprecated. Suggestion:
+
+color.channel($color, "red", $space: rgb)
+
+More info: https://sass-lang.com/d/color-functions
+
+   ╷
+37 │   @return red($value), green($value), blue($value);
+   │           ^^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 37:11   to-rgb()
+    ../../../bootstrap/scss/_variables.scss 846:31  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+DEPRECATION WARNING [color-functions]: green() is deprecated. Suggestion:
+
+color.channel($color, "green", $space: rgb)
+
+More info: https://sass-lang.com/d/color-functions
+
+   ╷
+37 │   @return red($value), green($value), blue($value);
+   │                        ^^^^^^^^^^^^^
+   ╵
+    ../../../bootstrap/scss/_functions.scss 37:24   to-rgb()
+    ../../../bootstrap/scss/_variables.scss 846:31  @import
+    ../../../bootstrap/scss/bootstrap.scss 8:9      @use
+    ../../../../src/styles/bootstrap.scss 3:1       @import
+    ../../../../src/styles/index.scss 3:9           root stylesheet
+
+WARNING: 311 repetitive deprecation warnings omitted.
+Run in verbose mode to see all warnings.
+
+✓ 2579 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                      0.46 kB │ gzip:     0.30 kB
+dist/assets/index-CXPhkj5P.css     401.54 kB │ gzip:    54.53 kB
+dist/assets/igv.esm-BQeiKYZK.js  1,424.37 kB │ gzip:   411.89 kB
+dist/assets/index-DtA6bgEa.js    5,779.44 kB │ gzip: 1,766.83 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 20.02s
