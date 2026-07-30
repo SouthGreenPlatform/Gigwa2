@@ -82,7 +82,7 @@ const NavigationBar = () => {
               <NavDropdown.Item as={Link} to="/importDataAccordion">Import Data Accordion </NavDropdown.Item>
               <NavDropdown.Item as={Link} to="/importMetadata">Import Metadata</NavDropdown.Item>
               {isAuthenticated && (
-                <NavDropdown.Item href={endpoints.PERMISSION_MANAGEMENT_URL}>
+                <NavDropdown.Item onClick={() => handleOpenFullModal({ url: endpoints.ROLE_MANAGER_URL, title: "Administer existing data and/or user permissions" })}>
                   Administer existing data<br />and/or user permissions
                 </NavDropdown.Item>
               )}
