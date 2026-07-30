@@ -1,0 +1,10 @@
+@use "variables" as variables;
+
+@use "../../node_modules/bootstrap/scss/bootstrap" with (
+  $primary: variables.$primary,
+  $secondary: variables.$secondary,
+  $success: variables.$success,
+  $warning: variables.$warning,
+  $danger: variables.$danger,
+  $info: variables.$info
+);

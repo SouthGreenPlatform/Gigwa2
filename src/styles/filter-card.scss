@@ -1,0 +1,624 @@
+@use '_shared' as *;
+
+// ============================================
+// Main Filter Container
+// ============================================
+.filter-variants {
+  padding: 4px;
+}
+
+// ============================================
+// Filter Card Shell
+// ============================================
+.filter-card-shell {
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8rem;
+  --filter-tab-active-bg: #{$bg-tab-active};
+  background-color: $bg-white !important;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-sm;
+  margin: 0 0 6px 5px !important;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  .card-header {
+    background-color: $bg-card-header;
+    border-bottom: 1px solid $border-color;
+    padding: 5px 10px;
+    // Rounded to match the shell's own corners now that the shell no longer
+    // clips via overflow:hidden (that was also clipping the Sequences
+    // multiselect dropdown menu whenever it needed to scroll).
+    border-top-left-radius: $radius-lg;
+    border-top-right-radius: $radius-lg;
+  }
+
+  .card-body {
+    background-color: $bg-white;
+    padding: 6px 10px !important;
+  }
+
+  // Generic form controls
+  .form-control,
+  .form-select,
+  .input-group-text {
+    background-color: $bg-white !important;
+    color: $text-primary !important;
+    border-color: $border-medium !important;
+    font-size: 0.75rem;
+    border-radius: $radius-sm !important;
+    padding: 3px 7px !important;
+    height: 26px;
+    transition: all $transition-speed ease;
+    box-shadow: $shadow-sm;
+
+    &:hover {
+      border-color: $primary-color !important;
+    }
+
+    &:focus {
+      border-color: $primary-color !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1) !important;
+      outline: none !important;
+    }
+
+    &:disabled {
+      background-color: $bg-card !important;
+      color: $text-light !important;
+      cursor: not-allowed;
+    }
+  }
+
+  .input-group-text {
+    background-color: $bg-card !important;
+    color: $text-secondary !important;
+    border-color: $border-medium !important;
+    font-weight: 600;
+    font-size: 0.75rem !important;
+    padding: 3px 7px !important;
+    box-shadow: none;
+  }
+
+  // Form Labels
+  .form-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-secondary;
+    margin-bottom: 2px !important;
+    letter-spacing: 0.2px;
+  }
+
+
+}
+
+// ============================================
+// Separator
+// ============================================
+.filter-card-separator {
+  border: none;
+  border-top: 1px solid $border-light;
+  margin: 6px 0 !important;
+  opacity: 1;
+}
+
+// ============================================
+// Tabs
+// ============================================
+.filter-card-shell {
+  .nav-tabs {
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 2px;
+    gap: 2px;
+    padding-top: 2px;
+
+    .nav-link {
+      color: $text-secondary;
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-radius: $radius-sm $radius-sm 0 0;
+      font-weight: 500;
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      transition: all $transition-speed ease;
+      position: relative;
+
+      &:hover {
+        color: $primary-color;
+        background-color: $bg-card;
+        border-color: transparent;
+      }
+
+      &.active,
+      &.nav-item.show {
+        color: $primary-color;
+        background-color: var(--filter-tab-active-bg);
+        border-color: $border-color $border-color var(--filter-tab-active-bg);
+        font-weight: 600;
+        box-shadow: none;
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background-color: $primary-color;
+          border-radius: 2px 2px 0 0;
+        }
+      }
+    }
+  }
+
+  .tab-content {
+    background-color: var(--filter-tab-active-bg);
+    padding: 4px 2px;
+    border: 0;
+
+    .form-control,
+    .form-select,
+    .input-group-text,
+    .dropdown-menu,
+    .actions-btn {
+      background-color: $bg-white !important;
+      border-color: $border-medium !important;
+    }
+  }
+}
+
+// ============================================
+// Position Inputs (Numeric)
+// ============================================
+.filter-card-no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+.filter-card-position-input {
+  font-size: 0.75rem !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  letter-spacing: 0.3px;
+}
+
+// ============================================
+// Action Buttons
+// ============================================
+.filter-card-btn-gap {
+  margin-right: 3px;
+}
+
+.filter-card-shell {
+  .btn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 3px 8px;
+    height: 26px;
+    border-radius: $radius-sm;
+    transition: all $transition-speed ease;
+    box-shadow: $shadow-sm;
+    border: 1px solid transparent;
+    line-height: 1;
+
+    &.btn-primary {
+      background-color: $primary-color;
+      border-color: $primary-color;
+      color: white;
+
+      &:hover {
+        background-color: $primary-hover;
+        border-color: $primary-hover;
+      }
+
+      &:active,
+      &.active {
+        background-color: $primary-active;
+        border-color: $primary-active;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+      }
+    }
+
+    &:not(.btn-primary):not(.btn-danger):not(.btn-secondary):not(.actions-btn) {
+      background-color: $bg-white;
+      border-color: $border-medium;
+      color: $text-primary;
+
+      &:hover {
+        background-color: $primary-light;
+        border-color: $primary-color;
+        color: $primary-color;
+      }
+
+      &.active {
+        background-color: $primary-color;
+        border-color: $primary-color;
+        color: white;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .svg-inline--fa {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// ============================================
+// Genotype Investigation Row
+// ============================================
+.filter-card-investigate-row {
+  margin: 4px 2px !important;
+  padding: 4px 8px;
+  background-color: $bg-card;
+  border-radius: $radius-sm;
+  border: 1px solid $border-light;
+
+  .form-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-secondary;
+    letter-spacing: 0.4px;
+    margin-bottom: 0 !important;
+  }
+}
+
+.filter-card-investigate-select-col {
+  padding-left: 6px;
+}
+
+.filter-card-select-sm {
+  font-size: 0.75rem !important;
+  padding: 3px 7px !important;
+  height: 26px;
+  cursor: pointer;
+}
+
+// ============================================
+// Hidden File Input
+// ============================================
+.filter-card-hidden-file-input {
+  display: none;
+}
+
+// ============================================
+// Modal Action Buttons
+// ============================================
+.filter-card-btn-load {
+  background-color: $primary-color !important;
+  border-color: $primary-color !important;
+  color: white !important;
+
+  &:hover {
+    background-color: $primary-hover !important;
+    border-color: $primary-hover !important;
+  }
+
+}
+.filter-card-btn-rename {
+  background-color: $secondary-color !important;
+  border-color: $secondary-color !important;
+  color: white !important;
+
+  &:hover {
+    background-color: $secondary-hover !important;
+    border-color: $secondary-hover !important;
+  }
+
+  &:active {
+    background-color: color-mix(in srgb, $secondary-hover 95%, black) !important;
+  }
+}
+
+.filter-card-btn-delete {
+  background-color: $danger-color !important;
+  border-color: $danger-color !important;
+  color: white !important;
+
+  &:hover {
+    background-color: $danger-hover !important;
+    border-color: $danger-hover !important;
+  }
+
+  &:active {
+    background-color: color-mix(in srgb, $danger-hover 95%, black) !important;
+  }
+}
+
+// ============================================
+// Card Header Dropdown (Queries)
+// ============================================
+.filter-card-shell {
+  .card-header {
+    .dropdown {
+      .dropdown-toggle {
+        background-color: $primary-color;
+        border-color: $primary-color;
+        color: white;
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        height: 24px;
+        border-radius: $radius-sm;
+        transition: all $transition-speed ease;
+        line-height: 1;
+
+        &:hover {
+          background-color: $primary-hover;
+          border-color: $primary-hover;
+        }
+
+        &::after {
+          margin-left: 6px;
+        }
+      }
+
+      .dropdown-menu {
+        border: 1px solid $border-color;
+        border-radius: $radius-md;
+        box-shadow: $shadow-lg;
+        padding: 2px;
+        margin-top: 3px;
+
+        .dropdown-item {
+          font-size: 0.75rem;
+          padding: 5px 10px;
+          border-radius: $radius-sm;
+          color: $text-primary;
+          transition: all $transition-speed ease;
+
+          &:hover {
+            background-color: $primary-light;
+            color: $primary-color;
+          }
+
+          &:active {
+            background-color: $primary-color;
+            color: white;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// Modal Styling
+// ============================================
+.modal-content {
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+}
+
+.modal-header {
+  background-color: $bg-card-header;
+  border-bottom: 1px solid $border-color;
+  padding: 10px 14px;
+
+  .modal-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.modal-body {
+  padding: 10px 14px;
+
+  .list-group-item {
+    border-color: $border-light;
+    padding: 8px 0;
+    font-size: 0.8rem;
+    transition: background-color $transition-speed ease;
+
+    &:hover {
+      background-color: $bg-card;
+    }
+
+    strong {
+      color: $text-primary;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+  }
+}
+
+// ============================================
+// Tooltips
+// ============================================
+.tooltip {
+  font-size: 0.7rem;
+
+  .tooltip-inner {
+    background-color: $text-primary;
+    border-radius: $radius-sm;
+    padding: 4px 8px;
+    font-weight: 500;
+    box-shadow: $shadow-md;
+  }
+
+  .tooltip-arrow::before {
+    border-top-color: $text-primary !important;
+    border-bottom-color: $text-primary !important;
+  }
+}
+
+// ============================================
+// Helper Messages (Please type more / No options)
+// ============================================
+.filter-card-shell {
+  p {
+    font-size: 0.7rem;
+    color: $text-muted;
+    margin: 3px 0 0;
+    padding: 4px 8px;
+    background-color: $bg-card;
+    border-radius: $radius-sm;
+    border-left: 2px solid $border-medium;
+    font-style: italic;
+  }
+}
+
+// ============================================
+// Collapse Animation
+// ============================================
+.collapse-horizontal {
+  transition: width 250ms ease, opacity 200ms ease;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 768px) {
+  .filter-card-shell {
+    margin: 0 0 6px 0 !important;
+
+    .card-body {
+      padding: 6px 8px !important;
+    }
+
+    .nav-tabs .nav-link {
+      padding: 4px 8px;
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// ============================================
+// Dark Mode
+// ============================================
+@media (prefers-color-scheme: dark) {
+  .filter-card-shell {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+
+    .card-header {
+      background-color: #111827;
+      border-bottom-color: #374151;
+    }
+
+    .card-body {
+      background-color: #1f2937;
+    }
+
+    .form-control,
+    .form-select,
+    .input-group-text {
+      background-color: #111827 !important;
+      color: #e5e7eb !important;
+      border-color: #374151 !important;
+
+      &:focus {
+        border-color: #60a5fa !important;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+      }
+    }
+
+    .input-group-text {
+      background-color: #1f2937 !important;
+      color: #9ca3af !important;
+    }
+
+    .form-label {
+      color: #d1d5db;
+    }
+
+  
+
+    .dropdown-menu {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+
+    .nav-tabs {
+      border-bottom-color: #374151;
+
+      .nav-link {
+        color: #9ca3af;
+
+        &:hover {
+          color: #60a5fa;
+          background-color: #374151;
+        }
+
+        &.active {
+          color: #60a5fa;
+          background-color: #1f2937;
+          border-color: #374151 #374151 #1f2937;
+
+          &::before {
+            background-color: #60a5fa;
+          }
+        }
+      }
+    }
+
+    .tab-content {
+      background-color: #1f2937;
+    }
+
+    p {
+      background-color: #111827;
+      color: #9ca3af;
+      border-left-color: #374151;
+    }
+  }
+
+  .filter-card-investigate-row {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  .modal-content {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+  }
+
+  .modal-header {
+    background-color: #111827;
+    border-bottom-color: #374151;
+
+    .modal-title {
+      color: #e5e7eb;
+    }
+
+    .btn-close {
+      filter: invert(1);
+    }
+  }
+}
+
+// ============================================
+// Fade-in animation
+// ============================================
+@keyframes filterCardFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-card-shell {
+  animation: filterCardFadeIn 180ms ease;
+}

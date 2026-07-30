@@ -1,0 +1,338 @@
+@use '_shared' as *;
+
+// ============================================
+// Export Setup / Export Ready Modals
+// ============================================
+.export-panel-modal {
+  .modal-content {
+    border: none;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+    border-bottom: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .modal-body {
+    padding: 18px 20px;
+    font-size: 0.85rem;
+    color: $text-secondary;
+  }
+
+  .modal-footer {
+    background-color: $bg-card;
+    border-top: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .form-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: $text-primary;
+    margin-bottom: 4px;
+  }
+
+  .form-select,
+  .form-control {
+    font-size: 0.8rem;
+    color: $text-primary;
+    border: 1px solid $border-medium;
+    border-radius: $radius-sm;
+    padding: 5px 10px;
+    height: 32px;
+    transition: border-color $transition-speed ease, box-shadow $transition-speed ease;
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+    }
+  }
+
+  // Primary action buttons (Export, Send to Galaxy, Send files to X) — react-bootstrap's
+  // default Button variant is "primary", so this scoped override covers all of them.
+  .btn-primary {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    font-weight: 600;
+    border-radius: $radius-md;
+    transition: all $transition-speed ease;
+
+    &:hover:not(:disabled) {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 6px rgba($primary-color, 0.3);
+    }
+
+    &:active:not(:disabled) {
+      background-color: $primary-active !important;
+      border-color: $primary-active !important;
+    }
+
+    &:disabled {
+      background-color: $border-medium;
+      border-color: $border-medium;
+      opacity: 0.7;
+    }
+  }
+
+  .btn-outline-secondary {
+    color: $text-secondary;
+    border-color: $border-medium;
+
+    &:hover {
+      background-color: $bg-card-alt;
+      border-color: $border-strong;
+      color: $text-primary;
+    }
+  }
+}
+
+// ============================================
+// Setup modal — sections
+// ============================================
+.export-panel-section {
+  background-color: $bg-card;
+  border: 1px solid $border-light;
+  border-radius: $radius-md;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.export-panel-format-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.export-panel-field {
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.export-panel-field-format {
+  flex: 1;
+}
+
+.export-panel-columns {
+  display: flex;
+  gap: 20px;
+
+  @media (max-width: 560px) {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+.export-panel-field-metadata {
+  display: flex;
+  align-items: flex-end;
+
+  // MultiSelectDropdown renders its own toggle+label; stretch it to match the
+  // height/width of the plain <select> in the sibling column.
+  .multiselect-full-width {
+    width: 100%;
+  }
+
+  [data-multiselect-toggle="true"] {
+    height: 32px !important;
+  }
+}
+
+.export-panel-info-trigger {
+  cursor: pointer;
+  opacity: 1;
+  padding-bottom: 6px;
+  transition: opacity $transition-speed ease;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.export-panel-info-trigger-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 0.5;
+  }
+}
+
+.export-panel-info-icon {
+  font-size: 1.15rem;
+}
+
+// ============================================
+// Setup modal — options (checkboxes)
+// ============================================
+.export-panel-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-panel-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-panel-option-check {
+  margin: 0 !important;
+
+  .form-check-input {
+    accent-color: $primary-color;
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.export-panel-option-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $text-primary;
+  cursor: pointer;
+  margin: 0;
+}
+
+.export-panel-server-warning {
+  text-align: center;
+  white-space: initial;
+  color: $danger-color;
+  font-size: 0.8rem;
+  margin-top: 10px;
+
+  &:empty {
+    display: none;
+  }
+}
+
+// ============================================
+// Export ready modal
+// ============================================
+.export-panel-ready-summary {
+  text-align: center;
+  margin-bottom: 14px;
+
+  strong {
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+.export-panel-center-text {
+  text-align: center;
+  color: $text-secondary;
+}
+
+.export-panel-url-block {
+  margin: 10px 0;
+  font-size: 0.85rem;
+
+  a {
+    display: inline-block;
+    background-color: $bg-card-alt;
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    padding: 6px 12px;
+    color: $primary-color;
+    font-weight: 500;
+    word-break: break-all;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $primary-light;
+      border-color: color-mix(in srgb, $primary-color 65%, white);
+      color: $primary-hover;
+    }
+  }
+}
+
+.export-panel-inline-link {
+  color: $primary-color;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: $primary-hover;
+  }
+}
+
+.export-panel-ready-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 14px;
+
+  .btn {
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.3;
+  }
+}
+
+// ============================================
+// Format Description Banner
+// ============================================
+.export-panel-help-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  z-index: 2000;
+  background-color: $primary-light;
+  border-bottom: 1px solid color-mix(in srgb, $primary-color 65%, white);
+  box-shadow: $shadow-md;
+}
+
+.export-panel-help-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  color: $primary-active;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.export-panel-help-banner-icon {
+  flex-shrink: 0;
+}
+
+.export-panel-help-close {
+  flex-shrink: 0;
+  margin-left: 4px;
+}

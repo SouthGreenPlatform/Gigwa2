@@ -1,0 +1,237 @@
+@use '_shared' as *;
+
+// ============================================
+// Welcome Container
+// ============================================
+div#welcome {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 32px 48px;
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: $text-primary;
+  text-align: left;
+
+  // ── Title ──────────────────────────────────
+  h3 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid $primary-color;
+    display: inline-block;
+    letter-spacing: -0.3px;
+  }
+
+  // ── Body Paragraphs ────────────────────────
+  > p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: $text-secondary;
+    margin-bottom: 14px;
+    text-align: justify;
+  }
+
+  // ── Links (inline) ─────────────────────────
+  a {
+    color: $primary-color;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color $transition-speed ease;
+
+    &:hover {
+      color: $primary-hover;
+      text-decoration: underline;
+    }
+  }
+
+  // ── Partner Logos ──────────────────────────
+  img {
+    margin: 12px 16px;
+    opacity: 0.7;
+    transition: opacity $transition-speed ease, transform $transition-speed ease;
+    filter: grayscale(30%);
+
+    &:hover {
+      opacity: 1;
+      filter: grayscale(0%);
+      transform: translateY(-2px);
+    }
+  }
+
+  // ── Citation Block ─────────────────────────
+  div#ref {
+    width: 100%;
+    margin: 32px 0 0;
+    padding: 16px 20px;
+    background-color: $bg-card;
+    border: 1px solid $border-color;
+    border-left: 4px solid $primary-color;
+    border-radius: $radius-md;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: $text-secondary;
+    text-align: left;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// ============================================
+// Terms of Use Link
+// ============================================
+.terms-of-use-link.btn.btn-link {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $text-muted;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color $transition-speed ease, text-decoration-color $transition-speed ease;
+
+  &:hover, &:focus {
+    color: $primary-color;
+    text-decoration-color: $primary-color;
+  }
+}
+
+// ============================================
+// Project Links Section
+// ============================================
+.home-float-left {
+  float: none;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: $text-secondary;
+  padding: 12px 16px;
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  margin-bottom: 16px;
+  box-shadow: $shadow-sm;
+
+  a {
+    color: $primary-color;
+    font-weight: 500;
+    word-break: break-all;
+  }
+}
+
+// ============================================
+// Summary Table Link
+// ============================================
+.home-summary-table {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 24px;
+    background-color: $primary-color;
+    color: white !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: $radius-md;
+    text-decoration: none !important;
+    box-shadow: $shadow-md;
+    transition: all $transition-speed ease;
+    letter-spacing: 0.2px;
+
+    &:hover {
+      background-color: $primary-hover;
+      box-shadow: 0 4px 12px rgba($primary-color, 0.25);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      background-color: $primary-active;
+      transform: translateY(0);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+// ============================================
+// Admin Email Contact
+// ============================================
+div#welcome > p.text-center {
+  font-size: 0.8rem;
+  color: $text-muted;
+  text-align: center !important;
+  margin-top: 20px;
+  padding: 10px 0;
+  border-top: 1px solid $border-light;
+
+  a {
+    color: $primary-color;
+    font-weight: 600;
+  }
+}
+
+// ============================================
+// Logo Row
+// ============================================
+.home-logo-row {
+  margin: 28px 0 32px;
+  padding: 16px 0;
+  text-align: center;
+  border-top: 1px solid $border-light;
+  border-bottom: 1px solid $border-light;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 920px) {
+  div#welcome {
+    padding: 24px 20px 36px;
+
+    h3 {
+      font-size: 1.3rem;
+    }
+
+    > p {
+      font-size: 0.85rem;
+    }
+
+    div#ref {
+      font-size: 0.75rem;
+      padding: 12px 14px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  div#welcome {
+    padding: 16px 14px 28px;
+
+    h3 {
+      font-size: 1.15rem;
+      margin-bottom: 16px;
+    }
+
+    > p {
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    img {
+      margin: 8px 10px;
+    }
+  }
+
+  .home-summary-table a {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 10px 16px;
+  }
+
+  .home-float-left {
+    font-size: 0.8rem;
+    padding: 10px 12px;
+  }
+}

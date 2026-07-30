@@ -1,0 +1,137 @@
+// Imports
+@use "_variables" as variables;
+@use "_shared" as shared;
+
+// Body of the website
+@media (max-width: 768px) {
+  body {
+    background-color: variables.$white;
+    color: variables.$dark-gray;
+    font-family: Arial, sans-serif;
+    font-size: 1rem; // Baseado no tamanho da fonte raiz
+    margin: 0 auto;
+    max-width: 100%; // Ocupa toda a largura disponível
+  }
+  button {
+    background-color: variables.$electric-purple;
+    color: variables.$electric-purple;
+    border: none;
+    padding: 1em 2em; // Ajusta com base no tamanho da fonte
+    cursor: pointer;
+
+    // Hover effect for buttons
+    &:hover {
+      background-color: variables.$light-gray;
+    }
+  }
+}
+
+// Titles (h1, h2, h3)
+@media (max-width: 576px) {
+  h1,
+  h2,
+  h3 {
+    color: variables.$primary;
+  }
+}
+
+
+// Links
+a {
+  color: variables.$secondary;
+  text-decoration: none;
+
+  &:hover {
+    color: variables.$light-gray;
+    text-decoration: underline;
+  }
+}
+
+.bg-yellow {
+  background-color: variables.$warning;
+  color: variables.$black;
+  padding: 20px;
+  text-align: left;
+}
+
+.footer {
+  padding: 24px;
+  text-align: center;
+}
+
+.custom-modal-size {
+  max-width: 500px;
+  width: 300%;
+  max-height: 500vh;
+  display: flex;
+  align-items: center;
+}
+
+.btn-primary,
+.btn-success {
+  --bs-btn-color: #fff;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-color: #fff;
+}
+
+/* Show dropdown menu on hover */
+.dropdown:hover .dropdown-menu {
+  display: block;
+  // margin-top: 0; /* optional: remove the small gap */
+}
+
+.dropdown-toggle::after {
+  margin-left: 0.255em;
+}
+
+
+.icon-small {
+  width: 20px;
+  height: 20px;
+}
+
+div#variantSearchResults div#variantSearchResultsNavigation {
+  width: 300px;
+  display: flex;
+}
+
+div#variantSearchResults div#variantSearchResultsNavigation button:disabled {
+  background-color: variables.$primary;
+}
+
+div#variantSearchResults div#variantSearchResultsNavigation div#pageContents {
+  background-color: variables.$success;
+  border-top: 1px solid variables.$primary;
+  border-bottom: 1px solid variables.$primary;
+}
+
+div#currentDataOutputs button {
+  margin: 0 10px;
+}
+
+table.main-variant-results-table.table-hover > tbody > tr:hover > * {
+  background-color: #edfaed !important;
+}
+
+.import-form-container {
+  max-width: 1200px;
+}
+
+.input-modal-visible {
+  display: block;
+}
+
+.taxon-modal-link-icon {
+  font-size: 1.3rem;
+  color: #0d6efd;
+}
+
+// Striped rows (lighter than default)
+  .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: #{shared.$bg-odd-table-row-bg};
+  }
+
+  .table-striped > tbody > tr:nth-of-type(even) > * {
+    --bs-table-accent-bg: #{shared.$bg-even-table-row-bg};
+  }

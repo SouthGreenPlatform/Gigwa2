@@ -1,0 +1,164 @@
+@use '_shared' as *;
+
+// ============================================
+// IGV "Load your own genome" / "Add track" dialogs
+// ============================================
+.igv-dialog-modal {
+  .modal-content {
+    border: none;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+    border-bottom: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .modal-body {
+    padding: 18px 20px;
+    font-size: 0.85rem;
+    color: $text-secondary;
+  }
+
+  .modal-footer {
+    background-color: $bg-card;
+    border-top: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .form-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: $text-primary;
+    margin-bottom: 4px;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 0.8rem;
+    color: $text-primary;
+    border: 1px solid $border-medium;
+    border-radius: $radius-sm;
+    padding: 6px 10px;
+    transition: border-color $transition-speed ease, box-shadow $transition-speed ease;
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+    }
+
+    &:disabled {
+      background-color: $bg-card;
+      color: $text-light;
+    }
+  }
+
+  .form-text {
+    font-size: 0.72rem;
+    color: $text-light;
+  }
+
+  code {
+    background-color: $bg-card-alt;
+    color: $text-secondary;
+    border-radius: $radius-sm;
+    padding: 1px 5px;
+    font-size: 0.75rem;
+  }
+
+  .form-check-input {
+    cursor: pointer;
+
+    &:checked {
+      background-color: $primary-color;
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+      border-color: $primary-color;
+    }
+  }
+
+  .form-check-label {
+    font-size: 0.8rem;
+    color: $text-secondary;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: $radius-md;
+    transition: all $transition-speed ease;
+
+    &:hover:not(:disabled) {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 6px rgba($primary-color, 0.3);
+    }
+
+    &:active:not(:disabled) {
+      background-color: $primary-active !important;
+      border-color: $primary-active !important;
+    }
+
+    &:disabled {
+      background-color: $border-medium;
+      border-color: $border-medium;
+      opacity: 0.7;
+    }
+  }
+
+  .btn-secondary {
+    background-color: $bg-white;
+    border-color: $border-medium;
+    color: $text-secondary;
+    font-weight: 500;
+    font-size: 0.85rem;
+    border-radius: $radius-md;
+
+    &:hover {
+      background-color: $bg-card-alt;
+      border-color: $border-strong;
+      color: $text-primary;
+    }
+  }
+
+  .alert-danger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: $danger-color;
+    background-color: $danger-light;
+    border: 1px solid rgba($danger-color, 0.25);
+    border-radius: $radius-sm;
+    padding: 8px 12px;
+
+    &::before {
+      content: "⚠";
+      flex-shrink: 0;
+    }
+  }
+}

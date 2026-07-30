@@ -1,0 +1,505 @@
+// ============================================
+// Metadata Modal - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// Fixed column widths (matching JS)
+$col-individuals-width: 150px;
+$col-actions-width: 100px;
+
+// ============================================
+// Modal Header
+// ============================================
+.metadata-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px !important;
+  background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+  border-bottom: 1px solid $border-color;
+  flex-wrap: wrap;
+
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  .btn-close {
+    opacity: 0.6;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// ============================================
+// Header Sections
+// ============================================
+.metadata-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  .btn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    height: 28px;
+    border-radius: $radius-sm;
+    background-color: $bg-white;
+    border: 1px solid $border-medium;
+    color: $text-secondary;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+    line-height: 1;
+
+    &:hover {
+      background-color: $danger-light;
+      border-color: $danger-color;
+      color: $danger-color;
+    }
+
+    &:active {
+      background-color: $danger-color;
+      border-color: $danger-color;
+      color: white;
+    }
+  }
+}
+
+.metadata-header-columns-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+// ============================================
+// Summary Pill (Apply hint)
+// ============================================
+.metadata-header-summary-pill {
+  background-color: $primary-light;
+  color: $primary-active;
+  border: 1px solid color-mix(in srgb, $primary-color 65%, white);
+  border-radius: $radius-pill;
+  padding: 5px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-speed ease;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+// ============================================
+// Apply Button
+// ============================================
+.metadata-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  .btn {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 5px 18px;
+    height: 30px;
+    background-color: $primary-color;
+    border: 1px solid $primary-color;
+    color: white;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+    line-height: 1;
+    letter-spacing: 0.3px;
+
+    &:hover {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 6px rgba($primary-color, 0.3);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      background-color: $primary-active;
+      border-color: $primary-active;
+      transform: translateY(0);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.25);
+    }
+  }
+}
+
+// ============================================
+// Modal Body
+// ============================================
+.metadata-modal-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 !important;
+  background-color: $bg-card;
+}
+
+.metadata-modal-body-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ============================================
+// Grid Header (Column titles + filter dropdowns)
+// ============================================
+.metadata-grid-header {
+  display: flex;
+  align-items: stretch;
+  background-color: $bg-card-alt;
+  border-bottom: 2px solid $border-medium;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 5;
+}
+
+.metadata-grid-header-cell {
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $text-secondary;
+  display: flex;
+  align-items: center;
+  background-color: $bg-card-alt;
+  border-right: 1px solid $border-color;
+}
+
+.metadata-grid-actions-header {
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $bg-card-alt;
+  border-left: 1px solid $border-color;
+}
+
+// ============================================
+// Sortable Columns (draggable filter columns)
+// ============================================
+.metadata-sortable-column {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  background-color: $bg-card-alt;
+  border-right: 1px solid $border-color;
+  transition: background-color $transition-speed ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, $bg-card-alt 98%, black);
+  }
+}
+
+.metadata-sortable-column-handle {
+  cursor: grab;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $text-secondary;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px dashed transparent;
+  border-radius: $radius-sm;
+  transition: all $transition-speed ease;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &::before {
+    content: "⋮⋮";
+    font-size: 0.85rem;
+    color: $text-light;
+    letter-spacing: -2px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background-color: $bg-white;
+    border-color: $primary-color;
+    color: $primary-color;
+
+    &::before {
+      color: $primary-color;
+    }
+  }
+
+  &:active {
+    cursor: grabbing;
+    background-color: $primary-light;
+    border-color: $primary-color;
+    border-style: solid;
+    box-shadow: $shadow-md;
+  }
+
+  b {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// ============================================
+// Body Rows
+// ============================================
+.metadata-row {
+  display: flex;
+  border-bottom: 1px solid $border-light;
+  background-color: $bg-white;
+  transition: background-color $transition-speed ease;
+  font-size: 0.8rem;
+
+  &:hover {
+    background-color: $primary-light;
+  }
+
+  // Zebra striping (apply via :nth-child if needed)
+  &:nth-child(even) {
+    background-color: $bg-card;
+
+    &:hover {
+      background-color: $primary-light;
+    }
+  }
+}
+
+// ============================================
+// Cells
+// ============================================
+.metadata-cell {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: $text-primary;
+  border-right: 1px solid $border-light;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// ============================================
+// Fixed-Width Columns
+// ============================================
+.metadata-col-individuals {
+  width: $col-individuals-width;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: $text-primary;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-right: 1px solid $border-color !important;
+}
+
+.metadata-col-actions {
+  width: $col-actions-width;
+  flex-shrink: 0;
+  border-left: 1px solid $border-color;
+}
+
+// ============================================
+// Actions Cell (Delete button)
+// ============================================
+.metadata-actions-cell {
+  text-align: center;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+
+  button {
+    background-color: $bg-white;
+    color: $danger-color;
+    border: 1px solid $border-medium;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: $radius-sm;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $danger-color;
+      border-color: $danger-color;
+      color: white;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    &:active {
+      background-color: $danger-hover;
+      border-color: $danger-hover;
+      transform: scale(0.95);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    }
+  }
+}
+
+// ============================================
+// MultiSelect toggles inside the Metadata Modal
+// (both the header "Columns" picker and the grid column filters)
+// ============================================
+.metadata-modal-header,
+.metadata-grid-header {
+  [data-multiselect-toggle="true"],
+  button[data-multiselect-toggle="true"],
+  .btn[data-multiselect-toggle="true"],
+  .btn.dropdown-toggle[data-multiselect-toggle="true"] {
+    height: 28px !important;
+    padding: 3px 8px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    background-color: $bg-white !important;
+    color: $text-primary !important;
+    border: 1px solid $border-medium !important;
+    border-radius: $radius-sm !important;
+    box-shadow: $shadow-sm !important;
+    transition: all $transition-speed ease !important;
+
+    &:hover {
+      border-color: $primary-color !important;
+      background-color: $bg-white !important;
+    }
+
+    &:focus,
+    &[aria-expanded="true"] {
+      border-color: $primary-color !important;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
+      background-color: $bg-white !important;
+    }
+
+    .multiselect-title {
+      color: $text-secondary !important;
+      font-size: 0.7rem !important;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .filter-option {
+      color: $text-secondary !important;
+      font-size: 0.7rem !important;
+    }
+  }
+}
+
+
+// ============================================
+// react-window List scrollbar styling
+// ============================================
+.metadata-modal-body-content {
+  // Target react-window's outer scroll container
+  > div:last-child {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 4px;
+
+      &:hover {
+        background-color: #94a3b8;
+      }
+    }
+  }
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 992px) {
+  .metadata-modal-header {
+    gap: 8px;
+    padding: 8px 12px !important;
+
+    .modal-title {
+      font-size: 0.9rem;
+    }
+  }
+
+  .metadata-header-summary-pill {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+  .metadata-header-actions .btn {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .metadata-modal-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    .metadata-header-left,
+    .metadata-header-columns-picker,
+    .metadata-header-actions {
+      width: 100%;
+    }
+
+    .metadata-header-summary-pill {
+      order: 99;
+    }
+  }
+}

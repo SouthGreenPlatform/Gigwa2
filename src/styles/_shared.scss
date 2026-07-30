@@ -1,0 +1,83 @@
+// ============================================
+// Shared Design Tokens - Single Source of Truth
+// ============================================
+// Import in every component-level SCSS file with:
+//   @use '_shared' as *;
+//
+// Page/component-specific tokens that only one file needs
+// (e.g. $navbar-bg, $col-individuals-width, $menu-width) stay
+// local to that file instead of being duplicated here.
+//
+// ============================================
+
+// ── Primary ──────────────────────────────────
+// Change these 4 to retheme the entire app
+$primary-color: var(--gigwa-primary-color, #134e4a);
+$primary-hover: var(--gigwa-primary-hover, #047857);
+$primary-active: var(--gigwa-primary-active, #065f46);
+$primary-light: var(--gigwa-primary-light, #ecfdf5);
+
+// ── Brand / chrome (navbar background, modal headers) ──
+// Currently the same hue as $primary-color, kept as a separate
+// token since it serves a different role (backgrounds, not accents).
+$header-bg: var(--gigwa-header-bg, #134e4a);
+$header-bg-alt: var(--gigwa-header-bg-alt, #0f3d39);
+
+// ── Danger / destructive ─────────────────────
+$danger-color: var(--gigwa-danger-color, #ef4444);
+$danger-hover: var(--gigwa-danger-hover, #dc2626);
+$danger-light: var(--gigwa-danger-light, #fee2e2);
+
+// ── Secondary / neutral ──────────────────────
+$secondary-color: var(--gigwa-secondary-color, #6b7280);
+$secondary-hover: var(--gigwa-secondary-hover, #4b5563);
+
+// ── Success ────────────────────────────────────
+// Used by investigate (count pill, allele badges) and variant-modal (overall stats card)
+$success-color: var(--gigwa-success-color, #16a34a);
+$success-hover: var(--gigwa-success-hover, #15803d);
+$success-light: var(--gigwa-success-light, #dcfce7);
+$success-dark: $success-hover; // alias, kept for call sites that use this name
+
+// ── Borders ────────────────────────────────────
+$border-color: #e5e7eb;
+$border-medium: #d1d5db;
+$border-light: #f3f4f6;
+$border-strong: #9ca3af;
+
+// ── Text ────────────────────────────────────────
+$text-primary: #1f2937;
+$text-secondary: #4b5563;
+$text-muted: #6b7280;
+$text-light: #9ca3af;
+
+// ── Backgrounds ──────────────────────────────────
+$bg-white: #ffffff;
+$bg-card: #f9fafb;
+$bg-card-alt: #f3f4f6;
+$bg-card-header: #f3f4f6;
+$bg-hover: #f9fafb;
+$bg-selected: #ecfdf5;
+$bg-page: #fafbfc;
+$bg-tab-active: #ffffff;
+
+// Stripe rules
+$bg-odd-table-row-bg: #ffffff;
+$bg-even-table-row-bg: #d3d6d6;
+
+// ── Typography ────────────────────────────────
+$font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+
+// ── Transitions ────────────────────────────────
+$transition-speed: 150ms;
+
+// ── Border radius ─────────────────────────────
+$radius-sm: 3px;
+$radius-md: 5px;
+$radius-lg: 6px;
+$radius-pill: 999px;
+
+// ── Shadows ────────────────────────────────────
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.08);

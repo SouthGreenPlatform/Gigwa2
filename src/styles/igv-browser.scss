@@ -1,0 +1,133 @@
+// ============================================
+// IGV Browser - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Shell — the outer card wrapping the whole browser
+// ============================================
+.igv-browser-shell {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-md;
+  background-color: $bg-white;
+}
+
+// ============================================
+// Header — title + IGVMenu toolbar
+// ============================================
+.igv-browser-header {
+  position: relative;
+  padding: 8px 10px 0 14px !important;
+  background: linear-gradient(to bottom, $bg-card-alt, $bg-card);
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 8px 0;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
+// ============================================
+// Body — holds the canvas
+// ============================================
+.igv-browser-body {
+  min-height: 0;
+  padding: 0 !important;
+  background-color: $bg-white;
+}
+
+// ============================================
+// Canvas — the IGV rendering area
+// ============================================
+.igv-browser-canvas {
+  height: 100%;
+  background-color: $bg-white;
+
+  // IGV renders its own elements inside here; keep them unclipped
+  overflow: visible;
+}
+
+// ============================================
+// Loading Overlay
+// ============================================
+.igv-browser-loading-overlay {
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(2px);
+  border-radius: $radius-md;
+
+  .spinner-border {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-width: 0.18em;
+    color: $primary-color !important;
+  }
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+}
+
+// ============================================
+// Error Alert
+// ============================================
+.igv-browser-canvas .alert.alert-danger {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  border-radius: $radius-md;
+  margin: 8px;
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+// ============================================
+// IGV Internal Overrides
+// (IGV renders its own toolbar/track UI — these
+// just nudge it to feel more at home in the app)
+// ============================================
+#igv-container {
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, sans-serif !important;
+  font-size: 0.8rem;
+
+  // IGV's own toolbar
+  .igv-navbar {
+    background-color: $bg-card !important;
+    border-bottom: 1px solid $border-color !important;
+  }
+
+  // IGV's track labels
+  .igv-track-label {
+    font-size: 0.7rem !important;
+    font-family: inherit !important;
+  }
+
+  // IGV's chromosome ideogram bar
+  .igv-ideogram-content-div {
+    border-bottom: 1px solid $border-color !important;
+  }
+
+  // IGV's viewport cursor lines
+  .igv-cursor-tracking-guide {
+    border-left-color: $primary-color !important;
+  }
+}

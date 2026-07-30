@@ -1,0 +1,184 @@
+// ============================================
+// Terms of Use Modal - SaaS Style
+// (emerald green palette — same as navbar / metadata modal)
+// ============================================
+
+@use '_shared' as *;
+
+.terms-of-use-modal {
+  font-family: $font-family;
+
+  .modal-content {
+    border: none;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  // ── Header ───────────────────────────────
+  .modal-header {
+    background: linear-gradient(to bottom, $header-bg, $header-bg-alt);
+    border-bottom: none;
+    padding: 14px 20px;
+  }
+
+  .modal-title {
+    color: #f0fdf4 !important;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-close {
+    opacity: 0.8;
+    transition: opacity $transition-speed ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  // ── Body ─────────────────────────────────
+  .modal-body {
+    background-color: $bg-white;
+    padding: 20px 24px;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: $text-secondary;
+    text-align: justify;
+  }
+
+  .terms-of-use-note {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: $primary-active;
+    background-color: $primary-light;
+    border: 1px solid color-mix(in srgb, $primary-color 65%, white);
+    border-left: 3px solid $primary-color;
+    border-radius: $radius-md;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+
+  h6,
+  .terms-of-use-custom h4 {
+    display: flex;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: $primary-active;
+    margin: 22px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid $border-light;
+  }
+
+  h6:first-of-type {
+    margin-top: 0;
+  }
+
+  p {
+    margin-bottom: 12px;
+    color: $text-secondary;
+  }
+
+  a {
+    color: $primary-color;
+    font-weight: 500;
+  }
+
+  ol[type="i"] {
+    padding-left: 26px;
+    margin-bottom: 12px;
+
+    li {
+      margin-bottom: 6px;
+      color: $text-secondary;
+    }
+  }
+
+  strong, b {
+    color: $text-primary;
+  }
+
+  // ── Cookie consent checkbox ─────────────
+  .terms-of-use-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $text-primary;
+    cursor: pointer;
+    margin-bottom: 4px;
+
+    input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: $primary-color;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+  }
+
+  // ── Footer ───────────────────────────────
+  .modal-footer {
+    background-color: $bg-card;
+    border-top: 1px solid $border-color;
+    padding: 12px 20px;
+  }
+
+  .terms-accept-btn.btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 22px;
+    background-color: $primary-color;
+    border-color: $primary-color;
+    color: $bg-white;
+    border-radius: $radius-md;
+    letter-spacing: 0.3px;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 6px rgba($primary-color, 0.3);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      background-color: $primary-active !important;
+      border-color: $primary-active !important;
+      transform: translateY(0);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.25);
+    }
+  }
+
+  // ── Scrollbar ────────────────────────────
+  .modal-body {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 4px;
+
+      &:hover {
+        background-color: #94a3b8;
+      }
+    }
+  }
+}

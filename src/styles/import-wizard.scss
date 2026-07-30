@@ -1,0 +1,520 @@
+@use '_shared' as *;
+
+// ============================================
+// Colors specific to this file (used only here)
+// ============================================
+$warning-color: #d97706;
+$warning-light: #fffbeb;
+
+$info-color: #1d4ed8;
+$info-light: #eff6ff;
+
+// ============================================
+// Page wrapper
+// ============================================
+.import-wizard-page {
+  padding: 32px 20px 48px;
+  background-color: #f4f6f8;
+  min-height: calc(100vh - 56px);
+}
+
+// ============================================
+// Main Container
+// ============================================
+.import-form-container {
+  font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: $bg-white !important;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-md;
+  max-width: 920px;
+  margin: 0 auto;
+  color: $text-primary;
+
+  // ── Form Labels ───────────────────────────
+  .form-label,
+  .col-form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+
+  // ── Form Controls ─────────────────────────
+  .form-control,
+  .form-select {
+    color: $text-primary;
+    border: 1px solid $border-medium;
+    border-radius: $radius-sm;
+    font-size: 0.875rem;
+    transition: border-color $transition-speed ease, box-shadow $transition-speed ease;
+    box-shadow: $shadow-sm;
+    background-color: $bg-white;
+
+    &:hover:not(:disabled) {
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(19, 78, 74, 0.1);
+      outline: none;
+    }
+
+    &:disabled {
+      background-color: $bg-card;
+      color: $text-light;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  // ── Checkboxes ────────────────────────────
+  .form-check-label {
+    font-size: 0.85rem;
+    color: $text-secondary;
+    cursor: pointer;
+  }
+
+  .form-check-input {
+    cursor: pointer;
+
+    &:checked {
+      background-color: $primary-color;
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(19, 78, 74, 0.1);
+      border-color: $primary-color;
+    }
+  }
+
+  // ── Buttons ───────────────────────────────
+  .btn-primary {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: $radius-sm;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 6px rgba(19, 78, 74, 0.25);
+    }
+
+    &:active {
+      background-color: $primary-active;
+      border-color: $primary-active;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px rgba(19, 78, 74, 0.25);
+    }
+  }
+
+  .btn-secondary {
+    background-color: $bg-white;
+    border-color: $border-medium;
+    color: $text-secondary;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: $radius-sm;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $bg-card;
+      border-color: $border-strong;
+      color: $text-primary;
+    }
+  }
+
+  .btn-success {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    color: $bg-white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: $radius-sm;
+    padding: 9px 28px;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      background-color: $primary-hover;
+      border-color: $primary-hover;
+      box-shadow: 0 2px 8px rgba(19, 78, 74, 0.3);
+    }
+
+    &:active {
+      background-color: $primary-active;
+      border-color: $primary-active;
+      box-shadow: none;
+    }
+  }
+
+  // ── Alerts ────────────────────────────────
+  .alert {
+    font-size: 0.85rem;
+    border-radius: $radius-md;
+    padding: 10px 14px;
+  }
+
+  .alert-warning {
+    background-color: $warning-light;
+    border-color: rgba($warning-color, 0.3);
+    color: color-mix(in srgb, $warning-color 95%, black);
+  }
+
+  .alert-danger {
+    background-color: $danger-light;
+    border-color: rgba($danger-color, 0.25);
+    color: $danger-hover;
+  }
+
+  .alert-success {
+    background-color: $success-light;
+    border-color: rgba($success-color, 0.3);
+    color: $success-hover;
+  }
+
+  // ── Dividers ─────────────────────────────
+  hr {
+    border-color: $border-light;
+    opacity: 1;
+    margin: 16px 0;
+  }
+
+  // ── Links ────────────────────────────────
+  a {
+    color: $primary-color;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color $transition-speed ease;
+
+    &:hover {
+      color: $primary-hover;
+      text-decoration: underline;
+    }
+  }
+}
+
+// ============================================
+// Page title
+// ============================================
+.import-form-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0 0 22px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid $primary-color;
+  display: inline-block;
+  letter-spacing: -0.2px;
+}
+
+// ============================================
+// Accordion
+// ============================================
+.import-form-container {
+  .accordion {
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: $shadow-sm;
+  }
+
+  .accordion-item {
+    border: none;
+    border-bottom: 1px solid $border-color;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .accordion-button {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $text-secondary;
+    background-color: $bg-card-header;
+    padding: 14px 18px;
+    transition: color $transition-speed ease, background-color $transition-speed ease;
+    box-shadow: none !important;
+
+    &:not(.collapsed) {
+      color: $primary-color;
+      background-color: $primary-light;
+      border-bottom: 1px solid rgba($primary-color, 0.15);
+
+      .import-step-badge {
+        background-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+      }
+
+      &::after {
+        filter: invert(25%) sepia(50%) saturate(600%) hue-rotate(130deg) brightness(75%);
+      }
+    }
+
+    &:hover:not(:disabled) {
+      background-color: color-mix(in srgb, $bg-card-header 98%, black);
+      color: $primary-color;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(19, 78, 74, 0.15) !important;
+      outline: none;
+    }
+  }
+
+  .accordion-body {
+    padding: 24px 20px;
+    background-color: $bg-white;
+  }
+}
+
+// ============================================
+// Step badge (accordion headers)
+// ============================================
+.import-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: $border-strong;
+  color: $bg-white;
+  margin-right: 10px;
+  flex-shrink: 0;
+  transition: background-color $transition-speed ease, box-shadow $transition-speed ease;
+  line-height: 1;
+}
+
+// ============================================
+// Form sections (field group cards)
+// ============================================
+.import-section {
+  background-color: $bg-card;
+  border: 1px solid $border-light;
+  border-left: 3px solid $border-medium;
+  border-radius: 0 $radius-md $radius-md 0;
+  padding: 16px 18px 8px;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.import-section-primary {
+  border-left-color: $primary-color;
+}
+
+.import-section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: $text-light;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: $border-medium;
+  }
+}
+
+// ============================================
+// Dropzone
+// ============================================
+.import-dropzone {
+  border: 2px dashed $border-medium;
+  border-radius: $radius-md;
+  background-color: $bg-card;
+  padding: 32px 24px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color $transition-speed ease, background-color $transition-speed ease;
+
+  &:hover {
+    border-color: $primary-color;
+    background-color: $primary-light;
+
+    .import-dropzone-icon {
+      color: $primary-color;
+      transform: translateY(-3px);
+    }
+  }
+}
+
+.import-dropzone-icon {
+  font-size: 2.2rem;
+  color: $text-light;
+  margin-bottom: 10px;
+  display: block;
+  transition: color $transition-speed ease, transform 200ms ease;
+}
+
+.import-dropzone-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $text-secondary;
+  margin: 0 0 6px;
+
+  .import-dropzone-browse {
+    color: $primary-color;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+.import-dropzone-hint {
+  font-size: 0.78rem;
+  color: $text-muted;
+  margin: 0 auto;
+  max-width: 520px;
+  line-height: 1.5;
+
+  strong {
+    color: $text-secondary;
+  }
+}
+
+.import-dropzone-files {
+  margin-top: 16px;
+}
+
+// ============================================
+// File card (inside dropzone)
+// ============================================
+.import-file-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 10px;
+  border-radius: $radius-sm;
+  border: 1px solid $border-medium;
+  background-color: $bg-white;
+  max-width: 280px;
+  box-shadow: $shadow-sm;
+  font-size: 0.78rem;
+
+  &.valid {
+    border-color: rgba($success-color, 0.35);
+    background-color: $success-light;
+    color: $success-hover;
+  }
+
+  &.invalid {
+    border-color: rgba($danger-color, 0.35);
+    background-color: $danger-light;
+    color: $danger-hover;
+  }
+}
+
+.import-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.import-file-size {
+  flex-shrink: 0;
+  opacity: 0.6;
+  font-size: 0.72rem;
+}
+
+.import-file-remove {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 1px;
+  cursor: pointer;
+  opacity: 0.5;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  transition: opacity $transition-speed ease, color $transition-speed ease;
+
+  &:hover {
+    opacity: 1;
+    color: $danger-color;
+  }
+}
+
+// ============================================
+// Info note
+// ============================================
+.import-info-note {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: $info-color;
+  background-color: $info-light;
+  border: 1px solid rgba($info-color, 0.2);
+  border-radius: $radius-sm;
+  padding: 5px 10px;
+  line-height: 1.4;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 960px) {
+  .import-form-container {
+    max-width: 100%;
+    margin: 0 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .import-wizard-page {
+    padding: 12px 0 32px;
+  }
+
+  .import-form-container {
+    margin: 0;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+
+    .col-form-label,
+    .form-label {
+      font-size: 0.8rem;
+    }
+  }
+
+  .import-section {
+    padding: 12px 12px 6px;
+    border-radius: 0 $radius-sm $radius-sm 0;
+  }
+
+  .accordion-body {
+    padding: 16px 12px !important;
+  }
+
+  .import-dropzone {
+    padding: 20px 16px;
+  }
+}

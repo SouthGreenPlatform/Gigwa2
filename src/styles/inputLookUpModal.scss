@@ -1,0 +1,116 @@
+@use '_shared' as *;
+
+.input-lookup-modal {
+
+  .modal-content {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+  }
+
+  // Header
+  .modal-header {
+    background-color: $bg-card-alt;
+    border-bottom: 1px solid $border-color;
+    padding: 10px 14px;
+
+    .modal-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: $text-primary;
+      letter-spacing: 0.2px;
+    }
+
+    .btn-close {
+      opacity: 0.6;
+      transition: all $transition-speed ease;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  // Body
+  .modal-body {
+    padding: 12px 14px;
+    background-color: $bg-white;
+
+    p {
+      font-size: 0.8rem;
+      color: $text-secondary;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    textarea.form-control {
+      font-size: 0.8rem;
+      color: $text-primary;
+      background-color: $bg-card;
+      border: 1px solid $border-color;
+      border-radius: $radius-sm;
+      padding: 8px 10px;
+      resize: vertical;
+      min-height: 220px;
+      transition: all $transition-speed ease;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.15);
+        background-color: $bg-white;
+      }
+
+      &::placeholder {
+        color: $text-light;
+      }
+    }
+  }
+
+  // Footer
+  .modal-footer {
+    background-color: $bg-card;
+    border-top: 1px solid $border-color;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    .btn {
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: $radius-sm;
+      transition: all $transition-speed ease;
+    }
+
+    .btn-danger {
+      background-color: $danger-color;
+      border-color: $danger-color;
+
+      &:hover {
+        background-color: $danger-hover;
+        border-color: $danger-hover;
+      }
+
+      &:active {
+        background-color: color-mix(in srgb, $danger-color 95%, black);
+      }
+    }
+
+    .btn-primary {
+      background-color: $primary-color;
+      border-color: $primary-color;
+
+      &:hover {
+        background-color: $primary-hover;
+        border-color: $primary-hover;
+      }
+
+      &:active {
+        background-color: $primary-active;
+      }
+    }
+  }
+}

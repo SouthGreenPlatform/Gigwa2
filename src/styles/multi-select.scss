@@ -1,0 +1,349 @@
+// ============================================
+// Multi-Select Dropdown - SaaS Style (Compact)
+// ============================================
+// This is the SINGLE source of truth for multi-select styling.
+// Page stylesheets should NOT redefine multi-select colors / selected
+// states — they inherit from here. Only override layout (width) per page.
+// ============================================
+
+@use '_shared' as *;
+
+// Menu width (the menu stays at this width; long options scroll horizontally inside)
+$menu-width: 280px;
+$menu-max-height: 280px;
+
+// ============================================
+// Dropdown Row (Individual Options)
+// ============================================
+[data-multiselect-row="true"] {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: $text-primary;
+  background-color: transparent;
+  border: none;
+  transition: background-color $transition-speed ease, color $transition-speed ease;
+  user-select: none;
+  white-space: nowrap; // never wrap option text
+  box-sizing: border-box;
+
+  .text {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: visible; // allow text to overflow row for horizontal scroll
+    padding-right: 8px;
+  }
+
+  &:hover {
+    background-color: $bg-hover;
+    color: $primary-color;
+  }
+
+  &.selected {
+    background-color: $bg-selected;
+    color: $primary-color;
+    font-weight: 500;
+
+    &:hover {
+      background-color: #d1fae5; // slightly darker green tint
+    }
+  }
+
+  &:active {
+    background-color: #d1fae5;
+  }
+}
+
+// ============================================
+// Checkmark
+// ============================================
+.multiselect-checkmark {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: $primary-color;
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding-left: 6px;
+}
+
+// ============================================
+// Full Width Container
+// ============================================
+.multiselect-full-width {
+  width: 100%;
+}
+
+// ============================================
+// Dropdown Toggle (Button)
+// ============================================
+[data-multiselect-toggle="true"] {
+  width: 100%;
+  padding: 4px 8px !important;
+  background-color: white;
+  border: 1px solid $border-medium;
+  border-radius: $radius-sm;
+  color: $text-primary;
+  font-size: 0.75rem;
+  font-weight: 500;
+  justify-content: space-between;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  height: 26px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all $transition-speed ease;
+
+  &:hover {
+    border-color: $primary-color;
+    background-color: #fafefb;
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: $primary-color;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.12);
+  }
+
+  &[aria-expanded="true"] {
+    border-color: $primary-color;
+    background-color: #fafefb;
+  }
+
+  .filter-option {
+    color: $text-secondary;
+    font-size: 0.7rem;
+    font-weight: normal;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+}
+
+// ============================================
+// Dropdown Title
+// ============================================
+.multiselect-title {
+  margin-right: 6px;
+  color: $text-secondary;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+// ============================================
+// Dropdown Menu — fixed width, internal scroll for long options
+// ============================================
+.multiselect-menu {
+  width: $menu-width;
+  min-width: $menu-width;
+  max-width: $menu-width;
+  min-height: 30px;
+  max-height: $menu-max-height;
+  user-select: none;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  margin-top: 0;
+  padding: 0 !important;
+
+  // ============================================
+  // react-window's outer scroll container
+  // (the unnamed direct child div after .multiselect-actionsbox)
+  // This is where horizontal AND vertical scrolling actually happens
+  // ============================================
+  > div:not(.multiselect-actionsbox):not(.multiselect-empty-state) {
+    overflow: auto !important;
+
+    // Firefox
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #f1f5f9;
+
+    // WebKit — always visible
+    &::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+      -webkit-appearance: none;
+      display: block;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #f1f5f9;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #94a3b8;
+      border-radius: 5px;
+      border: 2px solid #f1f5f9;
+      min-width: 30px;
+      min-height: 30px;
+
+      &:hover {
+        background-color: #64748b;
+      }
+
+      &:active {
+        background-color: #475569;
+      }
+    }
+
+    &::-webkit-scrollbar-corner {
+      background-color: #f1f5f9;
+    }
+
+    // react-window's INNER div (the one with the absolute-positioned rows)
+    // Make it grow with row content so horizontal scroll has something to scroll
+    > div {
+      min-width: max-content !important;
+      width: max-content !important;
+    }
+  }
+}
+
+// ============================================
+// Action Box (All/None/Search) — pinned at top, doesn't scroll
+// ============================================
+.multiselect-actionsbox {
+  background-color: white;
+  border-bottom: 1px solid $border-light;
+  padding: 5px 6px;
+  width: 100%;
+}
+
+.multiselect-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.multiselect-actions-buttons {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+// ============================================
+// Action Buttons (All/None)
+// ============================================
+.actions-btn {
+  padding: 2px 8px !important;
+  background-color: white !important;
+  border: 1px solid $border-medium !important;
+  color: $text-primary !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  border-radius: $radius-sm !important;
+  height: 22px;
+  line-height: 1;
+  transition: all $transition-speed ease !important;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+    background-color: #fafefb !important;
+  }
+
+  &:active {
+    border-color: $primary-active !important;
+    color: white !important;
+    background-color: $primary-active !important;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.2) !important;
+  }
+}
+
+// ============================================
+// Search Input
+// ============================================
+.multiselect-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 2px 6px !important;
+  border: 1px solid $border-medium !important;
+  border-radius: $radius-sm !important;
+  font-size: 0.75rem !important;
+  color: $text-primary !important;
+  background-color: white !important;
+  transition: all $transition-speed ease !important;
+
+  &::placeholder {
+    color: $text-light !important;
+    font-size: 0.7rem;
+  }
+
+  &:focus {
+    outline: none !important;
+    border-color: $primary-color !important;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
+  }
+}
+
+// ============================================
+// Empty State
+// ============================================
+.multiselect-empty-state {
+  padding: 12px 10px;
+  text-align: center;
+  color: $text-light;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+// ============================================
+// Hidden Select
+// ============================================
+.multiselect-hidden-select {
+  display: none;
+}
+
+// ============================================
+// Bootstrap Select Integration
+// ============================================
+.btn-group.bootstrap-select {
+  width: 100%;
+}
+
+// ============================================
+// Animation for Dropdown Open
+// ============================================
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.multiselect-menu {
+  animation: dropdownFadeIn 150ms ease;
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 640px) {
+  [data-multiselect-row="true"] {
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+  }
+
+  [data-multiselect-toggle="true"] {
+    padding: 6px 8px !important;
+    font-size: 0.8125rem;
+    height: 30px;
+  }
+
+  .multiselect-menu {
+    width: min($menu-width, 90vw);
+    max-width: min($menu-width, 90vw);
+    max-height: 50vh;
+  }
+
+  .multiselect-search-input {
+    font-size: 16px !important; // iOS zoom prevention
+  }
+}

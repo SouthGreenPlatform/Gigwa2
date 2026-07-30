@@ -1,0 +1,171 @@
+
+> gigwareact@0.0.0 build
+> tsc -b && vite build
+
+src/components/AddTrackDialog.tsx(43,92): error TS2353: Object literal may only specify known properties, and 'format' does not exist in type '{ url: string; name: string; type: string; indexUrl?: string; }'.
+src/components/AddTrackDialog.tsx(133,58): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/AddTrackDialog.tsx(133,75): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/AddTrackDialog.tsx(141,58): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/AddTrackDialog.tsx(141,75): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/ExportPanel.tsx(17,22): error TS2300: Duplicate identifier 'any'.
+src/components/ExportPanel.tsx(17,26): error TS2300: Duplicate identifier 'any'.
+src/components/ExportPanel.tsx(83,15): error TS2339: Property 'exportedIndividuals' does not exist on type '{ exportFormat: string; keepExportOnServer: boolean; metadataFields: string[]; }'.
+src/components/ExportPanel.tsx(87,15): error TS2339: Property 'exportedIndividuals' does not exist on type '{ exportFormat: string; keepExportOnServer: boolean; metadataFields: string[]; }'.
+src/components/ExportPanel.tsx(93,17): error TS2339: Property 'exportedIndividuals' does not exist on type '{ exportFormat: string; keepExportOnServer: boolean; metadataFields: string[]; }'.
+src/components/ExportPanel.tsx(95,17): error TS2339: Property 'exportedIndividuals' does not exist on type '{ exportFormat: string; keepExportOnServer: boolean; metadataFields: string[]; }'.
+src/components/ExportPanel.tsx(242,72): error TS2339: Property 'desc' does not exist on type 'unknown'.
+src/components/ExportPanel.tsx(374,8): error TS2741: Property 'autoClose' is missing in type '{ progressToken: string; show: boolean; onHide: () => void; title: string; showAbort: true; onAbort: () => void; nbMin: number; }' but required in type 'ProgressDialogProps'.
+src/components/FilterCard.tsx(66,40): error TS2315: Type 'MouseEvent' is not generic.
+src/components/FilterCard.tsx(137,36): error TS2315: Type 'MouseEvent' is not generic.
+src/components/FilterCard.tsx(182,31): error TS2339: Property 'split' does not exist on type 'string | ArrayBuffer'.
+  Property 'split' does not exist on type 'ArrayBuffer'.
+src/components/FilterCard.tsx(190,38): error TS2315: Type 'MouseEvent' is not generic.
+src/components/FilterCard.tsx(232,45): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/components/FilterCard.tsx(233,34): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/components/FilterCard.tsx(233,79): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/components/FilterCard.tsx(323,18): error TS2339: Property 'nbGroups' does not exist on type '{ selectedSequences: any; selectedVariantTypes: any; selectedNbAlleles: any; selectedStart: any; selectedEnd: any; selectedVariantEffects: any; selectedVariantIDs: any; key: string; genesOnly: boolean; noGene: boolean; geneFilter: boolean; selectedGeneNames: any; }'.
+src/components/FilterCard.tsx(324,21): error TS2345: Argument of type '{ selectedSequences: any; selectedVariantTypes: any; selectedNbAlleles: any; selectedStart: any; selectedEnd: any; selectedVariantEffects: any; selectedVariantIDs: any; key: string; genesOnly: boolean; noGene: boolean; geneFilter: boolean; selectedGeneNames: any; }' is not assignable to parameter of type 'SetStateAction<VariantFilter>'.
+  Type '{ selectedSequences: any; selectedVariantTypes: any; selectedNbAlleles: any; selectedStart: any; selectedEnd: any; selectedVariantEffects: any; selectedVariantIDs: any; key: string; genesOnly: boolean; noGene: boolean; geneFilter: boolean; selectedGeneNames: any; }' is missing the following properties from type 'VariantFilter': isCollapsed, nbGroups
+src/components/FilterCard.tsx(425,37): error TS2315: Type 'MouseEvent' is not generic.
+src/components/FilterCard.tsx(430,35): error TS2315: Type 'MouseEvent' is not generic.
+src/components/FilterCard.tsx(505,82): error TS2339: Property 'referenceName' does not exist on type 'string'.
+src/components/FilterCard.tsx(518,62): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/FilterCard.tsx(518,99): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/FilterCard.tsx(527,62): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/FilterCard.tsx(527,97): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IGVBrowser.tsx(57,22): error TS2300: Duplicate identifier 'any'.
+src/components/IGVBrowser.tsx(57,26): error TS2300: Duplicate identifier 'any'.
+src/components/IGVBrowser.tsx(103,16): error TS2339: Property 'igv' does not exist on type 'Window & typeof globalThis'.
+src/components/IGVBrowser.tsx(116,16): error TS2339: Property 'igv' does not exist on type 'Window & typeof globalThis'.
+src/components/IGVBrowser.tsx(116,34): error TS2339: Property 'igv' does not exist on type 'Window & typeof globalThis'.
+src/components/IGVBrowser.tsx(153,22): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/components/IGVBrowser.tsx(175,31): error TS2339: Property 'igv' does not exist on type 'Window & typeof globalThis'.
+src/components/IGVBrowser.tsx(196,36): error TS2339: Property 'igv' does not exist on type 'Window & typeof globalThis'.
+src/components/IGVBrowser.tsx(203,79): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(66,26): error TS2345: Argument of type '{}' is not assignable to parameter of type 'SetStateAction<string[]>'.
+  Type '{}' is not assignable to type '(prevState: string[]) => string[]'.
+    Type '{}' provides no match for the signature '(prevState: string[]): string[]'.
+src/components/IndividualCard.tsx(76,28): error TS2345: Argument of type '{}' is not assignable to parameter of type 'SetStateAction<string[]>'.
+src/components/IndividualCard.tsx(100,13): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/IndividualCard.tsx(122,25): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/IndividualCard.tsx(188,26): error TS2315: Type 'MouseEvent' is not generic.
+src/components/IndividualCard.tsx(217,28): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/IndividualCard.tsx(263,19): error TS2322: Type 'number' is not assignable to type 'string'.
+src/components/IndividualCard.tsx(381,52): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(381,62): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(397,52): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(397,97): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(413,48): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(413,65): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(429,48): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(429,104): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(445,59): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(446,39): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(464,59): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'number'.
+src/components/IndividualCard.tsx(466,39): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/IndividualCard.tsx(499,105): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/IndividualCard.tsx(516,31): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/IndividualCard.tsx(524,33): error TS2339: Property 'groupName' does not exist on type 'GroupFilter'.
+src/components/LoadGenomeDialog.tsx(171,58): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/LoadGenomeDialog.tsx(171,75): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/LoadGenomeDialog.tsx(180,58): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/LoadGenomeDialog.tsx(180,75): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/LoadGenomeDialog.tsx(190,61): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/LoadGenomeDialog.tsx(190,78): error TS2339: Property 'files' does not exist on type 'EventTarget & FormControlElement'.
+  Property 'files' does not exist on type 'EventTarget & HTMLTextAreaElement'.
+src/components/VariantModal.tsx(209,17): error TS2339: Property 'genotype' does not exist on type 'object'.
+src/components/VariantModal.tsx(230,35): error TS2339: Property 'info' does not exist on type 'object'.
+src/components/VariantModal.tsx(257,39): error TS2339: Property 'callSetId' does not exist on type 'object'.
+src/components/VariantModal.tsx(473,41): error TS2551: Property 'names' does not exist on type 'GroupFilter'. Did you mean 'name'?
+src/contexts/Filters.tsx(360,35): error TS2322: Type '{ variantFilters: VariantFilter; setVariantFilters: React.Dispatch<React.SetStateAction<VariantFilter>>; setKey: (value: string) => void; ... 29 more ...; resetAnnotationFilter: (groupId: string, annotationKey: string) => void; }' is not assignable to type 'FiltersContextType'.
+  Types of property 'setHeterozygosity' are incompatible.
+    Type '(groupId: string, value: [number, number]) => void' is not assignable to type '(groupId: string, value: number) => void'.
+      Types of parameters 'value' and 'value' are incompatible.
+        Type 'number' is not assignable to type '[number, number]'.
+src/pages/Database.tsx(335,42): error TS2315: Type 'MouseEvent' is not generic.
+src/pages/Database.tsx(346,75): error TS2322: Type '{ initialTaxon: string; initialDatabase: string; initialProject: string; }' is not assignable to type 'IntrinsicAttributes & { initialTaxon: any; initialDatabase: any; initialProjects: any; initialAssembly: any; } & RefAttributes<unknown>'.
+  Property 'initialProject' does not exist on type 'IntrinsicAttributes & { initialTaxon: any; initialDatabase: any; initialProjects: any; initialAssembly: any; } & RefAttributes<unknown>'. Did you mean 'initialProjects'?
+src/pages/Database.tsx(361,22): error TS2740: Type '{ chromosomes: any[]; }' is missing the following properties from type '{ chromosomes: string[]; buildSearchQuery: (any: any, any: any) => Record<string, any>; groupFilters: any; variantFilters: any; initialLocus?: string; variantSearchApiUrl: string; selectedIndividuals: string[]; igvGenomeRefTable: { ...; }; individualsOptionsNames?: string[]; onClose?: () => void; }': buildSearchQuery, groupFilters, variantFilters, variantSearchApiUrl, and 2 more.
+src/pages/Database.tsx(502,29): error TS2322: Type 'string' is not assignable to type 'number'.
+src/pages/DatasetSelection.tsx(213,43): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+src/pages/Investigate.tsx(182,10): error TS2339: Property 'forEach' does not exist on type 'unknown'.
+src/pages/Investigate.tsx(202,52): error TS2554: Expected 1 arguments, but got 0.
+src/pages/Investigate.tsx(295,45): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/pages/Investigate.tsx(296,34): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/pages/Investigate.tsx(296,79): error TS2339: Property 'discriminateGroups' does not exist on type 'unknown'.
+src/pages/Investigate.tsx(661,5): error TS2554: Expected 2 arguments, but got 1.
+src/pages/Investigate.tsx(782,19): error TS2322: Type '{ children: Element[]; direction: string; autoSaveId: string; style: { flex: number; }; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & { children?: ReactNode; className?: string; defaultLayout?: Layout; ... 9 more ...; style?: CSSProperties; }'.
+  Property 'direction' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & { children?: ReactNode; className?: string; defaultLayout?: Layout; ... 9 more ...; style?: CSSProperties; }'.
+src/pages/Investigate.tsx(788,14): error TS2741: Property 'eventKey' is missing in type '{ children: Element[]; }' but required in type 'AccordionItemProps'.
+src/pages/Investigate.tsx(808,21): error TS2322: Type '{ groupID: number; groupName: any; title: string; onDelete: () => void; individualsNames: any[]; individualsIDs: any[]; searchableAnnotations: any[]; distinctMetadata: {}; genotypePatterns: any[]; workWithSamples: boolean; }' is not assignable to type 'IntrinsicAttributes & IndividualProps'.
+  Property 'groupName' does not exist on type 'IntrinsicAttributes & IndividualProps'.
+src/pages/Investigate.tsx(808,54): error TS2551: Property 'names' does not exist on type 'GroupFilter'. Did you mean 'name'?
+src/pages/Investigate.tsx(832,148): error TS2554: Expected 1 arguments, but got 0.
+src/pages/Investigate.tsx(886,27): error TS2322: Type '(variantFilters: any, groupFilters: any, usedPagination: any) => { variantSetId: string; searchMode: number; getGT: boolean; referenceName: any; selectedVariantTypes: any; alleleCount: any; ... 21 more ...; additionalCallSetIds: any[]; }' is not assignable to type '(any: any, any: any) => Record<string, any>'.
+  Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/pages/Investigate.tsx(943,19): error TS2322: Type '(variantFilters: any, groupFilters: any, usedPagination: any) => { variantSetId: string; searchMode: number; getGT: boolean; referenceName: any; selectedVariantTypes: any; alleleCount: any; ... 21 more ...; additionalCallSetIds: any[]; }' is not assignable to type '(any: any, any: any) => Record<string, any>'.
+  Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/tools/GigwaSearchReader.ts(249,30): error TS2300: Duplicate identifier 'any'.
+src/tools/GigwaSearchReader.ts(249,34): error TS2300: Duplicate identifier 'any'.
+src/tools/GigwaSearchReader.ts(261,34): error TS2300: Duplicate identifier 'any'.
+src/tools/GigwaSearchReader.ts(261,38): error TS2300: Duplicate identifier 'any'.
+src/tools/commons.ts(153,10): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(161,5): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(m: string, key: any, value: any) => void' is not assignable to parameter of type '(substring: string, ...args: any[]) => string'.
+      Type 'void' is not assignable to type 'string'.
+src/tools/commons.ts(222,9): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(228,9): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(232,11): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(233,11): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(237,13): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(253,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(254,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(255,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(267,7): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(278,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(280,13): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(287,7): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(288,9): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(466,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(467,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(474,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(486,26): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(490,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(495,30): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(499,7): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(502,21): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(503,19): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(516,29): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(522,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(529,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(530,10): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(543,23): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(587,11): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(647,11): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(663,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(674,29): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(684,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(685,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(686,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(687,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(705,11): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(731,7): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(740,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(745,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(750,5): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(756,7): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(761,4): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(768,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(773,3): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(795,20): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.
+src/tools/commons.ts(798,151): error TS2581: Cannot find name '$'. Do you need to install type definitions for jQuery? Try `npm i --save-dev @types/jquery`.

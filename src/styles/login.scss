@@ -1,0 +1,171 @@
+@use '_shared' as *;
+
+// ============================================
+// Login Page
+// ============================================
+.login-page-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 15%, rgba($primary-color, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba($primary-color, 0.06), transparent 45%),
+    $bg-page;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: $bg-white;
+  border-radius: $radius-lg;
+  border-top: 4px solid $primary-color;
+  box-shadow: $shadow-lg;
+  padding: 40px 36px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.login-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.3px;
+  margin: 0 0 28px;
+}
+
+.login-field {
+  margin-bottom: 18px;
+
+  .form-control {
+    border-radius: $radius-md;
+    border: 1px solid $border-medium;
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 0.2rem rgba($primary-color, 0.15);
+    }
+  }
+
+  label {
+    color: $text-secondary;
+  }
+}
+
+.login-submit-btn {
+  width: 100%;
+  background-color: $primary-color !important;
+  border-color: $primary-color !important;
+  color: $bg-white !important;
+  border-radius: $radius-md;
+  font-weight: 600;
+  padding: 10px 0;
+  margin-bottom: 14px;
+  transition: background-color $transition-speed ease, border-color $transition-speed ease, transform $transition-speed ease;
+
+  &:hover {
+    background-color: $primary-hover !important;
+    border-color: $primary-hover !important;
+  }
+
+  &:active {
+    background-color: $primary-active !important;
+    border-color: $primary-active !important;
+    transform: translateY(1px);
+  }
+}
+
+.login-cas-btn {
+  width: 100%;
+  background-color: $bg-white !important;
+  border: 1px solid $primary-color !important;
+  color: $primary-color !important;
+  border-radius: $radius-md;
+  font-weight: 600;
+  padding: 10px 0;
+  margin-bottom: 8px;
+  transition: background-color $transition-speed ease, color $transition-speed ease;
+
+  &:hover {
+    background-color: $primary-light !important;
+  }
+
+  &:active {
+    background-color: $primary-light !important;
+    color: $primary-active !important;
+  }
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: $text-light;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 4px 0 18px;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid $border-light;
+  }
+
+  &::before {
+    margin-right: 12px;
+  }
+
+  &::after {
+    margin-left: 12px;
+  }
+}
+
+.login-forgot-btn {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: $text-muted !important;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  align-self: center;
+  margin-bottom: 20px;
+  transition: color $transition-speed ease, text-decoration-color $transition-speed ease;
+
+  &:hover {
+    color: $primary-color !important;
+    text-decoration-color: $primary-color;
+  }
+}
+
+.login-admin-contact {
+  text-align: center;
+  font-size: 0.8rem;
+  color: $text-muted;
+  padding-top: 16px;
+  border-top: 1px solid $border-light;
+
+  a {
+    color: $primary-color;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.login-already-authenticated {
+  font-size: 1.1rem;
+  color: $text-secondary;
+  text-align: center;
+}

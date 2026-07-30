@@ -1,0 +1,257 @@
+// ============================================
+// IGV Menu - SaaS Style (Compact)
+// ============================================
+
+@use '_shared' as *;
+
+// ============================================
+// Toolbar Container
+// ============================================
+.btn-toolbar[role="toolbar"] {
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+
+// ============================================
+// Toolbar Button Group
+// ============================================
+.btn-group[role="group"] {
+  gap: 4px;
+
+  // Override Bootstrap's btn-group border-radius flattening
+  .btn {
+    border-radius: $radius-sm !important;
+  }
+}
+
+// ============================================
+// All Toolbar Buttons (Reference Genome, Add Track, Displayed Genotypes)
+// ============================================
+.igv-browser-header {
+  .btn.btn-outline-primary,
+  .btn.btn-outline-primary.dropdown-toggle {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    height: 28px;
+    line-height: 1;
+    background-color: $bg-white;
+    color: $text-secondary;
+    border: 1px solid $border-medium;
+    border-radius: $radius-sm !important;
+    box-shadow: $shadow-sm;
+    transition: all $transition-speed ease;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: $primary-light;
+      border-color: $primary-color;
+      color: $primary-color;
+      box-shadow: 0 2px 4px rgba($primary-color, 0.15);
+    }
+
+    &:active,
+    &.show {
+      background-color: $primary-color;
+      border-color: $primary-color;
+      color: white;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+      outline: none;
+    }
+
+    // Dropdown caret
+    &::after {
+      margin-left: 6px;
+      opacity: 0.7;
+    }
+
+    svg, .svg-inline--fa {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// ============================================
+// Dropdown Menus
+// ============================================
+.igv-browser-header {
+  .dropdown-menu {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    box-shadow: $shadow-lg;
+    padding: 4px;
+    margin-top: 0;
+    min-width: 200px;
+    font-size: 0.8rem;
+
+    // Section headers (provider names — italic bold)
+    .dropdown-item.fst-italic.fw-bold {
+      font-size: 0.7rem;
+      color: $text-muted;
+      padding: 5px 10px 3px;
+      cursor: default;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-style: normal !important;
+      font-weight: 600 !important;
+      border-top: 1px solid $border-light;
+      margin-top: 2px;
+
+      &:first-child {
+        border-top: none;
+        margin-top: 0;
+      }
+    }
+
+    // Regular items
+    .dropdown-item {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: $radius-sm;
+      color: $text-primary;
+      background-color: transparent;
+      transition: all $transition-speed ease;
+      cursor: pointer;
+
+      &:hover {
+        background-color: $primary-light;
+        color: $primary-color;
+      }
+
+      &:active,
+      &.active {
+        background-color: $primary-color;
+        color: white;
+      }
+
+      // "Load your own genome" button
+      &.btn.btn-primary {
+        background-color: transparent;
+        border: none;
+        color: $text-primary;
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        width: 100%;
+        text-align: left;
+        font-weight: 400;
+
+        &:hover {
+          background-color: $primary-light;
+          color: $primary-color;
+        }
+      }
+    }
+
+    .dropdown-divider {
+      border-color: $border-light;
+      margin: 3px 0;
+    }
+  }
+}
+
+// ============================================
+// Displayed Genotypes Dropdown Item
+// ============================================
+.igv-menu-dropdown-item {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  color: $text-primary;
+  line-height: 1.6;
+
+  input[type="radio"] {
+    accent-color: $primary-color;
+    cursor: pointer;
+    width: 13px;
+    height: 13px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
+  label,
+  span {
+    cursor: pointer;
+    vertical-align: middle;
+  }
+}
+
+.igv-menu-option-gap {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: $text-primary;
+
+  input[type="radio"] {
+    accent-color: $primary-color;
+    cursor: pointer;
+    width: 13px;
+    height: 13px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}
+
+// ============================================
+// Selected Genome Name Label
+// ============================================
+.igv-browser-header {
+  .text-muted.small.align-self-center {
+    font-size: 0.72rem;
+    color: $text-muted !important;
+    font-style: italic;
+    padding: 0 4px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+}
+
+// ============================================
+// Close Button
+// ============================================
+.igv-menu-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  opacity: 0.5;
+  transition: opacity $transition-speed ease;
+  z-index: 5;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+    outline: none;
+    border-radius: 2px;
+  }
+}
+
+// ============================================
+// Responsive
+// ============================================
+@media (max-width: 768px) {
+  .btn-toolbar[role="toolbar"] {
+    gap: 4px;
+  }
+
+  .igv-browser-header {
+    .btn.btn-outline-primary {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      height: 26px;
+    }
+  }
+
+  .igv-menu-close-btn {
+    top: 10px;
+    right: 10px;
+  }
+}
