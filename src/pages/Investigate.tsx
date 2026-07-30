@@ -4,7 +4,7 @@ import FilterCard from "../components/FilterCard"
 import IndividualCard from "../components/IndividualCard"
 import { GroupFilter, useFilters, VariantFilter } from "../contexts/Filters"
 import { useEffect, useState, useRef, useContext } from "react"
-import { Container, Row, Accordion, Table, Button, FormCheck, FormSelect, Modal, OverlayTrigger, Tooltip, Form, AccordionContext, Overlay } from "react-bootstrap"
+import { Container, Row, Accordion, Table, Button, FormCheck, FormSelect, Modal, OverlayTrigger, Tooltip, Form, AccordionContext, Overlay, Dropdown } from "react-bootstrap"
 import VariantModal from "../components/VariantModal.tsx"
 import { useApi } from "../contexts/Authentication.tsx"
 import endpoints from "../endpoints"
@@ -24,6 +24,7 @@ import { fetchDistinctIndividualMetadata, fetchExportFormats, fetchGenotypePatte
 import { Axios, AxiosInstance } from "axios";
 import "../styles/investigate.scss";
 import React from "react";
+
 const Investigate = () => {
   const { variantFilters, setVariantFilters, resetAllGroups, setGroupFilters, resetAllFilters } = useFilters()
   const [groupIDs, setGroupIDs] = useState<number[]>([])
@@ -35,6 +36,14 @@ const Investigate = () => {
   const [isChanged, setIsChanged] = useState(false);
    const [browseEnabled,setBrowseEnabled] = useState(localStorage.getItem("browseEnabled")==='1')
    const [counted,setCounted] = useState(false);
+
+  interface SnpClustLink {
+    projId: string;
+    shortProjId: string;
+    label: string;
+    url: string;
+  }
+  const [snpClustLinks, setSnpClustLinks] = useState<SnpClustLink[]>([]);
    
   const applyConfig = () => {
     if (galaxyURL.trim()) localStorage.setItem("galaxyURL", galaxyURL.trim());
@@ -443,8 +452,10 @@ const [databaseProjects,setDatabaseProjects] = useState([]);
       setGenotypePatternsOptions(genotypePatternsFromServer);
     }
     const loadprojectsDb = async () => {
+      console.log("ici");
       const projectsDbFromServer = await fetchProjectsDb(api,database);
       setDatabaseProjects(projectsDbFromServer);
+      console.log(projectsDbFromServer);
     }
 
     loadExportFormats();
@@ -619,6 +630,49 @@ const currentEventKey="1"
     };
     fetchOnlineOutputTools();
   }, [assembly]);
+
+  //snpclust
+  useEffect(() => {
+    async function fetchSnpClustLinks() {
+      
+      if (!project) {
+        setSnpClustLinks([]);
+        return;
+      }
+
+      const projectIds: string[] = project.split(",").filter(Boolean);
+      console.log(projectIds);
+
+      const results = await Promise.all(
+        projectIds.map(async (projId): Promise<SnpClustLink | null> => {
+          try {
+            const shortProjId = projId.split("§")[1];
+            const resp = await api.get(
+              `${endpoints.SNPCLUST_EDITION_URL}?module=${database}&project=${shortProjId}`,
+              {
+                headers: {  
+                  "Content-Type": "application/json",
+                  accept: "application/json"
+                },
+              },
+            );   
+                   
+            const url = await resp.data;            
+            if (url) {
+              const label = databaseProjects.find( (p) => p?.id === projId)?.name;
+              return { projId, shortProjId, label, url };
+            }
+          } catch (error) {
+          }
+          return null;
+        })
+      );
+      console.log(results);
+      setSnpClustLinks(results.filter((r): r is SnpClustLink => r !== null));
+    }
+    fetchSnpClustLinks();
+  }, [databaseProjects, project]);
+
   /////////////////////////////////////////////////////////////////////////
   const toolConfigRef = React.useRef(null);
 
@@ -785,6 +839,39 @@ const currentEventKey="1"
                 >
                   <FontAwesomeIcon icon={faScrewdriverWrench} />
                 </Button>
+
+                {snpClustLinks.length > 0 && (
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      as="span"
+                      bsPrefix="snpclust-toggle"
+                      style={{ cursor: "pointer" }}
+                      id="snpclust-dropdown"
+                    >
+                      <img
+                        style={{ marginLeft: 8 }}
+                        title="Edit genotypes with SnpClust"
+                        src="/img/logo_snpclust.png"
+                        height={30}
+                        width={30}
+                        alt="SnpClust"
+                      />
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      {snpClustLinks.map(({ projId, url, label }) => (
+                        <Dropdown.Item
+                          key={projId}
+                          href={`${url}?maintoken=${token}&mainapiURL=${location.origin}${endpoints.REST_BASE_URL}&mainbrapistudy=${projId}&mainbrapiprogram=${database}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open project <strong>{label}</strong> in SnpClust
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                )}
 
                 <Overlay
                   target={toolConfigRef.current}

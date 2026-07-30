@@ -1,10 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-// Ensure index.html is explicit in the URL so that HashRouter deep links are copyable
-if (!window.location.pathname.endsWith('/index.html')) {
-  const base = window.location.pathname.replace(/\/?$/, '/index.html');
-  window.location.replace(base + window.location.search + window.location.hash);
+const path = window.location.pathname;
+if (!path.endsWith('/') && !path.endsWith('/index.html')) {
+  window.location.replace(path + '/' + window.location.search + window.location.hash);
 }
 
 import "./styles/index.scss";
