@@ -1,0 +1,8 @@
+{
+  "tomcat.buildType": "Maven",
+  "tomcat.autoDeployMode": "On Save",
+  "tomcat.port": 8080,
+  "tomcat.autoReloadBrowser": true,
+  "tomcat.logLevel": "INFO",
+  "tomcat.showTimestamp": true
+}

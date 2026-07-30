@@ -119,6 +119,7 @@ import com.github.jmchilton.blend4j.galaxy.beans.History;
 import com.mongodb.client.result.DeleteResult;
 import com.sun.jersey.api.client.ClientResponse;
 
+import fr.cirad.configuration.SwaggerConfig;
 import fr.cirad.io.brapi.BrapiService;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.ImportProcess;
@@ -283,6 +284,7 @@ public class GigwaRestController extends ControllerInterface {
 	static public final String FILTER_INDIVIDUALS_USING_METADATA = "/filterIndividualsFromMetadata";
 	static public final String FILTER_SAMPLES_USING_METADATA = "/filterSamplesFromMetadata";
 	static public final String INSTANCE_CONTENT_SUMMARY = "/instanceContentSummary";
+	static public final String VERSION_PATH = "/version";
 	static final public String snpclustEditionURL = "/snpclustEditionURL";
 	static public final String MANDATORY_MD_FIELDS = "/mandatoryMetadata";
 	static public final String CONFIG_PARAM_URL = "/configParams";
@@ -2587,6 +2589,12 @@ public class GigwaRestController extends ControllerInterface {
 		{
 			return "";
 		}
+	}
+
+	@ApiIgnore
+	@RequestMapping(value = BASE_URL + VERSION_PATH, method = RequestMethod.GET, produces = "application/text")
+	public String getVersion() {
+		return SwaggerConfig.getGigwaVersion();
 	}
 
 	@ApiIgnore

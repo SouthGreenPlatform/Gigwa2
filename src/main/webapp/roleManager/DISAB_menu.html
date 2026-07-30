@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Role Manager Menu</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+      :root {
+        --gigwa-primary: #6aff79;
+        --gigwa-primary-soft: #d7ffdb;
+        --gigwa-secondary: #183d3d;
+        --gigwa-secondary-soft: #244f4f;
+        --gigwa-border: rgba(215, 255, 219, 0.24);
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        padding: 14px;
+        font-family: 'Montserrat', sans-serif;
+        background:
+          radial-gradient(circle at 0% 8%, rgba(106, 255, 121, 0.14), transparent 40%),
+          var(--gigwa-secondary);
+      }
+
+      .menu {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .menu-link {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        text-decoration: none;
+        color: var(--gigwa-primary-soft);
+        background: linear-gradient(140deg, rgba(36, 79, 79, 0.95), rgba(65, 109, 109, 0.95));
+        border: 1px solid var(--gigwa-border);
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.25;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+      }
+
+      .menu-link:hover,
+      .menu-link:focus {
+        color: #0f2f2f;
+        background: var(--gigwa-primary);
+        border-color: var(--gigwa-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(106, 255, 121, 0.26);
+      }
+
+      .menu-link.active {
+        color: #0f2f2f;
+        background: var(--gigwa-primary);
+        border-color: var(--gigwa-primary);
+        box-shadow: 0 8px 16px rgba(106, 255, 121, 0.24);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menu">
+      <a class="menu-link" href="app.html#/databases" target="managementFrame">Manage databases</a>
+      <a class="menu-link" href="app.html#/users" target="managementFrame">Manage users and permissions</a>
+      <a class="menu-link" id="adminProcessesLink" href="app.html#/processes" target="managementFrame" style="display: none;">Admin processes</a>
+      <a class="menu-link" href="../fixVRD.jsp" target="managementFrame">Check allele<br/>list consistency</a>
+    </div>
+    <script>
+      const links = Array.from(document.querySelectorAll('.menu-link'));
+
+      function setActive(activeLink) {
+        links.forEach((link) => {
+          if (link === activeLink) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+
+      links.forEach((link) => {
+        link.addEventListener('click', () => setActive(link));
+      });
+
+      if (links.length > 0) {
+        setActive(links[0]);
+      }
+    </script>
+    <script type="module">
+      import { getCurrentUser } from './assets/roleManagerApi.js';
+
+      getCurrentUser()
+        .then(function (user) {
+          if (!user || !user.authenticated) return;
+          var canViewProcesses = user.isAdmin || (user.supervisedModules && user.supervisedModules.length > 0);
+          if (canViewProcesses) {
+            document.getElementById('adminProcessesLink').style.display = '';
+          }
+        })
+        .catch(function () {});
+    </script>
+  </body>
+</html>

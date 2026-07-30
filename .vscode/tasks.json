@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build WAR",
+      "type": "shell",
+      "command": "mvn",
+      "args": [
+        "-q",
+        "-DskipTests",
+        "package"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Tomcat (JPDA)",
+      "type": "shell",
+      "command": "/bin/bash",
+      "args": [
+        "-lc",
+        "set -e; mvn -q -DskipTests package && rm -rf \"/home/sempere/Bureau/work/apache-tomcat-9.0.74/webapps/Gigwa2\" \"/home/sempere/Bureau/work/apache-tomcat-9.0.74/webapps/Gigwa2.war\" && cp target/*.war \"/home/sempere/Bureau/work/apache-tomcat-9.0.74/webapps/Gigwa2.war\" && unset CATALINA_BASE CATALINA_TMPDIR && export CATALINA_HOME=\"/home/sempere/Bureau/work/apache-tomcat-9.0.74\" && exec \"$CATALINA_HOME/bin/catalina.sh\" jpda run"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Stop Tomcat",
+      "type": "shell",
+      "command": "/bin/bash",
+      "args": [
+        "-lc",
+        "unset CATALINA_BASE CATALINA_TMPDIR; export CATALINA_HOME=\"/home/sempere/Bureau/work/apache-tomcat-9.0.74\"; exec \"$CATALINA_HOME/bin/catalina.sh\" stop"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
