@@ -81,6 +81,11 @@ const NavigationBar = () => {
               <NavDropdown.Item as={Link} to="/importDataWizard">Import Data Wizard</NavDropdown.Item>
               <NavDropdown.Item as={Link} to="/importDataAccordion">Import Data Accordion </NavDropdown.Item>
               <NavDropdown.Item as={Link} to="/importMetadata">Import Metadata</NavDropdown.Item>
+              {isAuthenticated && (
+                <NavDropdown.Item href={endpoints.PERMISSION_MANAGEMENT_URL}>
+                  Administer existing data<br />and/or user permissions
+                </NavDropdown.Item>
+              )}
             </NavDropdown>
             <Nav.Link onClick={() => handleOpenFullModal({ url: endpoints.SWAGGER_URL, title: "Rest APIs"})}>Rest APIs</Nav.Link>
             <Nav.Link onClick={() => handleOpenFullModal({ url: endpoints.DOCS_URL, title: "Documentation" })}>Docs</Nav.Link>
