@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write"
+    "format": "prettier --write",
+    "postinstall": "node -e \"require('fs').mkdirSync('public/vendor',{recursive:true});require('fs').copyFileSync('node_modules/plotly.js-dist-min/plotly.min.js','public/vendor/plotly.min.js')\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -23,7 +24,6 @@
     "bootstrap": "^5.3.5",
     "form-data": "^4.0.5",
     "igv": "^3.8.0",
-    "plotly.js": "^3.0.1",
     "plotly.js-dist-min": "^3.1.0",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
@@ -46,7 +46,6 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
-    "@types/react-plotly.js": "^2.6.3",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^9.19.0",

@@ -4,5 +4,6 @@
   "tomcat.port": 8080,
   "tomcat.autoReloadBrowser": true,
   "tomcat.logLevel": "INFO",
-  "tomcat.showTimestamp": true
+  "tomcat.showTimestamp": true,
+  "java.compile.nullAnalysis.mode": "automatic"
 }

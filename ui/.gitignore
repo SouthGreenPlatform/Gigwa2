@@ -4,3 +4,4 @@ dist/
 .*
 public/custom/*
 !public/custom/README.md
+public/vendor/

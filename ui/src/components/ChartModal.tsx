@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Plot from 'react-plotly.js';
 import endpoints from '../endpoints';
 import { Alert, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useApi, useAuth } from '../contexts/Authentication';
@@ -8,6 +7,24 @@ import '../styles/chart-modal.scss';
 
 import SmartColorMultiSelect from './SmartColorMultiSelect';
 import MultiSelectDropdown from './MultiSelect';
+
+// Plotly is loaded from a static <script> tag (public/vendor/plotly.min.js) rather than bundled:
+// its prebuilt dist is an ~11MB single-file CJS module that dominates Vite's build time (~15s of an
+// ~19s build) for negligible runtime benefit, since it's only used in this one modal.
+let plotlyLoadPromise: Promise<any> | null = null;
+const loadPlotly = (): Promise<any> => {
+  if ((window as any).Plotly) return Promise.resolve((window as any).Plotly);
+  if (!plotlyLoadPromise) {
+    plotlyLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `${import.meta.env.BASE_URL}vendor/plotly.min.js`;
+      script.onload = () => resolve((window as any).Plotly);
+      script.onerror = () => reject(new Error('Failed to load Plotly'));
+      document.head.appendChild(script);
+    });
+  }
+  return plotlyLoadPromise;
+};
 
 interface ChartModalProps {
   show: boolean;
@@ -275,6 +292,18 @@ const ChartModal: React.FC<ChartModalProps> = ({
   const [metadataValues, setMetadataValues]       = useState<string[]>([]);
   const [metadataValueGroups, setMetadataValueGroups] = useState<string[][]>([]); // output of SmartColorMultiSelect
   const [metadataCallSets, setMetadataCallSets]   = useState<{ callSetIds: string[]; additionalCallSetIds: string[][] } | null>(null);
+  const [PlotComponent, setPlotComponent]         = useState<React.ComponentType<any> | null>(null);
+
+  // Load Plotly (and build the react-plotly.js component around it) once the modal is first shown
+  useEffect(() => {
+    if (!show || PlotComponent) return;
+    let cancelled = false;
+    Promise.all([loadPlotly(), import('react-plotly.js/factory')]).then(([Plotly, factoryModule]) => {
+      if (cancelled) return;
+      setPlotComponent(() => factoryModule.default(Plotly));
+    }).catch((error) => console.error('Failed to load Plotly:', error));
+    return () => { cancelled = true; };
+  }, [show, PlotComponent]);
 
   const modalBodyRef       = useRef<HTMLDivElement>(null);
   const plotViewportRef    = useRef<HTMLDivElement>(null);
@@ -1388,10 +1417,12 @@ const ChartModal: React.FC<ChartModalProps> = ({
                   </div>
                 )}
               </div>
+            ) : !PlotComponent ? (
+              <div className="chart-modal-empty-state">Loading chart engine...</div>
             ) : (
               <div className="chart-modal-plot-scroll">
                 <div ref={plotViewportRef} className={`chart-modal-viewport chart-modal-viewport-${widthMultiplier}x`}>
-                  <Plot
+                  <PlotComponent
                     data={plotData}
                     layout={plotLayout}
                     useResizeHandler
