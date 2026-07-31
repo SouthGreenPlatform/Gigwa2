@@ -3,6 +3,19 @@ import axios from 'axios';
 import { loginRequest } from "../pages/Login";
 import endpoints from "../endpoints";
 
+interface GigwaAuthBridge {
+  getAccessToken: () => string | null;
+  getUsername: () => string | null;
+  isAuthenticated: () => boolean;
+  onAuthChange: (listener: () => void) => () => void;
+}
+
+declare global {
+  interface Window {
+    gigwaAuth?: GigwaAuthBridge;
+  }
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, token: string, expiresInSeconds?: number) => void;
@@ -27,6 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onConnectionError = setConnectionError;
     return () => { onConnectionError = null; };
   }, []);
+
+  useEffect(() => {
+    publishGigwaAuthBridge(token, username, isAuthenticated);
+    notifyAuthChange();
+
+    return () => {
+      if (window.gigwaAuth) {
+        delete window.gigwaAuth;
+      }
+    };
+  }, [token, username, isAuthenticated]);
 
   // Load from localStorage on first render, or exchange CAS session for a token
   useEffect(() => {
@@ -95,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("username", username);
     localStorage.setItem("auth_token", token);
     localStorage.setItem("token_expires_at", expiresAt.toString());
+    notifyAuthChange();
   };
 
   const logout = () => {
@@ -104,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("username");
     localStorage.removeItem("auth_token");
     localStorage.removeItem("token_expires_at");
+    notifyAuthChange();
   };
 
   return (
@@ -124,6 +150,12 @@ export function useAuth() {
 let loginPromise: Promise<void> | null = null;
 let loginError: Error | null = null;
 let onConnectionError: ((err: Error) => void) | null = null;
+const authChangeListeners = new Set<() => void>();
+
+function notifyAuthChange() {
+  window.dispatchEvent(new Event('gigwa-auth-changed'));
+  authChangeListeners.forEach((listener) => listener());
+}
 
 const neverResolves = new Promise<void>(() => {}); // used to suspend indefinitely after an error
 
@@ -165,4 +197,20 @@ export function AuthGate({ children, fallback = <div>Loading authentication...</
   );
   if (!isAuthReady) return <>{fallback}</>;
   return <>{children}</>;
+}
+
+function publishGigwaAuthBridge(token: string | null, username: string | null, isAuthenticated: boolean) {
+  const bridge: GigwaAuthBridge = {
+    getAccessToken: () => token,
+    getUsername: () => username,
+    isAuthenticated: () => isAuthenticated,
+    onAuthChange: (listener: () => void) => {
+      authChangeListeners.add(listener);
+      return () => {
+        authChangeListeners.delete(listener);
+      };
+    },
+  };
+
+  window.gigwaAuth = bridge;
 }

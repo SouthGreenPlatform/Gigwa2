@@ -67,6 +67,39 @@
         box-shadow: 0 8px 16px rgba(106, 255, 121, 0.24);
       }
     </style>
+    <script>
+      (function installRoleManagerAuthBridge() {
+        const storageKey = window.roleManagerAuthTokenStorageKey || 'auth_token';
+        const eventName = 'gigwa-auth-changed';
+
+        const bridge = {
+          getAccessToken() {
+            try {
+              return window.localStorage.getItem(storageKey);
+            } catch (error) {
+              return null;
+            }
+          },
+          onAuthChange(callback) {
+            if (typeof callback !== 'function') {
+              return () => {};
+            }
+
+            const handleAuthChange = () => callback();
+            window.addEventListener(eventName, handleAuthChange);
+            window.addEventListener('storage', handleAuthChange);
+
+            return () => {
+              window.removeEventListener(eventName, handleAuthChange);
+              window.removeEventListener('storage', handleAuthChange);
+            };
+          }
+        };
+
+        window.gigwaAuth = bridge;
+        window.roleManagerAuth = bridge;
+      })();
+    </script>
   </head>
   <body>
     <div class="menu">
@@ -91,23 +124,55 @@
       links.forEach((link) => {
         link.addEventListener('click', () => setActive(link));
       });
-
-      if (links.length > 0) {
-        setActive(links[0]);
-      }
     </script>
     <script type="module">
-      import { getCurrentUser } from './assets/roleManagerApi.js';
-
-      getCurrentUser()
-        .then(function (user) {
-          if (!user || !user.authenticated) return;
-          var canViewProcesses = user.isAdmin || (user.supervisedModules && user.supervisedModules.length > 0);
-          if (canViewProcesses) {
-            document.getElementById('adminProcessesLink').style.display = '';
+      async function refreshFromCurrentUser() {
+        try {
+          const response = await fetch('../private/roleManager/api/currentUser.json_', { credentials: 'same-origin' });
+          if (!response.ok) {
+            return;
           }
-        })
-        .catch(function () {});
+
+          const user = await response.json();
+          if (!user || !user.authenticated) {
+            return;
+          }
+
+          const canViewProcesses = user.isAdmin || (user.supervisedModules && user.supervisedModules.length > 0);
+          const adminProcessesLink = document.getElementById('adminProcessesLink');
+          if (adminProcessesLink) {
+            adminProcessesLink.style.display = canViewProcesses ? '' : 'none';
+          }
+        } catch (e) {
+          // keep menu usable
+        }
+      }
+
+      function subscribeToAuthChanges(callback) {
+        var onStorage = function (event) {
+          if (event.storageArea !== localStorage) return;
+          if (event.key === null || event.key === 'auth_token' || event.key === 'token_expires_at' || event.key === 'username') {
+            callback();
+          }
+        };
+
+        var onCustomEvent = function () {
+          callback();
+        };
+
+        window.addEventListener('storage', onStorage);
+        window.addEventListener('gigwa-auth-changed', onCustomEvent);
+
+        return function () {
+          window.removeEventListener('storage', onStorage);
+          window.removeEventListener('gigwa-auth-changed', onCustomEvent);
+        };
+      }
+
+      refreshFromCurrentUser();
+      subscribeToAuthChanges(function () {
+        refreshFromCurrentUser();
+      });
     </script>
   </body>
 </html>
