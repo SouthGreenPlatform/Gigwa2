@@ -253,7 +253,7 @@ function ImportInfoPart({ canCreateDB }: ImportInfoPartComponentProps) {
       </div>
 
       {/* ── Project & Run ────────────────────── */}
-      <div className="import-section">
+      <div className="import-section import-section-primary">
         <div className="import-section-label">Project &amp; Run</div>
 
         <Form.Group controlId="project" as={Row} className="mb-3 align-items-center">
@@ -328,7 +328,7 @@ function ImportInfoPart({ canCreateDB }: ImportInfoPartComponentProps) {
       </div>
 
       {/* ── Options ──────────────────────────── */}
-      <div className="import-section">
+      <div className="import-section import-section-primary">
         <div className="import-section-label">Options</div>
 
         <Form.Group controlId="techno" as={Row} className="mb-3 align-items-center">

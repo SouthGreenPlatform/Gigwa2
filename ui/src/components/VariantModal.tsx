@@ -699,7 +699,7 @@ const allCalls = useMemo(() => {
       calls={allCalls}
       headersParsed={headersParsed}
       allelicGenotypes={allelicGenotypes}
-      referenceBases={baseVariant.referenceBases}
+      referenceBases={baseVariant?.referenceBases}
       groups={groups}
       groupFilters={groupFilters}
       getGroupsForId={getGroupsForId}

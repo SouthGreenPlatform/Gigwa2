@@ -313,7 +313,7 @@ function ImportMetadataPart({ dbSelect, selectedDb }: Step3ComponentProps) {
 
       {/* ── File / BrAPI source ──────────────── */}
       {(selectedMetaDataSourceType === '1' || (selectedMetaDataSourceType === "2" && selectedImportingWay == "2")) && (
-        <div className="import-section">
+        <div className="import-section import-section-primary">
           <div className="import-section-label">File source</div>
 
           <Form.Group controlId="fileURL" as={Row} className="mb-3 align-items-center">

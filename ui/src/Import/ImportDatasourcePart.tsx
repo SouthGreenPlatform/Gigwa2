@@ -261,7 +261,7 @@ function ImportDatasourcePart({ maxUploadSize }: ImportDatasourcePartComponentPr
       </div>
 
       {/* ── Datasource ───────────────────────── */}
-      <div className="import-section">
+      <div className="import-section import-section-primary">
         <div className="import-section-label">
           {selectedDataSourceType === '2' ? 'BrAPI source' : 'File source'}
         </div>
