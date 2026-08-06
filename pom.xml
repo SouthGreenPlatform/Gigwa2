@@ -200,6 +200,18 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.19.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>mongodb</artifactId>
+			<version>1.19.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 			<version>2.13.4</version>
@@ -252,16 +264,42 @@
 			    </exclusion>
 			</exclusions>
 		</dependency>
-	</dependencies>
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>Mgdb2</artifactId>
+			<version>2.12-RELEASE</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>3.0.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>Mgdb2BrapiV2Impl</artifactId>
+			<version>2.1.1-RELEASE</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>fr.cirad</groupId>
+			<artifactId>Mgdb2Export</artifactId>
+			<version>2.12-RELEASE</version>
+			<scope>compile</scope>
+		</dependency>
+        <dependency>
+            <groupId>fr.cirad</groupId>
+            <artifactId>Mgdb2BrapiV2Impl</artifactId>
+            <version>2.1.2-RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 	
 	<repositories>
 		<repository>
 			<id>REDHAT_GA</id>
 			<url>https://maven.repository.redhat.com/ga/</url>
-		</repository>
-		<repository>
-			<id>central</id>
-			<url>http://central.maven.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>sonatype</id>

@@ -12,7 +12,10 @@ import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.GAException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
@@ -23,9 +26,21 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaUnitTests {
-	
+
+	@ClassRule
+	public static MongoDBContainer mongoContainer =
+			new MongoDBContainer(DockerImageName.parse("mongo:8.0"));
+
 	@BeforeClass
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
+		// Redirect defaultMongoHost (in test applicationContext-data.xml) at the container
+		System.setProperty("test.mongo.host", mongoContainer.getHost());
+		System.setProperty("test.mongo.port",
+				String.valueOf(mongoContainer.getFirstMappedPort()));
+
+		System.out.println(">>> Test MongoDB at "
+				+ mongoContainer.getHost() + ":" + mongoContainer.getFirstMappedPort());
+
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
 		Properties p = new Properties();
 		p.load(datasources);
@@ -50,7 +65,7 @@ public class GigwaUnitTests {
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		Assembly.cleanupThreadAssembly();
-        MongoTemplateManager.get("testModule").getDb().drop();
+		MongoTemplateManager.get("testModule").getDb().drop();
 		MongoTemplateManager.closeApplicationContextIfOffline();
 	}
 
