@@ -267,7 +267,7 @@
 		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2</artifactId>
-			<version>2.12-RELEASE</version>
+			<version>2.13-RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -278,22 +278,10 @@
 		</dependency>
 		<dependency>
 			<groupId>fr.cirad</groupId>
-			<artifactId>Mgdb2BrapiV2Impl</artifactId>
-			<version>2.1.1-RELEASE</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>fr.cirad</groupId>
 			<artifactId>Mgdb2Export</artifactId>
-			<version>2.12-RELEASE</version>
+			<version>2.13-RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
-        <dependency>
-            <groupId>fr.cirad</groupId>
-            <artifactId>Mgdb2BrapiV2Impl</artifactId>
-            <version>2.1.2-RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 	
 	<repositories>
