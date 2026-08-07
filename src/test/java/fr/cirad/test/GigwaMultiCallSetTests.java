@@ -36,7 +36,7 @@ public class GigwaMultiCallSetTests {
 
     @ClassRule
     public static MongoDBContainer mongoContainer =
-            new MongoDBContainer(DockerImageName.parse("mongo:8.0"));
+            new MongoDBContainer(DockerImageName.parse("mongo:4.4"));
 
     @BeforeClass
     public static void setUpBeforeClass() throws MalformedURLException, Exception {
