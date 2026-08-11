@@ -13,7 +13,7 @@ export async function fetchVariantAnnotations(
 ) {
   try {
     const VartiantAnnotations = await api.get(
-      `${endpoints.VARIANT_ANNOTATIONS_URL}/${variantId}`,
+      `${endpoints.VARIANT_ANNOTATIONS_URL}/${variantId}/${projects}`,
       {
         headers: {
           "Content-Type": "application/json",

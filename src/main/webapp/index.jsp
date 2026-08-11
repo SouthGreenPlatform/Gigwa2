@@ -1956,7 +1956,7 @@ https://doi.org/10.1093/gigascience/giz051</pre>
 		// get annotations 
 	   	$('#scrollingAnnotationDiv').html("");
 		$.ajax({
-			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId) + '?projects=' + getProjectId().join(","),
+			url: '<c:url value="<%=GigwaRestController.REST_PATH + Ga4ghRestController.BASE_URL + Ga4ghRestController.VARIANT_ANNOTATION%>"/>/' + encodeURIComponent(variantId) + '/' + getProjectId().join(","),
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json;charset=utf-8",
