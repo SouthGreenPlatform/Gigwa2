@@ -661,9 +661,9 @@ public class Ga4ghRestController extends ControllerInterface {
 	    @ApiResponse(code = 401, message = "Access forbidden"),
 	    @ApiResponse(code = 404, message = "No VariantAnnotation with this ID")
 	})
-	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
-	public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestParam(required = false, name = "projects") String projects) throws Exception {
-        String token = tokenManager.readToken(request);
+	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}" + "/{projects}", method = RequestMethod.GET, produces = "application/json")
+	public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @PathVariable String projects) throws Exception {
+		String token = tokenManager.readToken(request);
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {

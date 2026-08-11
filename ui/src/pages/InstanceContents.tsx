@@ -136,7 +136,7 @@ function InstanceContent() {
                           <div className="ic-project" key={projectKey}>
                             <div className="ic-project-name">{proj.name}</div>
                             <div className="ic-project-details">
-                              <span className="ic-project-tag">{proj.variantType}</span>
+                              <span className="ic-project-tag">{proj?.variantType.join('; ')}</span>
                               <span className="ic-project-tag">Ploidy: {proj.ploidy}</span>
                               <span className="ic-project-tag">
                                 {proj.samples} {Number(proj.samples) === 1 ? "sample" : "samples"}
