@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-        <project.version>2.13-RELEASE</project.version>
+		<java.version>21</java.version>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<project.version>2.12.1-alpha</project.version>
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<bundle.dir>${project.build.directory}/bundles</bundle.dir>
@@ -14,20 +17,25 @@
 		<path.to.ubuntu.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_linux-x64_bin.tar.gz</path.to.ubuntu.jdk>
 		<path.to.osx.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_macos-x64_bin.tar.gz</path.to.osx.jdk>
 		<path.to.windows.jdk>/home/sempere/Bureau/projects/gigwa/bundle_jre/jdk-17_windows-x64_bin.tar.gz</path.to.windows.jdk>
-<!-- 		ubuntu	https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz -->
-<!-- 		macos	https://download.oracle.com/java/17/latest/jdk-17_macos-x64_bin.tar.gz -->
-<!-- 		win		https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.zip, needs to be converted to tar.gz by hand -->
-		<tomcat.version>9.0.113</tomcat.version>
+		<!-- 		ubuntu	https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz -->
+		<!-- 		macos	https://download.oracle.com/java/17/latest/jdk-17_macos-x64_bin.tar.gz -->
+		<!-- 		win		https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.zip, needs to be converted to tar.gz by hand -->
+		<!--		<tomcat.version>9.0.113</tomcat.version>-->
 		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.25</mongodb.linux.file>
 		<mongodb.windows.file>win32-x86_64-2012plus-4.2.25</mongodb.windows.file>
 		<mongodb.osx.file>macos-x86_64-4.2.25</mongodb.osx.file>
 		<mongodb.osx.folder>macos-x86_64-4.2.25</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
 	</properties>
 
-	<groupId>fr.cirad</groupId>
+	<parent>
+		<groupId>fr.cirad</groupId>
+		<artifactId>gigwa-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
 	<artifactId>Gigwa2</artifactId>
-	<version>${project.version}</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>Gigwa</name>
 
 	<dependencies>
@@ -38,27 +46,50 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context-support</artifactId>
-			<version>5.3.25</version>
+			<groupId>fr.cirad</groupId>
+			<artifactId>role_manager</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>fr.cirad</groupId>
-			<artifactId>role_manager</artifactId>
-			<version>2.0-snapshot</version>
+			<artifactId>Mgdb2BrapiV2Impl</artifactId>
 		</dependency>
-		
-   		<dependency>
-		    <groupId>fr.cirad</groupId>
-		    <artifactId>Mgdb2BrapiV2Impl</artifactId>
-		    <version>2.1.3-RELEASE</version>
-		    <exclusions>
-		    	<exclusion>
-				    <groupId>org.slf4j</groupId>
- 					<artifactId>log4j-over-slf4j</artifactId>
-		    	</exclusion>
-		    </exclusions>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-cas</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
 		<dependency>
@@ -68,55 +99,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>javax</groupId>
-			<artifactId>javaee-web-api</artifactId>
-			<version>8.0</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>fr.cirad</groupId>
 			<artifactId>Gigwa2ServiceImpl</artifactId>
-			<version>2.13-RELEASE</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-annotations</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.ga4gh</groupId>
-					<artifactId>ga4gh-schemas</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-	    <dependency>
-	        <groupId>io.springfox</groupId>
-	        <artifactId>springfox-oas</artifactId>
-	        <version>3.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-	    </dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger-ui</artifactId>
-			<version>3.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-		</dependency>
-		
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>jstl</artifactId>
-			<version>1.1.2</version>
 		</dependency>
 
 		<dependency>
@@ -126,168 +110,62 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-fileupload2-jakarta-servlet6</artifactId>
+			<version>2.0.0-M5</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.jmchilton.blend4j</groupId>
+			<artifactId>blend4j</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-taglibs</artifactId>
-			<version>5.6.10</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-jdbc</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-aop</artifactId>
-					<groupId>org.springframework</groupId>
-				</exclusion>
-			</exclusions>
+			<artifactId>spring-security-web</artifactId>
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework.security</groupId>
-		    <artifactId>spring-security-cas</artifactId>
-		    <version>5.6.10</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-		    	<exclusion>
-				    <groupId>org.slf4j</groupId>
- 					<artifactId>log4j-over-slf4j</artifactId>
-		    	</exclusion>
-		    </exclusions>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
 		</dependency>
-
+		<!-- Source: https://mvnrepository.com/artifact/jakarta.servlet.jsp.jstl/jakarta.servlet.jsp.jstl-api -->
 		<dependency>
-			<groupId>org.springmodules</groupId>
-			<artifactId>spring-modules-validation</artifactId>
-			<version>0.8</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-validator</groupId>
-					<artifactId>commons-validator</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>xml-apis</groupId>
-					<artifactId>xml-apis</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-collections</groupId>
-					<artifactId>commons-collections</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-lang</groupId>
-					<artifactId>commons-lang</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>jakarta.servlet.jsp.jstl</groupId>
+			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+			<version>3.0.2</version>
 		</dependency>
-
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.13.4.1</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-annotations</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<version>1.19.3</version>
+			<artifactId>testcontainers-mongodb</artifactId>
+			<version>2.0.5</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>mongodb</artifactId>
-			<version>1.19.3</version>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<version>2.0.5</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>2.13.4</version>
-		</dependency>
 
-		<dependency>
-			<groupId>commons-fileupload</groupId>
-			<artifactId>commons-fileupload</artifactId>
-			<version>1.4</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-io</groupId>
-					<artifactId>commons-io</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		
-		<dependency>
-		    <groupId>com.github.jmchilton.blend4j</groupId>
-		    <artifactId>blend4j</artifactId>
-		    <version>0.2.0</version>
-		    <exclusions>
-	            <exclusion>
-	                <groupId>com.fasterxml.jackson.core</groupId>
-	                <artifactId>jackson-core</artifactId>
-	            </exclusion>
-	            <exclusion>
-	                <groupId>io.grpc</groupId>
-	                <artifactId>grpc-all</artifactId>
-	            </exclusion>
-	            <exclusion>
-	                <groupId>org.apache.commons</groupId>
-	                <artifactId>commons-compress</artifactId>
-	            </exclusion>
-	            <exclusion>
-	                <groupId>org.mortbay.jetty</groupId>
-	                <artifactId>servlet-api</artifactId>
-	            </exclusion>
-			    <exclusion>
-			      <groupId>org.codehaus.jackson</groupId>
-			      <artifactId>jackson-core-asl</artifactId>
-			    </exclusion>
-			    <exclusion>
-			      <groupId>org.codehaus.jackson</groupId>
-			      <artifactId>jackson-mapper-asl</artifactId>
-			    </exclusion>
-			    <exclusion>
-			      <groupId>com.google.code.findbugs</groupId>
-			      <artifactId>jsr305</artifactId>
-			    </exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>fr.cirad</groupId>
-			<artifactId>Mgdb2</artifactId>
-			<version>2.13-RELEASE</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>3.0.0</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>fr.cirad</groupId>
-			<artifactId>Mgdb2Export</artifactId>
-			<version>2.13-RELEASE</version>
-			<scope>compile</scope>
-		</dependency>
-    </dependencies>
-	
+	</dependencies>
+
 	<repositories>
 		<repository>
 			<id>REDHAT_GA</id>
 			<url>https://maven.repository.redhat.com/ga/</url>
+		</repository>
+		<repository>
+			<id>central</id>
+			<url>http://central.maven.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>sonatype</id>
@@ -298,15 +176,15 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-clean-plugin</artifactId>
-				<version>3.1.0</version>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>fr.cirad.GigwaApplication</mainClass>
+				</configuration>
 				<executions>
 					<execution>
-						<id>del-target-dir</id>
-						<phase>validate</phase>
 						<goals>
-							<goal>clean</goal>
+							<goal>repackage</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -314,1050 +192,1065 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.9.0</version>
 				<configuration>
-					<source>17</source>
-					<target>17</target>
-					<compilerArguments>
-						<endorseddirs>${endorsed.dir}</endorseddirs>
-					</compilerArguments>
+					<compilerArgs>
+						<arg>-parameters</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
-			
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>3.3.2</version>
-				<configuration>
-					<failOnMissingWebXml>false</failOnMissingWebXml>
-					<archive>
-						<manifestEntries>
-							<Implementation-version>${project.version}</Implementation-version>
-						</manifestEntries>
-						<manifestFile>src/main/resources/MANIFEST.MF</manifestFile>
-					</archive>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
 				<version>1.15.0</version>
 				<configuration>
 					<workingDirectory>ui</workingDirectory>
+					<nodeVersion>v20.11.0</nodeVersion>
 				</configuration>
 				<executions>
 					<execution>
-						<id>install-node-and-npm</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>install-node-and-npm</goal>
-						</goals>
-						<configuration>
-							<nodeVersion>v20.18.0</nodeVersion>
-						</configuration>
+						<id>install-node</id>
+						<goals><goal>install-node-and-npm</goal></goals>
 					</execution>
+					<!-- npm install -->
 					<execution>
 						<id>npm-install</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>npm</goal>
-						</goals>
-						<configuration>
-							<arguments>ci</arguments>
-						</configuration>
+						<goals><goal>npm</goal></goals>
 					</execution>
+					<!-- npm run build -->
 					<execution>
 						<id>npm-build</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>npm</goal>
-						</goals>
+						<goals><goal>npm</goal></goals>
 						<configuration>
-							<arguments>run build -- --outDir ${project.basedir}/src/main/webapp/v3 --emptyOutDir</arguments>
-							<environmentVariables>
-								<APP_VERSION>${project.version}</APP_VERSION>
-							</environmentVariables>
+							<arguments>run build</arguments>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
+			<!-- Copy build React to resources/static -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.2.0</version>
+				<artifactId>maven-resources-plugin</artifactId>
 				<executions>
 					<execution>
-						<phase>validate</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
+						<id>copy-react-build</id>
+						<phase>process-resources</phase>
+						<goals><goal>copy-resources</goal></goals>
 						<configuration>
-							<outputDirectory>${endorsed.dir}</outputDirectory>
-							<silent>true</silent>
-							<artifactItems>
-								<artifactItem>
-								    <groupId>javax</groupId>
-								    <artifactId>javaee-api</artifactId>
-								    <version>8.0</version>
-									<type>jar</type>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			
-			<plugin>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
-				<groupId>org.codehaus.mojo</groupId>
-				<executions>
-					<!-- decompress war to directory -->
-					<execution>
-						<id>unwar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>unzip</executable>
-							<workingDirectory>${project.build.directory}</workingDirectory>
-							<arguments>
-								<argument>-uo</argument>
-								<argument>${project.build.finalName}.war</argument>
-								<argument>-d</argument>
-								<argument>gigwa</argument>
-							</arguments>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>update-docker-compose-image-version</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/(image: guilhemsempere\/gigwa.*)/image: guilhemsempere\/gigwa:${project.version}/g</argument>
-								<argument>${project.basedir}/docker-compose.yml</argument>
-							</arguments>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>update-bundle-linux-project-version</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>
-								<argument>${project.basedir}/misc/linux_bundle.sh</argument>
-							</arguments>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>update-bundle-macos-project-version</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>
-								<argument>${project.basedir}/misc/macos_bundle.command</argument>
-							</arguments>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>update-bundle-windows-project-version</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/(\$project_version =.*)/$project_version = "${project.version}"/g</argument>
-								<argument>${project.basedir}/misc/win_bundle.ps1</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					
-					<execution>
-						<id>update-manifest-version</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/Implementation-version:.*/Implementation-version: ${project.version}/g</argument>
-								<argument>${project.basedir}/src/main/resources/MANIFEST.MF</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					
-				</executions>
-			</plugin>
-			
-			<!--	MUST remain here although empty, bundle build will fail otherwise
-				 	(making Maven respect an execution order is a nightmare!) 			-->
-			<plugin>
-				<groupId>com.coderplus.maven.plugins</groupId>
-				<artifactId>copy-rename-maven-plugin</artifactId>
-				<version>1.0.1</version>
-				<executions>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
-				<groupId>org.codehaus.mojo</groupId>
-				<executions>
-					<!-- make log4j write to file and change DEBUG levels to INFO -->
-					<execution>
-						<id>update-log4j-config</id>
-						<phase>package</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>sed</executable>
-							<arguments>
-								<argument>-i</argument>
-								<argument>-E</argument>
-								<argument>s/ref ref="console"/ref ref="FILE"/g;s/priority value="DEBUG"/priority value="INFO"/g</argument>
-								<argument>target/gigwa/WEB-INF/classes/log4j.xml</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					
-					<!-- zip directory to create webapp package -->
-					<execution>
-						<id>zip-webapp</id>
-						<phase>pre-integration-test</phase>	<!-- This should be in package phase but when it's there it executes before set-default-config -->
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>zip</executable>
-							<workingDirectory>${project.build.directory}</workingDirectory>
-							<arguments>
-								<argument>-u</argument>
-								<argument>-r</argument>
-								<argument>Gigwa_V${project.version}_Webapp.zip</argument>
-								<argument>gigwa</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					
-					<!-- copy updateGigwa scripts so users always get the latest version for their OS -->
-					<execution>
-						<id>copy-updateGigwa-scripts</id>
-						<phase>pre-integration-test</phase>	<!-- This should be in package phase but when it's there it executes before set-default-config -->
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>zip</executable>
-							<workingDirectory>${project.build.directory}</workingDirectory>
-							<arguments>
-								<argument>-j</argument>
-								<argument>-u</argument>
-								<argument>Gigwa_V${project.version}_Webapp.zip</argument>
-								<argument>${project.basedir}/bundle_files/ubuntu/updateGigwa.sh</argument>
-								<argument>${project.basedir}/bundle_files/windows/updateGigwa.bat</argument>
-								<argument>${project.basedir}/bundle_files/osx/updateGigwa.command</argument>
-							</arguments>
+							<outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+							<resources>
+								<resource>
+									<directory>ui/dist</directory>
+								</resource>
+							</resources>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
-
-		<pluginManagement>
-			<plugins>
-				<!-- This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.apache.maven.plugins
-										</groupId>
-										<artifactId>
-												
-										</artifactId>
-										<versionRange>
-											[3.0.0,)
-										</versionRange>
-										<goals>
-											<goal>clean</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											com.github.eirslett
-										</groupId>
-										<artifactId>
-											frontend-maven-plugin
-										</artifactId>
-										<versionRange>
-											[1.0.0,)
-										</versionRange>
-										<goals>
-											<goal>install-node-and-npm</goal>
-											<goal>npm</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
 
-	<profiles>
-		<profile>
-			<id>bundles</id>	<!-- Create bundles for Ubuntu, OSX and Windows -->
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>com.googlecode.maven-download-plugin</groupId>
-						<artifactId>download-maven-plugin</artifactId>
-						<version>1.4.2</version>
-						<executions>
-							<!-- Download and unzip Tomcat -->
-							<execution>
-								<id>download-apache-tomcat-for-bundle-ubuntu</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
-								</configuration>
-							</execution>
-							<execution>
-								<id>download-apache-tomcat-for-bundle-osx</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.osx}</outputDirectory>
-								</configuration>
-							</execution>
-							<execution>
-								<id>download-apache-tomcat-for-bundle-windows</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.windows}</outputDirectory>
-								</configuration>
-							</execution>
-							<!-- Download and unzip MongoDB -->
-							<execution>
-								<id>download-mongo-for-bundle-ubuntu</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://fastdl.mongodb.org/linux/mongodb-${mongodb.linux.file}.tgz</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>
-								</configuration>
-							</execution>
-							<execution>
-								<id>download-mongo-for-bundle-osx</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://fastdl.mongodb.org/osx/mongodb-${mongodb.osx.file}.tgz</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.osx}</outputDirectory>
-								</configuration>
-							</execution>
-							<execution>
-								<id>download-mongo-for-bundle-windows</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://fastdl.mongodb.org/win32/mongodb-${mongodb.windows.file}.zip</url>
-									<unpack>true</unpack>
-									<outputDirectory>${bundle.dir.windows}</outputDirectory>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
+	<!--	<build>-->
+	<!--		<plugins>-->
+	<!--			<plugin>-->
+	<!--				<groupId>org.apache.maven.plugins</groupId>-->
+	<!--				<artifactId>maven-clean-plugin</artifactId>-->
+	<!--				<version>3.1.0</version>-->
+	<!--				<executions>-->
+	<!--					<execution>-->
+	<!--						<id>del-target-dir</id>-->
+	<!--						<phase>validate</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>clean</goal>-->
+	<!--						</goals>-->
+	<!--					</execution>-->
+	<!--				</executions>-->
+	<!--			</plugin>-->
+	<!--			<plugin>-->
+	<!--				<groupId>org.apache.maven.plugins</groupId>-->
+	<!--				<artifactId>maven-compiler-plugin</artifactId>-->
+	<!--				<version>3.9.0</version>-->
+	<!--				<configuration>-->
+	<!--					<source>17</source>-->
+	<!--					<target>17</target>-->
+	<!--					<compilerArguments>-->
+	<!--						<endorseddirs>${endorsed.dir}</endorseddirs>-->
+	<!--					</compilerArguments>-->
+	<!--				</configuration>-->
+	<!--			</plugin>-->
+	<!--			-->
+	<!--			<plugin>-->
+	<!--				<groupId>org.apache.maven.plugins</groupId>-->
+	<!--				<artifactId>maven-war-plugin</artifactId>-->
+	<!--				<version>3.3.2</version>-->
+	<!--				<configuration>-->
+	<!--					<failOnMissingWebXml>false</failOnMissingWebXml>-->
+	<!--					<archive>-->
+	<!--						<manifestEntries>-->
+	<!--							<Implementation-version>${project.version}</Implementation-version>-->
+	<!--						</manifestEntries>-->
+	<!--						<manifestFile>src/main/resources/MANIFEST.MF</manifestFile>-->
+	<!--					</archive>-->
+	<!--				</configuration>-->
+	<!--			</plugin>-->
 
-					<plugin>	
-						<groupId>com.coderplus.maven.plugins</groupId>
-						<artifactId>copy-rename-maven-plugin</artifactId>
-						<version>1.0.1</version>
-						<executions>
-					      <execution>	<!-- Give generic names to tomcat and mongodb directories -->
-					        <id>rename-tomcat-and-mongodb-dirs</id>
-					        <phase>generate-sources</phase>
-					        <goals>
-					          <goal>rename</goal>
-					        </goals>
-					        <configuration>
-						        <fileSets>
-							        <fileSet>
-										<sourceFile>${bundle.dir.ubuntu}/apache-tomcat-${tomcat.version}</sourceFile>
-										<destinationFile>${bundle.dir.ubuntu}/tomcat</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${bundle.dir.osx}/apache-tomcat-${tomcat.version}</sourceFile>
-										<destinationFile>${bundle.dir.osx}/tomcat</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${bundle.dir.windows}/apache-tomcat-${tomcat.version}</sourceFile>
-										<destinationFile>${bundle.dir.windows}/tomcat</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${bundle.dir.ubuntu}/mongodb-${mongodb.linux.file}</sourceFile>
-										<destinationFile>${bundle.dir.ubuntu}/mongodb</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${bundle.dir.osx}/mongodb-${mongodb.osx.folder}</sourceFile>
-										<destinationFile>${bundle.dir.osx}/mongodb</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${bundle.dir.windows}/mongodb-${mongodb.windows.file}</sourceFile>
-										<destinationFile>${bundle.dir.windows}/mongodb</destinationFile>
-							        </fileSet>
-						        </fileSets>
-							</configuration>
-					      </execution>
-					      <execution>	<!-- Add sample vcf (the one required for unit tests) -->
-					        <id>copy-vcf-sample</id>
-					        <phase>generate-sources</phase>
-					        <goals>
-					          <goal>copy</goal>
-					        </goals>
-					        <configuration>
-						        <fileSets>
-							        <fileSet>
-										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>
-										<destinationFile>${bundle.dir.ubuntu}/vcf/sample.vcf</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>
-										<destinationFile>${bundle.dir.osx}/vcf/sample.vcf</destinationFile>
-							        </fileSet>
-							        <fileSet>
-										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>
-										<destinationFile>${bundle.dir.windows}/vcf/sample.vcf</destinationFile>
-							        </fileSet>
-						        </fileSets>
-							</configuration>
-					      </execution>
-				      	</executions>
-					</plugin>
+	<!--			<plugin>-->
+	<!--				<groupId>org.apache.maven.plugins</groupId>-->
+	<!--				<artifactId>maven-dependency-plugin</artifactId>-->
+	<!--				<version>3.2.0</version>-->
+	<!--				<executions>-->
+	<!--					<execution>-->
+	<!--						<phase>validate</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>copy</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<outputDirectory>${endorsed.dir}</outputDirectory>-->
+	<!--							<silent>true</silent>-->
+	<!--							<artifactItems>-->
+	<!--								<artifactItem>-->
+	<!--								    <groupId>javax</groupId>-->
+	<!--								    <artifactId>javaee-api</artifactId>-->
+	<!--								    <version>8.0</version>-->
+	<!--									<type>jar</type>-->
+	<!--								</artifactItem>-->
+	<!--							</artifactItems>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--				</executions>-->
+	<!--			</plugin>-->
+	<!--			-->
+	<!--			<plugin>-->
+	<!--				<artifactId>exec-maven-plugin</artifactId>-->
+	<!--				<version>1.6.0</version>-->
+	<!--				<groupId>org.codehaus.mojo</groupId>-->
+	<!--				<executions>-->
+	<!--					&lt;!&ndash; decompress war to directory &ndash;&gt;-->
+	<!--					<execution>-->
+	<!--						<id>unwar</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>unzip</executable>-->
+	<!--							<workingDirectory>${project.build.directory}</workingDirectory>-->
+	<!--							<arguments>-->
+	<!--								<argument>-uo</argument>-->
+	<!--								<argument>${project.build.finalName}.war</argument>-->
+	<!--								<argument>-d</argument>-->
+	<!--								<argument>gigwa</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
 
-					<plugin>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.6.0</version>
-						<groupId>org.codehaus.mojo</groupId>
-						<executions>
-						<!-- Create setenv scripts to adjust tomcat memory usage -->
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>create-setenv-ubuntu</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>echo</executable>
-									<arguments>
-										<argument>-e</argument>
-										<argument>LC_ALL=</argument>
-										<argument>\nexport CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
-										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>
-									</arguments>
-									<outputFile>${bundle.dir.ubuntu}/tomcat/bin/setenv.sh</outputFile>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>create-setenv-osx</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>echo</executable>
-									<arguments>
-										<argument>-e</argument>
-										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>
-										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>
-									</arguments>
-									<outputFile>${bundle.dir.osx}/tomcat/bin/setenv.sh</outputFile>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>create-setenv-windows</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>echo</executable>
-									<arguments>
-										<argument>-e</argument>
-										<argument>set "JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m"</argument>
-										<argument>\nset "JAVA_OPTS=%JAVA_OPTS% -Dlog4j2.formatMsgNoLookups=true"</argument>
-									</arguments>
-									<outputFile>${bundle.dir.windows}/tomcat/bin/setenv.bat</outputFile>
-								</configuration>
-							</execution>
-							<!--  Add all additional files to bundles (start/stop/update scripts, license, readme) -->
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>copy-scripts-ubuntu</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>bash</executable>
-									<arguments>
-										<argument>-c</argument>
-										<argument>cp ${project.basedir}/bundle_files/ubuntu/* ${bundle.dir.ubuntu}</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>copy-scripts-osx</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>bash</executable>
-									<arguments>
-										<argument>-c</argument>
-										<argument>cp ${project.basedir}/bundle_files/osx/* ${bundle.dir.osx}</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>copy-scripts-windows</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>bash</executable>
-									<arguments>
-										<argument>-c</argument>
-										<argument>cp ${project.basedir}/bundle_files/windows/* ${bundle.dir.windows}</argument>
-									</arguments>
-								</configuration>
-							</execution>
+	<!--					<execution>-->
+	<!--						<id>update-docker-compose-image-version</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/(image: guilhemsempere\/gigwa.*)/image: guilhemsempere\/gigwa:${project.version}/g</argument>-->
+	<!--								<argument>${project.basedir}/docker-compose.yml</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
 
-							<!--  Create data and logs directories -->
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>add-empty-folders-ubuntu</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>mkdir</executable>
-									<arguments>
-										<argument>${bundle.dir.ubuntu}/data</argument>
-										<argument>${bundle.dir.ubuntu}/logs</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>add-empty-folders-osx</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>mkdir</executable>
-									<arguments>
-										<argument>${bundle.dir.osx}/data</argument>
-										<argument>${bundle.dir.osx}/logs</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>pre-integration-test</phase>
-								<id>add-empty-folders-windows</id>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>mkdir</executable>
-									<arguments>
-										<argument>${bundle.dir.windows}/data</argument>
-										<argument>${bundle.dir.windows}/logs</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							
-							<!-- Add JRE to bundle (this is not downloaded but expected to be found at locations defined in variables at the top of the file) -->
-							<execution>
-								<id>add-jre-ubuntu</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>tar</executable>
-									<workingDirectory>${bundle.dir.ubuntu}/jre</workingDirectory>
-									<arguments>
-										<argument>xvzf</argument>
-										<argument>${path.to.ubuntu.jdk}</argument>
-										<argument>--strip-components=1</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>add-jre-osx</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>tar</executable>
-									<workingDirectory>${bundle.dir.osx}/jre</workingDirectory>
-									<arguments>
-										<argument>xvzf</argument>
-										<argument>${path.to.osx.jdk}</argument>
-										<argument>--strip-components=1</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>add-jre-windows</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>tar</executable>
-									<workingDirectory>${bundle.dir.windows}/jre</workingDirectory>
-									<arguments>
-										<argument>xvzf</argument>
-										<argument>${path.to.windows.jdk}</argument>
-										<argument>--strip-components=1</argument>
-									</arguments>
-								</configuration>
-							</execution>
+	<!--					<execution>-->
+	<!--						<id>update-bundle-linux-project-version</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>-->
+	<!--								<argument>${project.basedir}/misc/linux_bundle.sh</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
 
-							<!-- Delete Tomcat's examples webapp -->
-							<execution>
-								<id>rm-examples-webapp-ubuntu</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>rm</executable>
-									<arguments>
-										<argument>-rf</argument>
-										<argument>${bundle.dir.ubuntu}/tomcat/webapps/examples</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>rm-examples-webapp-osx</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>rm</executable>
-									<arguments>
-										<argument>-rf</argument>
-										<argument>${bundle.dir.osx}/tomcat/webapps/examples</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>rm-examples-webapp-windows</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>rm</executable>
-									<arguments>
-										<argument>-rf</argument>
-										<argument>${bundle.dir.windows}/tomcat/webapps/examples</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							
-							<!-- Copy gigwa webapp into Tomcat -->
-							<execution>
-								<id>copy-webapp-ubuntu</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>cp</executable>
-									<arguments>
-										<argument>-r</argument>
-										<argument>${project.build.directory}/gigwa</argument>
-										<argument>${bundle.dir.ubuntu}/tomcat/webapps/gigwa</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>copy-webapp-osx</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>cp</executable>
-									<arguments>
-										<argument>-r</argument>
-										<argument>${project.build.directory}/gigwa</argument>
-										<argument>${bundle.dir.osx}/tomcat/webapps/gigwa</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>copy-webapp-windows</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>cp</executable>
-									<arguments>
-										<argument>-r</argument>
-										<argument>${project.build.directory}/gigwa</argument>
-										<argument>${bundle.dir.windows}/tomcat/webapps/gigwa</argument>
-									</arguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					
-					<plugin>
-						<groupId>com.google.code.maven-replacer-plugin</groupId>
-						<artifactId>replacer</artifactId>
-						<version>1.5.3</version>
-						<executions>
-							<!-- Set port to 59395 instead of 8080 in server.xml -->
-							<execution>
-								<id>set-tomcat-ports-ubuntu</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>replace</goal>
-								</goals>
-								<configuration>
-									<file>${bundle.dir.ubuntu}/tomcat/conf/server.xml</file>
-									<replacements>
-										<replacement>
-											<token>8080</token>
-											<value>59395</value>
-										</replacement>
-										<replacement>
-											<token>8005</token>
-											<value>59396</value>
-										</replacement>
-										<replacement>
-											<token>8009</token>
-											<value>59397</value>
-										</replacement>
-										<replacement>
-											<token>Connector port="59395"</token>
-											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
-										</replacement>
-									</replacements>
-								</configuration>
-							</execution>
-							<execution>
-								<id>set-tomcat-ports-osx</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>replace</goal>
-								</goals>
-								<configuration>
-									<file>${bundle.dir.osx}/tomcat/conf/server.xml</file>
-									<replacements>
-										<replacement>
-											<token>8080</token>
-											<value>59395</value>
-										</replacement>
-										<replacement>
-											<token>8005</token>
-											<value>59396</value>
-										</replacement>
-										<replacement>
-											<token>8009</token>
-											<value>59397</value>
-										</replacement>
-										<replacement>
-											<token>Connector port="59395"</token>
-											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
-										</replacement>
-									</replacements>
-								</configuration>
-							</execution>
-							<execution>
-								<id>set-tomcat-ports-windows</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>replace</goal>
-								</goals>
-								<configuration>
-									<file>${bundle.dir.windows}/tomcat/conf/server.xml</file>
-									<replacements>
-										<replacement>
-											<token>8080</token>
-											<value>59395</value>
-										</replacement>
-										<replacement>
-											<token>8005</token>
-											<value>59396</value>
-										</replacement>
-										<replacement>
-											<token>8009</token>
-											<value>59397</value>
-										</replacement>
-										<replacement>
-											<token>Connector port="59395"</token>
-											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>
-										</replacement>
-									</replacements>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.6.0</version>
-						<groupId>org.codehaus.mojo</groupId>
-						<executions>
-							<!-- Allow script execution -->
-							<execution>
-								<id>chmod</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>chmod</executable>
-									<workingDirectory>${bundle.dir}</workingDirectory>
-									<arguments>
-										<argument>-R</argument>
-										<argument>755</argument>
-										<argument>.</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<!-- Zip up a bundle archive for each system -->
-							<execution>
-								<id>zip-bundle-ubuntu</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>zip</executable>
-									<workingDirectory>${bundle.dir}</workingDirectory>
-									<arguments>
-										<argument>-u</argument>
-										<argument>-r</argument>
-										<argument>Gigwa_V${project.version}-Ubuntu.zip</argument>
-										<argument>Gigwa_V${project.version}-Ubuntu</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>zip-bundle-osx</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>zip</executable>
-									<workingDirectory>${bundle.dir}</workingDirectory>
-									<arguments>
-										<argument>-u</argument>
-										<argument>-r</argument>
-										<argument>Gigwa_V${project.version}-OSX.zip</argument>
-										<argument>Gigwa_V${project.version}-OSX</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>zip-bundle-windows</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>zip</executable>
-									<workingDirectory>${bundle.dir}</workingDirectory>
-									<arguments>
-										<argument>-u</argument>
-										<argument>-r</argument>
-										<argument>Gigwa_V${project.version}-Windows.zip</argument>
-										<argument>Gigwa_V${project.version}-Windows</argument>
-									</arguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		
-	    <profile>
-	        <id>prod</id>
-			<build>
-		        <plugins>
-					<plugin>
-						<groupId>com.coderplus.maven.plugins</groupId>
-						<artifactId>copy-rename-maven-plugin</artifactId>
-						<version>1.0.1</version>					
-						<executions>
-							<execution>	<!-- replace target directory's config files with default versions -->
-								<id>set-default-config</id>
-								<phase>package</phase>
-								<goals>
-									<goal>rename</goal>
-								</goals>
-								<configuration>
-									<fileSets>
-										<fileSet>
-											<sourceFile>target/gigwa/WEB-INF/classes/users.default</sourceFile>
-											<destinationFile>target/gigwa/WEB-INF/classes/users.properties</destinationFile>
-										</fileSet>
-										<fileSet>
-											<sourceFile>target/gigwa/WEB-INF/classes/datasources.default</sourceFile>
-											<destinationFile>target/gigwa/WEB-INF/classes/datasources.properties</destinationFile>
-										</fileSet>
-										<fileSet>
-											<sourceFile>target/gigwa/WEB-INF/classes/applicationContext-data.default</sourceFile>
-											<destinationFile>target/gigwa/WEB-INF/classes/applicationContext-data.xml</destinationFile>
-										</fileSet>
-										<fileSet>
-											<sourceFile>target/gigwa/WEB-INF/classes/config.default</sourceFile>
-											<destinationFile>target/gigwa/WEB-INF/classes/config.properties</destinationFile>
-										</fileSet>
-									</fileSets>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-	    </profile>
-		
-		<profile>
-			<id>docker</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>com.spotify</groupId>
-						<artifactId>dockerfile-maven-plugin</artifactId>
-						<version>1.4.13</version>
-						<executions>
-							<execution>
-								<id>default</id>
-								<phase>install</phase>	<!-- This should be in deploy phase but could not get it to work -->
-								<goals>
-									<goal>build</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<repository>guilhemsempere/gigwa</repository>
-							<tag>${project.version}</tag>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		
-		<profile>
-			<id>push</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>com.spotify</groupId>
-						<artifactId>dockerfile-maven-plugin</artifactId>
-						<version>1.4.13</version>
-						<executions>
-							<execution>
-								<id>default</id>
-								<phase>install</phase>	<!-- This should be in deploy phase but could not get it to work -->
-								<goals>
-									<goal>push</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<repository>guilhemsempere/gigwa</repository>
-							<tag>${project.version}</tag>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	
-	</profiles>
+	<!--					<execution>-->
+	<!--						<id>update-bundle-macos-project-version</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/(project_version=.*)/project_version="${project.version}"/g</argument>-->
+	<!--								<argument>${project.basedir}/misc/macos_bundle.command</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+
+	<!--					<execution>-->
+	<!--						<id>update-bundle-windows-project-version</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/(\$project_version =.*)/$project_version = "${project.version}"/g</argument>-->
+	<!--								<argument>${project.basedir}/misc/win_bundle.ps1</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--					-->
+	<!--					<execution>-->
+	<!--						<id>update-manifest-version</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/Implementation-version:.*/Implementation-version: ${project.version}/g</argument>-->
+	<!--								<argument>${project.basedir}/src/main/webapp/META-INF/MANIFEST.MF</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--					-->
+	<!--				</executions>-->
+	<!--			</plugin>-->
+	<!--			-->
+	<!--			&lt;!&ndash;	MUST remain here although empty, bundle build will fail otherwise-->
+	<!--				 	(making Maven respect an execution order is a nightmare!) 			&ndash;&gt;-->
+	<!--			<plugin>-->
+	<!--				<groupId>com.coderplus.maven.plugins</groupId>-->
+	<!--				<artifactId>copy-rename-maven-plugin</artifactId>-->
+	<!--				<version>1.0.1</version>-->
+	<!--				<executions>-->
+	<!--				</executions>-->
+	<!--			</plugin>-->
+
+	<!--			<plugin>-->
+	<!--				<artifactId>exec-maven-plugin</artifactId>-->
+	<!--				<version>1.6.0</version>-->
+	<!--				<groupId>org.codehaus.mojo</groupId>-->
+	<!--				<executions>-->
+	<!--					&lt;!&ndash; make log4j write to file and change DEBUG levels to INFO &ndash;&gt;-->
+	<!--					<execution>-->
+	<!--						<id>update-log4j-config</id>-->
+	<!--						<phase>package</phase>-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>sed</executable>-->
+	<!--							<arguments>-->
+	<!--								<argument>-i</argument>-->
+	<!--								<argument>-E</argument>-->
+	<!--								<argument>s/ref ref="console"/ref ref="FILE"/g;s/priority value="DEBUG"/priority value="INFO"/g</argument>-->
+	<!--								<argument>target/gigwa/WEB-INF/classes/log4j.xml</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--					-->
+	<!--					&lt;!&ndash; zip directory to create webapp package &ndash;&gt;-->
+	<!--					<execution>-->
+	<!--						<id>zip-webapp</id>-->
+	<!--						<phase>pre-integration-test</phase>	&lt;!&ndash; This should be in package phase but when it's there it executes before set-default-config &ndash;&gt;-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>zip</executable>-->
+	<!--							<workingDirectory>${project.build.directory}</workingDirectory>-->
+	<!--							<arguments>-->
+	<!--								<argument>-u</argument>-->
+	<!--								<argument>-r</argument>-->
+	<!--								<argument>Gigwa_V${project.version}_Webapp.zip</argument>-->
+	<!--								<argument>gigwa</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--					-->
+	<!--					&lt;!&ndash; copy updateGigwa scripts so users always get the latest version for their OS &ndash;&gt;-->
+	<!--					<execution>-->
+	<!--						<id>copy-updateGigwa-scripts</id>-->
+	<!--						<phase>pre-integration-test</phase>	&lt;!&ndash; This should be in package phase but when it's there it executes before set-default-config &ndash;&gt;-->
+	<!--						<goals>-->
+	<!--							<goal>exec</goal>-->
+	<!--						</goals>-->
+	<!--						<configuration>-->
+	<!--							<executable>zip</executable>-->
+	<!--							<workingDirectory>${project.build.directory}</workingDirectory>-->
+	<!--							<arguments>-->
+	<!--								<argument>-j</argument>-->
+	<!--								<argument>-u</argument>-->
+	<!--								<argument>Gigwa_V${project.version}_Webapp.zip</argument>-->
+	<!--								<argument>${project.basedir}/bundle_files/ubuntu/updateGigwa.sh</argument>-->
+	<!--								<argument>${project.basedir}/bundle_files/windows/updateGigwa.bat</argument>-->
+	<!--								<argument>${project.basedir}/bundle_files/osx/updateGigwa.command</argument>-->
+	<!--								<argument>target</argument>-->
+	<!--							</arguments>-->
+	<!--						</configuration>-->
+	<!--					</execution>-->
+	<!--				</executions>-->
+	<!--			</plugin>-->
+	<!--		</plugins>-->
+
+	<!--		<pluginManagement>-->
+	<!--			<plugins>-->
+	<!--				&lt;!&ndash; This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself &ndash;&gt;-->
+	<!--				<plugin>-->
+	<!--					<groupId>org.eclipse.m2e</groupId>-->
+	<!--					<artifactId>lifecycle-mapping</artifactId>-->
+	<!--					<version>1.0.0</version>-->
+	<!--					<configuration>-->
+	<!--						<lifecycleMappingMetadata>-->
+	<!--							<pluginExecutions>-->
+	<!--								<pluginExecution>-->
+	<!--									<pluginExecutionFilter>-->
+	<!--										<groupId>-->
+	<!--											org.apache.maven.plugins-->
+	<!--										</groupId>-->
+	<!--										<artifactId>-->
+	<!--												-->
+	<!--										</artifactId>-->
+	<!--										<versionRange>-->
+	<!--											[3.0.0,)-->
+	<!--										</versionRange>-->
+	<!--										<goals>-->
+	<!--											<goal>clean</goal>-->
+	<!--										</goals>-->
+	<!--									</pluginExecutionFilter>-->
+	<!--									<action>-->
+	<!--										<ignore></ignore>-->
+	<!--									</action>-->
+	<!--								</pluginExecution>-->
+	<!--							</pluginExecutions>-->
+	<!--						</lifecycleMappingMetadata>-->
+	<!--					</configuration>-->
+	<!--				</plugin>-->
+	<!--			</plugins>-->
+	<!--		</pluginManagement>-->
+	<!--	</build>-->
+
+
+
+	<!--	<profiles>-->
+	<!--		<profile>-->
+	<!--			<id>bundles</id>	&lt;!&ndash; Create bundles for Ubuntu, OSX and Windows &ndash;&gt;-->
+	<!--			<build>-->
+	<!--				<plugins>-->
+	<!--					<plugin>-->
+	<!--						<groupId>com.googlecode.maven-download-plugin</groupId>-->
+	<!--						<artifactId>download-maven-plugin</artifactId>-->
+	<!--						<version>1.4.2</version>-->
+	<!--						<executions>-->
+	<!--							&lt;!&ndash; Download and unzip Tomcat &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>download-apache-tomcat-for-bundle-ubuntu</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>download-apache-tomcat-for-bundle-osx</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.osx}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>download-apache-tomcat-for-bundle-windows</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://archive.apache.org/dist/tomcat/tomcat-9/v${tomcat.version}/bin/apache-tomcat-${tomcat.version}.zip</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.windows}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							&lt;!&ndash; Download and unzip MongoDB &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>download-mongo-for-bundle-ubuntu</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://fastdl.mongodb.org/linux/mongodb-${mongodb.linux.file}.tgz</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.ubuntu}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>download-mongo-for-bundle-osx</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://fastdl.mongodb.org/osx/mongodb-${mongodb.osx.file}.tgz</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.osx}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>download-mongo-for-bundle-windows</id>-->
+	<!--								<phase>initialize</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>wget</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<url>https://fastdl.mongodb.org/win32/mongodb-${mongodb.windows.file}.zip</url>-->
+	<!--									<unpack>true</unpack>-->
+	<!--									<outputDirectory>${bundle.dir.windows}</outputDirectory>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--					</plugin>-->
+
+	<!--					<plugin>	-->
+	<!--						<groupId>com.coderplus.maven.plugins</groupId>-->
+	<!--						<artifactId>copy-rename-maven-plugin</artifactId>-->
+	<!--						<version>1.0.1</version>-->
+	<!--						<executions>-->
+	<!--					      <execution>	&lt;!&ndash; Give generic names to tomcat and mongodb directories &ndash;&gt;-->
+	<!--					        <id>rename-tomcat-and-mongodb-dirs</id>-->
+	<!--					        <phase>generate-sources</phase>-->
+	<!--					        <goals>-->
+	<!--					          <goal>rename</goal>-->
+	<!--					        </goals>-->
+	<!--					        <configuration>-->
+	<!--						        <fileSets>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.ubuntu}/apache-tomcat-${tomcat.version}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.ubuntu}/tomcat</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.osx}/apache-tomcat-${tomcat.version}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.osx}/tomcat</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.windows}/apache-tomcat-${tomcat.version}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.windows}/tomcat</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.ubuntu}/mongodb-${mongodb.linux.file}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.ubuntu}/mongodb</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.osx}/mongodb-${mongodb.osx.folder}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.osx}/mongodb</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${bundle.dir.windows}/mongodb-${mongodb.windows.file}</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.windows}/mongodb</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--						        </fileSets>-->
+	<!--							</configuration>-->
+	<!--					      </execution>-->
+	<!--					      <execution>	&lt;!&ndash; Add sample vcf (the one required for unit tests) &ndash;&gt;-->
+	<!--					        <id>copy-vcf-sample</id>-->
+	<!--					        <phase>generate-sources</phase>-->
+	<!--					        <goals>-->
+	<!--					          <goal>copy</goal>-->
+	<!--					        </goals>-->
+	<!--					        <configuration>-->
+	<!--						        <fileSets>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.ubuntu}/vcf/sample.vcf</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.osx}/vcf/sample.vcf</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--							        <fileSet>-->
+	<!--										<sourceFile>${project.basedir}/test/sample.vcf</sourceFile>-->
+	<!--										<destinationFile>${bundle.dir.windows}/vcf/sample.vcf</destinationFile>-->
+	<!--							        </fileSet>-->
+	<!--						        </fileSets>-->
+	<!--							</configuration>-->
+	<!--					      </execution>-->
+	<!--				      	</executions>-->
+	<!--					</plugin>-->
+
+	<!--					<plugin>-->
+	<!--						<artifactId>exec-maven-plugin</artifactId>-->
+	<!--						<version>1.6.0</version>-->
+	<!--						<groupId>org.codehaus.mojo</groupId>-->
+	<!--						<executions>-->
+	<!--						&lt;!&ndash; Create setenv scripts to adjust tomcat memory usage &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>create-setenv-ubuntu</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>echo</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-e</argument>-->
+	<!--										<argument>LC_ALL=</argument>-->
+	<!--										<argument>\nexport CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>-->
+	<!--										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>-->
+	<!--									</arguments>-->
+	<!--									<outputFile>${bundle.dir.ubuntu}/tomcat/bin/setenv.sh</outputFile>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>create-setenv-osx</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>echo</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-e</argument>-->
+	<!--										<argument>export CATALINA_OPTS="$CATALINA_OPTS -Xms512m -Xmx2048m"</argument>-->
+	<!--										<argument>\nexport JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"</argument>-->
+	<!--									</arguments>-->
+	<!--									<outputFile>${bundle.dir.osx}/tomcat/bin/setenv.sh</outputFile>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>create-setenv-windows</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>echo</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-e</argument>-->
+	<!--										<argument>set "JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m"</argument>-->
+	<!--										<argument>\nset "JAVA_OPTS=%JAVA_OPTS% -Dlog4j2.formatMsgNoLookups=true"</argument>-->
+	<!--									</arguments>-->
+	<!--									<outputFile>${bundle.dir.windows}/tomcat/bin/setenv.bat</outputFile>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							&lt;!&ndash;  Add all additional files to bundles (start/stop/update scripts, license, readme) &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>copy-scripts-ubuntu</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>bash</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-c</argument>-->
+	<!--										<argument>cp ${project.basedir}/bundle_files/ubuntu/* ${bundle.dir.ubuntu}</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>copy-scripts-osx</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>bash</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-c</argument>-->
+	<!--										<argument>cp ${project.basedir}/bundle_files/osx/* ${bundle.dir.osx}</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>copy-scripts-windows</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>bash</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-c</argument>-->
+	<!--										<argument>cp ${project.basedir}/bundle_files/windows/* ${bundle.dir.windows}</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+
+	<!--							&lt;!&ndash;  Create data and logs directories &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>add-empty-folders-ubuntu</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>mkdir</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>${bundle.dir.ubuntu}/data</argument>-->
+	<!--										<argument>${bundle.dir.ubuntu}/logs</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>add-empty-folders-osx</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>mkdir</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>${bundle.dir.osx}/data</argument>-->
+	<!--										<argument>${bundle.dir.osx}/logs</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<phase>pre-integration-test</phase>-->
+	<!--								<id>add-empty-folders-windows</id>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>mkdir</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>${bundle.dir.windows}/data</argument>-->
+	<!--										<argument>${bundle.dir.windows}/logs</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							-->
+	<!--							&lt;!&ndash; Add JRE to bundle (this is not downloaded but expected to be found at locations defined in variables at the top of the file) &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>add-jre-ubuntu</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>tar</executable>-->
+	<!--									<workingDirectory>${bundle.dir.ubuntu}/jre</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>xvzf</argument>-->
+	<!--										<argument>${path.to.ubuntu.jdk}</argument>-->
+	<!--										<argument>&#45;&#45;strip-components=1</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>add-jre-osx</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>tar</executable>-->
+	<!--									<workingDirectory>${bundle.dir.osx}/jre</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>xvzf</argument>-->
+	<!--										<argument>${path.to.osx.jdk}</argument>-->
+	<!--										<argument>&#45;&#45;strip-components=1</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>add-jre-windows</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>tar</executable>-->
+	<!--									<workingDirectory>${bundle.dir.windows}/jre</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>xvzf</argument>-->
+	<!--										<argument>${path.to.windows.jdk}</argument>-->
+	<!--										<argument>&#45;&#45;strip-components=1</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+
+	<!--							&lt;!&ndash; Delete Tomcat's examples webapp &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>rm-examples-webapp-ubuntu</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>rm</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-rf</argument>-->
+	<!--										<argument>${bundle.dir.ubuntu}/tomcat/webapps/examples</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>rm-examples-webapp-osx</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>rm</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-rf</argument>-->
+	<!--										<argument>${bundle.dir.osx}/tomcat/webapps/examples</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>rm-examples-webapp-windows</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>rm</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-rf</argument>-->
+	<!--										<argument>${bundle.dir.windows}/tomcat/webapps/examples</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							-->
+	<!--							&lt;!&ndash; Copy gigwa webapp into Tomcat &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>copy-webapp-ubuntu</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>cp</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>${project.build.directory}/gigwa</argument>-->
+	<!--										<argument>${bundle.dir.ubuntu}/tomcat/webapps/gigwa</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>copy-webapp-osx</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>cp</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>${project.build.directory}/gigwa</argument>-->
+	<!--										<argument>${bundle.dir.osx}/tomcat/webapps/gigwa</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>copy-webapp-windows</id>-->
+	<!--								<phase>integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>cp</executable>-->
+	<!--									<arguments>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>${project.build.directory}/gigwa</argument>-->
+	<!--										<argument>${bundle.dir.windows}/tomcat/webapps/gigwa</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--					</plugin>-->
+	<!--					-->
+	<!--					<plugin>-->
+	<!--						<groupId>com.google.code.maven-replacer-plugin</groupId>-->
+	<!--						<artifactId>replacer</artifactId>-->
+	<!--						<version>1.5.3</version>-->
+	<!--						<executions>-->
+	<!--							&lt;!&ndash; Set port to 59395 instead of 8080 in server.xml &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>set-tomcat-ports-ubuntu</id>-->
+	<!--								<phase>post-integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>replace</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<file>${bundle.dir.ubuntu}/tomcat/conf/server.xml</file>-->
+	<!--									<replacements>-->
+	<!--										<replacement>-->
+	<!--											<token>8080</token>-->
+	<!--											<value>59395</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8005</token>-->
+	<!--											<value>59396</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8009</token>-->
+	<!--											<value>59397</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>Connector port="59395"</token>-->
+	<!--											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>-->
+	<!--										</replacement>-->
+	<!--									</replacements>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>set-tomcat-ports-osx</id>-->
+	<!--								<phase>post-integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>replace</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<file>${bundle.dir.osx}/tomcat/conf/server.xml</file>-->
+	<!--									<replacements>-->
+	<!--										<replacement>-->
+	<!--											<token>8080</token>-->
+	<!--											<value>59395</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8005</token>-->
+	<!--											<value>59396</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8009</token>-->
+	<!--											<value>59397</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>Connector port="59395"</token>-->
+	<!--											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>-->
+	<!--										</replacement>-->
+	<!--									</replacements>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>set-tomcat-ports-windows</id>-->
+	<!--								<phase>post-integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>replace</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<file>${bundle.dir.windows}/tomcat/conf/server.xml</file>-->
+	<!--									<replacements>-->
+	<!--										<replacement>-->
+	<!--											<token>8080</token>-->
+	<!--											<value>59395</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8005</token>-->
+	<!--											<value>59396</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>8009</token>-->
+	<!--											<value>59397</value>-->
+	<!--										</replacement>-->
+	<!--										<replacement>-->
+	<!--											<token>Connector port="59395"</token>-->
+	<!--											<value>Connector port="59395" maxHttpHeaderSize="65536" maxParameterCount="-1" maxPostSize="-1"</value>-->
+	<!--										</replacement>-->
+	<!--									</replacements>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--					</plugin>-->
+	<!--					<plugin>-->
+	<!--						<artifactId>exec-maven-plugin</artifactId>-->
+	<!--						<version>1.6.0</version>-->
+	<!--						<groupId>org.codehaus.mojo</groupId>-->
+	<!--						<executions>-->
+	<!--							&lt;!&ndash; Allow script execution &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>chmod</id>-->
+	<!--								<phase>post-integration-test</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>chmod</executable>-->
+	<!--									<workingDirectory>${bundle.dir}</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>-R</argument>-->
+	<!--										<argument>755</argument>-->
+	<!--										<argument>.</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							&lt;!&ndash; Zip up a bundle archive for each system &ndash;&gt;-->
+	<!--							<execution>-->
+	<!--								<id>zip-bundle-ubuntu</id>-->
+	<!--								<phase>verify</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>zip</executable>-->
+	<!--									<workingDirectory>${bundle.dir}</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>-u</argument>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-Ubuntu.zip</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-Ubuntu</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>zip-bundle-osx</id>-->
+	<!--								<phase>verify</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>zip</executable>-->
+	<!--									<workingDirectory>${bundle.dir}</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>-u</argument>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-OSX.zip</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-OSX</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--							<execution>-->
+	<!--								<id>zip-bundle-windows</id>-->
+	<!--								<phase>verify</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>exec</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<executable>zip</executable>-->
+	<!--									<workingDirectory>${bundle.dir}</workingDirectory>-->
+	<!--									<arguments>-->
+	<!--										<argument>-u</argument>-->
+	<!--										<argument>-r</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-Windows.zip</argument>-->
+	<!--										<argument>Gigwa_V${project.version}-Windows</argument>-->
+	<!--									</arguments>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--					</plugin>-->
+	<!--				</plugins>-->
+	<!--			</build>-->
+	<!--		</profile>-->
+	<!--		-->
+	<!--	    <profile>-->
+	<!--	        <id>prod</id>-->
+	<!--			<build>-->
+	<!--		        <plugins>-->
+	<!--					<plugin>-->
+	<!--						<groupId>com.coderplus.maven.plugins</groupId>-->
+	<!--						<artifactId>copy-rename-maven-plugin</artifactId>-->
+	<!--						<version>1.0.1</version>					-->
+	<!--						<executions>-->
+	<!--							<execution>	&lt;!&ndash; replace target directory's config files with default versions &ndash;&gt;-->
+	<!--								<id>set-default-config</id>-->
+	<!--								<phase>package</phase>-->
+	<!--								<goals>-->
+	<!--									<goal>rename</goal>-->
+	<!--								</goals>-->
+	<!--								<configuration>-->
+	<!--									<fileSets>-->
+	<!--										<fileSet>-->
+	<!--											<sourceFile>target/gigwa/WEB-INF/classes/users.default</sourceFile>-->
+	<!--											<destinationFile>target/gigwa/WEB-INF/classes/users.properties</destinationFile>-->
+	<!--										</fileSet>-->
+	<!--										<fileSet>-->
+	<!--											<sourceFile>target/gigwa/WEB-INF/classes/datasources.default</sourceFile>-->
+	<!--											<destinationFile>target/gigwa/WEB-INF/classes/datasources.properties</destinationFile>-->
+	<!--										</fileSet>-->
+	<!--										<fileSet>-->
+	<!--											<sourceFile>target/gigwa/WEB-INF/classes/applicationContext-data.default</sourceFile>-->
+	<!--											<destinationFile>target/gigwa/WEB-INF/classes/applicationContext-data.xml</destinationFile>-->
+	<!--										</fileSet>-->
+	<!--										<fileSet>-->
+	<!--											<sourceFile>target/gigwa/WEB-INF/classes/config.default</sourceFile>-->
+	<!--											<destinationFile>target/gigwa/WEB-INF/classes/config.properties</destinationFile>-->
+	<!--										</fileSet>-->
+	<!--									</fileSets>-->
+	<!--								</configuration>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--					</plugin>-->
+	<!--				</plugins>-->
+	<!--			</build>-->
+	<!--	    </profile>-->
+	<!--		-->
+	<!--		<profile>-->
+	<!--			<id>docker</id>-->
+	<!--			<build>-->
+	<!--				<plugins>-->
+	<!--					<plugin>-->
+	<!--						<groupId>com.spotify</groupId>-->
+	<!--						<artifactId>dockerfile-maven-plugin</artifactId>-->
+	<!--						<version>1.4.13</version>-->
+	<!--						<executions>-->
+	<!--							<execution>-->
+	<!--								<id>default</id>-->
+	<!--								<phase>install</phase>	&lt;!&ndash; This should be in deploy phase but could not get it to work &ndash;&gt;-->
+	<!--								<goals>-->
+	<!--									<goal>build</goal>-->
+	<!--								</goals>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--						<configuration>-->
+	<!--							<repository>guilhemsempere/gigwa</repository>-->
+	<!--							<tag>${project.version}</tag>-->
+	<!--						</configuration>-->
+	<!--					</plugin>-->
+	<!--				</plugins>-->
+	<!--			</build>-->
+	<!--		</profile>-->
+	<!--		-->
+	<!--		<profile>-->
+	<!--			<id>push</id>-->
+	<!--			<build>-->
+	<!--				<plugins>-->
+	<!--					<plugin>-->
+	<!--						<groupId>com.spotify</groupId>-->
+	<!--						<artifactId>dockerfile-maven-plugin</artifactId>-->
+	<!--						<version>1.4.13</version>-->
+	<!--						<executions>-->
+	<!--							<execution>-->
+	<!--								<id>default</id>-->
+	<!--								<phase>install</phase>	&lt;!&ndash; This should be in deploy phase but could not get it to work &ndash;&gt;-->
+	<!--								<goals>-->
+	<!--									<goal>push</goal>-->
+	<!--								</goals>-->
+	<!--							</execution>-->
+	<!--						</executions>-->
+	<!--						<configuration>-->
+	<!--							<repository>guilhemsempere/gigwa</repository>-->
+	<!--							<tag>${project.version}</tag>-->
+	<!--						</configuration>-->
+	<!--					</plugin>-->
+	<!--				</plugins>-->
+	<!--			</build>-->
+	<!--		</profile>-->
+	<!--	-->
+	<!--	</profiles>-->
 </project>
