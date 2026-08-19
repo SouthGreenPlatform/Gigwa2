@@ -68,6 +68,11 @@ export async function importGenotypes(
     nextIndex++;
   });
 
+  data.mappingFile?.forEach((mappingFile, i) => {
+    formData.append(`file[${data.files.length + i}]`, mappingFile);
+    nextIndex++;
+  });
+
   if (data.brapiEndpoint) formData.append("dataFile1", data.brapiEndpoint);
 
   if (data.metadataSelectedIndSample) {
