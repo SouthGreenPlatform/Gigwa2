@@ -242,6 +242,11 @@ function ImportDatasourcePart({ maxUploadSize }: ImportDatasourcePartComponentPr
                 <option value="2">BrAPI</option>
               </Form.Select>
             </Col>
+            <Col>
+              {(selectedIndSample === '2' && selectedMapping === '2') && (
+                <i className="import-info-note">You will have to specify a BrAPI endpoint in Metadata part</i>
+              )}
+            </Col>
           </Form.Group>
         )}
 
@@ -275,9 +280,6 @@ function ImportDatasourcePart({ maxUploadSize }: ImportDatasourcePartComponentPr
             </Form.Select>
           </Col>
           <Col>
-            {(selectedIndSample === '2' && selectedMapping === '2') && (
-              <i className="import-info-note">You will have to specify a BrAPI endpoint in Metadata part</i>
-            )}
             {selectedDataSourceType === '1' && (
               <i className="import-info-note">You may upload up to {maxUploadSize} Mb</i>
             )}

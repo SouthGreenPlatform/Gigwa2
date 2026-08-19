@@ -211,25 +211,25 @@ function ImportInfoPart({ canCreateDB }: ImportInfoPartComponentProps) {
           <Form.Label column sm={3} className="import-info-label-right">
             Database<span className="import-info-required">*</span>
           </Form.Label>
-          <Col sm={5}>
-            <div className="import-info-db-row">
-              <Controller
-                name="selectedDb"
-                control={control}
-                render={({ field }) => (
-                  <DatabaseSelect {...field} newDb={true} writable={true} />
-                )}
-              />
-              {!selectedDb && canCreateDB && (
-                <Form.Control
-                  type="text"
-                  placeholder="New database name"
-                  {...register('newDatabaseName')}
-                  className="import-info-new-db-input"
-                />
+          <Col sm={4}>
+            <Controller
+              name="selectedDb"
+              control={control}
+              render={({ field }) => (
+                <DatabaseSelect {...field} newDb={true} writable={true} />
               )}
-            </div>
+            />
           </Col>
+          <Col sm={5}>
+            {!selectedDb && canCreateDB && (
+              <Form.Control
+                type="text"
+                placeholder="New database name"
+                {...register('newDatabaseName')}
+                className="import-info-new-db-input"
+              />
+            )}
+          </Col>          
         </Form.Group>
 
         <Form.Group as={Row} className="mb-3 align-items-center">
