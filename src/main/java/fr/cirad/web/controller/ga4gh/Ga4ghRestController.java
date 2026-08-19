@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.ejb.ObjectNotFoundException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.ejb.ObjectNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.commons.collections4.CollectionUtils;
@@ -47,6 +47,8 @@ import org.ga4gh.models.ReferenceSet;
 import org.ga4gh.models.Variant;
 import org.ga4gh.models.VariantAnnotation;
 import org.ga4gh.models.VariantSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -75,10 +77,12 @@ import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
 import fr.cirad.web.controller.gigwa.base.ControllerInterface;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 /**
  *
@@ -99,7 +103,7 @@ public class Ga4ghRestController extends ControllerInterface {
      * logger
      */
     @SuppressWarnings("unused")
-    static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(Ga4ghRestController.class);
+    static private final Logger LOG = LoggerFactory.getLogger(Ga4ghRestController.class);
 
     static public final String BASE_URL = "/ga4gh";
     static public final String CALLSETS = "/callsets";
@@ -128,11 +132,11 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return
      * @throws IOException
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getSequenceBase", notes = "Get references sequences bases from a specific location ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = ListReferenceBasesResponse.class),
-        @ApiResponse(code = 401, message = "Access forbidden")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getSequenceBase", description = "Get references sequences bases from a specific location ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ListReferenceBasesResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden")
+	})
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}" + BASES, method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ListReferenceBasesResponse getReferenceBases(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody ListReferenceBasesRequest listReferenceBasesRequest) throws IOException {
 
@@ -161,12 +165,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return CallSet
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getCallSet", notes = "get a CallSet from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = CallSet.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no CallSet with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getCallSet", description = "get a CallSet from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CallSet.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no CallSet with this ID")
+	})
 	@RequestMapping(value = BASE_URL + CALLSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public CallSet getCallSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -198,12 +202,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return VariantSet
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantSet", notes = "get a VariantSet from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = VariantSet.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no VariantSet with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getVariantSet", description = "get a VariantSet from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = VariantSet.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no VariantSet with this ID")
+	})
 	@RequestMapping(value = BASE_URL + VARIANTSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -237,12 +241,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @throws ObjectNotFoundException 
      * @throws NumberFormatException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariant", notes = "get a Variant from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = Variant.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no Variant with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getVariant", description = "get a Variant from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Variant.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no Variant with this ID")
+	})
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, NumberFormatException, ObjectNotFoundException {
         String indHeader = request.getHeader("ind");
@@ -260,12 +264,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @throws ObjectNotFoundException 
      * @throws NumberFormatException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantByPost", notes = "get a Variant from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = Variant.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no Variant with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getVariantByPost", description = "get a Variant from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Variant.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no Variant with this ID")
+	})
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException, NumberFormatException, ObjectNotFoundException {
        	String[] info = id.split(Helper.ID_SEPARATOR);
@@ -332,12 +336,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return Reference in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getReference", notes = "get a Reference from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = Reference.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no Reference with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getReference", description = "get a Reference from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Reference.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no Reference with this ID")
+	})
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public Reference getReference(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
 
@@ -369,12 +373,12 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return ReferenceSet in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getReferenceSet", notes = "get a ReferenceSet from its ID. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = ReferenceSet.class),
-        @ApiResponse(code = 401, message = "Access forbidden"),
-        @ApiResponse(code = 404, message = "no ReferenceSet with this ID")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getReferenceSet", description = "get a ReferenceSet from its ID. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReferenceSet.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no ReferenceSet with this ID")
+	})
 	@RequestMapping(value = BASE_URL + REFERENCESETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ReferenceSet getReferenceSet(HttpServletResponse response, @PathVariable String id, HttpServletRequest request) throws IOException {
 
@@ -407,11 +411,11 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchCallSetsResponse in JSON format
      * @throws Exception 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchCallSets", notes = "get a list of CallSet matching values from SearchCallSetsRequest. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = SearchCallSetsResponse.class),
-        @ApiResponse(code = 401, message = "Access forbidden")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "searchCallSets", description = "get a list of CallSet matching values from SearchCallSetsRequest. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SearchCallSetsResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden")
+	})
 	@RequestMapping(value = BASE_URL + CALLSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchCallSetsResponse searchCallSets(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchCallSetsRequest callSetsRequest) throws Exception {
         String token = tokenManager.readToken(request);
@@ -504,10 +508,10 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferenceSetsResponse in JSON format
      * @throws org.apache.avro.AvroRemoteException
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferenceSets", notes = "get a list of ReferenceSet matching values from SearchReferenceSetsRequest. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = SearchReferenceSetsResponse.class)
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "searchReferenceSets", description = "get a list of ReferenceSet matching values from SearchReferenceSetsRequest. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SearchReferenceSetsResponse.class))),
+	})
 	@RequestMapping(value = BASE_URL + REFERENCESETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferenceSetsResponse searchReferenceSets(HttpServletRequest request, @RequestBody SearchReferenceSetsRequest referenceSetsRequest) throws AvroRemoteException {
 
@@ -531,11 +535,11 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferencesResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferences", notes = "get a list of Reference matching values from SearchReferencesRequest. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = SearchReferencesResponse.class),
-        @ApiResponse(code = 401, message = "Access forbidden")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "searchReferences", description = "get a list of Reference matching values from SearchReferencesRequest. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SearchReferencesResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden")
+	})
 	@RequestMapping(value = BASE_URL + REFERENCES_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -567,11 +571,11 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferencesResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchVariantSets", notes = "get a list of VariantSet matching values from SearchVariantSetsRequest. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = SearchVariantSetsResponse.class),
-        @ApiResponse(code = 401, message = "Access forbidden")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "searchVariantSets", description = "get a list of VariantSet matching values from SearchVariantSetsRequest. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SearchVariantSetsResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden")
+	})
 	@RequestMapping(value = BASE_URL + VARIANTSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchVariantSetsResponse searchVariantSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchVariantSetsRequest variantSetsRequest) throws IOException {
         String token = tokenManager.readToken(request);
@@ -614,11 +618,11 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchVariantsResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchVariant", notes = "get a list of Variant matching values from GigwaSearchVariantsResponse. ")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", response = GigwaSearchVariantsResponse.class),
-        @ApiResponse(code = 401, message = "Access forbidden")
-    })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "searchVariant", description = "get a list of Variant matching values from GigwaSearchVariantsResponse. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = GigwaSearchVariantsResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden")
+	})
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws IOException {
 
@@ -651,15 +655,11 @@ public class Ga4ghRestController extends ControllerInterface {
         }
     }
 
-    @ApiOperation(
-	    authorizations = { @Authorization(value = "AuthorizationToken") },
-	    value = "getVariantAnnotationById",
-	    notes = "Get a VariantAnnotation from its ID."
-	)
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getVariantAnnotationById", description = "get a VariantAnnotation from its ID. ")
 	@ApiResponses(value = {
-	    @ApiResponse(code = 200, message = "Success", response = VariantAnnotation.class),
-	    @ApiResponse(code = 401, message = "Access forbidden"),
-	    @ApiResponse(code = 404, message = "No VariantAnnotation with this ID")
+			@ApiResponse(responseCode = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = VariantAnnotation.class))),
+			@ApiResponse(responseCode = "401", description = "Access forbidden"),
+			@ApiResponse(responseCode = "404", description = "no VariantAnnotation with this ID")
 	})
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}" + "/{projects}", method = RequestMethod.GET, produces = "application/json")
 	public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @PathVariable String projects) throws Exception {

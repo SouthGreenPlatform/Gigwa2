@@ -1,0 +1,15 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr1,length=1000000>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SP_1	SP_2	SP_3	SP_4	SP_5	SP_6
+chr1	1000	VAR_001	A	T	.	PASS	.	GT	0/0	0/0	0/0	0/0	0/0	0/0
+chr1	2000	VAR_002	A	T	.	PASS	.	GT	1/1	1/1	1/1	1/1	1/1	1/1
+chr1	3000	VAR_003	A	T	.	PASS	.	GT	0/1	0/1	0/1	0/1	0/0	0/0
+chr1	4000	VAR_004	A	T	.	PASS	.	GT	0/1	0/1	0/0	0/0	0/0	0/0
+chr1	5000	VAR_005	A	T	.	PASS	.	GT	./.	./.	0/1	0/0	1/1	0/1
+chr1	6000	VAR_006	A	T	.	PASS	.	GT	0/0	0/1	0/0	0/0	1/1	0/1
+chr1	7000	VAR_007	A	T	.	PASS	.	GT	0/0	0/1	0/0	0/1	0/0	./.
+chr1	8000	VAR_008	A	T	.	PASS	.	GT	0/1	0/1	1/1	1/1	1/1	0/0
+chr1	9000	VAR_009	A	T	.	PASS	.	GT	0/0	0/0	0/0	0/0	0/0	1/1
+chr1	10000	VAR_010	A	T	.	PASS	.	GT:GQ	0/0:10	0/1:50	0/1:50	1/1:50	0/1:50	0/1:50

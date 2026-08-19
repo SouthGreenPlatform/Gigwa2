@@ -1,5 +1,5 @@
 package fr.cirad.test;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -9,12 +9,15 @@ import java.util.*;
 import fr.cirad.mgdb.importing.parameters.VCFParameters;
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.GAException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.junit.jupiter.Container;
 
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
@@ -23,6 +26,9 @@ import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
+@SpringBootTest
+@Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GigwaMultiCallSetTests {
 
     private static final List<String> ALL_INDIVIDUALS = Arrays.asList(
@@ -34,18 +40,9 @@ public class GigwaMultiCallSetTests {
             "testModule§1§IND_F"
     );
 
-    @ClassRule
-    public static MongoDBContainer mongoContainer =
-            new MongoDBContainer(DockerImageName.parse("mongo:4.4"));
-
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() throws MalformedURLException, Exception {
-        System.setProperty("test.mongo.host", mongoContainer.getHost());
-        System.setProperty("test.mongo.port",
-                String.valueOf(mongoContainer.getFirstMappedPort()));
-
-        System.out.println(">>> [MultiCallSet] MongoDB at "
-                + mongoContainer.getHost() + ":" + mongoContainer.getFirstMappedPort());
+        TestMongoContainer.get();
 
         // Import the 3 VCF files into the SAME project, as 3 different runs.
         // Gigwa will compute the consensus genotype per (individual, variant)
@@ -71,11 +68,11 @@ public class GigwaMultiCallSetTests {
         new VcfImport().importToMongo(params);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownAfterClass() throws Exception {
         Assembly.cleanupThreadAssembly();
         MongoTemplateManager.get("testModule").getDb().drop();
-        MongoTemplateManager.closeApplicationContextIfOffline();
+        //MongoTemplateManager.closeApplicationContextIfOffline();
     }
 
     /* ============================================================

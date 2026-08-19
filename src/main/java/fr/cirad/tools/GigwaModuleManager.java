@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -36,8 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,8 +50,10 @@ import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+
 import org.brapi.v2.model.VariantSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Sort;
@@ -87,7 +91,7 @@ public class GigwaModuleManager implements IModuleManager {
 
     private Map<String, AbstractProcess> importProcesses = new ConcurrentHashMap<>();
 
-    private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GigwaModuleManager.class);
 
     private static final String defaultDumpFolder = DumpProcess.dumpManagementPath + "/dumps";
 
@@ -696,4 +700,22 @@ public class GigwaModuleManager implements IModuleManager {
 			}
 		}
 	}
+
+
+    private void deleteDirectory(File directory) throws IOException {
+        Path path = directory.toPath();
+        if (!Files.exists(path)) {
+            return; // FileUtils.deleteDirectory ne lève pas d'exception si le dossier n'existe pas
+        }
+        try (Stream<Path> walk = Files.walk(path)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to delete " + p, e);
+                        }
+                    });
+        }
+    }
 }

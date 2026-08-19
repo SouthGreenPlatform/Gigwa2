@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import fr.cirad.tools.AppConfig;
 
+@Component
 public class CustomCorsConfigurationSource extends UrlBasedCorsConfigurationSource {
 
     public static final String ALLOWED_ORIGINS_PROPERTY_PREFIX = "allowedOrigins_";

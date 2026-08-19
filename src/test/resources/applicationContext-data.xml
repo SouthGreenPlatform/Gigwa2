@@ -1,19 +1,19 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd
-                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<beans xmlns="http://www.springframework.org/schema/beans"-->
+<!--       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--       xmlns:mongo="http://www.springframework.org/schema/data/mongo"-->
+<!--       xmlns:context="http://www.springframework.org/schema/context"-->
+<!--       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd-->
+<!--                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd-->
+<!--                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">-->
 
-    <context:property-placeholder ignore-unresolvable="true"/>
+<!--    <context:property-placeholder ignore-unresolvable="true"/>-->
 
-    <!-- defaultMongoHost is wired to the Testcontainers MongoDB.
-         Host/port come from system properties set in GigwaUnitTests. -->
-    <mongo:mongo-client host="${test.mongo.host:127.0.0.1}"
-                        port="${test.mongo.port:27018}"
-                        id="defaultMongoHost">
-        <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client>
-</beans>
+<!--    &lt;!&ndash; defaultMongoHost is wired to the Testcontainers MongoDB.-->
+<!--         Host/port come from system properties set in GigwaUnitTests. &ndash;&gt;-->
+<!--    <mongo:mongo-client host="${test.mongo.host:127.0.0.1}"-->
+<!--                        port="${test.mongo.port:27018}"-->
+<!--                        id="defaultMongoHost">-->
+<!--        <mongo:client-settings connection-pool-max-size="500" />-->
+<!--    </mongo:mongo-client>-->
+<!--</beans>-->

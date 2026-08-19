@@ -2,7 +2,8 @@ package fr.cirad.security;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,7 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import fr.cirad.security.base.IRoleDefinition;
 
 public class GigwaUserDetailsWrapper<T extends Authentication> implements AuthenticationUserDetailsService<T> {
-	private static final Logger LOG = Logger.getLogger(GigwaUserDetailsWrapper.class);
+	private static final Logger LOG = LoggerFactory.getLogger(GigwaUserDetailsWrapper.class);
 	
 	public static final String METHOD_CAS = "CAS";
 	
@@ -36,7 +37,7 @@ public class GigwaUserDetailsWrapper<T extends Authentication> implements Authen
 				try {
 					service.saveOrUpdateUser(authentication.getName(), "", authorities, true, METHOD_CAS, null);
 				} catch (IOException e) {
-					LOG.error(e);
+					LOG.error(e.getMessage());
 					throw new ExternalUserCreationFailureException("Error while creating the new CAS user", e);
 				}
 				UserDetails user = service.loadUserByUsername(authentication.getName());

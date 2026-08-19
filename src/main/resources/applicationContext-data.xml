@@ -1,22 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd
-                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<beans xmlns="http://www.springframework.org/schema/beans"-->
+<!--       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--       xmlns:mongo="http://www.springframework.org/schema/data/mongo"-->
+<!--       xmlns:context="http://www.springframework.org/schema/context"-->
+<!--       xsi:schemaLocation="http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd-->
+<!--                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd-->
+<!--                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">-->
 
-    <!-- Enable property placeholder configuration -->
-    <context:property-placeholder ignore-unresolvable="true"/>
+<!--    &lt;!&ndash; Enable property placeholder configuration &ndash;&gt;-->
+<!--    <context:property-placeholder ignore-unresolvable="true"/>-->
 
-    <!-- Definition of a host running remotely without authentication enabled, with a custom max-pool-size -->
-    <mongo:mongo-client host="127.0.0.1" port="27018" id="defaultMongoHost">
-        <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client>
+<!--    &lt;!&ndash; Definition of a host running remotely without authentication enabled, with a custom max-pool-size &ndash;&gt;-->
+<!--    <mongo:mongo-client host="127.0.0.1" port="27017" id="defaultMongoHost">-->
+<!--        <mongo:client-settings connection-pool-max-size="500" />-->
+<!--    </mongo:mongo-client>-->
 
-<!--     Definition of a host with authentication enabled -->
-<!--     <mongo:mongo-client host="cortenais.cirad.fr" port="27017" id="cortenais" credential="gigwa:${mongo_pwd}@admin">
-        <mongo:client-settings connection-pool-max-size="500" />
-    </mongo:mongo-client> -->
-</beans>
+<!--&lt;!&ndash;     Definition of a host with authentication enabled &ndash;&gt;-->
+<!--    <mongo:mongo-client host="cortenais.cirad.fr" port="27017" id="cortenais" credential="gigwa:${mongo_pwd}@admin">-->
+<!--        <mongo:client-settings connection-pool-max-size="500" />-->
+<!--    </mongo:mongo-client>-->
+<!--</beans>-->

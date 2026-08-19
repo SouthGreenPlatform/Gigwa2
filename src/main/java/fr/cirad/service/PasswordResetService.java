@@ -5,15 +5,16 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.servlet.http.HttpServletRequest;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,7 @@ import fr.cirad.web.controller.GigwaAuthenticationController;
 @Service
 public class PasswordResetService {
 
-	private static final Logger LOG = Logger.getLogger(PasswordResetService.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PasswordResetService.class);
 
     private static final ExpiringHashMap<String, String> resetInfo = new ExpiringHashMap<>(1000 * 60 * 5 /* expiration delay: 5 minutes */);
 

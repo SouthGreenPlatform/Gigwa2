@@ -1,5 +1,6 @@
 package fr.cirad.test;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.FileReader;
@@ -8,14 +9,19 @@ import java.net.MalformedURLException;
 import java.util.*;
 
 import fr.cirad.mgdb.importing.parameters.VCFParameters;
+import fr.cirad.tools.AppConfig;
 import org.apache.avro.AvroRemoteException;
 import org.ga4gh.methods.GAException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import fr.cirad.mgdb.importing.VcfImport;
 import fr.cirad.mgdb.model.mongo.maintypes.Assembly;
@@ -25,26 +31,19 @@ import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
+@SpringBootTest
+@Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GigwaUnitTests {
 
-	@ClassRule
-	public static MongoDBContainer mongoContainer =
-			new MongoDBContainer(DockerImageName.parse("mongo:4.4"));
-
-	@BeforeClass
+	@BeforeAll
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
-		// Redirect defaultMongoHost (in test applicationContext-data.xml) at the container
-		System.setProperty("test.mongo.host", mongoContainer.getHost());
-		System.setProperty("test.mongo.port",
-				String.valueOf(mongoContainer.getFirstMappedPort()));
+		TestMongoContainer.get();
 
-		System.out.println(">>> Test MongoDB at "
-				+ mongoContainer.getHost() + ":" + mongoContainer.getFirstMappedPort());
-
-		Reader datasources = new FileReader("src/main/resources/datasources.properties");
-		Properties p = new Properties();
-		p.load(datasources);
-		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.properties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
+//		Reader datasources = new FileReader("src/main/resources/datasources.properties");
+//		Properties p = new Properties();
+//		p.load(datasources);
+//		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.properties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
         VCFParameters params = new VCFParameters(
                 "testModule",
                 "testProject",
@@ -62,11 +61,11 @@ public class GigwaUnitTests {
 		Assembly.setThreadAssembly(0);
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDownAfterClass() throws Exception {
 		Assembly.cleanupThreadAssembly();
 		MongoTemplateManager.get("testModule").getDb().drop();
-		MongoTemplateManager.closeApplicationContextIfOffline();
+		//MongoTemplateManager.closeApplicationContextIfOffline();
 	}
 
 //	@Before
@@ -76,7 +75,7 @@ public class GigwaUnitTests {
 //	@After
 //	public void tearDown() throws Exception {
 //	}
-	
+
 	/*test 0/ comptage sans filtre*/
 	@Test
 	public void test00() throws GAException, AvroRemoteException {
@@ -88,13 +87,13 @@ public class GigwaUnitTests {
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
-				
+
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 1000);
 	}
-	
+
 	/*test 1/ types : INDEL et MIXED, séquences : 29 et MT*/
 	@Test
 	public void test01() throws GAException, AvroRemoteException {
@@ -102,7 +101,7 @@ public class GigwaUnitTests {
 
 		svr.setSelectedVariantTypes("INDEL;MIXED");
 		svr.setReferenceName("29;MT");
-		
+
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
@@ -113,14 +112,14 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 15);
 	}
-	
+
 	/*test 2/ nb d'allèles : 3 et 4*/
 	@Test
 	public void test02() throws GAException, AvroRemoteException {
 		MgdbSearchVariantsRequest svr = new MgdbSearchVariantsRequest();
 
 		svr.setAlleleCount("3;4");
-		
+
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
@@ -128,17 +127,17 @@ public class GigwaUnitTests {
 		svr.setSearchMode(0);//only count
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
-		
+
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 5);
 	}
-	
+
 	/*test 3/ position entre 1000000 et 2000000 sur séquence 1*/
 	@Test
 	public void test03() throws GAException, AvroRemoteException {
 		MgdbSearchVariantsRequest svr = new MgdbSearchVariantsRequest();
 
 		svr.setReferenceName("1");
-		
+
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
@@ -170,7 +169,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 8);
 	}
-	
+
 	/*test 5/ gène impacté = ENSBTAG00000008482 ou ENSBTAG00000012899 ou ENSBTAG00000009899*/
 	@Test
 	public void test05() throws GAException, AvroRemoteException {
@@ -188,7 +187,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 14);
 	}
-	
+
 	/*test 6/ séquence = 1 et position <= 4000000 et gène impacté = aucun*/
 	@Test
 	public void test06() throws GAException, AvroRemoteException {
@@ -196,7 +195,7 @@ public class GigwaUnitTests {
 
 		svr.setReferenceName("1");
 		svr.setGeneName("-");
-		
+
 		svr.setVariantSetId("testModule§1");
 		svr.setCallSetIds(new ArrayList<>());
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
@@ -208,7 +207,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 9);
 	}
-	
+
 	/*test 7/ nb d'allèles = 3 ou 4 et un au moins gène impacté
 	 * (il doit y avoir une qlq chose dans la colonne gene du tableau de résultats)*/
 	@Test
@@ -228,15 +227,15 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 5);
 	}
-	
-	
+
+
 	/* ------------------
 	 * (à partir du test 8 jusqu'au 25 on considère que groupe d'individus 1
 	 * = tous les individus qui commencent par BO)
 	 * ------------------
 	 */
-	
-	
+
+
 	/*test 8/ sur groupe 1 : Max missing data=20%*/
 	@Test
 	public void test08() throws GAException, AvroRemoteException {
@@ -254,7 +253,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 862);
 	}
-	
+
 	/*test 9/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50*/
 	@SuppressWarnings("serial")
 	@Test
@@ -275,7 +274,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 179);
 	}
-	
+
 	/*test 10/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et MAF = 25%*/
 	@SuppressWarnings("serial")
 	@Test
@@ -298,7 +297,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 8);
 	}
-	
+
 	/*test 11/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%*/
 	@SuppressWarnings("serial")
 	@Test
@@ -321,7 +320,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 67);
 	}
-	
+
 	/*test 12/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 *  et pattern=not all the same*/
 	@SuppressWarnings("serial")
@@ -346,7 +345,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 47);
 	}
-	
+
 	/*test 13/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 *  et pattern=mostly all the same 75%*/
 	@SuppressWarnings("serial")
@@ -372,7 +371,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 36);
 	}
-	
+
 	/*test 14/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50
 	 * et pattern=all homozygous ref*/
 	@SuppressWarnings("serial")
@@ -384,7 +383,7 @@ public class GigwaUnitTests {
 		svr.setAnnotationFieldThresholdsWithIndex(new HashMap<String, Float>(){{put(VariantData.GT_FIELD_GQ, 50f);}}, 0);
 		svr.setMaxMissingDataWithIndex(20f, 0);
 		svr.setGtPatternWithIndex(MgdbSearchVariantsRequest.GENOTYPE_CODE_LABEL_ALL_HOMOZYGOUS_REF, 0);
-		
+
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		//svr.setAdditionalCallSetIds(new ArrayList<>());
@@ -395,7 +394,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 25);
 	}
-	
+
 	/*test 15/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 *  et pattern=some homozygous ref*/
 	@SuppressWarnings("serial")
@@ -420,7 +419,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 40);
 	}
-	
+
 	/*test 16/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50
 	 * et pattern=all homozygous var*/
 	@SuppressWarnings("serial")
@@ -443,7 +442,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 20);
 	}
-	
+
 	/*test 17/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 * et pattern=some homozygous var*/
 	@SuppressWarnings("serial")
@@ -466,9 +465,9 @@ public class GigwaUnitTests {
 		GigwaGa4ghServiceImpl gigwaGa4ghServiceImpl = new GigwaGa4ghServiceImpl();
 		GigwaSearchVariantsResponse gigwaSearchVariantsResponse = gigwaGa4ghServiceImpl.searchVariants(svr);
 
-		assertTrue(gigwaSearchVariantsResponse.getCount() == 16);
+		assertEquals(16, gigwaSearchVariantsResponse.getCount());
 	}
-	
+
 	/*test 18/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 * et pattern=all heterozygous*/
 	@SuppressWarnings("serial")
@@ -493,7 +492,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 20);
 	}
-	
+
 	/*test 19/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 * et pattern=some heterozygous*/
 	@SuppressWarnings("serial")
@@ -518,7 +517,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 65);
 	}
-	
+
 	/*test 20/ nb d'allèles = 2 et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 * et pattern=50 % heterozygous*/
 	@SuppressWarnings("serial")
@@ -544,7 +543,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 9);
 	}
-	
+
 	/*test 21/ nb d'allèles = 3 ou 4 et sur groupe 1 : all heterozygous*/
 	@Test
 	public void test21() throws GAException, AvroRemoteException {
@@ -563,8 +562,8 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 1);
 	}
-	
-	/*test 22/ sur groupe 1 : Max missing data=40% et GQ>=5 
+
+	/*test 22/ sur groupe 1 : Max missing data=40% et GQ>=5
 	 * et pattern=all different*/
 	@SuppressWarnings("serial")
 	@Test
@@ -585,15 +584,15 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 6);
 	}
-	
+
 	/* ------------------
 	 * (à partir du test 23 on considère que groupe d'individus 2
 	 *  = tous les individus qui commencent par LA)
 	 * ------------------
 	 */
-	
+
 	/*test 23/ nb d'allèles = 2
-	 * et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50% 
+	 * et sur groupe 1 : Max missing data=20% et GQ>=50 et 25%<=MAF<=50%
 	 * et pattern=some heterozygous
 	 * et sur groupe 2 : pattern=not all the same*/
 	@SuppressWarnings("serial")
@@ -611,7 +610,7 @@ public class GigwaUnitTests {
 		additionalCallSetIds.add(new ArrayList<>(Arrays.asList("testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4", "testModule§1§LA5")));
 		svr.setAdditionalCallSetIds(additionalCallSetIds);
 		svr.setGtPatternWithIndex(MgdbSearchVariantsRequest.GENOTYPE_CODE_LABEL_NOT_ALL_SAME, 1);
-		
+
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
 		svr.setSearchMode(0);//only count
@@ -620,7 +619,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 45);
 	}
-	
+
 	/*test 24/ nb d'allèles = 2
 	 * et sur les 2 groupes : GQ>=15 et max missing data = 20%
 	 * et pattern=mostly all the same 75%*/
@@ -641,7 +640,7 @@ public class GigwaUnitTests {
 		svr.setMaxMissingDataWithIndex(20f, 1);
 		svr.setGtPatternWithIndex(MgdbSearchVariantsRequest.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 1);
 		svr.setMostSameRatioWithIndex(75, 1);
-		
+
 		svr.setAlleleCount("2");
 		svr.setVariantSetId("testModule§1");
 		svr.setGetGT(false);
@@ -651,7 +650,7 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 258);
 	}
-	
+
 	/*test 25/ nb d'allèles = 2
 	 * et (sur les 2 groupes : GQ>=15 et max missing data = 20%
 	 * et pattern=mostly all the same 75%) + Discriminate groups activé*/
@@ -683,13 +682,13 @@ public class GigwaUnitTests {
 
 		assertTrue(gigwaSearchVariantsResponse.getCount() == 22);
 	}
-	
+
 	/*test 26/ pattern=mostly all the same 100%)*/
 	@SuppressWarnings("serial")
 	@Test
 	public void test26() throws GAException, AvroRemoteException {
 		MgdbSearchVariantsRequest svr = new MgdbSearchVariantsRequest();
-		
+
 		svr.setCallSetIds(new ArrayList<>(Arrays.asList("testModule§1§BO4", "testModule§1§BO5", "testModule§1§BO6", "testModule§1§LA1", "testModule§1§LA2", "testModule§1§LA3", "testModule§1§LA4")));
 		svr.setGtPatternWithIndex(MgdbSearchVariantsRequest.GENOTYPE_CODE_LABEL_MOSTLY_SAME, 0);
 		svr.setVariantSetId("testModule§1");

@@ -20,7 +20,7 @@ const endpoints = {
   RESET_PASSWORD_URL:               config.INSTANCE_URL + "/resetPassword.do",
   LOGOUT_URL:                       config.INSTANCE_URL + "/logout",
   CAS_SERVICE_URL:                  config.INSTANCE_URL + '/login/cas',
-  ROLE_MANAGER_URL:                 config.INSTANCE_URL + "/roleManager",
+  ROLE_MANAGER_URL:                 config.INSTANCE_URL + "/roleManager/",
 
   VARIANT_EFFECTS_URL:	          	GIGWA_REST_ENDPOINT + "/effectAnnotations", // Effects annotations for a project's database
   HOSTS_URL:	                    	GIGWA_REST_ENDPOINT + "/hosts", // hosts

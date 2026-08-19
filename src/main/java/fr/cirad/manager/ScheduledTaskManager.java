@@ -23,10 +23,12 @@ import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletContext;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.ServletContext;
 
 import org.brapi.v2.api.VariantsetsApiController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -43,7 +45,7 @@ import org.springframework.web.context.ServletContextAware;
 @EnableScheduling
 public class ScheduledTaskManager implements ServletContextAware {
 
-    static private final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(ScheduledTaskManager.class);
+    static private final Logger LOG = LoggerFactory.getLogger(ScheduledTaskManager.class);
     
     @Autowired private AppConfig appConfig;
     @Autowired private TokenManager tokenManager;

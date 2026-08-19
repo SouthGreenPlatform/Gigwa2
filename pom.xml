@@ -4,10 +4,10 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<properties>
-		<java.version>21</java.version>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
-		<project.version>2.12.1-alpha</project.version>
+<!--		<java.version>21</java.version>-->
+<!--		<maven.compiler.source>21</maven.compiler.source>-->
+<!--		<maven.compiler.target>21</maven.compiler.target>-->
+<!--		<project.version>2.12.1-alpha</project.version>-->
 		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<bundle.dir>${project.build.directory}/bundles</bundle.dir>

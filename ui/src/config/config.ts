@@ -1,7 +1,7 @@
 const config: { INSTANCE_URL: string; IGV_PROXIED_DOMAINS: string[] } = {
     //INSTANCE_URL:                   "https://gigwa-dev.southgreen.fr/gigwaV2",
     // INSTANCE_URL:                   "http://localhost:9090/Gigwa2/",
-    INSTANCE_URL:                   "",
+    INSTANCE_URL:                   "http://localhost:8080/",
     IGV_PROXIED_DOMAINS:            ["*.southgreen.fr"],           //FIXME: this should be obtained dynamically
 };
 

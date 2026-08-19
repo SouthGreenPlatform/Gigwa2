@@ -3,7 +3,7 @@ package fr.cirad.web.controller.gigwa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.brapi.v2.model.AlleleMatrixPagination;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public class GenotypeMatrix {

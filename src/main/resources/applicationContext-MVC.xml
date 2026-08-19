@@ -1,62 +1,62 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+<!--<beans xmlns="http://www.springframework.org/schema/beans"-->
+<!--       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"-->
+<!--       xmlns:context="http://www.springframework.org/schema/context"-->
+<!--       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd-->
+<!--		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd-->
+<!--		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">-->
 
-    <bean class="com.fasterxml.jackson.databind.ObjectMapper" />
+<!--    <bean class="com.fasterxml.jackson.databind.ObjectMapper" />-->
 
-    <mvc:annotation-driven>
-        <mvc:message-converters>
-            <bean class="fr.cirad.rest.json.CustomMappingJackson2HttpMessageConverter" />
-        </mvc:message-converters>
-    </mvc:annotation-driven>
+<!--    <mvc:annotation-driven>-->
+<!--        <mvc:message-converters>-->
+<!--            <bean class="fr.cirad.rest.json.CustomMappingJackson2HttpMessageConverter" />-->
+<!--        </mvc:message-converters>-->
+<!--    </mvc:annotation-driven>-->
 
-     <!-- Controllers, MongoTemplateManager,timer, api documentation, controller and service -->
-    <context:component-scan base-package="fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api, fr.cirad.web.controller, fr.cirad.service" />
+<!--     &lt;!&ndash; Controllers, MongoTemplateManager,timer, api documentation, controller and service &ndash;&gt;-->
+<!--    <context:component-scan base-package="fr.cirad.mgdb.service,fr.cirad.web.controller,fr.cirad.manager,fr.cirad.configuration,org.brapi.v2.api, fr.cirad.web.controller, fr.cirad.service" />-->
 
-    <bean class="fr.cirad.tools.GlobalExceptionHandler" />
+<!--    <bean class="fr.cirad.tools.GlobalExceptionHandler" />-->
 
-    <!-- swagger resources config -->
-    <mvc:resources mapping="/swagger-ui/**" location="classpath:/META-INF/resources/webjars/springfox-swagger-ui/"/>
+<!--    &lt;!&ndash; swagger resources config &ndash;&gt;-->
+<!--    <mvc:resources mapping="/swagger-ui/**" location="classpath:/META-INF/resources/webjars/springfox-swagger-ui/"/>-->
 
-    <!-- View resolver -->
-    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-        <property name="order" value="2" />
-        <property name="prefix" value="/WEB-INF/jsp/"/>
-        <property name="suffix" value=".jsp"/>
-    </bean>
+<!--    &lt;!&ndash; View resolver &ndash;&gt;-->
+<!--    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">-->
+<!--        <property name="order" value="2" />-->
+<!--        <property name="prefix" value="/WEB-INF/jsp/"/>-->
+<!--        <property name="suffix" value=".jsp"/>-->
+<!--    </bean>-->
 
-	<!-- Multi-part resolver (to handle file uploads) -->
-	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-        <property name="maxUploadSize" value="1073741824"/> <!-- 1 Gb -->
-	</bean>
+<!--	&lt;!&ndash; Multi-part resolver (to handle file uploads) &ndash;&gt;-->
+<!--	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">-->
+<!--        <property name="maxUploadSize" value="1073741824"/> &lt;!&ndash; 1 Gb &ndash;&gt;-->
+<!--	</bean>-->
 
-    <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
-        <property name="exceptionMappings">
-            <props>
-                <prop key="java.lang.Exception">/error/500</prop>
-                <prop key="java.lang.AccessDeniedException">/error/403</prop>
-            </props>
-        </property>
-    </bean>
-  
-    <bean class="org.springframework.mail.javamail.JavaMailSenderImpl">
-        <property name="defaultEncoding" value="UTF-8"/>
-        <property name="host" value="smtp.host.url"/>	<!-- shall be adapted to point to your mail server -->
-        <!-- <property name="username" value="UN"/> -->	<!-- only used if mail.smtp.auth set to true -->
-        <!-- <property name="password" value="PW"/> -->	<!-- only used if mail.smtp.auth set to true -->
-        <property name="port" value="25"/>    			<!-- should normally be set to 587 if mail.smtp.auth is true, otherwise 25 -->
-        <property name="javaMailProperties">
-            <value>
-                mail.debug=false
-                mail.smtp.auth=false
-                mail.smtp.starttls.enable=false
-                mail.smtp.ssl.enable=false
-            </value>
-        </property>
-    </bean>
-</beans>
+<!--    <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">-->
+<!--        <property name="exceptionMappings">-->
+<!--            <props>-->
+<!--                <prop key="java.lang.Exception">/error/500</prop>-->
+<!--                <prop key="java.lang.AccessDeniedException">/error/403</prop>-->
+<!--            </props>-->
+<!--        </property>-->
+<!--    </bean>-->
+<!--  -->
+<!--    <bean class="org.springframework.mail.javamail.JavaMailSenderImpl">-->
+<!--        <property name="defaultEncoding" value="UTF-8"/>-->
+<!--        <property name="host" value="smtp.host.url"/>	&lt;!&ndash; shall be adapted to point to your mail server &ndash;&gt;-->
+<!--        &lt;!&ndash; <property name="username" value="UN"/> &ndash;&gt;	&lt;!&ndash; only used if mail.smtp.auth set to true &ndash;&gt;-->
+<!--        &lt;!&ndash; <property name="password" value="PW"/> &ndash;&gt;	&lt;!&ndash; only used if mail.smtp.auth set to true &ndash;&gt;-->
+<!--        <property name="port" value="25"/>    			&lt;!&ndash; should normally be set to 587 if mail.smtp.auth is true, otherwise 25 &ndash;&gt;-->
+<!--        <property name="javaMailProperties">-->
+<!--            <value>-->
+<!--                mail.debug=false-->
+<!--                mail.smtp.auth=false-->
+<!--                mail.smtp.starttls.enable=false-->
+<!--                mail.smtp.ssl.enable=false-->
+<!--            </value>-->
+<!--        </property>-->
+<!--    </bean>-->
+<!--</beans>-->

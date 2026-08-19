@@ -58,23 +58,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import javax.ejb.ObjectNotFoundException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
+import jakarta.ejb.ObjectNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.avro.AvroRemoteException;
-import org.apache.commons.fileupload.disk.DiskFileItem;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.log4j.Logger;
 import org.brapi.v2.api.AllelematrixApiController;
 import org.brapi.v2.api.ServerinfoApi;
 import org.brapi.v2.model.*;
@@ -83,6 +88,8 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.ga4gh.methods.SearchReferenceSetsRequest;
 import org.ga4gh.methods.SearchReferenceSetsResponse;
 import org.ga4gh.models.ReferenceSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -103,10 +110,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -177,12 +183,7 @@ import fr.cirad.web.controller.gigwa.base.IGigwaViewController;
 import fr.cirad.web.controller.rest.BrapiRestController;
 import fr.cirad.web.controller.security.UserPermissionController;
 import htsjdk.samtools.util.BlockCompressedInputStream;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import springfox.documentation.annotations.ApiIgnore;
-
+import org.springframework.beans.factory.annotation.Value;
 /**
  * The Class GigwaRestController.
  */
@@ -193,8 +194,6 @@ public class GigwaRestController extends ControllerInterface {
 	@Autowired AuthenticationManager authenticationManager;
 
 	@Autowired SecurityContextRepository repository;
-
-	@Autowired private CommonsMultipartResolver uploadResolver;
 
 	@Autowired private TokenManager tokenManager;
 
@@ -216,10 +215,13 @@ public class GigwaRestController extends ControllerInterface {
 
 	@Autowired private AllelematrixApiController allelematrixApiController;
 
+	@Value("${spring.servlet.multipart.max-request-size:500MB}")
+	private DataSize maxRequestSize;
+
 	/**
 	 * The Constant LOG.
 	 */
-	private static final Logger LOG = Logger.getLogger(GigwaRestController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(GigwaRestController.class);
 
 	/**
 	 * The view controllers.
@@ -300,8 +302,8 @@ public class GigwaRestController extends ControllerInterface {
 	 * @throws UnsupportedEncodingException
 	 * @throws IllegalArgumentException
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GET_SESSION_TOKEN, notes = "Generate a token. The obtained token then needs to be passed along with every request.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = GET_SESSION_TOKEN, description =  "Generate a token. The obtained token then needs to be passed along with every request.")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success") })
 	@RequestMapping(value = BASE_URL + GET_SESSION_TOKEN, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<String, String> generateToken(HttpServletRequest request, HttpServletResponse response, @RequestBody(required = false) UserInfo userInfo) throws IllegalArgumentException, UnsupportedEncodingException {
         if (userInfo != null && (userInfo.getUsername() == null || userInfo.getUsername().isEmpty() ||  userInfo.getPassword() == null || userInfo.getPassword().isEmpty())) {
@@ -361,10 +363,10 @@ public class GigwaRestController extends ControllerInterface {
 	 *         htsjdk.variant.variantcontext.Type
 	 * @throws IOException
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getVariantTypes", notes = "get availables variant types in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getVariantTypes", description =  "get availables variant types in a referenceSet and variantSet. ")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + VARIANT_TYPES_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public List<String> getVariantTypes(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
 		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -382,10 +384,11 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getRunList", notes = "get availables runs in a project. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getRunList", description =  "get availables runs in a project. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + PROJECT_RUN_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<Integer, List<String>> getRunsByProjects(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -404,10 +407,11 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getHostList", notes = "get availables hosts.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "Unauthorized resource") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getHostList", description =  "get availables hosts.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "Unauthorized resource") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + HOSTS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<String>> getHostList(HttpServletRequest request, HttpServletResponse resp) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -433,10 +437,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, List<Integer>> containing distinct number of alleles in JSON format
 	 * @throws Exception 
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getNumberOfAlleles", notes = "get availables alleles count in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getNumberOfAlleles", description =  "get availables alleles count in a referenceSet and variantSet. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + NUMBER_ALLELE_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, List<Integer>> getNumberOfAlleles(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
 		String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -496,10 +501,10 @@ public class GigwaRestController extends ControllerInterface {
 	 *         JSON format
 	 * @throws Exception 
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getEffectAnnotations", notes = "get availables effect annotations in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getEffectAnnotations", description =  "get availables effect annotations in a referenceSet and variantSet. ")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + EFFECT_ANNOTATION_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, TreeSet<String>> getEffectAnnotations(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -525,10 +530,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return List<String> field IDs
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "listSearchableAnnotationFields", notes = "Lists searchable annotation fields in a referenceSet's variantSet")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "listSearchableAnnotationFields", description =  "Lists searchable annotation fields in a referenceSet's variantSet")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + SEARCHABLE_ANNOTATION_FIELDS_URL + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> listSearchableAnnotationFields(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -554,9 +560,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return List<Integer> containing distinct ploidy levels found among specified variantSets
 	 * @throws Exception 
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getPloidyLevel", notes = "return the ploidy level in a referenceSet and variantSet. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getPloidyLevel", description =  "return the ploidy level in a referenceSet and variantSet. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + PLOIDY_LEVEL_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public List<Integer> getPloidyLevel(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -574,9 +582,9 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getGenotypePatternsAndDescriptions", notes = "get the list of genotype patterns")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"), })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getGenotypePatternsAndDescriptions", description =  "get the list of genotype patterns")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"), })
+	@Hidden
 	@RequestMapping(value = BASE_URL + GENOTYPE_PATTERNS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public HashMap<String, String> getGenotypePatternsAndDescriptions() {
 		return GenotypingDataQueryBuilder.getGenotypePatternToDescriptionMap();
@@ -588,9 +596,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @return Map<String, ProgressIndicator>
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = PROGRESS_PATH, notes = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-							@ApiResponse(code = 204, message = "No progress indicator") })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = PROGRESS_PATH, description = "Get the progress status of a process from its token. If no current process is associated with this token, returns null")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "204", description = "No progress indicator")
+	})
 	@RequestMapping(value = BASE_URL + PROGRESS_PATH, method = RequestMethod.GET, produces = "application/json")
 	public ProgressIndicator getProcessProgress(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "progressToken", required = false) final String progressToken) {
 		String processId = progressToken != null ? progressToken : tokenManager.readToken(request);
@@ -664,9 +674,9 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param request
 	 * @return Map<String, Boolean> true if aborted successfully
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = ABORT_PROCESS_PATH, notes = "abort a process from its ID. If there is a process with this id running, and if the process aborted successfully, will return true. ")
-	@ApiResponses(value = { @ApiResponse(code = 204, message = "Success") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = ABORT_PROCESS_PATH, description =  "abort a process from its ID. If there is a process with this id running, and if the process aborted successfully, will return true. ")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "204", description = "Success") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + ABORT_PROCESS_PATH, method = RequestMethod.DELETE, produces = "application/json")
 	public Map<String, Boolean> abortProcess(HttpServletRequest request, @RequestParam(value = "progressToken", required = false) final String progressToken) {
 		String processId = progressToken != null ? progressToken : tokenManager.readToken(request);
@@ -680,7 +690,7 @@ public class GigwaRestController extends ControllerInterface {
 	 *
 	 * @param request
 	 */
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + CLEAR_TOKEN_PATH, method = RequestMethod.DELETE)
 	public void clearToken(HttpServletRequest request, HttpServletResponse resp) {
 		String token = tokenManager.readToken(request);
@@ -700,7 +710,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, Boolean> true if could drop temporary collection
 	 * @throws InterruptedException 
 	 */
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + DROP_TEMP_COL_PATH + "/{referenceSetId}", method = RequestMethod.DELETE, produces = "application/json")
 	public Map<String, Boolean> dropTempCollection(HttpServletRequest request, HttpServletResponse resp, @PathVariable String referenceSetId) throws IOException, InterruptedException {
 		Map<String, Boolean> response = new HashMap<>();
@@ -731,11 +741,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, Long> containing density data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = DENSITY_DATA_PATH, notes = "get density data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = DENSITY_DATA_PATH, description =  "get density data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + DENSITY_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Long> getDensityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -763,11 +773,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, Double> containing Fst data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = FST_DATA_PATH, notes = "get Fst data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = FST_DATA_PATH, description =  "get Fst data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + FST_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Double> getFstData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -795,11 +805,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return List<Map<Long, Double>> containing TajimaD data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = TAJIMAD_DATA_PATH, notes = "get Tajima's D data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = TAJIMAD_DATA_PATH, description =  "get Tajima's D data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + TAJIMAD_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public List<Map<Long, Double>> getTajimaDData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -827,11 +837,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, Float> containing density data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = MAF_DATA_PATH, notes = "get MAF data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = MAF_DATA_PATH, description =  "get MAF data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + MAF_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Float> getMafData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -859,11 +869,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, Float> containing density data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = MISSING_DATA_PATH, notes = "get missing data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = MISSING_DATA_PATH, description =  "get missing data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + MISSING_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Float> getMissingData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -891,11 +901,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, Float> containing density data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = HETZ_DATA_PATH, notes = "get heterozygosity data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = HETZ_DATA_PATH, description =  "get heterozygosity data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + HETZ_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Float> getHeterozygosityData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gdr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gdr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -922,11 +932,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param gr
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = IGV_DATA_PATH, notes = "get IGV data from selected variants")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = IGV_DATA_PATH, description =  "get IGV data from selected variants")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + IGV_DATA_PATH, method = RequestMethod.POST, consumes = "application/json")
     public void getSelectionIgvData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbChartRequest gr) throws Exception {
 		String token = tokenManager.readToken(request);
@@ -948,7 +958,7 @@ public class GigwaRestController extends ControllerInterface {
 	/**
 	 * Get the mandatory fields for importing Samples and Individuals
 	 */
-	@ApiIgnore
+	@Hidden
 	@GetMapping(value = { BASE_URL + MANDATORY_MD_FIELDS, BASE_URL + MANDATORY_MD_FIELDS + "/{module}" }, produces = "application/json")
 	public HashMap<String, LinkedHashMap<String, String>> getMandatoryMetadataFields(@PathVariable(required = false) String module) {
 		HashMap<String, LinkedHashMap<String, String>> result = new HashMap<>();
@@ -960,7 +970,7 @@ public class GigwaRestController extends ControllerInterface {
 	/**
 	 * Get the genome configs for the IGV.js browser
 	 */
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + IGV_GENOME_CONFIG_PATH, method = RequestMethod.GET, produces = "application/json")
 	public List<HashMap<String, String>> getIGVGenomeConfig() {
 		List<HashMap<String, String>> configs = new ArrayList<>();
@@ -989,11 +999,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<String, Map<Long, Long>> containing plot data in JSON format
 	 * @throws Exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VCF_FIELD_PLOT_DATA_PATH, notes = "get plot data from selected variants, using numeric values for a vcf info field")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "wrong parameters"),
-			@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = VCF_FIELD_PLOT_DATA_PATH, description =  "get plot data from selected variants, using numeric values for a vcf info field")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + VCF_FIELD_PLOT_DATA_PATH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	public Map<Long, Integer> getVcfFieldPlotData(HttpServletRequest request, HttpServletResponse resp, @RequestBody MgdbVcfFieldPlotRequest gvfpr, @RequestParam(value = "progressToken", required = false) final String progressToken) throws Exception {
 		String[] info = gvfpr.getVariantSetId().split(Helper.ID_SEPARATOR);
@@ -1021,7 +1031,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @throws InterruptedException 
 	 * @throws NumberFormatException 
 	 */
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + DISTINCT_SEQUENCE_SELECTED_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Collection<String> getDistinctSequencesSelected(HttpServletRequest request, HttpServletResponse resp,
 			@PathVariable String variantSetId) throws Exception {
@@ -1049,10 +1059,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return Map<Long, String> containing the list of datasets recently exported by this user, along with corresponding timestamps
 	 * @throws IOException
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EXPORTED_DATA_PATH + "/{username}", notes = "Get recent history of files exported by the specified user")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = EXPORTED_DATA_PATH + "/{username}", description =  "Get recent history of files exported by the specified user")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + EXPORTED_DATA_PATH + "/{username}", produces = "application/json")
 	public Map<Long, String> getExportedData(HttpServletRequest request, HttpServletResponse resp, @PathVariable String username) throws IOException {
 		String token = tokenManager.readToken(request);
@@ -1084,10 +1095,11 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param variantSetId
 	 * @return Map<String, Map<String, String>> containing the list of annotation headers in a referenceSet and variantSet
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = ANNOTATION_HEADERS_PATH + "/{variantSetId}", notes = "get annotation headers in a referenceSet and variantSet.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = ANNOTATION_HEADERS_PATH + "/{variantSetId}", description =  "get annotation headers in a referenceSet and variantSet.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + ANNOTATION_HEADERS_PATH + "/{variantSetId}", method = RequestMethod.GET, produces = "application/json")
 	public Map<String, Map<String, String>> getHeaderDescription(HttpServletRequest request, HttpServletResponse resp, @PathVariable String variantSetId) throws Exception {
     	String info[] = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
@@ -1112,9 +1124,9 @@ public class GigwaRestController extends ControllerInterface {
 	 * @param resp
 	 * @return
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getExportFormat", notes = "get available exports formats and descriptions")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getExportFormat", description =  "get available exports formats and descriptions")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + EXPORT_FORMAT_PATH, method = RequestMethod.GET, produces = "application/json")
 	public TreeMap<String, HashMap<String, String>> getExportFormats(HttpServletRequest request, HttpServletResponse resp) throws IOException {
 		return ga4ghService.getExportFormats();
@@ -1124,11 +1136,12 @@ public class GigwaRestController extends ControllerInterface {
 	 * export results in a specific format as a .zip file
 	 *
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = EXPORT_DATA_PATH, notes = "export selected variant data. ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = HashMap.class),
-	@ApiResponse(code = 400, message = "wrong parameters"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
-	@ApiIgnore
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = EXPORT_DATA_PATH, description =  "export selected variant data. ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HashMap.class))),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
+	@Hidden
 	@RequestMapping(value = BASE_URL + EXPORT_DATA_PATH, method = RequestMethod.POST, consumes =  "application/json")
     public void exportData(HttpServletRequest request, HttpServletResponse resp, @RequestBody GigwaSearchVariantsExportRequest gsver) throws IOException, Exception {
         String token = tokenManager.readToken(request);
@@ -1199,7 +1212,7 @@ public class GigwaRestController extends ControllerInterface {
 		return viewControllers;
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + GALAXY_HISTORY_PUSH, method = RequestMethod.GET, produces = "application/json")
 	public void pushFileToGalaxyHistory(HttpServletRequest request, HttpServletResponse response, @RequestParam("galaxyUrl") String galaxyInstanceUrl, @RequestParam("galaxyApiKey") String galaxyApiKey, @RequestParam("fileUrl") String fileUrl)
 	{
@@ -1263,7 +1276,7 @@ public class GigwaRestController extends ControllerInterface {
       	}
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = IMPORT_PAGE_URL)
 	public ModelAndView setupImportPage()
 	{
@@ -1276,8 +1289,8 @@ public class GigwaRestController extends ControllerInterface {
 		return mav;
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataValidationURL, notes = "Import metadata for individuals.")
-    @RequestMapping(value = BASE_URL + metadataValidationURL, method = RequestMethod.POST)
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = metadataValidationURL, description =  "Import metadata for individuals.")
+	@RequestMapping(value = BASE_URL + metadataValidationURL, method = RequestMethod.POST)
     public @ResponseBody Collection<String> checkMetaDataAndReturnBrapiEndpoints(HttpServletRequest request, HttpServletResponse response,
     		@RequestParam("moduleExistingMD") final String sModule,
             @RequestParam(value = "metadataFile1", required = false) final String dataUri1,
@@ -1420,7 +1433,7 @@ public class GigwaRestController extends ControllerInterface {
         return result;
 	}
 	
-    @ApiIgnore
+    @Hidden
 	@GetMapping(value = BASE_URL + snpclustEditionURL)
 	public @ResponseBody String snpclustEditionURL(HttpServletRequest request, @RequestParam("module") final String sModule, @RequestParam("project") final int projId) {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -1458,21 +1471,13 @@ public class GigwaRestController extends ControllerInterface {
                 	fileExtension = synonymExtensions.get(fileExtension);
                 if (filesByExtension.containsKey(fileExtension))
                     throw new Exception("Each provided datasource entry must be of a different kind!");
-                else {
-                    File file = null;
-                    if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
-                        // make sure we transfer it to a file in the same location so it is a move rather than a copy!
-                        File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-                        if (uploadedFile != null)
-                            file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-                    }
-                    if (file == null) {
-                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
-                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
-                    }
-                    mpf.transferTo(file);
-                    filesByExtension.put(fileExtension, file.getAbsolutePath());
-                }
+				else {
+					File file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
+					LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+
+					mpf.transferTo(file);
+					filesByExtension.put(fileExtension, file.getAbsolutePath());
+				}
             }
         }
 
@@ -1489,9 +1494,9 @@ public class GigwaRestController extends ControllerInterface {
         }
         return filesByExtension;
 	}
-	
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = metadataImportSubmissionURL, notes = "Import metadata for individuals.")
-    @RequestMapping(value = BASE_URL + metadataImportSubmissionURL, method = RequestMethod.POST)
+
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = metadataImportSubmissionURL, description =  "Import metadata for individuals.")
+	@RequestMapping(value = BASE_URL + metadataImportSubmissionURL, method = RequestMethod.POST)
     public @ResponseBody String importMetaData(HttpSession session, HttpServletRequest request, HttpServletResponse response,
     		@RequestParam("moduleExistingMD") final String sModule,
             @RequestParam(value = "metadataFile1", required = false) final String dataUri1,
@@ -1763,7 +1768,7 @@ public class GigwaRestController extends ControllerInterface {
 	 * @return the token to use for checking progress
 	 * @throws Exception the exception
 	 */
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = genotypeImportSubmissionURL, notes = "Import genotyping data.")
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = genotypeImportSubmissionURL, description =  "Import genotyping data.")
 	@RequestMapping(value = BASE_URL + genotypeImportSubmissionURL, method = RequestMethod.POST)
 	public @ResponseBody String importGenotypingData(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(value = "host", required = false) String sHost, @RequestParam(value = "module", required = false) final String sModule,
@@ -1839,17 +1844,9 @@ public class GigwaRestController extends ControllerInterface {
 						continue;
 					}
 
-					File file = null;
-					if (CommonsMultipartFile.class.isAssignableFrom(mpf.getClass()) && DiskFileItem.class.isAssignableFrom(((CommonsMultipartFile) mpf).getFileItem().getClass())) {
-						// make sure we transfer it to a file in the same location so it is a move rather than a copy!
-						File uploadedFile = ((DiskFileItem) ((CommonsMultipartFile) mpf).getFileItem()).getStoreLocation();
-						if (uploadedFile != null)
-						    file = new File(uploadedFile.getAbsolutePath() + "." + fileExtension);
-					}
-					if (file == null) {
-                        file = File.createTempFile("importByUpload_", "_" + mpf.getOriginalFilename());
-                        LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
-					}
+					File file = File.createTempFile("importByUpload_", "." + mpf.getOriginalFilename());
+					LOG.debug("Had to transfer MultipartFile to tmp directory for " + mpf.getOriginalFilename());
+
 					mpf.transferTo(file);
 					nTotalUploadSize += file.length();
 					nTotalImportSize += file.length() * (fileExtension.toLowerCase().equals("gz") ? 20 : 1);
@@ -2573,7 +2570,7 @@ public class GigwaRestController extends ControllerInterface {
 	}
 
 	/* This is a proxy method so we can call this URL insecurely even when Gigwa runs in https mode */
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + IGV_GENOME_LIST_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getIgvGenomeListURL() {
 		String url = appConfig.get("igvGenomeListUrl");
@@ -2591,13 +2588,13 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + VERSION_PATH, method = RequestMethod.GET, produces = "application/text")
 	public String getVersion() {
 		return SwaggerConfig.getGigwaVersion();
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + TERMS_OF_USE_COOKIE_DURATION_IN_HOURS_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getTermsOfUseCookieDurationInHours() {
 		try {
@@ -2608,7 +2605,7 @@ public class GigwaRestController extends ControllerInterface {
 		}
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + CONFIG_PARAM_URL, method = RequestMethod.GET, produces = "application/json")
 	public Map<String, String> getConfigParams(String pattern) {
 		if (!pattern.endsWith("*"))
@@ -2617,19 +2614,19 @@ public class GigwaRestController extends ControllerInterface {
 			return appConfig.getPrefixed(pattern.substring(0, pattern.length() - 1));
 	}
 	
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + DEFAULT_GENOME_BROWSER_URL, method = RequestMethod.GET, produces = "application/text")
 	public String getDefaultGenomeBrowserURL(@RequestParam("module") String sModule) {
 		return appConfig.get("genomeBrowser-" + sModule, "");
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + ONLINE_OUTPUT_TOOLS_URL, method = RequestMethod.GET, produces = "application/json")
 	public HashMap<String, HashMap<String, String>> getOnlineOutputToolURLs() {
 		return exportHelper.getOnlineOutputToolURLs();
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + ONLINE_TOOL_URLS_FOR_GIVEN_EXPORT, method = RequestMethod.GET, produces = "application/json")
 	public HashMap<String, String> getToolURLsForExport(@RequestParam String exportFormat, @RequestParam String exportUrl, @RequestParam String fileExtensions) {
 	    HashMap<String, String> fileUrls = new HashMap<>();	    
@@ -2641,7 +2638,7 @@ public class GigwaRestController extends ControllerInterface {
 	    return exportHelper.getToolURLsForExport(exportFormat, fileUrls);
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + MAX_UPLOAD_SIZE_PATH, method = RequestMethod.GET)
 	public Long maxUploadSize(HttpServletRequest request, @RequestParam(required=false) Boolean capped) {
 		String maxSize = null;
@@ -2658,7 +2655,7 @@ public class GigwaRestController extends ControllerInterface {
 		if (!Boolean.TRUE.equals(capped))
 			return nMaxSizeMb;
 
-		return Math.min(uploadResolver.getFileUpload().getSizeMax() / (1024 * 1024), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
+		return Math.min(maxRequestSize.toMegabytes(), fIsAdmin ? Integer.MAX_VALUE : nMaxSizeMb);
 	}
 	
 	public void buildResponse(HttpServletResponse resp, int httpCode, String message) throws IOException {
@@ -2684,7 +2681,7 @@ public class GigwaRestController extends ControllerInterface {
 		buildResponse(resp, HttpServletResponse.SC_NOT_FOUND, "This resource does not exist");
 	}
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + SAVE_QUERY_URL, method = RequestMethod.POST, consumes = "application/json")
     public void bookmarkQuery(HttpServletRequest request, HttpServletResponse response) throws Exception {
         boolean workWithSamples = "true".equalsIgnoreCase(request.getHeader("workWithSamples"));
@@ -2739,7 +2736,7 @@ public class GigwaRestController extends ControllerInterface {
     	response.setStatus(HttpServletResponse.SC_CREATED);
     }
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + LIST_SAVED_QUERIES_URL, method = RequestMethod.GET, produces = "application/json")
     public HashMap<String, String> listBookmarkedQueries(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule) throws IOException {
         String token = tokenManager.readToken(request);
@@ -2759,7 +2756,7 @@ public class GigwaRestController extends ControllerInterface {
         return result;
     }
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + LOAD_QUERY_URL, method = RequestMethod.GET, produces = "application/json")
     public HashMap<String, Object> loadBookmarkedQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
         String token = tokenManager.readToken(request);
@@ -2784,7 +2781,7 @@ public class GigwaRestController extends ControllerInterface {
         return cachedQuery.getSavedFilters();
     }
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + DELETE_QUERY_URL, method = RequestMethod.DELETE, produces = "application/json")
     public void deleteBookmarkedQuery(HttpServletRequest request, HttpServletResponse response, @RequestParam("module") String sModule, @RequestParam String queryId) throws IOException {
         String token = tokenManager.readToken(request);
@@ -2804,10 +2801,11 @@ public class GigwaRestController extends ControllerInterface {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = VARIANTS_LOOKUP, notes = "Get variants IDs ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
-	@ApiResponse(code = 400, message = "wrong parameters"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = VARIANTS_LOOKUP, description =  "Get variants IDs ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
     @RequestMapping(value = BASE_URL + VARIANTS_LOOKUP, method = RequestMethod.GET, produces = "application/json")
     public List<Comparable> searchableVariantsLookup(
             HttpServletRequest request, HttpServletResponse resp,
@@ -2822,7 +2820,7 @@ public class GigwaRestController extends ControllerInterface {
         return null;
     }
 
-    @ApiIgnore
+    @Hidden
 	@RequestMapping(value = BASE_URL + DISTINCT_INDIVIDUAL_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
 	public LinkedHashMap<String, Set<String>> distinctIndividualMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final String projIDs, @RequestBody HashMap<String, Object> reqBody) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -2831,7 +2829,7 @@ public class GigwaRestController extends ControllerInterface {
 		return MgdbDao.getInstance().distinctIndividualMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), (Collection<String>) reqBody.get("individuals"));
 	}
     
-    @ApiIgnore
+    @Hidden
 	@RequestMapping(value = BASE_URL + DISTINCT_SAMPLE_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
 	public LinkedHashMap<String, Set<String>> distinctSampleMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestParam(required = false) final String projIDs, @RequestBody HashMap<String, Object> reqBody) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -2840,7 +2838,7 @@ public class GigwaRestController extends ControllerInterface {
         return MgdbDao.getInstance().distinctSampleMetadata(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null);
 	}
     
-	@ApiIgnore
+	@Hidden
     @RequestMapping(value = BASE_URL + FILTER_INDIVIDUALS_USING_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
     public Collection<Individual> filterIndividualsUsingMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, Set<String>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
         Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -2849,7 +2847,7 @@ public class GigwaRestController extends ControllerInterface {
         return MgdbDao.getInstance().loadIndividualsForUser(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters).values();
     }
 
-	@ApiIgnore
+	@Hidden
 	@RequestMapping(value = BASE_URL + FILTER_SAMPLES_USING_METADATA + "/{module}", method = RequestMethod.POST, produces = "application/json")
 	public Collection<GenotypingSample> filterSamplesUsingMetadata(HttpServletRequest request, HttpServletResponse response, @PathVariable String module, @RequestBody LinkedHashMap<String, LinkedHashMap<String, Set<String>>> filters, @RequestParam(required = false) final String projIDs) throws IOException {
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
@@ -2859,10 +2857,11 @@ public class GigwaRestController extends ControllerInterface {
         return MgdbDao.getInstance().loadSamplesForUser(module, sUserName, Arrays.stream(splitProjIDs).map(pjId -> Integer.parseInt(pjId)).toList(), null, filters, !fIncludeMetadataInResponse, !fIncludeMetadataInResponse).values();
 	}
 
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENES_LOOKUP , notes = "Get genes names ")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = List.class),
-	@ApiResponse(code = 400, message = "wrong parameters"),
-	@ApiResponse(code = 401, message = "you don't have rights on this database, please log in") })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = GENES_LOOKUP , description =  "Get genes names ")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode  = "200", description = "Success"),
+			@ApiResponse(responseCode  = "400", description = "wrong parameters"),
+			@ApiResponse(responseCode  = "401", description = "you don't have rights on this database, please log in") })
     @RequestMapping(value = BASE_URL + GENES_LOOKUP, method = RequestMethod.GET, produces = "application/json")
     public List<String> searchableGenesLookup(
             HttpServletRequest request, HttpServletResponse resp,
@@ -2876,8 +2875,8 @@ public class GigwaRestController extends ControllerInterface {
 
         return null;
     }
-    
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = INSTANCE_CONTENT_SUMMARY)
+
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = INSTANCE_CONTENT_SUMMARY)
 	@GetMapping(value = BASE_URL + INSTANCE_CONTENT_SUMMARY, produces = "application/json")
 	public @ResponseBody Map<String, Object> getAllDatabaseInfo(HttpServletRequest request, HttpServletResponse response) throws AvroRemoteException {
 		SearchReferenceSetsResponse accessibleDBs = ga4ghController.searchReferenceSets(request, new SearchReferenceSetsRequest());
@@ -2927,8 +2926,8 @@ public class GigwaRestController extends ControllerInterface {
 		return resultObjects;
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "getUserInfo", notes = "get given user info")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success") })
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = "getUserInfo", description =  "get given user info")
+	@ApiResponses(value = { @ApiResponse(responseCode  = "200", description = "Success") })
 	@RequestMapping(value = BASE_URL + "/userInfo", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<fr.cirad.tools.security.UserInfo> getUserInfo(HttpServletRequest request, HttpServletResponse resp) throws IOException {
 		fr.cirad.tools.security.UserInfo userInfo = tokenManager.getUserInfo(tokenManager.readToken(request));
@@ -2938,7 +2937,7 @@ public class GigwaRestController extends ControllerInterface {
 		return new ResponseEntity<fr.cirad.tools.security.UserInfo>(userInfo, HttpStatus.OK);
 	}
 
-	@ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = GENOTYPE_MATRIX, notes = "Get genotype matrix.")
+	@Operation(security = { @SecurityRequirement(name = "AuthorizationToken") }, summary = GENOTYPE_MATRIX, description =  "Get genotype matrix.")
 	@RequestMapping(value = BASE_URL + GENOTYPE_MATRIX, method = RequestMethod.POST)
 	public ResponseEntity<GenotypeMatrixResponse> searchGenotypes(
 			@Parameter(in = ParameterIn.HEADER, description = "HTTP HEADER - Token used for Authorization   <strong> Bearer {token_string} </strong>" ,schema=@Schema())

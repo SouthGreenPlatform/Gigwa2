@@ -26,9 +26,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.ObjectNotFoundException;
+import jakarta.ejb.ObjectNotFoundException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -54,7 +55,7 @@ import fr.cirad.tools.security.base.AbstractTokenManager;
 @Component
 public class TokenManager extends AbstractTokenManager {
 
-    static private final Logger LOG = Logger.getLogger(TokenManager.class);
+    static private final Logger LOG = LoggerFactory.getLogger(TokenManager.class);
 
     private Map<String, Long> tokenLastUseTimes = new HashMap<>();
     private Map<String, Authentication> tokenToAuthenticationMap = new HashMap<>();

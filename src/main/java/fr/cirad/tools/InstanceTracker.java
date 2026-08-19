@@ -6,9 +6,10 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -20,7 +21,7 @@ import fr.cirad.tools.mongo.MongoTemplateManager;
 @Configuration
 @EnableScheduling
 public class InstanceTracker {
-	private static final Logger LOG = Logger.getLogger(InstanceTracker.class);
+	private static final Logger LOG = LoggerFactory.getLogger(InstanceTracker.class);
 	
 	@Autowired private ReloadableInMemoryDaoImpl userDao;
 	@Autowired private AppConfig appConfig;

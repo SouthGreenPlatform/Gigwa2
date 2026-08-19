@@ -20,16 +20,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.log4j.Logger;
 import org.brapi.v2.model.Metadata;
 import org.brapi.v2.model.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -47,7 +49,7 @@ import fr.cirad.tools.security.base.AbstractTokenManager;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-	protected static final Logger LOG = Logger.getLogger(GlobalExceptionHandler.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 	
 	@Autowired private SimpleMappingExceptionResolver exceptionResolver;
 	@Autowired private AbstractTokenManager tokenManager;
@@ -59,10 +61,10 @@ public class GlobalExceptionHandler {
 	  {
 	      HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
-	      if (ex instanceof ResponseStatusException)
-	          status = ((ResponseStatusException) ex).getStatus();
-
-	      else if (ex instanceof AccessDeniedException)
+	      if (ex instanceof ResponseStatusException) {
+			  HttpStatusCode statusCode = ((ResponseStatusException) ex).getStatusCode();
+			  status = HttpStatus.valueOf(statusCode.value());
+		  } else if (ex instanceof AccessDeniedException)
 	          status = HttpStatus.FORBIDDEN;
 
 	      response.setStatus(status.value());
