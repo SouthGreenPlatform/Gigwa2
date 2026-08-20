@@ -8,27 +8,13 @@ public final class TestMongoContainer {
     private static final MongoDBContainer CONTAINER =
             new MongoDBContainer(DockerImageName.parse("mongo:4.4"));
 
-    static {
-        CONTAINER.start();
-
-        System.setProperty("test.mongo.host", CONTAINER.getHost());
-        System.setProperty(
-                "test.mongo.port",
-                String.valueOf(CONTAINER.getFirstMappedPort())
-        );
-
-        System.out.println(
-                ">>> Test MongoDB at "
-                        + CONTAINER.getHost()
-                        + ":"
-                        + CONTAINER.getFirstMappedPort()
-        );
-    }
-
     public static MongoDBContainer get() {
+        if (!CONTAINER.isRunning()) {
+            CONTAINER.start();
+            System.out.println(">>> Test MongoDB at " + CONTAINER.getConnectionString());
+        }
         return CONTAINER;
     }
 
-    private TestMongoContainer() {
-    }
+    private TestMongoContainer() {}
 }

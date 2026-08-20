@@ -15,7 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.util.*;
@@ -23,7 +28,6 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) //allows to inject AlleleMatrixController
 public class BrAPITests {
 
@@ -42,10 +46,14 @@ public class BrAPITests {
     @Autowired
     private SamplesApiController sampleApi;
 
+    @DynamicPropertySource
+    static void mongoProps(DynamicPropertyRegistry registry) {
+        registry.add("mongo.hosts.defaultMongoHost.uri",
+                TestMongoContainer.get()::getReplicaSetUrl);
+    }
+
     @BeforeAll
     void setUpBeforeClass() throws Exception {
-        TestMongoContainer.get();
-
         Map<String, String> sampleToIndividualMap = Map.of(
                 "SP_1", "IND_A",
                 "SP_2", "IND_A",
@@ -145,7 +153,7 @@ public class BrAPITests {
 
     /* test 0: allelematrix on studyDbId */
     @Test
-    public void test00_searchByStudyDbId() throws InterruptedException, ObjectNotFoundException {
+    public void test05_searchByStudyDbId() throws InterruptedException, ObjectNotFoundException {
         AlleleMatrixSearchRequest req = new AlleleMatrixSearchRequest();
         req.setStudyDbIds(List.of("testModule§1"));
         req.addDataMatrixAbbreviationsItem("GT");
@@ -167,9 +175,9 @@ public class BrAPITests {
         assertEquals(3, germplasmDbIds.size());
     }
 
-    /* test 1: allelematrix on variantSetDbId */
+    /* test 6: allelematrix on variantSetDbId */
     @Test
-    public void test01_searchByVariantSetDbId() throws InterruptedException, ObjectNotFoundException {
+    public void test06_searchByVariantSetDbId() throws InterruptedException, ObjectNotFoundException {
         AlleleMatrixSearchRequest req = new AlleleMatrixSearchRequest();
         req.addVariantSetDbIdsItem("testModule§1§run1");
         req.addDataMatrixAbbreviationsItem("GT");
@@ -191,9 +199,9 @@ public class BrAPITests {
         assertEquals(3, germplasmDbIds.size());
     }
 
-    /* test 2: allelematrix on variantSetDbId */
+    /* test 7: allelematrix on variantSetDbId */
     @Test
-    public void test02_searchByVariantDbId() throws InterruptedException, ObjectNotFoundException {
+    public void test07_searchByVariantDbId() throws InterruptedException, ObjectNotFoundException {
         AlleleMatrixSearchRequest req = new AlleleMatrixSearchRequest();
         req.addVariantDbIdsItem("testModule§VAR_010");
         req.addDataMatrixAbbreviationsItem("GT");
@@ -215,9 +223,9 @@ public class BrAPITests {
         assertEquals(3, germplasmDbIds.size());
     }
 
-    /* test 3: allelematrix on sampleDbId */
+    /* test 8: allelematrix on sampleDbId */
     @Test
-    public void test03_searchByVariantDbId() throws InterruptedException, ObjectNotFoundException {
+    public void test08_searchByVariantDbId() throws InterruptedException, ObjectNotFoundException {
         AlleleMatrixSearchRequest req = new AlleleMatrixSearchRequest();
         req.addVariantDbIdsItem("testModule§VAR_010");
         req.addDataMatrixAbbreviationsItem("GT");

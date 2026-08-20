@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.junit.jupiter.Container;
@@ -32,13 +34,17 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 @SpringBootTest
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GigwaUnitTests {
 
+	@DynamicPropertySource
+	static void mongoProps(DynamicPropertyRegistry registry) {
+		registry.add("mongo.hosts.defaultMongoHost.uri",
+				TestMongoContainer.get()::getReplicaSetUrl);
+	}
+
 	@BeforeAll
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
-		TestMongoContainer.get();
 
 //		Reader datasources = new FileReader("src/main/resources/datasources.properties");
 //		Properties p = new Properties();

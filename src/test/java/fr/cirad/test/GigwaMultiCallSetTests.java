@@ -14,6 +14,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -27,7 +29,6 @@ import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 @SpringBootTest
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GigwaMultiCallSetTests {
 
@@ -40,10 +41,13 @@ public class GigwaMultiCallSetTests {
             "testModule§1§IND_F"
     );
 
+    @DynamicPropertySource
+    static void mongoProps(DynamicPropertyRegistry registry) {
+        registry.add("mongo.hosts.defaultMongoHost.uri",
+                TestMongoContainer.get()::getReplicaSetUrl);
+    }
     @BeforeAll
     public static void setUpBeforeClass() throws MalformedURLException, Exception {
-        TestMongoContainer.get();
-
         // Import the 3 VCF files into the SAME project, as 3 different runs.
         // Gigwa will compute the consensus genotype per (individual, variant)
         // via the "most frequent wins, tie = null" rule.
