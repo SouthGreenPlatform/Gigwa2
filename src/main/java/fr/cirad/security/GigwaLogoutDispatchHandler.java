@@ -7,8 +7,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import fr.cirad.tools.AppConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 import fr.cirad.tools.security.TokenManager;
@@ -21,6 +24,12 @@ public class GigwaLogoutDispatchHandler implements LogoutSuccessHandler {
 	private String defaultRedirect;
 	private Map<String, String> methodRedirects;
 	@Autowired private TokenManager tokenManager;
+
+	@Autowired
+	private GigwaClientRegistrationRepository clientRegistrationRepository;
+
+	@Autowired
+	private AppConfig appConfig;
 	
 	/**
 	 * @param defaultRedirect Page to redirect to when the user was not authenticated or when no redirect was defined for their authentication method
@@ -40,12 +49,29 @@ public class GigwaLogoutDispatchHandler implements LogoutSuccessHandler {
 	        return;
 	    }
 
-	    if (authentication == null || authentication.getPrincipal() == null)
-	        response.sendRedirect(defaultRedirect);
-	    else {
-	        UserWithMethod user = (UserWithMethod) authentication.getPrincipal();
-	        String redirect = methodRedirects.get(user.getMethod());
-	        response.sendRedirect(redirect == null ? defaultRedirect : redirect);
-	    }
+		if (authentication == null || authentication.getPrincipal() == null)
+			response.sendRedirect(defaultRedirect);
+		else if (authentication instanceof OAuth2AuthenticationToken) {
+			// OAuth2 logout
+			String registrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+			ClientRegistration clientRegistration = clientRegistrationRepository.findByRegistrationId(registrationId);
+			String logoutUrl = null;
+			if (clientRegistration != null) {
+				Map<String, Object> metadata = clientRegistration.getProviderDetails().getConfigurationMetadata();
+				logoutUrl = (String) metadata.get("end_session_endpoint");
+			}
+			if (logoutUrl != null) {
+				String redirect = appConfig.get("enforcedWebapRootUrl") + "/" + defaultRedirect;
+				response.sendRedirect(logoutUrl + "?post_logout_redirect_uri=" + redirect
+						+ "&client_id=" + clientRegistration.getClientId());
+			} else {
+				response.sendRedirect(defaultRedirect);
+			}
+		}
+		else {
+			UserWithMethod user = (UserWithMethod)authentication.getPrincipal();
+			String redirect = methodRedirects.get(user.getMethod());
+			response.sendRedirect(redirect == null ? defaultRedirect : redirect);
+		}
 	}
 }

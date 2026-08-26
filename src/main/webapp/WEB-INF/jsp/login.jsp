@@ -77,6 +77,11 @@
                             	<c:choose><c:when test='${!fn:startsWith(casOrganization, "??") && !empty casOrganization}'>${casOrganization}</c:when><c:otherwise>organization</c:otherwise></c:choose>
                             	account</a>
 							</c:if>
+							<c:forEach var="registration" items="${oauth2Providers}">
+                                <a class="btn btn-primary btn-block btn-large margin-top" href="/gigwa/oauth2/authorization/${registration.registrationId}">
+                                    Authenticate with <c:out value="${registration.registrationId}"/>
+                                </a>
+                            </c:forEach>
 							<c:choose>
 	                            <c:when test="${param.auth eq 'failure'}">
 	                                <div class="text-red margin-top-md">

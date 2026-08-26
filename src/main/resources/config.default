@@ -163,3 +163,8 @@ maxDistanceMatrixSize = 1E9
 
 # CSV list of domains (supporting wildcards) for which IGV.js will use a proxy to access genome / track files (workaround for CORS issues)
 igvProxiedDomains = jbrowse.southgreen.fr
+
+# OIDC servers, each entry should contain 4 strings separated with ";": name, issuer URL, client id, client secret (secret is optional)
+#oauth2config_1 = GitHub;https://github.com/login/oauth;<github_client_id>;<github_client_secret>
+#oauth2config_2 = Google;https://accounts.google.com;<google_client_id>;<google_client_secret>
+#oauth2config_3 = Keycloak;http://127.0.0.1:8085/realms/gigwa;<keycloak_client_id>;<keycloak_client_secret>
