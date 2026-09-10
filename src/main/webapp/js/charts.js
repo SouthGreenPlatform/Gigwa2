@@ -53,7 +53,6 @@ async function chartIndSelectionChanged() {
 	    groups = selectedValues.map(v => [v]);
 
 	let minRequiredGroups = currentChartType == "fst" ? 2 : currentChartType == null || (currentChartType == "density" && $("input.showHideSeriesBox:checked").length == 0 ? 0 : 1);
-	$('#showChartButton').prop('disabled', groups.length < minRequiredGroups);
 	$('#indSelectionCount').html("&nbsp;");
 	if (groups.length > 0) {
 		$('#indSelectionCount').html("<span class='timer'></span>");
@@ -113,12 +112,23 @@ async function chartIndSelectionChanged() {
 			}
 
 			const results = await Promise.all(currentChartType == "fst" ? groups.map(g => getSelectedIndividuals(g, true)) : [getSelectedIndividuals(selectedValues, true)]);
+			let emptyGroups = [];
+			for (let i = 0; i < results.length; i++)
+				if (results[i].length == 0) {
+					emptyGroups.push(groups[i]);
+					$("#plotGroupingMetadataValues option[value='" + groups[i] + "']").prop("disabled", true).prop("selected", false);
+				}
+			if (emptyGroups.length > 0) {
+				alert("No biological entities found for group(s): " + emptyGroups.join(", ") + "; consequently disabled from the selection list.");
+				groups = groups.filter(g => !emptyGroups.includes(g));
+			}
 			callSetIds = results[0];
 			additionalCallSetIds = results.length > 1 ? results.slice(1) : [];
 
 			updateIndSelectionCount();
 		}
 	}
+	$('#showChartButton').prop('disabled', groups.length < minRequiredGroups);
 
 	function updateIndSelectionCount() {
 		let allCallsetIDs = new Set(callSetIds.length > 0 || (groupOption != "__") ? callSetIds : (typeof getCallsetIDsWhenNoneExplicitlySelected != "undefined" ? getCallsetIDsWhenNoneExplicitlySelected() : []));
