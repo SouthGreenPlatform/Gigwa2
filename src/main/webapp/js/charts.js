@@ -112,15 +112,17 @@ async function chartIndSelectionChanged() {
 			}
 
 			const results = await Promise.all(currentChartType == "fst" ? groups.map(g => getSelectedIndividuals(g, true)) : [getSelectedIndividuals(selectedValues, true)]);
-			let emptyGroups = [];
-			for (let i = 0; i < results.length; i++)
-				if (results[i].length == 0) {
-					emptyGroups.push(groups[i]);
-					$("#plotGroupingMetadataValues option[value='" + groups[i] + "']").prop("disabled", true).prop("selected", false);
+			if (groupOption != "__") {
+				let emptyGroups = [];
+				for (let i = 0; i < results.length; i++)
+					if (results[i].length == 0) {
+						emptyGroups.push(groups[i]);
+						$("#plotGroupingMetadataValues option[value='" + groups[i] + "']").prop("disabled", true).prop("selected", false);
+					}
+				if (emptyGroups.length > 0) {
+					alert("No biological entities found for group(s): " + emptyGroups.join(", ") + "; consequently disabled from the selection list.");
+					groups = groups.filter(g => !emptyGroups.includes(g));
 				}
-			if (emptyGroups.length > 0) {
-				alert("No biological entities found for group(s): " + emptyGroups.join(", ") + "; consequently disabled from the selection list.");
-				groups = groups.filter(g => !emptyGroups.includes(g));
 			}
 			callSetIds = results[0];
 			additionalCallSetIds = results.length > 1 ? results.slice(1) : [];
