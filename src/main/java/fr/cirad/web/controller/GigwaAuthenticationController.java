@@ -1,5 +1,6 @@
 package fr.cirad.web.controller;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -128,7 +129,15 @@ public class GigwaAuthenticationController  {
 			return "redirect:" + LOGIN_RESET_PASSWORD_URL;
 		}
 
-		boolean updated = passwordResetService.updatePassword(code, newPassword);
+		boolean updated;
+		try {
+			updated = passwordResetService.updatePassword(code, newPassword);
+		}
+		catch (IOException e) {
+			LOG.error("Error while overriding user password", e);
+			model.addAttribute("error", "Unable to save new password due to a server-side error. Please contact the administrator.");
+			return "redirect:" + LOGIN_RESET_PASSWORD_URL;
+		}
 		if (updated) {
 			model.addAttribute("message", "Password updated successfully. You may now login.");
 			return "redirect:" + LOGIN_FORM_URL;

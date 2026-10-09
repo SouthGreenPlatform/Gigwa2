@@ -22,6 +22,7 @@ import fr.cirad.tools.AppConfig;
 import fr.cirad.tools.GigwaModuleManager;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
+import fr.cirad.web.controller.rest.BrapiRestController;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
@@ -114,6 +115,7 @@ public class ScheduledTaskManager implements ServletContextAware {
 	            try {
 	            	GigwaGa4ghServiceImpl.cleanupExpiredExportData(servletContext);
 	                VariantsetsApiController.cleanupOldExportData(servletContext);
+	                BrapiRestController.cleanupOldExportData(servletContext);
 	            } catch (Exception e) {
 	                LOG.error("Unable to cleanup expired export files", e);
 	            }
