@@ -69,6 +69,7 @@ import fr.cirad.model.GigwaSearchReferencesRequest;
 import fr.cirad.model.MgdbSearchVariantsRequest;
 import fr.cirad.model.GigwaSearchVariantsResponse;
 import fr.cirad.security.base.IRoleDefinition;
+import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.AlphaNumericComparator;
 import fr.cirad.tools.Helper;
 import fr.cirad.tools.mongo.MongoTemplateManager;
@@ -269,6 +270,10 @@ public class Ga4ghRestController extends ControllerInterface {
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException, NumberFormatException, ObjectNotFoundException {
        	String[] info = id.split(Helper.ID_SEPARATOR);
+       	if (info.length < 2 || (info.length > 2 && !info[2].matches("\\d{1,9}"))) {
+       		build400Response(response, "Malformed variant ID: expected <module>" + Helper.ID_SEPARATOR + "<variantId>, optionally followed by " + Helper.ID_SEPARATOR + "<projectId> and " + Helper.ID_SEPARATOR + "<run>");
+       		return null;
+       	}
 		Authentication auth = tokenManager.getAuthenticationFromToken(tokenManager.readToken(request));
 		
 		List<Integer> allowedProjects = new ArrayList<>();
@@ -276,7 +281,7 @@ public class Ga4ghRestController extends ControllerInterface {
 			allowedProjects.addAll(MgdbDao.getUserReadableProjectsIds(tokenManager, auth == null ? null : auth.getAuthorities(), info[0], true));
 		} catch (ObjectNotFoundException e) {}	// user may not be allowed to see any project
 		
-		int nProjId = Integer.parseInt(info[2]);
+		Integer nProjId = info.length > 2 ? Integer.parseInt(info[2]) : null;	// the project is optional
 		List<Integer> targetProjects = info.length > 2 ? Arrays.asList(nProjId) : allowedProjects;
 		
 		Collection<Integer> projectsToSearchIn = CollectionUtils.intersection(targetProjects, allowedProjects);
@@ -465,7 +470,7 @@ public class Ga4ghRestController extends ControllerInterface {
 	            }
 
 	            // create a callSet for each item in the list
-	            List<String> indList = new ArrayList() {{ addAll(sampleMap.keySet()); }};
+	            List<String> indList = new ArrayList<>() {{ addAll(sampleMap.keySet()); }};
 	            for (int i = start; i < end; i++) {
 	                final GenotypingSample sample = sampleMap.get(indList.get(i));
 	                CallSet.Builder csb = CallSet.newBuilder().setId(Helper.createId(module, info[1], sample.getId())).setName("" + sample.getId() /* FIXME: should be name?*/).setVariantSetIds(Arrays.asList(callSetsRequest.getVariantSetId())).setSampleId(""/*Helper.createId(module, info[1], sample.getId(), sample.getId())*/);
@@ -510,14 +515,17 @@ public class Ga4ghRestController extends ControllerInterface {
     })
 	@RequestMapping(value = BASE_URL + REFERENCESETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferenceSetsResponse searchReferenceSets(HttpServletRequest request, @RequestBody SearchReferenceSetsRequest referenceSetsRequest) throws AvroRemoteException {
-
         SearchReferenceSetsResponse response = service.searchReferenceSets(referenceSetsRequest);
         String token = tokenManager.readToken(request);
         List<ReferenceSet> listRef = new ArrayList<>();
-        Collection<String> allowedModules = request.getHeader("Writable") != null ? tokenManager.listWritableDBs(token) : tokenManager.listReadableDBs(token);
+        Collection<String> writableModules = request.getHeader("Writable") != null ? tokenManager.listWritableDBs(token) : null;
         for (ReferenceSet referenceSet : response.getReferenceSets())
-            if (allowedModules.contains(referenceSet.getName()))
-                listRef.add(referenceSet);	// only keep allowed modules
+            try {
+                // only keep allowed modules: as for BrAPI programs / trials, a hidden module is only listed when the token grants access to it
+                if (writableModules != null ? writableModules.contains(referenceSet.getName()) : tokenManager.canUserListDB(token, referenceSet.getName()))
+                    listRef.add(referenceSet);
+            }
+            catch (ObjectNotFoundException ignored) {}	// module no longer connected
         Collections.sort(listRef, new AlphaNumericComparator<ReferenceSet>());
         response.setReferenceSets(listRef);
         return response;
@@ -531,23 +539,43 @@ public class Ga4ghRestController extends ControllerInterface {
      * @return SearchReferencesResponse in JSON format
      * @throws IOException 
      */
-    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferences", notes = "get a list of Reference matching values from SearchReferencesRequest. ")
+    @ApiOperation(authorizations = { @Authorization(value = "AuthorizationToken") }, value = "searchReferences", notes = "get a list of Reference matching values from SearchReferencesRequest. Requires referenceSetId (lists contigs of the whole database) and/or variantSetId (lists contigs of the given project(s)). No reference is returned if both are provided but point to different databases. ")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success", response = SearchReferencesResponse.class),
+        @ApiResponse(code = 400, message = "Neither referenceSetId nor variantSetId provided, or invalid variantSetId"),
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + REFERENCES_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException {
         String token = tokenManager.readToken(request);
-        String id = referencesRequest.getReferenceSetId();
-        if (id == null) {
-            build400Response(response, "Parameter referenceSetId is required");
+        String referenceSetId = referencesRequest.getReferenceSetId(), variantSetId = referencesRequest.getVariantSetId();
+        if (referenceSetId != null && referenceSetId.isBlank())
+        	referenceSetId = null;
+        if (variantSetId != null && (variantSetId.isBlank() || "-1".equals(variantSetId)))	// -1 is GigwaSearchReferencesRequest's default value
+        	variantSetId = null;
+        if (referenceSetId == null && variantSetId == null) {
+            build400Response(response, "Either referenceSetId or variantSetId is required");
             return null;
         }
-        
+        referencesRequest.setReferenceSetId(referenceSetId);
+        referencesRequest.setVariantSetId(variantSetId);
+
+        String sModule = referenceSetId == null ? null : referenceSetId.split(Helper.ID_SEPARATOR)[0];
+        if (variantSetId != null)
+	        try {
+	        	String[] info = Helper.extractModuleAndProjectIDsFromVariantSetIds(variantSetId);
+	        	for (String projId : info[1].split(","))
+	        		Integer.parseInt(projId);
+	        	sModule = info[0];	// the database that will actually be queried
+	        }
+	        catch (Exception e) {	// malformed ID, or IDs spanning several databases
+	            build400Response(response, "Invalid variantSetId: expected comma-separated <module>" + Helper.ID_SEPARATOR + "<projectId> values from a single database");
+	            return null;
+	        }
+
         try
         {
-	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0]))
+	        if (tokenManager.canUserReadDB(token, sModule))
 	            return service.searchReferences(referencesRequest);
 	        else {
 	            buildForbiddenAccessResponse(token, response);
@@ -632,6 +660,13 @@ public class Ga4ghRestController extends ControllerInterface {
             build400Response(response, "Parameter callSetIds is required");
             return null;
         }
+        for (int g = 0; g < gsvr.getNumberGroups(); g++) {
+            String gtPattern = gsvr.getGtPattern(g);
+            if (gtPattern != null && !GenotypingDataQueryBuilder.getGenotypePatternToQueryMap().containsKey(gtPattern)) {
+                build400Response(response, "Unsupported genotype pattern: " + gtPattern);
+                return null;
+            }
+        }
         try
         {
 	        if (tokenManager.canUserReadDB(token, id.split(Helper.ID_SEPARATOR)[0])) {
@@ -663,6 +698,16 @@ public class Ga4ghRestController extends ControllerInterface {
 	})
 	@RequestMapping(value = BASE_URL + VARIANT_ANNOTATION + "/{id}", method = RequestMethod.GET, produces = "application/json")
 	public VariantAnnotation getVariantAnnotationById(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestParam(required = false, name = "projects") String projects) throws Exception {
+		if (projects != null && !projects.isBlank()) {
+			String module = id.split(Helper.ID_SEPARATOR)[0];
+			for (String projectId : projects.split(",")) {
+				String[] info = Helper.getInfoFromId(projectId, 2);
+				if (info == null || !info[0].equals(module) || !info[1].matches("\\d{1,9}")) {
+					build400Response(response, "Invalid project ID: " + projectId + " (expected " + module + Helper.ID_SEPARATOR + "<projectId>)");
+					return null;
+				}
+			}
+		}
         String token = tokenManager.readToken(request);
         try
         {
@@ -684,11 +729,13 @@ public class Ga4ghRestController extends ControllerInterface {
     public void build400Response(HttpServletResponse resp, String message) throws IOException
     {
     	resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    	resp.setContentType("text/plain;charset=UTF-8");
     	resp.getWriter().write(message);
     }
       
     public void buildForbiddenAccessResponse(String token, HttpServletResponse resp) throws IOException
     {
+    	resp.setContentType("text/plain;charset=UTF-8");
     	if (token == null || tokenManager.getAuthenticationFromToken(token) == null)
     	{
 	    	resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -704,6 +751,7 @@ public class Ga4ghRestController extends ControllerInterface {
     public void build404Response(HttpServletResponse resp) throws IOException
     {
     	resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    	resp.setContentType("text/plain;charset=UTF-8");
     	resp.getWriter().write("This resource does not exist");
     }
 }
