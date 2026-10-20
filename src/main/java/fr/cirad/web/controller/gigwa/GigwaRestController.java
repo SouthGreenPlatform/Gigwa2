@@ -2646,7 +2646,7 @@ public class GigwaRestController extends ControllerInterface {
 	    for (String ext : fileExtensions.split(",")) {
 	        ext = ext.trim();
 	        if (!ext.isEmpty())
-	            fileUrls.put(ext, exportUrl.replace(".zip", "." + ext));
+	            fileUrls.put(ext, exportUrl.replace(".fjzip", ".zip").replace(".zip", "." + ext));
 	    }
 	    return exportHelper.getToolURLsForExport(exportFormat, fileUrls);
 	}
