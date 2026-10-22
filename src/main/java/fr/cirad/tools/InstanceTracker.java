@@ -114,12 +114,12 @@ public class InstanceTracker {
 	}
 
 	/**
-	 * @return enforcedWebapRootUrl when configured, otherwise the base-URL learned from incoming requests (null until one has been received)
+	 * @return enforcedWebapRootUrl when configured, otherwise the base-URL learned from incoming requests (null until one has been received), always ending with a slash
 	 */
 	private String getBaseUrl() {
 		String enforcedWebapRootUrl = appConfig.get("enforcedWebapRootUrl");
 		if (enforcedWebapRootUrl != null && !enforcedWebapRootUrl.isBlank())
-			return stripTrailingSlash(enforcedWebapRootUrl.trim());
+			return withTrailingSlash(enforcedWebapRootUrl.trim());
 		return learnedBaseUrl;
 	}
 
@@ -173,7 +173,7 @@ public class InstanceTracker {
 		if (port != null && (("http".equals(scheme) && "80".equals(port)) || ("https".equals(scheme) && "443".equals(port))))
 			port = null;
 
-		return scheme + "://" + host + (port == null ? "" : ":" + port) + stripTrailingSlash(request.getContextPath());
+		return scheme + "://" + host + (port == null ? "" : ":" + port) + withTrailingSlash(request.getContextPath());
 	}
 
 	private static String firstValue(String headerValue) {
@@ -183,7 +183,8 @@ public class InstanceTracker {
 		return first.isEmpty() ? null : first;
 	}
 
-	private static String stripTrailingSlash(String url) {
-		return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+	/** @return the URL ending with exactly one slash: that is the form under which a webapp root is always reachable (some reverse-proxy setups answer 404 without it) */
+	private static String withTrailingSlash(String url) {
+		return url.replaceFirst("/+$", "") + "/";
 	}
 }

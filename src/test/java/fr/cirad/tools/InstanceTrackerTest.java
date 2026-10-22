@@ -31,18 +31,19 @@ public class InstanceTrackerTest {
 
 	@Test
 	public void directAccess() {
-		assertEquals("http://gigwa.example.org:59395/gigwa", InstanceTracker.computeBaseUrl(request("http", "gigwa.example.org", 59395, "/gigwa")));
-		assertEquals("https://gigwa.example.org", InstanceTracker.computeBaseUrl(request("https", "gigwa.example.org", 443, "")));
-		assertEquals("http://8.8.4.4/gigwa", InstanceTracker.computeBaseUrl(request("http", "8.8.4.4", 80, "/gigwa")));
+		assertEquals("http://gigwa.example.org:59395/gigwa/", InstanceTracker.computeBaseUrl(request("http", "gigwa.example.org", 59395, "/gigwa")));
+		assertEquals("https://gigwa.example.org/", InstanceTracker.computeBaseUrl(request("https", "gigwa.example.org", 443, "")));
+		assertEquals("http://8.8.4.4/gigwa/", InstanceTracker.computeBaseUrl(request("http", "8.8.4.4", 80, "/gigwa/")));
+		assertEquals("http://8.8.4.4/gigwa/", InstanceTracker.computeBaseUrl(request("http", "8.8.4.4", 80, "/gigwa")));
 	}
 
 	@Test
 	public void behindProxy() {
-		assertEquals("https://gigwa.example.org/gigwa", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
+		assertEquals("https://gigwa.example.org/gigwa/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
 				"X-Forwarded-Proto", "https", "X-Forwarded-Host", "gigwa.example.org, internal.proxy")));
-		assertEquals("https://gigwa.example.org:8443/gigwa", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
+		assertEquals("https://gigwa.example.org:8443/gigwa/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
 				"X-Forwarded-Host", "gigwa.example.org:8443", "X-Forwarded-Proto", "https")));
-		assertEquals("http://gigwa.example.org:8000/gigwa", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
+		assertEquals("http://gigwa.example.org:8000/gigwa/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/gigwa",
 				"X-Forwarded-Server", "gigwa.example.org", "X-Forwarded-Port", "8000")));
 	}
 
