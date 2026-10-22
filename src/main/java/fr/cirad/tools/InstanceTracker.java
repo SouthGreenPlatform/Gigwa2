@@ -173,7 +173,14 @@ public class InstanceTracker {
 		if (port != null && (("http".equals(scheme) && "80".equals(port)) || ("https".equals(scheme) && "443".equals(port))))
 			port = null;
 
-		return scheme + "://" + host + (port == null ? "" : ":" + port) + withTrailingSlash(request.getContextPath());
+		// a reverse-proxy serving the app under a sub-path it strips (e.g. Apache "ProxyPass /gigwa/ http://localhost:8080/") must pass that sub-path on
+		// via X-Forwarded-Prefix, otherwise we can't know it (enforcedWebapRootUrl should then be set)
+		String prefix = firstValue(request.getHeader("X-Forwarded-Prefix"));
+		if (prefix != null && !prefix.matches("/[\\w\\-./~%]*"))
+			prefix = null;
+		String path = ((prefix == null ? "" : prefix) + request.getContextPath()).replaceAll("/{2,}", "/");
+
+		return scheme + "://" + host + (port == null ? "" : ":" + port) + withTrailingSlash(path);
 	}
 
 	private static String firstValue(String headerValue) {

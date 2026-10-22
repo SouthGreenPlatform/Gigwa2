@@ -48,6 +48,19 @@ public class InstanceTrackerTest {
 	}
 
 	@Test
+	public void proxiedUnderSubPath() {
+		for (String prefix : new String[] {"/gigwa", "/gigwa/"})
+			assertEquals(prefix, "https://gigwa.example.org/gigwa/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "",
+					"X-Forwarded-Proto", "https", "X-Forwarded-Host", "gigwa.example.org", "X-Forwarded-Prefix", prefix)));
+		// prefix added in front of a non-root context path
+		assertEquals("http://gigwa.example.org/tools/app/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "/app",
+				"X-Forwarded-Host", "gigwa.example.org", "X-Forwarded-Prefix", "/tools/")));
+		// malformed prefix ignored
+		assertEquals("http://gigwa.example.org/", InstanceTracker.computeBaseUrl(request("http", "127.0.0.1", 8080, "",
+				"X-Forwarded-Host", "gigwa.example.org", "X-Forwarded-Prefix", "javascript:alert(1)")));
+	}
+
+	@Test
 	public void nonPublicHostsAreIgnored() {
 		for (String host : new String[] {"localhost", "127.0.0.1", "10.1.2.3", "192.168.0.12", "172.20.0.5", "169.254.1.1", "[::1]", "[fd12:3456::1]", "gigwa"})
 			assertNull(host, InstanceTracker.computeBaseUrl(request("http", host, 8080, "/gigwa")));
