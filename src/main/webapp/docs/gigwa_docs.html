@@ -346,6 +346,7 @@
                <FONT COLOR="#2e74B6"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 class='title2'>B2/ APACHE CONFIGURATION</FONT></FONT></FONT>
             </P>
             <P STYLE="margin-bottom: 0.14in">In production environments, Tomcat often runs behind an Apache proxy. If such is your case, you must include the following line in your VirtualHost configuration: <BR><FONT STYLE="font-size: 9pt"><SPAN LANG="en-US"><B>ProxyTimeout 86400</B></SPAN></FONT><BR>Otherwise, when Gigwa is undertaking a process that is meant to last long, Apache may stop waiting for Tomcat to respond, and the interface will fail in displaying results.</P>
+            <P STYLE="margin-bottom: 0.14in">If the proxy serves Gigwa under a sub-path that it strips before forwarding (e.g. <FONT STYLE="font-size: 9pt"><B>ProxyPass /gigwa/ http://localhost:8080/</B></FONT>), Gigwa cannot see that sub-path: either set the <B>enforcedWebapRootUrl</B> parameter (see below), or have the proxy pass it on in an X-Forwarded-Prefix header (e.g. <FONT STYLE="font-size: 9pt"><B>RequestHeader set X-Forwarded-Prefix /gigwa</B></FONT>).</P>
          </LI>
       </UL>
       <P STYLE="margin-bottom: 0.14in"><BR></P>
@@ -524,7 +525,10 @@
                   <P><B>googleAnalyticsId</B> - If set, a Google Analytics tag is automatically added into the main page.</P>
                </LI>
                <LI>
-                  <P><B>enforcedWebapRootUrl</B> - In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. <font color="red">(Required for CAS authentication)</font> Example values: https://secured.server.com/gigwa or http://unsecured.gigwa.server:59395</P>
+                  <P><B>enforcedWebapRootUrl</B> - In some situations the system needs to provide externally visible file URLs for remote applications to download. In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL. It should also be set when a proxy serves Gigwa under a sub-path that it strips, unless the proxy passes that sub-path on via an X-Forwarded-Prefix header. <font color="red">(Required for CAS authentication)</font> Example values: https://secured.server.com/gigwa or http://unsecured.gigwa.server:59395</P>
+               </LI>
+               <LI>
+                  <P><B>trackerUrl</B> - Endpoint pinged on startup and every 28 days (usage statistics for the Gigwa team) with the instance id, Gigwa version, user and database counts, server locale, and the instance's base-URL (<B>enforcedWebapRootUrl</B> if set, otherwise deduced from incoming requests; localhost / private-network addresses are never sent). Defaults to the Gigwa team's tracker; set to an empty value to disable the ping.</P>
                </LI>
                <LI>
                   <P STYLE="margin-bottom: 0in; line-height: 100%"><B>casServerURL</B> - If defined, enables CAS authentication by defining the CAS server URL <font color="red">(<b>enforcedWebapRootUrl</b> is also required for the CAS server to know how to redirect to Gigwa after login)</font></P>
