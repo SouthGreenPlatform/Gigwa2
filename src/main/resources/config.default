@@ -8,6 +8,10 @@
 #adminEmail=gigwa@cirad.fr
 
 
+# Endpoint pinged on startup and every 28 days (usage statistics for the Gigwa team) with the instance id, Gigwa version, user and database counts, server locale, and the instance's base-URL (enforcedWebapRootUrl if set, otherwise deduced from incoming requests, never sent when it is a localhost / private-network address). Defaults to the Gigwa team's tracker; set to an empty value to disable the ping.
+#trackerUrl =
+
+
 # Defines the port at which IGV listens for data submission. No IGV connection if missing / invalid.
 igvDataLoadPort=60151
 
@@ -79,6 +83,7 @@ maxExportableBillionGenotypes = 2
 # In some situations the system needs to provide externally visible file URLs for remote applications to download.
 # In most cases it is able to figure out which base URL to use, but it might also be impossible (for example when a proxy is used to add a https layer). This parameter may then be used to enforce a base-URL.
 # This also provides the base service URL and needs to be set for CAS authentication
+# It should also be set when a reverse-proxy serves Gigwa under a sub-path that it strips (e.g. Apache "ProxyPass /gigwa/ http://localhost:8080/"), unless the proxy passes that sub-path on via an X-Forwarded-Prefix header (Apache: RequestHeader set X-Forwarded-Prefix /gigwa).
 # Example values: https://my.secure.server.com/gigwa or http://my.unsecure.gigwa.server:59395
 #enforcedWebapRootUrl = http://127.0.0.1:59395/gigwa2
 
