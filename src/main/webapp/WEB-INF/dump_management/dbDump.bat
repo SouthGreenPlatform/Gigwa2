@@ -51,6 +51,9 @@ if not "%DBUSERNAME%"=="" (
 set FILENAME=%OUTPUT%\%DUMPNAME%.gz
 set COMMAND=mongodump -vv %CREDENTIAL_OPTIONS% --db=%DATABASE% --excludeCollectionsWithPrefix=tmpVar_ --excludeCollectionsWithPrefix=brapi --excludeCollection=cachedCounts --excludeCollection=variants_without_runs --host=%HOST% --archive=%FILENAME% --gzip
 
+:: DumpProcess.onError() looks for this line in order to clean up after a failed dump
+echo Name : %DUMPNAME%
+
 if "%LOGFILE%"=="" (
 	%COMMAND%
 ) else (
