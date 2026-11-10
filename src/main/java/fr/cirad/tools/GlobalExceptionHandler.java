@@ -43,6 +43,7 @@ import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
 import fr.cirad.tools.security.base.AbstractTokenManager;
+import fr.cirad.web.controller.ga4gh.Ga4ghRestController;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -68,6 +69,24 @@ public class GlobalExceptionHandler {
 	      response.setStatus(status.value());
 
 	      return buildBrapiErrorResponse(status, ex);
+	  }
+
+	  if (isGa4ghRequest(request))
+	  {
+	      HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+	      if (ex instanceof ResponseStatusException)
+	          status = ((ResponseStatusException) ex).getStatus();
+
+	      else if (ex instanceof AccessDeniedException)
+	          status = HttpStatus.FORBIDDEN;
+
+	      if (status.is5xxServerError())
+	    	  LOG.error("Error at URL (" + ex.hashCode() + ") " + request.getRequestURI(), ex);
+
+	      response.setStatus(status.value());
+
+	      return buildGa4ghErrorResponse(status, ex);
 	  }
 	    
 	  if (ex instanceof HttpRequestMethodNotSupportedException)
@@ -123,12 +142,35 @@ public class GlobalExceptionHandler {
 	    return mav;
   }
   
+  /** Body mirrors the GA4GH GAException schema: {"message": string, "errorCode": int} */
+  private ModelAndView buildGa4ghErrorResponse(HttpStatus httpStatus, Exception ex)
+  {
+	    Map<String, Object> body = new HashMap<>();
+	    body.put("message", (httpStatus.is5xxServerError() ? "Internal server error: " : "") + ex.getMessage());
+	    body.put("errorCode", httpStatus.value());
+
+	    MappingJackson2JsonView view = new MappingJackson2JsonView();
+
+	    ModelAndView mav = new ModelAndView(view);
+	    mav.addAllObjects(body);
+
+	    return mav;
+  }
+  
   private boolean isBrapiRequest(HttpServletRequest request) {
 	    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
 	    if (!(handler instanceof HandlerMethod))
 	        return false;
 
 	    return ((HandlerMethod) handler).getBeanType().getPackageName().startsWith("org.brapi.v2.api");
+	}
+  
+  private boolean isGa4ghRequest(HttpServletRequest request) {
+	    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+	    if (!(handler instanceof HandlerMethod))
+	        return false;
+
+	    return Ga4ghRestController.class.isAssignableFrom(((HandlerMethod) handler).getBeanType());
 	}
   
   private boolean isGigwaSearchGenotypesRequest(HttpServletRequest request) {

@@ -106,4 +106,13 @@
     <filter-name>assemblyFilter</filter-name>
     <url-pattern>/rest/*</url-pattern>
   </filter-mapping>
+  <filter>
+    <filter-name>instanceTrackerFilter</filter-name>
+    <filter-class>fr.cirad.web.filter.InstanceTrackerFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <!-- lets the instance tracker learn the public base-URL when enforcedWebapRootUrl is not set (no-op once known) -->
+    <filter-name>instanceTrackerFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 </web-app>

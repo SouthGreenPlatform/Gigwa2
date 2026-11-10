@@ -54,6 +54,32 @@
    "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/susScr3.fa",
    "indexURL": "https://gigwa.southgreen.fr/genomes/seq/susScr3.fa.fai",
    "tracks": [
+ {
+   "name": "Genes",
+   "type": "annotation",
+   "format": "gff3",
+   "sourceType": "file",
+   "url": "https://gigwa.southgreen.fr/genomes/annot/GCF_000003025.5_Sscrofa10.2_genomic_primary_sorted.gff3.gz.tbi",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/annot/GCF_000003025.5_Sscrofa10.2_genomic_primary_sorted.gff3.gz.tbi",
+   "order": 0
+ }
+   ]
+ },
+ {
+   "id": "Sus_scrofa_Sscrofa11.1",
+   "name": "Sus scrofa Sscrofa11.1",
+   "fastaURL": "https://gigwa.southgreen.fr/genomes/seq/susScr11.fa",
+   "indexURL": "https://gigwa.southgreen.fr/genomes/seq/susScr11.fa.fai",
+   "tracks": [
+	{
+	  "name": "Genes",
+	  "type": "annotation",
+	  "format": "gff3",
+	  "sourceType": "file",
+	  "url": "https://gigwa.southgreen.fr/genomes/annot/GCF_000003025.6_Sscrofa11.1_genomic_primary_sorted_final.gff3.gz",
+	  "indexURL": "https://gigwa.southgreen.fr/genomes/annot/GCF_000003025.6_Sscrofa11.1_genomic_primary_sorted_final.gff3.gz.tbi",
+	  "order": 0
+	}
    ]
  },
  {

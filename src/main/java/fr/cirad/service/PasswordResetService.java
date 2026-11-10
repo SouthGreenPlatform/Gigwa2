@@ -144,7 +144,11 @@ public class PasswordResetService {
         return noReplyAddress;
     }
 
-    public boolean updatePassword(String code, String newPassword) {
+    /**
+     * @return false if the code is invalid or no user matches it
+     * @throws IOException if the new password could not be saved
+     */
+    public boolean updatePassword(String code, String newPassword) throws IOException {
     	String emailAssociatedToCode = resetInfo.get(code);
         if (emailAssociatedToCode == null) {
         	LOG.debug("Password reset code validation failed for code '" + code/* + "' and newPassword '" + newPassword + "'"*/);
@@ -157,13 +161,7 @@ public class PasswordResetService {
             return false;
         }
 
-        try {
-            userDao.saveOrUpdateUser(user.getUsername(), newPassword, user.getAuthorities(), user.isEnabled(), user.getMethod(), user.getEmail());
-        }
-        catch (IOException e) {
-            LOG.error("Error while overriding user password", e);
-            return false;
-        }
+        userDao.saveOrUpdateUser(user.getUsername(), newPassword, user.getAuthorities(), user.isEnabled(), user.getMethod(), user.getEmail());
 
         // Clear the reset information
         resetInfo.remove(code);

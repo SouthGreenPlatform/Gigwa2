@@ -132,6 +132,30 @@ public class TokenManager extends AbstractTokenManager {
         return hasAccess;
     }
     
+    @Override
+    public boolean canUserListDB(String token, String module) throws ObjectNotFoundException {
+    	if (!MongoTemplateManager.isModuleHidden(module))
+    		return canUserReadDB(token, module);
+
+    	if (MongoTemplateManager.get(module) == null)
+    		throw new ObjectNotFoundException("Database " + module + " does not exist");
+    	Authentication authentication = getAuthenticationFromToken(token);
+    	boolean fResult = hasExplicitReadPermissionOnDB(authentication == null ? null : userDao.getUserAuthorities(authentication), module);
+    	if (fResult)
+    		updateToken(token, System.currentTimeMillis());
+        return fResult;
+    }
+
+    /** read permission granted by the user's roles (admin, supervisor, managed entity or custom role in the database), regardless of the database being public */
+    private boolean hasExplicitReadPermissionOnDB(Collection<? extends GrantedAuthority> authorities, String module) {
+    	if (authorities == null)
+    		return false;
+    	return authorities.contains(new SimpleGrantedAuthority(IRoleDefinition.ROLE_ADMIN))
+    			|| userDao.getSupervisedModules(authorities).contains(module)
+    			|| userDao.getManagedEntitiesByModuleAndType(authorities).get(module) != null
+    			|| userDao.getCustomRolesByModuleAndEntityType(authorities).get(module) != null;
+    }
+
     /**
      * check if user has permission to write some contents to a database
      *
@@ -198,7 +222,7 @@ public class TokenManager extends AbstractTokenManager {
             boolean fPublicModule = MongoTemplateManager.isModulePublic(module);
             boolean fIsSupervisor = !fAdminUser && supervisedModules.contains(module);
             boolean fAuthorizedUser = authorities != null && (fIsSupervisor || customRolesByModuleAndEntityType.get(module) != null || managedEntitiesByModuleAndType.get(module) != null);
-            if (fAdminUser || fIsSupervisor || (!fHiddenModule && (fAuthorizedUser || fPublicModule)))
+            if (fAdminUser || fAuthorizedUser || (!fHiddenModule && fPublicModule))	// a hidden module is listed whenever the user has at least read access to it, never just because it is public
                 authorizedModules.add(module);
         }
         return authorizedModules;

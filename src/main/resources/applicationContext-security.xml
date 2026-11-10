@@ -46,6 +46,12 @@
 
         <secur:form-login login-page="/login.do" authentication-failure-url="/login.do?auth=failure" always-use-default-target="true" default-target-url="/index.jsp" authentication-success-handler-ref="authenticationSuccessHandler" />
 
+        <secur:oauth2-login
+                client-registration-repository-ref="gigwaClientRegistrationRepository"
+                authentication-success-handler-ref="authenticationSuccessHandler"
+                login-page="/login.do"
+        />
+
 		<secur:access-denied-handler error-page="/WEB-INF/jsp/error/403.jsp" />
 
         <secur:logout success-handler-ref="logoutDispatchHandler" invalidate-session="true"/>
@@ -53,7 +59,7 @@
         <secur:custom-filter position="CAS_FILTER" ref="casFilter" />
         <secur:custom-filter before="LOGOUT_FILTER" ref="requestSingleLogoutFilter" />
         <secur:custom-filter before="CAS_FILTER" ref="singleLogoutFilter" />
-        
+
         <secur:cors configuration-source-ref="corsSource" />
     </secur:http>
 
@@ -168,6 +174,7 @@
 
 	<bean id="authenticationSuccessHandler" class="fr.cirad.security.GigwaAuthenticationSuccessHandler">
 		<constructor-arg value="/index.jsp" />
+        <property name="userDetailsService" ref="userDetailsService"/>
 	</bean>
 
 <!-- CAS authentication beans -->
@@ -181,11 +188,10 @@
     	<property name="serviceProperties" ref="casServiceProperties" />
     </bean>
 
-
     <import resource="applicationContext-data.xml" />
     <import resource="applicationContext-MVC.xml" />
-        
-    <context:component-scan base-package="fr.cirad.security.service, fr.cirad.mgdb.model.mongodao, fr.cirad.tools">
+
+    <context:component-scan base-package="fr.cirad.security, fr.cirad.mgdb.model.mongodao, fr.cirad.tools">
         <context:exclude-filter type="regex" expression="^fr.cirad.tools.GlobalExceptionHandler$"/>
     </context:component-scan>
 </beans>

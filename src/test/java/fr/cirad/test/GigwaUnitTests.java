@@ -29,7 +29,7 @@ public class GigwaUnitTests {
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
 		Properties p = new Properties();
 		p.load(datasources);
-		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.propperties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
+		assertTrue("Tests require a datasource named 'testModule' to be declared in datasources.properties", p.getProperty("*testModule") != null || p.getProperty("testModule") != null);
         VCFParameters params = new VCFParameters(
                 "testModule",
                 "testProject",

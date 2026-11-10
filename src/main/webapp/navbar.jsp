@@ -20,6 +20,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <jsp:useBean id="appConfig" class="fr.cirad.tools.AppConfig" />
 <sec:authentication property="principal" var="principal"/>
+<sec:authentication property="name" var="currentUsername"/>
 <sec:authorize access="hasRole('ROLE_ADMIN')" var="isAdmin"/>
 <sec:authorize access="hasRole('ROLE_ANONYMOUS')" var="isAnonymous"/>
 
@@ -54,7 +55,7 @@
 					</c:if>
 					<c:if test="${principal != null && !isAnonymous}">
                         <li>
-                            <a href="<c:url value='logout' />" data-toggle="tooltip" data-placement="bottom" title="Log out ${principal.username}" id="logOut"><span class="glyphicon glyphicon-log-out margin-icon" aria-hidden="true"></span>Log out</a>
+                            <a href="<c:url value='logout' />" data-toggle="tooltip" data-placement="bottom" title="Log out ${currentUsername}" id="logOut"><span class="glyphicon glyphicon-log-out margin-icon" aria-hidden="true"></span>Log out</a>
                         </li>
 					</c:if>
                 </ul>
