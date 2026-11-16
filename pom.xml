@@ -17,7 +17,7 @@
 <!-- 		ubuntu	https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz -->
 <!-- 		macos	https://download.oracle.com/java/17/latest/jdk-17_macos-x64_bin.tar.gz -->
 <!-- 		win		https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.zip, needs to be converted to tar.gz by hand -->
-		<tomcat.version>9.0.113</tomcat.version>
+		<tomcat.version>9.0.124</tomcat.version>
 		<mongodb.linux.file>linux-x86_64-ubuntu1804-4.2.25</mongodb.linux.file>
 		<mongodb.windows.file>win32-x86_64-2012plus-4.2.25</mongodb.windows.file>
 		<mongodb.osx.file>macos-x86_64-4.2.25</mongodb.osx.file>
@@ -277,6 +277,12 @@
 			      <artifactId>jsr305</artifactId>
 			    </exclusion>
 			</exclusions>
+		</dependency>
+		<!-- Jackson 1 mapper, used by blend4j (Galaxy) and GigwaRestController.bookmarkQuery; formerly provided transitively by Avro 1.7.7 -->
+		<dependency>
+		    <groupId>org.codehaus.jackson</groupId>
+		    <artifactId>jackson-mapper-asl</artifactId>
+		    <version>1.9.13</version>
 		</dependency>
 	</dependencies>
 	

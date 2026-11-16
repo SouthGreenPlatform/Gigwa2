@@ -25,7 +25,6 @@ import java.util.List;
 import javax.servlet.ServletContext;
 
 import org.apache.log4j.Logger;
-import org.mortbay.log.Log;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.ServletContextAware;
@@ -165,7 +164,7 @@ public class SwaggerConfig implements WebMvcConfigurer, ServletContextAware {
 			prop.load(is);
 			gigwaVersion = "v" + prop.getProperty("Implementation-version");
 		} catch (IOException e) {
-			Log.warn("Unable to determine Gigwa version for Swagger");
+			LOG.warn("Unable to determine Gigwa version for Swagger", e);
 		}
 	}
 	

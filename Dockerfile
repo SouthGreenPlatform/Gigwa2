@@ -1,4 +1,4 @@
-FROM tomcat:9.0.113-jdk17-temurin-jammy
+FROM tomcat:9.0.124-jdk17-temurin-jammy
 
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
@@ -10,7 +10,7 @@ RUN sed -i 's|maxParameterCount="1000"|maxParameterCount="-1" maxPostSize="-1"|g
 #env vars to avoid ip/port inside image
 && echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<beans xmlns=\"http://www.springframework.org/schema/beans\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:mongo=\"http://www.springframework.org/schema/data/mongo\" xsi:schemaLocation=\"http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-3.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd\">\n<mongo:mongo-client host=\"#{systemEnvironment['MONGO_IP']}\" port=\"#{systemEnvironment['MONGO_PORT']}\" id=\"defaultMongoHost\" credential=\"#{systemEnvironment['MONGO_INITDB_ROOT_USERNAME']}:#{systemEnvironment['MONGO_INITDB_ROOT_PASSWORD']}@admin\" />\n</beans>" > webapps/gigwa/WEB-INF/classes/applicationContext-data.xml \
 && apt-get update && apt-get install -y wget \
-&& wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb && dpkg -i mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb && rm -f mongodb-database-tools-ubuntu1804-x86_64-100.5.2.deb \
+&& wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.20.1.deb && dpkg -i mongodb-database-tools-ubuntu2204-x86_64-100.20.1.deb && rm -f mongodb-database-tools-ubuntu2204-x86_64-100.20.1.deb \
 && apt-get remove -y wget libpsl5 publicsuffix \
 && sed -i 's|<appender-ref ref="FILE" />|<appender-ref ref="console" /> <appender-ref ref="FILE" />|g' webapps/gigwa/WEB-INF/classes/log4j.xml \
 #allowLinking="true" to be able to use symbolic link

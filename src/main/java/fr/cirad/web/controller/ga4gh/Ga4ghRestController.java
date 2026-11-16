@@ -135,7 +135,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}" + BASES, method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ListReferenceBasesResponse getReferenceBases(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody ListReferenceBasesRequest listReferenceBasesRequest) throws IOException {
+    public ListReferenceBasesResponse getReferenceBases(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody ListReferenceBasesRequest listReferenceBasesRequest) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         try
@@ -169,7 +169,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no CallSet with this ID")
     })
 	@RequestMapping(value = BASE_URL + CALLSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public CallSet getCallSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public CallSet getCallSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         try
@@ -206,7 +206,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no VariantSet with this ID")
     })
 	@RequestMapping(value = BASE_URL + VARIANTSETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public VariantSet getVariantSet(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         try
@@ -245,7 +245,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
 	@RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, NumberFormatException, ObjectNotFoundException {
+    public Variant getVariant(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, NumberFormatException, ObjectNotFoundException, AvroRemoteException {
         String indHeader = request.getHeader("ind");
     	Map<String, Object> body = new HashMap<>() {{put("callSetIds", indHeader == null || indHeader.length() == 0 ? new ArrayList<String>() : Helper.split(indHeader, ";")); }};
     	return getVariantByPost(request, response, id, body);
@@ -268,7 +268,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no Variant with this ID")
     })
     @RequestMapping(value = BASE_URL + VARIANTS + "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
-    public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException, NumberFormatException, ObjectNotFoundException {
+    public Variant getVariantByPost(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestBody Map<String, Object> body) throws IOException, NumberFormatException, ObjectNotFoundException, AvroRemoteException {
        	String[] info = id.split(Helper.ID_SEPARATOR);
        	if (info.length < 2 || (info.length > 2 && !info[2].matches("\\d{1,9}"))) {
        		build400Response(response, "Malformed variant ID: expected <module>" + Helper.ID_SEPARATOR + "<variantId>, optionally followed by " + Helper.ID_SEPARATOR + "<projectId> and " + Helper.ID_SEPARATOR + "<run>");
@@ -344,7 +344,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no Reference with this ID")
     })
 	@RequestMapping(value = BASE_URL + REFERENCES + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public Reference getReference(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException {
+    public Reference getReference(HttpServletRequest request, HttpServletResponse response, @PathVariable String id) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         try
@@ -381,7 +381,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 404, message = "no ReferenceSet with this ID")
     })
 	@RequestMapping(value = BASE_URL + REFERENCESETS + "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ReferenceSet getReferenceSet(HttpServletResponse response, @PathVariable String id, HttpServletRequest request) throws IOException {
+    public ReferenceSet getReferenceSet(HttpServletResponse response, @PathVariable String id, HttpServletRequest request) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         try
@@ -546,7 +546,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + REFERENCES_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException {
+    public SearchReferencesResponse searchReferences(HttpServletRequest request, HttpServletResponse response, @RequestBody GigwaSearchReferencesRequest referencesRequest) throws IOException, AvroRemoteException {
         String token = tokenManager.readToken(request);
         String referenceSetId = referencesRequest.getReferenceSetId(), variantSetId = referencesRequest.getVariantSetId();
         if (referenceSetId != null && referenceSetId.isBlank())
@@ -601,7 +601,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
 	@RequestMapping(value = BASE_URL + VARIANTSETS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public SearchVariantSetsResponse searchVariantSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchVariantSetsRequest variantSetsRequest) throws IOException {
+    public SearchVariantSetsResponse searchVariantSets(HttpServletRequest request, HttpServletResponse response, @RequestBody SearchVariantSetsRequest variantSetsRequest) throws IOException, AvroRemoteException {
         String token = tokenManager.readToken(request);
         boolean fWillingToWrite = request.getHeader("Writable") != null;
         if (variantSetsRequest.getDatasetId() == null) {
@@ -648,7 +648,7 @@ public class Ga4ghRestController extends ControllerInterface {
         @ApiResponse(code = 401, message = "Access forbidden")
     })
     @RequestMapping(value = BASE_URL + VARIANTS_SEARCH, method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws IOException {
+    public GigwaSearchVariantsResponse searchVariants(HttpServletRequest request, HttpServletResponse response, @RequestBody MgdbSearchVariantsRequest gsvr) throws IOException, AvroRemoteException {
 
         String token = tokenManager.readToken(request);
         String id = gsvr.getVariantSetId();

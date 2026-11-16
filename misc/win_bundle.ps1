@@ -1,6 +1,6 @@
 # Variables
 $project_version = "2.13.1-RELEASE"
-$tomcat_version = "9.0.113"
+$tomcat_version = "9.0.124"
 $mongodb_windows_file = "win32-x86_64-2012plus-4.2.25"
 $path_to_windows_jre = "zulu17.40.19-ca-jre17.0.6-win_x64"
 
