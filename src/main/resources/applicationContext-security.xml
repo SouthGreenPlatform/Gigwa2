@@ -49,6 +49,7 @@
         <secur:oauth2-login
                 client-registration-repository-ref="gigwaClientRegistrationRepository"
                 authentication-success-handler-ref="authenticationSuccessHandler"
+                authentication-failure-handler-ref="oauth2AuthenticationFailureHandler"
                 login-page="/login.do"
         />
 
@@ -112,7 +113,7 @@
 
     <bean id="formEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
     	<constructor-arg value="/login.do" />
-   		<property name="forceHttps" value="true" />
+        <property name="forceHttps" value="#{appConfig.get('enforcedWebapRootUrl') == null or !appConfig.get('enforcedWebapRootUrl').toLowerCase().startsWith('http://')}" />
     </bean>
 
     <bean id="casEntryPoint" class="org.springframework.security.cas.web.CasAuthenticationEntryPoint">
@@ -176,6 +177,8 @@
 		<constructor-arg value="/index.jsp" />
         <property name="userDetailsService" ref="userDetailsService"/>
 	</bean>
+
+	<bean id="oauth2AuthenticationFailureHandler" class="fr.cirad.security.GigwaOAuth2AuthenticationFailureHandler" />
 
 <!-- CAS authentication beans -->
     <bean id="casServiceProperties" class="org.springframework.security.cas.ServiceProperties">

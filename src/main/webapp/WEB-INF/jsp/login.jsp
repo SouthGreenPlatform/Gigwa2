@@ -78,7 +78,7 @@
                             	account</a>
 							</c:if>
 							<c:forEach var="registration" items="${oauth2Providers}">
-                                <a class="btn btn-primary btn-block btn-large margin-top" href="/gigwa/oauth2/authorization/${registration.registrationId}">
+                                <a class="btn btn-primary btn-block btn-large margin-top" href="${enforcedWebapRootUrl}/oauth2/authorization/${registration.registrationId}">
                                     Authenticate with <c:out value="${registration.registrationId}"/>
                                 </a>
                             </c:forEach>
@@ -100,6 +100,11 @@
 	                                </c:if>
 	                            </c:otherwise>
                             </c:choose>
+                            <c:if test="${not empty errorMessage}">
+                                <div class="text-danger margin-top-md">
+                                    <span id="loginErrorMsg" style="background-color:white; padding:0 10px;"><c:out value="${errorMessage}" /></span>
+                                </div>
+                            </c:if>
                             <button type="button" class="btn btn-primary btn-block btn-large margin-top-md" onclick="window.location.href = 'index.jsp';">Return to public databases</button>
                             <c:set var="adminEmail" value="<%= appConfig.get(\"adminEmail\") %>"></c:set>
                             <c:if test='${!fn:startsWith(adminEmail, "??") && !empty adminEmail}'>

@@ -169,7 +169,30 @@ maxDistanceMatrixSize = 1E9
 # CSV list of domains (supporting wildcards) for which IGV.js will use a proxy to access genome / track files (workaround for CORS issues)
 igvProxiedDomains = jbrowse.southgreen.fr
 
-# OIDC servers, each entry should contain 4 strings separated with ";": name, issuer URL, client id, client secret (secret is optional)
-#oauth2config_1 = GitHub;https://github.com/login/oauth;<github_client_id>;<github_client_secret>
-#oauth2config_2 = Google;https://accounts.google.com;<google_client_id>;<google_client_secret>
-#oauth2config_3 = Keycloak;http://127.0.0.1:8085/realms/gigwa;<keycloak_client_id>;<keycloak_client_secret>
+# OIDC login providers. Each oidcProvider_<n> is: name;issuerUri;clientId;clientSecret;userNameAttr;displayName
+#  - name is lowercased into the registration id / callback path; displayName (optional, 6th field) is what the login
+button shows and defaults to name as typed (so its case is kept)
+#  - issuerUri must expose /.well-known/openid-configuration
+#  - userNameAttr is optional (default email, setting a userNameAttribute other than "email" automatically requires the
+oauth client accept sending the "profile" scope)
+#  - callback URL to register with the provider: <enforcedWebapRootUrl>/login/oauth2/code/<name-lowercased>
+# (the former key prefix "oauth2config_" is still accepted, with a deprecation warning)
+
+# Optional CSV email-domain allowlist (empty = any):
+#oidcAllowedEmailDomains = cirad.fr, ird.fr
+
+# Google: credentials from https://console.cloud.google.com/apis/credentials ; userNameAttr can be name for example
+#oidcProvider_1 = Google;https://accounts.google.com;${GOOGLE_CLIENT_ID};${GOOGLE_CLIENT_SECRET}
+
+# Cognito issuer: https://cognito-idp.<region>.amazonaws.com/<userPoolId>
+#oidcProvider_2 = Cognito;https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID};${COGNITO_CLIENT_ID};${COGNITO_CLIENT_SECRET}
+
+# Keycloak issuer: https://<host>/realms/<realm>  (<=17: .../auth/realms/<realm>)
+#oidcProvider_3 = Keycloak;https://<host>/realms/<realm>;${KEYCLOAK_CLIENT_ID};${KEYCLOAK_CLIENT_SECRET};preferred_username
+
+# BMS and Github are not OIDC client, you must follow the following configuration
+# BMS: configure an oauth client in your bms instance with this redirect_url <enforcedWebapRootUrl>/login/oauth2/code/bms
+#oidcProvider_4 = bms;${BMS_URL};${BMS_CLIENT_ID}
+
+# Github: Configure client in https://github.com/settings/apps
+#oidcProvider_5 = github;https://github.com/login/oauth;${GITHUB_CLIENT_ID};${GITHUB_CLIENT_SECRET}

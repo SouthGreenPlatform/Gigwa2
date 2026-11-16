@@ -13,6 +13,7 @@ import java.util.Iterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import fr.cirad.security.GigwaClientRegistrationRepository;
 import org.apache.log4j.Logger;
@@ -83,7 +84,23 @@ public class GigwaAuthenticationController  {
 		}
 		ModelAndView mav = new ModelAndView();
 		mav.addObject("resetPasswordEnabled", passwordResetService.seemsProperlyConfigured());
+
+		String errorMessage = resolveLoginErrorMessage(request);
+		if (errorMessage != null)
+			mav.addObject("errorMessage", errorMessage);
+
 		return mav;
+	}
+
+	private static String resolveLoginErrorMessage(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session == null)
+			return null;
+
+		Object stored = session.getAttribute(GigwaAuthenticationSuccessHandler.LOGIN_ERROR_SESSION_KEY);
+		session.removeAttribute(GigwaAuthenticationSuccessHandler.LOGIN_ERROR_SESSION_KEY);
+
+		return stored instanceof String message && !message.isBlank() ? message : null;
 	}
 	
 	@GetMapping(LOGIN_CAS_URL)
