@@ -32,6 +32,21 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- keep every Spring Framework / Spring Security artifact (including transitive ones) on the same, latest OSS 5.x versions -->
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>5.3.39</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.security</groupId>
+				<artifactId>spring-security-bom</artifactId>
+				<version>5.8.16</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<!-- override old transitive versions (spring-modules-validation, cas-client-core) to match what opencsv / POI expect, and avoid CVE-2019-10086 & CVE-2025-48734 -->
 			<dependency>
 				<groupId>commons-beanutils</groupId>
@@ -56,7 +71,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-support</artifactId>
-			<version>5.3.25</version>
+			<version>5.3.39</version>
 		</dependency>
 
 		<dependency>
@@ -144,7 +159,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-taglibs</artifactId>
-			<version>5.6.10</version>
+			<version>5.8.16</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework</groupId>
@@ -159,7 +174,7 @@
 		<dependency>
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-cas</artifactId>
-		    <version>5.6.10</version>
+		    <version>5.8.16</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -174,12 +189,12 @@
 		<dependency>
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-oauth2-client</artifactId>
-		    <version>5.6.10</version>
+		    <version>5.8.16</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-jose</artifactId>
-			<version>5.6.10</version>
+			<version>5.8.16</version>
 		</dependency>
 
 		<dependency>
@@ -293,7 +308,7 @@
 		</repository>
 		<repository>
 			<id>central</id>
-			<url>http://central.maven.org/maven2/</url>
+			<url>https://repo.maven.apache.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>sonatype</id>
@@ -574,9 +589,9 @@
 										<groupId>
 											org.apache.maven.plugins
 										</groupId>
-										<artifactId>
-												
-										</artifactId>
+													<artifactId>
+														maven-clean-plugin
+													</artifactId>
 										<versionRange>
 											[3.0.0,)
 										</versionRange>

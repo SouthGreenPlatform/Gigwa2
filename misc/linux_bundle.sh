@@ -43,7 +43,7 @@ curl -o  sample.vcf "https://raw.githubusercontent.com/SouthGreenPlatform/Gigwa2
 mv sample.vcf ${bundle_dir_ubuntu}/vcf/sample.vcf
 
 # Create setenv scripts for Tomcat
-echo -e "LC_ALL=\nexport CATALINA_OPTS=\"\$CATALINA_OPTS -Xms512m -Xmx2048m\"\nexport JAVA_OPTS=\"\$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true\"" > ${bundle_dir_ubuntu}/tomcat/bin/setenv.sh
+echo -e "LC_ALL=\nexport CATALINA_OPTS=\"\$CATALINA_OPTS -Xms512m -Xmx2048m\"\nexport JAVA_OPTS=\"\$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true -Dorg.apache.catalina.session.StandardSession.ACTIVITY_CHECK=true\"" > ${bundle_dir_ubuntu}/tomcat/bin/setenv.sh
 
 # Copy additional files to bundles
 cd ${bundle_dir_ubuntu}

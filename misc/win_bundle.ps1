@@ -45,7 +45,7 @@ Invoke-WebRequest -Uri $rawUrl -OutFile "${bundle_dir_win}\vcf\sample.vcf"
 
 # Create setenv scripts for Tomcat
 Set-Content -Path "${bundle_dir_win}\tomcat\bin\setenv.bat" -Value 'set "JAVA_OPTS=%JAVA_OPTS% -Xms512m -Xmx2048m"'
-Add-Content -Path "${bundle_dir_win}\tomcat\bin\setenv.bat" -Value 'set "JAVA_OPTS=%JAVA_OPTS% -Dlog4j2.formatMsgNoLookups=true"'
+Add-Content -Path "${bundle_dir_win}\tomcat\bin\setenv.bat" -Value 'set "JAVA_OPTS=%JAVA_OPTS% -Dlog4j2.formatMsgNoLookups=true -Dorg.apache.catalina.session.StandardSession.ACTIVITY_CHECK=true"'
 
 # Copy additional files to bundles
 Set-Location -Path $bundle_dir_win

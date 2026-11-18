@@ -6,6 +6,10 @@ export CATALINA_OPTS=" -Xms512m -Xmx2048m"
 export JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
 
 
+# Recent Tomcat versions ignore maxIdleSwap / minIdleSwap (set in META-INF/context.xml) unless session activity check is enabled
+export JAVA_OPTS="$JAVA_OPTS -Dorg.apache.catalina.session.StandardSession.ACTIVITY_CHECK=true"
+
+
 # In container start Tomcat using the host's locale
 if [ ! -z "${HOST_LOCALE}" ]; then
 	export LANG=${HOST_LOCALE};
